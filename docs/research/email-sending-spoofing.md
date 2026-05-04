@@ -4,13 +4,13 @@
 
 This document outlines the email delivery technology/infrastructure selected for the simulated phishing attacks. It explains technical challenges and possible solutions for each one.
 
-Our phishing simulations will be structured very similar to real phishing attacks, making us vulnerable to malicious mail flagging. This is especially true since we are sending emails in bulk that includes links made to look suspicious. This means the very mechanisms uses on the internet to protect people from malicious mail, hinders our platforms efficiency and functionality since being able to send emails is a fundamental part of our platform.
+Our phishing simulations will be structured very similar to real phishing attacks, making us vulnerable to malicious mail flagging. This is especially true since we are sending emails in bulk that includes links made to look suspicious. This means the very mechanism used on the internet to protect people from malicious mail, hinders our platforms efficiency and functionality since being able to send emails is a fundamental part of our platform.
 
-If emails are not able to reach the recipients inboxes, then the simulations will produce no data and we will be unable to provide educational feedback to the recipient. Therefore it is crucial for our email to not get blocked.
+If emails are not able to reach the recipient's inbox, then the simulations will produce no data and we will be unable to provide educational feedback to the recipient. Therefore, it is crucial that our emails do not get blocked.
 
-We have evaluated and selected **Resend**, a cloud email delivery service, since it is designed to handle most of these changes. We have also chosen **Mailu** as a self-hosted fallback.
+We have evaluated and selected **Resend**, a cloud email delivery service, since it is designed to handle most of these challenges. We have also chosen **Mailu** as a self-hosted fallback.
 
-In this document we first discuss the details of the problems followed by their possible solutions. We then list all necessary details about both Resend and Mailu. Finally we will finish off with our plans moving forward. 
+In this document we first discuss the details of the problems followed by their possible solutions. We then list all necessary details about both Resend and Mailu. Finally, we will finish off with our plans moving forward.
 
 **Note: There are short summaries after each section.**
 
@@ -25,12 +25,12 @@ We are therefore highly vulnerable to being placed on a blacklist by Microsoft, 
 
 ## Solution: Cold IP
 
-- **Cloud Email API:** 
-  By using a cloud email API we allow our outgoing emails to have the vendor's reputation score rather than our own, since the email is routed through their servers. Cloud API vendors have high reputation scores at major providers like Microsoft or Google since they have their own security checks on any outgoing emails. This results in out emails having a "warm" IP score. Cloud email API's usually, also make use of shared IP pools, which distribute the sending load across multiple pre-warmed IPs.
+- **Cloud Email API:**
+  By using a cloud email API we allow our outgoing emails to have the vendor's reputation score rather than our own, since the email is routed through their servers. Cloud API vendors have high reputation scores at major providers like Microsoft or Google since they have their own security checks on any outgoing emails. This results in out emails having a "warm" IP score. Cloud email API's usually also make use of shared IP pools, which distribute the sending load across multiple pre-warmed IPs.
 
 ## Problem: Anti-Abuse AI
 
-Modern email providers and cloud API vendors make use of aggressive AI protection to filter and flag malicious mail. These machine-learning classifiers are trained on countless amount of spam and phishing samples meaning they are efficient in recognizing suspicions sending behavior, link reputation, and  metadata.
+Modern email providers and cloud API vendors make use of aggressive AI protection to filter and flag malicious mail. These machine-learning classifiers are trained on a countless amount of spam and phishing samples meaning they are efficient in recognizing suspicions sending behavior, link reputation, and  metadata.
 
 This means that there is a high possibility of our mail being flagged or blocked as malicious mail. This could lead to our account being blacklisted. Being blacklisted is a severe problem since it will block all future emails originating from our account registered, causing our entire platform to become non-functional.
 
@@ -45,7 +45,7 @@ This means that there is a high possibility of our mail being flagged or blocked
 
 ## Problem: Rate Limiting
 
-Modern email providers impose a strict rate limits on incoming or outgoing emails per user. This protects them against sending or receiving spam bursts. This is especially true if the incoming emails are form self-hosting servers.
+Modern email providers impose strict rate limits on incoming or outgoing emails per user. This protects them against sending or receiving spam bursts. This is especially true if the incoming emails are from self-hosting servers.
 
 When executing a large-scale phishing simulation, our mail might get blocked to some extent or our connection might completely be blocked if the quantity of emails exceed the rate limit. This can lead to incomplete or inaccurate data.
 
@@ -56,9 +56,10 @@ When executing a large-scale phishing simulation, our mail might get blocked to 
 
 
 >[!Summary]
+>
 >**Cold IP:**
 >**Problem:**
->Our static IP has a low reputation score. This increases the chances of being blacklisted. 
+>Our static IP has a low reputation score. This increases the chances of being blacklisted.
 >**Solution:**
 >Use a cloud email API, since they have a shared pool of IP's with high reputation scores.
 > ---
@@ -98,6 +99,7 @@ We will use it track the interaction with our simulated attack for more accurate
 Every webhook request sent by Resend is cryptographically signed using a shared secret key. Our server verifies this signature before processing any payload, ensuring that no external party can send forged event data to our endpoint. This keeps the integrity of our campaign data intact.
 
 >[!Summary]
+>
 >We will use Resend's built-in webhook to track users interactions with our simulated phishing emails, to get real-time feedback.
 
 ---
@@ -106,6 +108,7 @@ Every webhook request sent by Resend is cryptographically signed using a shared 
 After carefully evaluating our options and the challenges we outlined above, we decided to use Resend as the primary cloud email delivery service for our platform. Should Resend prove unsuitable, we decided to reserve Mailu as the self-hosting fallback solution.
 
 >[!Summary]
+>
 >**Email Delivery Service:**
 >- Primary: Resend
 >- Secondary: Mailu
@@ -113,33 +116,35 @@ After carefully evaluating our options and the challenges we outlined above, we 
 ---
 ## Why Resend?
 
-- **Shared, Pre-warmed IP Pool:** 
+- **Shared, Pre-warmed IP Pool:**
   Meaning that rather than sending emails from our server's cold, untrustworthy IP address, all our outgoing emails will now be routed through Resend's infrastructure. This will greatly reduce the chances of being blacklisted by providers like Microsoft.
-- **Build-in Webhook System:** 
-  This is how our platform will be tracking user interactions, with our emails, in real time. This way it is not necessary for us to build or maintain a custom tracking layer from scratch. This will save us developmental effort and reduce risk of receiving unreliable data. 
-- **Batch Email API:** 
+- **Built-in Webhook System:**
+  This is how our platform will be tracking user interactions, with our emails, in real time. This way it is not necessary for us to build or maintain a custom tracking layer from scratch. This will save us developmental effort and reduce risk of receiving unreliable data.
+- **Batch Email API:**
   By utilizing Resend's Batch Email API, our platform can dispatch up to 100 emails within a single API call. This way we are able to avoid throttling typically imposed on self-hosting servers. As a result, we can execute large-scale, simultaneous simulated phishing attacks without the risk of emails being deferred or blocked due to inbound rate limits.
-- **Free Plan:** 
+- **Free Plan:**
   Resend has a generous free tier that provides 3000 emails per month and no "Send via..." watermark. This helps keep the simulated emails looking authentic and allows us to send our emails with no cost.
-- **Zero Infrastructure Overhead:** 
-  Because Resend operates completely in the cloud, it will offload tasks such as SMTP routing and email queueing from our local server. This allows us to dedicate our existing hardware and network bandwidth exclusively to our core features. This will reduce the chances of us needing to invest into additional hardware and will also optimize the program's overall responsiveness. 
+- **Zero Infrastructure Overhead:**
+  Because Resend operates completely in the cloud, it will offload tasks such as SMTP routing and email queueing from our local server. This allows us to dedicate our existing hardware and network bandwidth exclusively to our core features. This will reduce the chances of us needing to invest into additional hardware and will also optimize the program's overall responsiveness.
 
 >[!Summary]
+>
 >- Resend solves almost all problems we mentioned above
 >- Resend has a generous free plan
 >- Resend operates completely in the cloud
 
 ---
-## Anti-abuse problem with Resend: 
+## Anti-abuse problem with Resend:
 
-The one problem we might have with Resend, is its aggressive AI filtering system, designed to prevent its platform from being used to send malicious emails. Since our emails simulate real phishing attacks, they have a large possibility of being flagged and blocked by this AI system.
+An obstacle we may encounter under Resend is its aggressive AI filtering system, designed to prevent its platform from being used to send malicious emails. Since our emails simulate real phishing attacks, they have a large possibility of being flagged and blocked by this AI system.
 
-**We will address this through three approaches:** 
+**We will address this through three approaches:**
 - Firstly by contacting Resend's support team directly to explain the academic and educational nature of the project and request to be whitelisted to prevent being flagged.
 - Secondly by using trustworthy links, that do not use any URL shorteners, we hope to reduce the chances of being flagged and blocked by the AI filtering System. This is because the AI system heavily penalizes URL's that seem suspicious, and by doing this we reduce the suspicion.
-- Thirdly by injecting custom headers like `X-Phishing-Simulation: Tyto-PhishShield-Training` we hope to signal to both Resend's system and any downstream mail security tools that the email is part of a simulation and does not have any malicious intent.
+- Thirdly by injecting custom headers like `X-Phishing-Simulation: Tyto-PhishShield-Training` we hope to signal to both Resend's system and any mail security tools downstream that the email is part of a simulation and does not have any malicious intent.
 
 >[!Summary]
+>
 >**Problem:**
 >Resend has an AI filtering system that can block us.
 >**Solution:**
@@ -153,6 +158,7 @@ The one problem we might have with Resend, is its aggressive AI filtering system
 Should Resend prove to be unsuitable for any reason, the fallback option is Mailu. Mailu is a self-hosted, open-source mail server stack that runs natively within a Docker environment. Mailu will easily integrate with our projects structure. Unlike Resend Mailu provides no shared, pre-warmed IP pool and no built-in webhook. Therefore using Mailu will force us to implement a custom interaction tracker for our emails and to adjust our emails to not get flagged and blocked easily. For these reasons, Mailu is held in reserve rather than used immediately.
 
 >[!Summary]
+>
 >- Mailu is self-hosted, open-source.
 >- It does not solve the problems Resend does.
 >- We will be forced to implement our own solutions
