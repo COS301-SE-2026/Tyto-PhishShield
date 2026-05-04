@@ -1,0 +1,34 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets and Environment Variables
+.env
+.env.*
+*.env
+secrets.yml
+credentials.json
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Compiled class file
+*.class
+
+# Package Files
+*.jar
+*.war
+*.ear
+*.nar
+
+# Obsidian
+.obsidian/
