@@ -7,3 +7,6 @@ In this way the employees are trained to detect phishing attacks and prevent com
 
 ## Documentation
 [View our documentation](Docs/README.md)
+
+## Project
+[View our project files](Project/README.md)
