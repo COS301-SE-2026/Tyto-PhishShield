@@ -2,21 +2,14 @@
 Tyto-PhishShield
 │   .gitignore
 │   README.md
-│   
-├───.obsidian
-│       app.json
-│       appearance.json
-│       core-plugins.json
-│       graph.json
-│       workspace.json
 │       
-├───docs
+├───Docs
 │   │   README.md
 │   │   
 │   ├───Repository_Layout
 │   │       README.md
 │   │       
-│   ├───research
+│   ├───Research
 │   │       architecture-style.md
 │   │       auth0-vs-firebase-rbac.md
 │   │       cicd-docker-ubuntu.md
@@ -28,8 +21,20 @@ Tyto-PhishShield
 │   │       realtime-gamification-websockets.md
 │   │       wcag-react-tailwind.md
 │   │       
-│   └───Setup_Instructions
+│   ├───Scrum
+│   │       Project_History.md
+│   │       README.md
+│   │       Sprints.md
+│   │       Sprint_Retrospective.md
+│   │       
+│   ├───Setup_Instructions
+│   │       README.md
+│   │       
+│   └───SRS
 │           README.md
+│           Software_Requirements_Specification.md
+│           Test_Cases.md
+│           User_Stories.md
 │           
 └───Project
     │   README.md

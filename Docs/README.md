@@ -5,5 +5,5 @@ Welcome to the Tyto-PhishShield's documentation.
 - To view research: [Research Documentation](Research/README.md)
 - To view team description:
 - To view repository layout: [Repository Layout](Repository_Layout/README.md)
-- To view ... 
+- To view how we applied scrum principles: [Scrum Documentation](Scrum/README.md)
 - Add as necessary...
