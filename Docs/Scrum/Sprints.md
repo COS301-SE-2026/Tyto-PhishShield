@@ -8,6 +8,6 @@ Dates: 11 May 2026 - 22 May 2026
 |                             |       Dev + testing       |     Dev + testing      |          Dev + testing          |     Dev + testing      |        Dev + testing        |       Dev + testing       |        Dev + testing         |           Dev + testing            |                      |
 Use cases to implement: UC-1, UC-6, UC-10 (UC-13)
 5 Base Features: A base set of features is required from all teams for Demo 1, and these do not count towards your total use cases: 
-	• Registration and Login
+	• Registration and Login: UC-4
 	• Basic Themes 
 	• Form Validation
