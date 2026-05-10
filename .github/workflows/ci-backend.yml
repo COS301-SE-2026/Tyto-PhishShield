@@ -1,14 +1,14 @@
-name: frontend CI
+name: backend CI
 
 on:
   push:
-    branches: [main, dev, frontend]
+    branches: [main, dev, backend]
   pull_request:
     branches: [main, dev]
 
 jobs:
-    Website-checks:
-        name: Website Frontend CI
+    API-Gateway-checks:
+        name: API-Gateway Backend CI
         runs-on: ubuntu-latest
 
         steps:
@@ -17,14 +17,14 @@ jobs:
               with:
                 version: 10.33.4
             - name: Install dependencies
-              working-directory: ./Project/Frontend/Website
+              working-directory: ./Project/Backend/API-Gateway
               run: pnpm install --frozen-lockfile
             - name: test
-              working-directory: ./Project/Frontend/Website
-              run: pnpm test
+              working-directory: ./Project/Backend/API-Gateway
+              run: pnpm run test
             - name: lint
-              working-directory: ./Project/Frontend/Website
-              run: pnpm lint
+              working-directory: ./Project/Backend/API-Gateway
+              run: pnpm run lint
             - name: build
-              working-directory: ./Project/Frontend/Website
-              run: pnpm build
+              working-directory: ./Project/Backend/API-Gateway
+              run: pnpm run build
