@@ -1,0 +1,30 @@
+name: frontend CI
+
+on:
+  push:
+    branches: [main, dev, frontend]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+    Website-checks:
+        name: Website Frontend CI
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+            - uses: pnpm/action-setup@a7487c7e4942893040b07106fa796c14175b3104 # v4.3.0
+              with:
+                version: 10.33.4
+            - name: Install dependencies
+              working-directory: ./Project/Frontend/Website
+              run: pnpm install --frozen-lockfile
+            - name: test
+              working-directory: ./Project/Frontend/Website
+              run: pnpm test
+            - name: lint
+              working-directory: ./Project/Frontend/Website
+              run: pnpm lint
+            - name: build
+              working-directory: ./Project/Frontend/Website
+              run: pnpm build
