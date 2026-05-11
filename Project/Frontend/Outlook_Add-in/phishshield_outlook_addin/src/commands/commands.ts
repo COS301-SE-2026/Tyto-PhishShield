@@ -3,33 +3,49 @@
  * See LICENSE in the project root for license information.
  */
 
-/* global Office */
+declare const Office: any;
 
 Office.onReady(() => {
-  // If needed, Office.js is ready to be called.
+  console.log("Tyto PhishShield command file loaded.");
 });
 
-/**
- * Shows a notification when the add-in command is executed.
- * @param event
- */
-function action(event: Office.AddinCommands.Event) {
-  const message: Office.NotificationMessageDetails = {
-    type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
-    message: "Performed action.",
-    icon: "Icon.80x80",
-    persistent: true,
-  };
+export async function action(event: any) {
+  try {
+    console.log("Report Phish button clicked.");
 
-  // Show a notification message.
-  Office.context.mailbox.item.notificationMessages.replaceAsync(
-    "ActionPerformanceNotification",
-    message
-  );
+    const item = Office.context.mailbox.item;
 
-  // Be sure to indicate when the add-in command function is complete.
-  event.completed();
+    if (!item) {
+      console.error("No email item selected.");
+      event.completed();
+      return;
+    }
+
+    const reportPayload = {
+      subject: item.subject || "",
+      from: item.from?.emailAddress || "",
+      senderName: item.from?.displayName || "",
+      itemId: item.itemId || "",
+      dateReported: new Date().toISOString(),
+      source: "outlook-addin",
+    };
+
+    console.log("=== PHISH REPORT PAYLOAD ===");
+    console.log(reportPayload);
+
+    Office.context.mailbox.item.notificationMessages.replaceAsync(
+      "phishshield-report",
+      {
+        type: "informationalMessage",
+        message: `Reported: ${reportPayload.subject}`,
+        persistent: false,
+      }
+    );
+  } catch (error) {
+    console.error("Failed to report phishing email:", error);
+  } finally {
+    event.completed();
+  }
 }
 
-// Register the function with Office.
 Office.actions.associate("action", action);
