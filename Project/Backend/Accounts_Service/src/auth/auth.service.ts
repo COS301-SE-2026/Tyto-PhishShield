@@ -51,7 +51,7 @@ export class AuthService {
         ),
       );
       auth0User = data;
-    } catch (err) {
+    } catch (err:any) {
       if (err.response?.status === 409) {
         throw new ConflictException('An account with this email already exists');
       }
