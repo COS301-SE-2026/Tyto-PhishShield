@@ -31,5 +31,12 @@ Folder structure is set up for the project and research is uploaded to the githu
 	↓
 5 May 2026
 Scrum documentation and structure is set up for the first sprint to take place.
+	↓
+10 May 2026
+Team meets to discuss the sprint and handle project management. CI is also set up.
+↓
+11 May 2026
+The backend team meets with mentor to discuss CI/CD and docker deployement.
+Team meets and divides up the tasks and the first sprint officially begins.
 ```
 
