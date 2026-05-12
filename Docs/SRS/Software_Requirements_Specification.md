@@ -1,9 +1,7 @@
 # Tyto-PhishShield
----
 > FiveGuys Capstone project
 
 # Table of Contents
----
  - [Overview](#overview)
  - [Functional Requirements](#functional-requirements)
  - [Optional Functional Requirements](#optional-functional-requirements-including-wow-factors)
@@ -134,7 +132,6 @@ This document contains a list of all the functional and non-functional requireme
 | **UC-11**   | User can view their personal dashboard                         | As a user, I want to view my personal XP, progress history, and past campaign results, so that I can track my own improvement over time.                                                          |
 | **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                       |
 | **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                                |
-
 ## Requirements Use Case Traceability Matrix
 
 |              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 |
