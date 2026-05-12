@@ -24,7 +24,7 @@
 
 **Mission:** Help organisations build human resilience against phishing attacks.
 
-**Product Personality:** Trustworthy · Intelligent · Protective · Motivating · Modern
+**Product Personality:** Trustworthy; Intelligent; Protective; Motivating; Modern
 
 **Tone of Voice:** Clear, Helpful, Encouraging, Professional.
 
@@ -44,7 +44,7 @@
 
 ## 3. Colour System
 
-Use semantic colour tokens throughout the codebase — never hardcode hex values directly.
+Use semantic colour tokens throughout the codebase; hardcoded hex values should be avoided.
 
 | Token | Value | Purpose |
 |---|---|---|
@@ -115,7 +115,7 @@ Base unit: **8px grid**
 | Danger | Red filled (`danger-red`) | Destructive actions |
 | Ghost | Text only, no background | Tertiary / inline |
 
-**Required states:** `default` · `hover` · `active` · `disabled` · `loading`
+**Required states:** `default`; `hover`; `active`; `disabled`; `loading`
 
 ---
 
@@ -126,8 +126,8 @@ Base unit: **8px grid**
 | **Cards** | Dashboard metrics and data summaries |
 | **Tables** | Campaign reports, user lists |
 | **Toasts** | Success / failure feedback notifications |
-| **Leaderboard** | Rank · Name · XP display |
-| **Badges** | Achievement tiers — Bronze / Silver / Gold |
+| **Leaderboard** | Rank; Name; XP display |
+| **Badges** | Achievement tiers: Bronze / Silver / Gold |
 
 ---
 
@@ -137,7 +137,7 @@ PhishShield targets **WCAG 2.1 Level AA** compliance.
 
 | Requirement | Detail |
 |---|---|
-| Colour contrast | Minimum 4.5:1 for body text, 3:1 for large text — [check here](https://webaim.org/resources/contrastchecker/) |
+| Colour contrast | Minimum 4.5:1 for body text, 3:1 for large text; [click here for more](https://webaim.org/resources/contrastchecker/) |
 | Keyboard navigation | All interactive elements reachable via keyboard |
 | Focus states | Visible focus rings on all focusable elements |
 | Typography | Readable fonts, no text smaller than 12px |
@@ -147,7 +147,7 @@ PhishShield targets **WCAG 2.1 Level AA** compliance.
 
 ## 9. Motion & Animation
 
-Keep animations **subtle and purposeful** — never decorative for its own sake.
+Keep animations **subtle and purposeful** (never decorative for its own sake).
 
 | Transition | Duration | Usage |
 |---|---|---|
@@ -165,7 +165,7 @@ Keep animations **subtle and purposeful** — never decorative for its own sake.
 
 **Structure:** Sidebar navigation + Top navbar + Main content grid
 
-> 📐 *Wireframes to be designed in Figma — see `figma/` for links and frames.*
+> *Wireframes to be designed in Figma — see `figma/` for links and frames.*
 
 ---
 
