@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
@@ -24,7 +23,6 @@ import { AppService } from './app.service';
         synchronize: true, //this will auto create tables based on entities, but this is for development only.
       }),
     }),
-    AuthModule,
     UsersModule,
   ],
   controllers: [AppController],
