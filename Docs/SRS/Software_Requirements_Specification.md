@@ -1,13 +1,25 @@
-# Tyto-PhishShield
+# Tyto-PhishShield <br>
 > FiveGuys Capstone project
 
+The Team:
+
+| Name      | Surname | Student Number |
+| --------- | ------- | -------------- |
+| Josua     | Louw    | u24569772      |
+| Darius    | Erasmus | u24586189      |
+| Frikkie   | Malan   | u14439141      |
+| Nico      | Theron  | u23565722      |
+| Heindrich | Jansen  | u24711358      |
 # Table of Contents
  - [Overview](#overview)
  - [Functional Requirements](#functional-requirements)
  - [Optional Functional Requirements](#optional-functional-requirements-including-wow-factors)
  - [Non-Functional Requirements](#non-functional-requirements)
- - [Use Cases + User Stories](use-cases-user-stories)
+ - [Use Cases + User Stories](#use-cases-user-stories)
+ - [Use Case Diagrams](#use-case-diagrams)
  - [Requirements Use Case Traceability Matrix](#requirements-use-case-traceability-matrix)
+ - [Domain Model](#domain-model)
+ - [Architecture Diagram](#architecture-diagram)
 
 ## Overview
 This document contains a list of all the functional and non-functional requirements that needs to be met for the project to be considered as complete. It also contains all the use cases and user stories derived from the functional requirements as well as the test cases to consider for each user story.
@@ -117,53 +129,61 @@ This document contains a list of all the functional and non-functional requireme
 	**NFR 7.2**: The system stack must be fully dockerized for handoff.
 ## Use Cases + User Stories
 
-| Use Case ID | Use Case Description                                           | Agile User Story                                                                                                                                                                                  |
-| ----------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **UC-01**   | Users can report a suspicious email.                           | As an employee, I want to report a suspicious email with a single click in the Outlook ribbon, so that I can earn XP on a correct report.                                                         |
-| **UC-02**   | Users can experience a teachable moment upon making a mistake. | As an employee I want to receive immediate, specific feedback when I fail to identify a phishing email or message so that I can be educated appropriately and my XP is adjusted accordingly.      |
-| **UC-03**   | Users can view the live leaderboard.                           | As a user, I want to view a real-time leaderboard showing my XP and team rankings, so that I stay motivated to accurately identify phishing emails.                                               |
-| **UC-04**   | Users can register accounts.                                   | As a new user, I want to register for an account securely, so that I can be part of the phishing platform and start tracking my progress.                                                         |
-| **UC-05**   | Users can be authenticated by the system.                      | As a registered user, I want to log in securely, so that I can access my dashboard and role-specific features.                                                                                    |
-| **UC-06**   | Admin can control and schedule campaigns.                      | As an Admin, I want to configure campaign parameters such as target group, schedule and difficulty, so that the AI-generated phishing campaigns are tailored and executed at the scheduled times. |
-| **UC-07**   | Admin and Analyst can view organizational metrics.             | As an Admin or Analyst, I want to view aggregated organizational metrics, so that I can identify common failure points and track the company's overall security posture.                          |
-| **UC-08**   | Admin can configure campaign difficulty.                       | As an Admin, I want to configure the difficulty level and context of AI-generated campaigns, so that the simulations match the evolving skill levels of our employees.                            |
-| **UC-09**   | Admin can manage users and roles .                             | As an Admin, I want to assign roles (Admin, Analyst, User) for registered accounts, so that I can control what each person can access within the platform.                                        |
-| **UC-10**   | System can send a scheduled simulated phishing campaign email. | As the system, I want to automatically deliver AI-generated phishing emails to targeted user groups at the scheduled times, so that employees are tested without manual intervention.             |
-| **UC-11**   | User can view their personal dashboard                         | As a user, I want to view my personal XP, progress history, and past campaign results, so that I can track my own improvement over time.                                                          |
-| **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                       |
-| **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                                |
+| Use Case ID | Use Case Description                                           | Agile User Story                                                                                                                                                                             |
+| ----------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **UC-01**   | Users can report a suspicious email.                           | As an employee, I want to report a suspicious email with a single click in the Outlook ribbon, so that I can earn XP on a correct report.                                                    |
+| **UC-02**   | Users can experience a teachable moment upon making a mistake. | As an employee I want to receive immediate, specific feedback when I fail to identify a phishing email or message so that I can be educated appropriately and my XP is adjusted accordingly. |
+| **UC-03**   | Users can view the live leaderboard.                           | As a user, I want to view a real-time leaderboard showing my XP and team rankings, so that I stay motivated to accurately identify phishing emails.                                          |
+| **UC-04**   | Users can register accounts.                                   | As a new user, I want to register for an account securely, so that I can be part of the phishing platform and start tracking my progress.                                                    |
+| **UC-05**   | Users can be authenticated by the system.                      | As a registered user, I want to log in securely, so that I can access my dashboard and role-specific features.                                                                               |
+| **UC-06**   | Admin can control and schedule campaigns.                      | As an Admin, I want to configure campaign parameters such as target group and schedule, so that the AI-generated phishing campaigns are tailored and executed at the scheduled times.        |
+| **UC-07**   | Admin and Analyst can view organizational metrics.             | As an Admin or Analyst, I want to view aggregated organizational metrics, so that I can identify common failure points and track the company's overall security posture.                     |
+| **UC-08**   | Admin can configure campaign difficulty.                       | As an Admin, I want to configure the difficulty level and context of AI-generated campaigns, so that the simulations match the evolving skill levels of our employees.                       |
+| **UC-09**   | Admin can manage users and roles .                             | As an Admin, I want to assign roles (Admin, Analyst, User) for registered accounts, so that I can control what each person can access within the platform.                                   |
+| **UC-10**   | System can send a scheduled simulated phishing campaign email. | As the system, I want to automatically deliver AI-generated phishing emails to targeted user groups at the scheduled times, so that employees are tested without manual intervention.        |
+| **UC-11**   | User can view their personal dashboard                         | As a user, I want to view my personal XP, progress history, and past campaign results, so that I can track my own improvement over time.                                                     |
+| **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                  |
+| **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                           |
+| UC-14       | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
+## Use Case Diagrams <br>
+![[Register and Login Use Cases.jpg]]
+![[General Interaction Use Cases.jpg]]
+![[Campaign Use Cases.jpg]]
+![[Analystic Use Cases.jpg]]
 ## Requirements Use Case Traceability Matrix
 
-|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 |
-| ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |
-| **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |
-| **FR 1.3**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |
-| **FR 2.1**   | 3               |        |        |       |       |       | X      |       | X     |       | X     |       |       |       |
-| **FR 2.1.1** | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |
-| **FR 2.2**   | 3               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |
-| **FR 2.3**   | 2               |        |        |       |       |       |        |       |       |       |       |       | X     |       |
-| **FR 3.1**   | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |
-| **FR 3.1.1** | 2               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |
-| **FR 3.1.2** | 2               |        | X      |       |       |       |        |       |       |       |       |       |       | X     |
-| **FR 3.1.3** | 1               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |
-| **FR 3.1.4** | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |
-| **FR 3.2**   | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |
-| **FR 3.2.1** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |
-| **FR 3.2.2** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |
-| **FR 3.2.3** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |
-| **FR 3.3**   | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |
-| **FR 3.3.1** | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |
-| **FR 4.1**   | 3               |        |        |       | X     | X     |        |       |       |       |       |       |       |       |
-| **FR 4.2**   | 2               |        |        |       | X     | X     |        |       |       |       |       |       |       |       |
-| **FR 4.3**   | 2               |        |        |       |       | X     |        |       |       | X     |       |       |       |       |
-| **FR 4.4**   | 2               |        |        |       |       | X     |        |       |       |       |       |       |       |       |
-| **FR 5.1**   | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |
-| **FR 5.2**   | 2               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |
-| **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |
-| **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |
-| **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |
-| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** |
+|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 |
+| ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |
+| **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |
+| **FR 1.3**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |
+| **FR 2.1**   | 3               |        |        |       |       |       | X      |       | X     |       | X     |       |       |       |       |
+| **FR 2.1.1** | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |
+| **FR 2.2**   | 3               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |
+| **FR 2.3**   | 2               |        |        |       |       |       |        |       |       |       |       |       | X     |       |       |
+| **FR 3.1**   | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |
+| **FR 3.1.1** | 2               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |
+| **FR 3.1.2** | 2               |        | X      |       |       |       |        |       |       |       |       |       |       | X     |       |
+| **FR 3.1.3** | 1               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |
+| **FR 3.1.4** | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |
+| **FR 3.2**   | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
+| **FR 3.2.1** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
+| **FR 3.2.2** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
+| **FR 3.2.3** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
+| **FR 3.3**   | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |
+| **FR 3.3.1** | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |
+| **FR 4.1**   | 3               |        |        |       | X     | X     |        |       |       |       |       |       |       |       | X     |
+| **FR 4.2**   | 2               |        |        |       | X     | X     |        |       |       |       |       |       |       |       |       |
+| **FR 4.3**   | 2               |        |        |       |       | X     |        |       |       | X     |       |       |       |       | X     |
+| **FR 4.4**   | 2               |        |        |       |       | X     |        |       |       |       |       |       |       |       |       |
+| **FR 5.1**   | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |
+| **FR 5.2**   | 2               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |
+| **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |
+| **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |
+| **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |       |
+| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | 5     |
+## Domain Model
+## Architecture Diagram
 
 ---
 For more details on user stories see: [User Stories](./User_Stories)
