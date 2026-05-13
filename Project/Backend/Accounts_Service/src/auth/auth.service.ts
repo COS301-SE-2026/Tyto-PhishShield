@@ -9,6 +9,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
+import { connect } from 'http2';
 
 @Injectable()
 export class AuthService {
@@ -81,6 +82,7 @@ export class AuthService {
           scope: 'openid profile email',
           client_id: this.config.get('AUTH0_CLIENT_ID'),
           client_secret: this.config.get('AUTH0_CLIENT_SECRET'),
+          connection: 'Username-Password-Authentication',
         }),
       );
 
@@ -88,7 +90,8 @@ export class AuthService {
         access_token: data.access_token,
         expires_in: data.expires_in,
       };
-    } catch {
+    } catch(err:any) {
+      console.error('Login error:', err.response?.data || err.message);
       throw new UnauthorizedException('Invalid email or password');
     }
   }
