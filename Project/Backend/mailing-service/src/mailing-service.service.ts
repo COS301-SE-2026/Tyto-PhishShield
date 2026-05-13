@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateMailingServiceDto } from './dto/create-mailing-service.dto';
-import { UpdateMailingServiceDto } from './dto/update-mailing-service.dto';
+import { CreateMailingServiceDto } from '../dto/create-mailing-service.dto';
+import { UpdateMailingServiceDto } from '../dto/update-mailing-service.dto';
 
 @Injectable()
 export class MailingServiceService {

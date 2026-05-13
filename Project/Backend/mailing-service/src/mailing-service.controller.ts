@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { MailingServiceService } from './mailing-service.service';
-import { CreateMailingServiceDto } from './dto/create-mailing-service.dto';
-import { UpdateMailingServiceDto } from './dto/update-mailing-service.dto';
+import { CreateMailingServiceDto } from '../dto/create-mailing-service.dto';
+import { UpdateMailingServiceDto } from '../dto/update-mailing-service.dto';
 
 @Controller('mailing-service')
 export class MailingServiceController {
