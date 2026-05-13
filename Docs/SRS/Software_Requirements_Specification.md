@@ -15,7 +15,7 @@ The Team:
  - [Functional Requirements](#functional-requirements)
  - [Optional Functional Requirements](#optional-functional-requirements-including-wow-factors)
  - [Non-Functional Requirements](#non-functional-requirements)
- - [Use Cases + User Stories](#use-cases-user-stories)
+ - [Use Cases + User Stories](#use-cases---user-stories)
  - [Use Case Diagrams](#use-case-diagrams)
  - [Requirements Use Case Traceability Matrix](#requirements-use-case-traceability-matrix)
  - [Domain Model](#domain-model)
@@ -145,7 +145,7 @@ This document contains a list of all the functional and non-functional requireme
 | **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                  |
 | **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                           |
 | UC-14       | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
-## Use Case Diagrams <br>
+## Use Case Diagrams
 
 ![Register and Login Use Cases](<../images/Register and Login Use Cases.jpg>)
 
