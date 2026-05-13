@@ -1,7 +1,7 @@
 # Tyto-PhishShield Documentation
 Welcome to the Tyto-PhishShield's documentation.
 
-- To view SRS documentation: [Software Requirements Specification](./SRS/Software_Requirements_Specification)
+- To view SRS documentation: [Software Requirements Specification](./SRS/Software_Requirements_Specification.md)
 - To view setup: [Setup Documentation](./Setup_Instructions/README.md)
 - To view research: [Research Documentation](./Research/README.md)
 - To view team description:
