@@ -3,9 +3,12 @@ import { MailingServiceService } from './mailing-service.service';
 import { MailingServiceController } from './mailing-service.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { GeneratedEmail } from '../entities/generated-emails.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([GeneratedEmail]),
+
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -22,6 +25,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         database: configService.get<string>('MAILING_DB_NAME'),
         synchronize: configService.get<string>('DB_SYNC') === 'true',
         autoLoadEntities: true,
+        schema: 'mailing',
       }),
     }),
   ],

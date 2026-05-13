@@ -1,14 +1,13 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { MailingServiceService } from './mailing-service.service';
-import { CreateMailingServiceDto } from '../dto/create-mailing-service.dto';
-import { UpdateMailingServiceDto } from '../dto/update-mailing-service.dto';
+import { GenerateEmailDto } from '../dto/generate-email-dto';
 
 @Controller('mailing-service')
 export class MailingServiceController {
   constructor(private readonly mailingServiceService: MailingServiceService) {}
 
   @Post()
-  create(@Body() createMailingServiceDto: CreateMailingServiceDto) {
+  create(@Body() createMailingServiceDto: GenerateEmailDto) {
     return this.mailingServiceService.create(createMailingServiceDto);
   }
 
@@ -20,11 +19,6 @@ export class MailingServiceController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.mailingServiceService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMailingServiceDto: UpdateMailingServiceDto) {
-    return this.mailingServiceService.update(+id, updateMailingServiceDto);
   }
 
   @Delete(':id')
