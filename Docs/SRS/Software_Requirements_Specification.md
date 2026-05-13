@@ -15,7 +15,7 @@ The Team:
  - [Functional Requirements](#functional-requirements)
  - [Optional Functional Requirements](#optional-functional-requirements-including-wow-factors)
  - [Non-Functional Requirements](#non-functional-requirements)
- - [Use Cases + User Stories](#use-cases---user-stories)
+ - [Use Cases + User Stories](#use-cases-stories)
  - [Use Case Diagrams](#use-case-diagrams)
  - [Requirements Use Case Traceability Matrix](#requirements-use-case-traceability-matrix)
  - [Domain Model](#domain-model)
@@ -127,7 +127,7 @@ This document contains a list of all the functional and non-functional requireme
 **NFR 7**: Maintainability
 	**NFR 7.1**: The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
 	**NFR 7.2**: The system stack must be fully dockerized for handoff.
-## Use Cases + User Stories
+## Use Cases + User Stories <a id="use-cases-stories"></a>
 
 | Use Case ID | Use Case Description                                           | Agile User Story                                                                                                                                                                             |
 | ----------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
