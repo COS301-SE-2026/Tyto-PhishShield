@@ -59,23 +59,26 @@ V = Valid, I = Invalid, NA = Not Applicable
 ## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
 Inputs for authentication:
 - **User Credentials**: Are the login credentials valid?
+- **Account Status**: Is the account activated?
 - **Authentication Service**: Is the authentication backend available?
 V = Valid, I = Invalid, NA = Not Applicable
 
-| Test Case ID | Scenario                       | User Credentials | Authentication Service | Expected Result                                      |
-| ------------ | ------------------------------ | ---------------- | ---------------------- | ---------------------------------------------------- |
-| **TC1**      | Successful Login               | V                | V                      | User logged in and redirected to dashboard.          |
-| **TC2**      | Invalid Credentials            | I                | NA                     | Display error: "Invalid username or password."       |
-| **TC3**      | Authentication Service Offline | V                | I                      | Display error: "Authentication service unavailable." |
-| **TC4**      | User Cancels Login             | V                | NA                     | Login aborted and user stays on login page.          |
+| Test Case ID | Scenario                       | User Credentials | Account Status | Authentication Service | Expected Result                                      |
+| ------------ | ------------------------------ | ---------------- | -------------- | ---------------------- | ---------------------------------------------------- |
+| **TC1**      | Successful Login               | V                | V              | V                      | User logged in and redirected to dashboard.          |
+| **TC2**      | Invalid Credentials            | I                | NA             | NA                     | Display error: "Invalid username or password."       |
+| **TC3**      | Account status not active      | V                | I              | I                      | Display error: "Authentication service unavailable." |
+| **TC4**      | Authentication Service Offline | V                | V              | I                      | Display error: "Authentication service unavailable." |
+| **TC5**      | User Cancels Login             | V                | NA             | NA                     | Login aborted and user stays on login page.          |
 ## 2. Identifying Test Data Values (The Concrete Data Matrix)
 
-| Test Case ID | Scenario                       | User Credentials                                | Authentication Service | Expected Result                                      |
-| ------------ | ------------------------------ | ----------------------------------------------- | ---------------------- | ---------------------------------------------------- |
-| **TC1**      | Successful Login               | Email=john@example.com, Password=Str0ngP@ss123! | V                      | User logged in and redirected to dashboard.          |
-| **TC2**      | Invalid Credentials            | Email=john@example.com, Password=WrongPass      | NA                     | Display error: "Invalid username or password."       |
-| **TC3**      | Authentication Service Offline | Valid credentials                               | I                      | Display error: "Authentication service unavailable." |
-| **TC4**      | User Cancels Login             | Valid credentials entered                       | NA                     | Login aborted and user stays on login page.          |
+| Test Case ID | Scenario                       | User Credentials                                | Account Status           | Authentication Service | Expected Result                                      |
+| ------------ | ------------------------------ | ----------------------------------------------- | ------------------------ | ---------------------- | ---------------------------------------------------- |
+| **TC1**      | Successful Login               | Email=john@example.com, Password=Str0ngP@ss123! | `Active`                 | V                      | User logged in and redirected to dashboard.          |
+| **TC2**      | Invalid Credentials            | Email=john@example.com, Password=WrongPass      | NA                       | NA                     | Display error: "Invalid username or password."       |
+| **TC3**      | Account status not active      | Email=john@example.com, Password=Str0ngP@ss123! | `Suspended` / `Inactive` | I                      | Display error: "Authentication service unavailable." |
+| **TC4**      | Authentication Service Offline | Email=john@example.com, Password=Str0ngP@ss123! | `Active`                 | I                      | Display error: "Authentication service unavailable." |
+| **TC5**      | User Cancels Login             | Email=john@example.com, Password=Str0ngP@ss123! | NA                       | NA                     | Login aborted and user stays on login page.          |
 # UC-06: Admin can control and schedule campaigns
 ## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
 Inputs for configuring phishing campaigns:
