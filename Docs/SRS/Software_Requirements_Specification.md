@@ -15,7 +15,7 @@ The Team:
  - [Functional Requirements](#functional-requirements)
  - [Optional Functional Requirements](#optional-functional-requirements-including-wow-factors)
  - [Non-Functional Requirements](#non-functional-requirements)
- - [Use Cases + User Stories](#use-cases-user-stories)
+ - [Use Cases + User Stories](#use-cases-stories)
  - [Use Case Diagrams](#use-case-diagrams)
  - [Requirements Use Case Traceability Matrix](#requirements-use-case-traceability-matrix)
  - [Domain Model](#domain-model)
@@ -127,7 +127,7 @@ This document contains a list of all the functional and non-functional requireme
 **NFR 7**: Maintainability
 	**NFR 7.1**: The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
 	**NFR 7.2**: The system stack must be fully dockerized for handoff.
-## Use Cases + User Stories
+## Use Cases + User Stories <a id="use-cases-stories"></a>
 
 | Use Case ID | Use Case Description                                           | Agile User Story                                                                                                                                                                             |
 | ----------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -145,11 +145,16 @@ This document contains a list of all the functional and non-functional requireme
 | **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                  |
 | **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                           |
 | UC-14       | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
-## Use Case Diagrams <br>
-![[Register and Login Use Cases.jpg]]
-![[General Interaction Use Cases.jpg]]
-![[Campaign Use Cases.jpg]]
-![[Analystic Use Cases.jpg]]
+## Use Case Diagrams
+
+![Register and Login Use Cases](<../images/Register and Login Use Cases.jpg>)
+
+![General Interaction Use Cases](<../images/General Interaction Use Cases.jpg>)
+
+![Campaign Use Cases](<../images/Campaign Use Cases.jpg>)
+
+![Analystic Use Cases](<../images/Analystic Use Cases.jpg>)
+
 ## Requirements Use Case Traceability Matrix
 
 |              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 |
@@ -187,4 +192,5 @@ This document contains a list of all the functional and non-functional requireme
 
 ---
 For more details on user stories see: [User Stories](./User_Stories)
+
 For test cases of each user story see: [Test Cases](./Test_Cases)
