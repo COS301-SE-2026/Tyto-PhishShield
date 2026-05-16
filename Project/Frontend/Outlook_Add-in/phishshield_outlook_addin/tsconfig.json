@@ -2,7 +2,7 @@
   "compilerOptions": {
     "allowJs": true,
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "jsx": "react",
