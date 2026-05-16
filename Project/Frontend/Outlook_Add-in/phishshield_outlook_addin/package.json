@@ -24,7 +24,7 @@
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
     "watch": "webpack --mode development --watch",
-    "mock-backend": "tsx Mock_Backend/server.ts"
+    "mock-backend": "tsx mock-backend/server.ts"
   },
   "dependencies": {
     "core-js": "^3.36.0",
