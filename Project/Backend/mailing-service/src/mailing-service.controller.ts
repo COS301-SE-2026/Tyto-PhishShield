@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { MailingServiceService } from './mailing-service.service';
-import { GenerateEmailDto } from '../dto/generate-email-dto';
+import { GenerateEmailDto } from '../dto/generate-email.dto';
 
 @Controller('mailing-service')
 export class MailingServiceController {

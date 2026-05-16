@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GenerateEmailDto } from '../dto/generate-email-dto';
+import { GenerateEmailDto } from '../dto/generate-email.dto';
 
 @Injectable()
 export class MailingServiceService {
