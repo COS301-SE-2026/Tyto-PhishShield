@@ -19,7 +19,13 @@ Office.onReady(() => {
 });
 
 function showNotification(message: string): void {
-  Office.context.mailbox.item.notificationMessages.replaceAsync("phishshield-report", {
+  const item = Office.context.mailbox.item;
+
+  if (!item) {
+    return;
+  }
+
+  item.notificationMessages.replaceAsync("phishshield-report", {
     type: "informationalMessage",
     message,
     icon: "Icon.16x16",
@@ -44,16 +50,14 @@ async function sendReportToMockBackend(reportPayload: PhishingReportPayload): Pr
   console.log("Mock backend response:", result);
 }
 
-function getEmailBody(): Promise<string> {
+function getEmailBody(item: Office.MessageRead): Promise<string> {
   return new Promise((resolve) => {
-    const item = Office.context.mailbox.item;
-
-    if (!item || !item.body) {
+    if (!item.body) {
       resolve("");
       return;
     }
 
-    item.body.getAsync(Office.CoercionType.Text, (result: any) => {
+    item.body.getAsync(Office.CoercionType.Text, (result: Office.AsyncResult<string>) => {
       if (result.status === Office.AsyncResultStatus.Succeeded) {
         resolve(result.value || "");
       } else {
@@ -64,7 +68,15 @@ function getEmailBody(): Promise<string> {
   });
 }
 
-export async function action(event: any): Promise<void> {
+function getDateTimeCreatedAsString(dateTimeCreated: Date | undefined): string {
+  if (!dateTimeCreated) {
+    return "";
+  }
+
+  return dateTimeCreated.toISOString();
+}
+
+export async function action(event: Office.AddinCommands.Event): Promise<void> {
   try {
     console.log("Report Phish button clicked.");
 
@@ -76,7 +88,7 @@ export async function action(event: any): Promise<void> {
       return;
     }
 
-    const emailBody = await getEmailBody();
+    const emailBody = await getEmailBody(item);
 
     const reportPayload: PhishingReportPayload = {
       subject: item.subject || "",
@@ -84,7 +96,7 @@ export async function action(event: any): Promise<void> {
       senderName: item.from?.displayName || "",
       itemId: item.itemId || "",
       internetMessageId: item.internetMessageId || "",
-      dateTimeCreated: item.dateTimeCreated || "",
+      dateTimeCreated: getDateTimeCreatedAsString(item.dateTimeCreated),
       dateReported: new Date().toISOString(),
       body: emailBody,
       source: "outlook-addin",
