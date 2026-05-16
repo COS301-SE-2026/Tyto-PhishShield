@@ -20,6 +20,11 @@ credentials.json
 *.log
 logs/
 npm-debug.log*
+logs
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Compiled class file
 *.class
@@ -40,9 +45,11 @@ npm-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# Node / pnpm
-node_modules/
+# compiled output
 dist/
+node_modules/
+build/
+*.tsbuildinfo
 .pnpm-store/
 
 # Outlook add-in
