@@ -40,5 +40,10 @@ npm-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# Node
-node_modules
+# Node / pnpm
+node_modules/
+dist/
+.pnpm-store/
+
+# Outlook add-in
+.office-addin-dev-certs/
