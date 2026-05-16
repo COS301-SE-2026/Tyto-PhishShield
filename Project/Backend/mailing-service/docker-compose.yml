@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${MAILING_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MAILING_DB_NAME}
+
+    volumes:
+      # This must be unique not to override other db's data
+      # This must be hard coded
+      - mailing_pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+
+    ports:
+      # Left side must be unique
+      - "$MAILING_DB_PORT:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+      # Must be unique
+    container_name: ${MAILING_APP_CONTAINER}
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - MAILING_DB_HOST=db
+      - MAILING_DB_PORT=5432
+
+    ports:
+      # Left side must be unique
+      - "${MAILING_SERVICE_PORT}:3000"
+
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app/src
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+
+    # Must be unique
+    container_name: ${MAILING_PGADMIN_CONTAINER}
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "${MAILING_PGADMIN_PORT}:80"
+    depends_on:
+      - db
+
+volumes:
+  # Must be same as volume name for db
+  # Must be hard coded
+  mailing_pgdata:
+  pgadmin_data:
