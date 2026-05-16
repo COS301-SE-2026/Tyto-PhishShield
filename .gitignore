@@ -50,3 +50,7 @@ dist/
 node_modules/
 build/
 *.tsbuildinfo
+.pnpm-store/
+
+# Outlook add-in
+.office-addin-dev-certs/
