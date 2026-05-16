@@ -5,8 +5,6 @@
 
 /* global document, Office */
 
-declare const Office: any;
-
 Office.onReady((info: any) => {
   if (info.host === Office.HostType.Outlook) {
     const sideloadMsg = document.getElementById("sideload-msg");

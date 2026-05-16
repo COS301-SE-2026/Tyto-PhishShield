@@ -3,6 +3,7 @@
     "allowJs": true,
     "baseUrl": ".",
     "ignoreDeprecations": "5.0",
+    "types": ["office-js", "node"],
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "jsx": "react",

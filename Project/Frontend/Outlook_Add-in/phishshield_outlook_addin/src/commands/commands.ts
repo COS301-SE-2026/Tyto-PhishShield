@@ -1,4 +1,4 @@
-declare const Office: any;
+/* global Office, console, fetch */
 
 const MOCK_BACKEND_URL = "http://localhost:3001/api/phishing/report";
 
@@ -19,15 +19,12 @@ Office.onReady(() => {
 });
 
 function showNotification(message: string): void {
-  Office.context.mailbox.item.notificationMessages.replaceAsync(
-    "phishshield-report",
-    {
-      type: "informationalMessage",
-      message,
-      icon: "Icon.16x16",
-      persistent: false,
-    }
-  );
+  Office.context.mailbox.item.notificationMessages.replaceAsync("phishshield-report", {
+    type: "informationalMessage",
+    message,
+    icon: "Icon.16x16",
+    persistent: false,
+  });
 }
 
 async function sendReportToMockBackend(reportPayload: PhishingReportPayload): Promise<void> {
@@ -81,17 +78,17 @@ export async function action(event: any): Promise<void> {
 
     const emailBody = await getEmailBody();
 
-const reportPayload: PhishingReportPayload = {
-  subject: item.subject || "",
-  from: item.from?.emailAddress || "",
-  senderName: item.from?.displayName || "",
-  itemId: item.itemId || "",
-  internetMessageId: item.internetMessageId || "",
-  dateTimeCreated: item.dateTimeCreated || "",
-  dateReported: new Date().toISOString(),
-  body: emailBody,
-  source: "outlook-addin",
-};
+    const reportPayload: PhishingReportPayload = {
+      subject: item.subject || "",
+      from: item.from?.emailAddress || "",
+      senderName: item.from?.displayName || "",
+      itemId: item.itemId || "",
+      internetMessageId: item.internetMessageId || "",
+      dateTimeCreated: item.dateTimeCreated || "",
+      dateReported: new Date().toISOString(),
+      body: emailBody,
+      source: "outlook-addin",
+    };
 
     console.log("=== PHISH REPORT PAYLOAD ===");
     console.log(reportPayload);
