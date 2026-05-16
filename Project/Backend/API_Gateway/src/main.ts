@@ -12,8 +12,8 @@ async function bootstrap() {
     .addTag('api-gateway')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+  SwaggerModule.setup('api-gateway', app, documentFactory);
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
 }
 bootstrap();
