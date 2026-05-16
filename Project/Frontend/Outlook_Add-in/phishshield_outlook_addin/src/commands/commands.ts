@@ -10,6 +10,7 @@ interface PhishingReportPayload {
   internetMessageId: string;
   dateTimeCreated: string;
   dateReported: string;
+  body: string;
   source: "outlook-addin";
 }
 
@@ -46,6 +47,26 @@ async function sendReportToMockBackend(reportPayload: PhishingReportPayload): Pr
   console.log("Mock backend response:", result);
 }
 
+function getEmailBody(): Promise<string> {
+  return new Promise((resolve) => {
+    const item = Office.context.mailbox.item;
+
+    if (!item || !item.body) {
+      resolve("");
+      return;
+    }
+
+    item.body.getAsync(Office.CoercionType.Text, (result: any) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) {
+        resolve(result.value || "");
+      } else {
+        console.error("Could not read email body:", result.error);
+        resolve("");
+      }
+    });
+  });
+}
+
 export async function action(event: any): Promise<void> {
   try {
     console.log("Report Phish button clicked.");
@@ -58,16 +79,19 @@ export async function action(event: any): Promise<void> {
       return;
     }
 
-    const reportPayload: PhishingReportPayload = {
-      subject: item.subject || "",
-      from: item.from?.emailAddress || "",
-      senderName: item.from?.displayName || "",
-      itemId: item.itemId || "",
-      internetMessageId: item.internetMessageId || "",
-      dateTimeCreated: item.dateTimeCreated || "",
-      dateReported: new Date().toISOString(),
-      source: "outlook-addin",
-    };
+    const emailBody = await getEmailBody();
+
+const reportPayload: PhishingReportPayload = {
+  subject: item.subject || "",
+  from: item.from?.emailAddress || "",
+  senderName: item.from?.displayName || "",
+  itemId: item.itemId || "",
+  internetMessageId: item.internetMessageId || "",
+  dateTimeCreated: item.dateTimeCreated || "",
+  dateReported: new Date().toISOString(),
+  body: emailBody,
+  source: "outlook-addin",
+};
 
     console.log("=== PHISH REPORT PAYLOAD ===");
     console.log(reportPayload);
