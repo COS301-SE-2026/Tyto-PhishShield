@@ -61,47 +61,48 @@ function StepSidebar({ step }: { step: Step }) {
   ];
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-      <h2 style={{ color: '#fff', fontSize: 21, fontWeight: 700, marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
-        Set up your account
-      </h2>
-      <p style={{ color: 'rgba(255,255,255,0.42)', fontSize: 13, lineHeight: 1.65, marginBottom: 36, fontFamily: 'Inter, system-ui, sans-serif' }}>
-        Complete your profile to access PhishShield.
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {steps.map(s => {
-          const done = step > s.n;
-          const active = step === s.n;
-          return (
-            <div key={s.n} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                background: done ? 'var(--color-success)' : active ? '#2563EB' : 'rgba(255,255,255,0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 700, color: (done || active) ? '#fff' : 'rgba(255,255,255,0.35)',
-                fontFamily: 'Inter, system-ui, sans-serif',
-                transition: 'background 0.3s',
-              }}>
-                {done ? (
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                ) : s.n}
-              </div>
-              <div>
-                <div style={{
-                  fontSize: 13, fontWeight: 600, fontFamily: 'Inter, system-ui, sans-serif',
-                  color: (done || active) ? '#fff' : 'rgba(255,255,255,0.3)',
-                  transition: 'color 0.3s',
-                }}>
-                  {s.label}
+    <div
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%'}}>
+          {/* Header block */}
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <h2 style={{color: '#fff', fontSize: 21, fontWeight: 700, marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif', }}>
+              Set up your account
+            </h2>
+            <p style={{color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 1.6, fontFamily: 'Inter, system-ui, sans-serif', }}>
+              Complete your profile to access PhishShield.
+            </p>
+          </div>
+
+          {/* Steps list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            {steps.map(s => {
+              const done = step > s.n;
+              const active = step === s.n;
+
+              return (
+                <div key={s.n} style={{ display: 'flex', alignItems: 'flex-start', gap: 14}}>
+                  {/* Number circle */}
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, marginTop: 2,
+                    background: done ? 'var(--color-success)' : active ? '#2563EB' : 'rgba(255,255,255,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700,
+                    color: (done || active) ? '#fff' : 'rgba(255,255,255,0.35)',
+                  }}>
+                    {done ? '✓' : s.n}
+                  </div>
+
+                  {/* Text block */}
+                  <div>
+                    <div style={{fontSize: 13, fontWeight: 600, color: (done || active) ? '#fff' : 'rgba(255,255,255,0.4)', }}>
+                      {s.label}
+                    </div>
+                    <div style={{fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 2, }}>
+                      {s.desc}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)', marginTop: 2, fontFamily: 'Inter, system-ui, sans-serif' }}>
-                  {s.desc}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
     </div>
   );
 }
@@ -109,9 +110,9 @@ function StepSidebar({ step }: { step: Step }) {
 export function Register({ onNavigate }: RegisterProps) {
   const { addToast } = useToast();
 
-  const [firstName, setFirstName] = useState('Mark');
-  const [lastName, setLastName] = useState('Marshall');
-  const [email, setEmail] = useState('mark@tyto.co.za');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
 
@@ -214,19 +215,19 @@ export function Register({ onNavigate }: RegisterProps) {
 
           <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
             <div style={{ flex: 1 }}>
-              <Input label="First name" placeholder="Mark" value={firstName}
+              <Input label="First name" placeholder="Lisa" value={firstName}
                 onChange={e => { setFirstName(e.target.value); setStep1Errors(p => ({ ...p, firstName: '' })); }}
                 error={step1Errors.firstName} required />
             </div>
             <div style={{ flex: 1 }}>
-              <Input label="Last name" placeholder="Marshall" value={lastName}
+              <Input label="Last name" placeholder="Jacobs" value={lastName}
                 onChange={e => { setLastName(e.target.value); setStep1Errors(p => ({ ...p, lastName: '' })); }}
                 error={step1Errors.lastName} required />
             </div>
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <Input label="Work email" type="email" placeholder="mark@tyto.co.za" value={email}
+            <Input label="Work email" type="email" placeholder="lisa@tyto.co.za" value={email}
               onChange={e => { setEmail(e.target.value); setStep1Errors(p => ({ ...p, email: '' })); }}
               error={step1Errors.email} required />
           </div>
@@ -241,7 +242,8 @@ export function Register({ onNavigate }: RegisterProps) {
             <PwHints password={password} />
           </div>
 
-          <Button fullWidth size="lg" onClick={handleStep1Continue} disabled={!step1Valid}>
+          <Button fullWidth size="lg" onClick={handleStep1Continue} disabled={!step1Valid} style={{ width: '100%', padding: '13px 20px', fontSize: 13,
+                          fontWeight: 700, borderRadius: 8, }}>
             Continue
           </Button>
 
@@ -315,10 +317,11 @@ export function Register({ onNavigate }: RegisterProps) {
 
           <div style={{ display: 'flex', gap: 10 }}>
             <Button variant="ghost" onClick={() => setStep(1)}
-              style={{ flex: '0 0 auto', paddingLeft: 20, paddingRight: 20 }}>
+              style={{ padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8, border: '1.5px solid var(--border)' }}>
               Back
             </Button>
-            <Button fullWidth size="lg" loading={loading} onClick={handleStep2Continue} disabled={!step2Valid}>
+            <Button fullWidth loading={loading} onClick={handleStep2Continue} disabled={!step2Valid} 
+              style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}>
               Continue
             </Button>
           </div>
@@ -355,7 +358,8 @@ export function Register({ onNavigate }: RegisterProps) {
             </p>
           )}
 
-          <Button fullWidth size="lg" loading={loading} onClick={handleOtpSubmit}
+          <Button fullWidth loading={loading} onClick={handleOtpSubmit}   
+            style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}
             disabled={otp.length < 5}>
             Verify &amp; Go to Login
           </Button>
