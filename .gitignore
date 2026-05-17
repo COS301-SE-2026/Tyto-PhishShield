@@ -54,3 +54,7 @@ build/
 
 # Outlook add-in
 .office-addin-dev-certs/
+
+# Docker/Postgres runtime volumes
+**/pgdata/
+**/dgdata/
