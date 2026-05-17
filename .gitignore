@@ -42,3 +42,6 @@ npm-debug.log*
 
 # Node
 node_modules
+
+# dist folder
+dist

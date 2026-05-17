@@ -2,7 +2,7 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
-import { SendEmailDto } from '../../dto/send-email.dto';
+import { SendEmailDto } from '../dto/send-email.dto';
 
 @Injectable()
 export class SendEmailService {

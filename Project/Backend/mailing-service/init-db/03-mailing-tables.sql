@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS mailing.generated_emails (
     alias VARCHAR(255) DEFAULT NULL,
 
     -- The recipient of the email.
-    recipient VARCHAR(255) NOT NULL
+    recipient VARCHAR(255) NOT NULL,
 
     -- The email subject line.
     subject VARCHAR(255) NOT NULL,
@@ -39,6 +39,6 @@ CREATE TABLE IF NOT EXISTS mailing.generated_emails (
     );
 
 -- Indexes for performance on common lookups.
-CREATE INDEX IF NOT EXISTS idx_generated_emails_to ON mailing.generated_emails(email_to);
+CREATE INDEX IF NOT EXISTS idx_generated_emails_to ON mailing.generated_emails(recipient);
 CREATE INDEX IF NOT EXISTS idx_generated_emails_ref ON mailing.generated_emails(reference_number);
 CREATE INDEX IF NOT EXISTS idx_generated_emails_difficulty ON mailing.generated_emails(difficulty);
