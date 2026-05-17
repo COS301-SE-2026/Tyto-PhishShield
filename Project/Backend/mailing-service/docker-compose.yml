@@ -24,8 +24,8 @@ services:
 
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: project/backend/mailing-service/Dockerfile
 
       # Must be unique
     container_name: ${MAILING_APP_CONTAINER}
