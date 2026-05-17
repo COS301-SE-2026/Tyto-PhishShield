@@ -192,7 +192,8 @@ export function Login({ onNavigate }: LoginProps) {
           </button>
         </div>
 
-        <Button type="submit" fullWidth loading={loading} size="lg">
+        <Button type="submit" loading={loading} style={{width: '100%', padding: '12px 20px', 
+                        fontSize: 13, fontWeight: 700, borderRadius: 8, }}>
           Sign In
         </Button>
       </form>
