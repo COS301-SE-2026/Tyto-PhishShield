@@ -34,6 +34,7 @@ jobs:
     
     API-Gateway-lint:
         name: API Gateway Backend lint
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -57,6 +58,7 @@ jobs:
           
     API-Gateway-tests:
         name: API Gateway Backend tests
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -80,6 +82,7 @@ jobs:
     
     API-Gateway-build:
         name: API Gateway Backend build
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -103,6 +106,7 @@ jobs:
 
     Accounts-Service-lint:
         name: Accounts Service Backend lint
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -126,6 +130,7 @@ jobs:
 
     Accounts-Service-tests:
         name: Accounts Service Backend tests
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -149,6 +154,7 @@ jobs:
     
     Accounts-Service-build:
         name: Accounts Service Backend build
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -172,6 +178,7 @@ jobs:
 
     Mailing-Service-lint:
         name: Mailing Service Backend lint
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -195,6 +202,7 @@ jobs:
 
     Mailing-Service-tests:
         name: Mailing Service Backend tests
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
@@ -218,6 +226,7 @@ jobs:
     
     Mailing-Service-build:
         name: Mailing Service Backend build
+        needs: install
         runs-on: ubuntu-latest
         strategy:
           matrix:
