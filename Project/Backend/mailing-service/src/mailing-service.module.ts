@@ -3,7 +3,9 @@ import { MailingServiceService } from './mailing-service.service';
 import { MailingServiceController } from './mailing-service.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GeneratedEmail } from '../entities/generated-emails.entity';
+import { GeneratedEmail } from './entities/generated-emails.entity';
+import { SendEmailService } from './send-email/send-email.service';
+import { SendEmailModule } from './send-email/send-email.module';
 
 @Module({
   imports: [
@@ -28,8 +30,10 @@ import { GeneratedEmail } from '../entities/generated-emails.entity';
         schema: 'mailing',
       }),
     }),
+
+    SendEmailModule,
   ],
   controllers: [MailingServiceController],
-  providers: [MailingServiceService],
+  providers: [MailingServiceService, SendEmailService],
 })
 export class MailingServiceModule {}
