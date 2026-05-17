@@ -1,6 +1,44 @@
-{
-	"devDependencies": {
-		"@nestjs/schematics": "^11.1.0",
-		"@nestjs/cli": "^11.0.21"
-	}
+﻿{
+  "name": "tyto-phishshield",
+  "private": true,
+  "packageManager": "pnpm@11.1.1",
+  "scripts": {
+    "bootstrap": "pnpm install",
+    "update:all": "pnpm -r up --latest",
+    "build:all": "pnpm -r --if-present build",
+	"test:all": "pnpm -r --if-present test",
+
+    "build:website": "pnpm --filter website build",
+    "dev:website": "pnpm --filter website dev",
+	"lint:website": "pnpm --filter website run lint",
+	"test:website": "pnpm --filter website test",
+
+    "build:api-gateway": "pnpm --filter api-gateway build",
+    "dev:api-gateway": "pnpm --filter api-gateway start:dev",
+	"lint:api-gateway": "pnpm --filter api-gateway run lint",
+	"test:api-gateway": "pnpm --filter api-gateway test",
+
+    "build:accounts-service": "pnpm --filter accounts-service build",
+    "dev:accounts-service": "pnpm --filter accounts-service start:dev",
+	"lint:accounts-service": "pnpm --filter accounts-service run lint",
+	"test:accounts-service": "pnpm --filter accounts-service test",
+
+    "build:outlook-addin": "pnpm --filter phishshield_outlook_addin build",
+    "dev:outlook-addin": "pnpm --filter phishshield_outlook_addin start:dev",
+	"lint:outlook-addin": "pnpm --filter phishshield_outlook_addin run lint",
+	"test:outlook-addin": "pnpm --filter phishshield_outlook_addin test",
+
+	"build:mailing-service": "pnpm --filter mailing-service build",
+	"dev:mailing-service": "pnpm --filter mailing-service start:dev",
+	"lint:mailing-service": "pnpm --filter mailing-service run lint",
+	"test:mailing-service": "pnpm --filter mailing-service test",
+
+	"clear:dist": "pnpm -r --if-present run clear:dist",
+	"clear:node_modules": "pnpm -r --if-present run clear:node_modules",
+	"clear:all": "pnpm run clear:dist && pnpm run clear:node_modules"
+  },
+  "devDependencies": {
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/cli": "^11.0.21"
+  }
 }
