@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +32,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.6.0",
     "jest": "^30.4.2",
+    "prettier": "^3.8.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.3"
   },

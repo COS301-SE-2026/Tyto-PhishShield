@@ -3,10 +3,10 @@ import {
   Injectable,
   Logger,
   InternalServerErrorException,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { Resend } from "resend";
-import { SendEmailDto } from "../dto/send-email.dto";
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Resend } from 'resend';
+import { SendEmailDto } from '../dto/send-email.dto';
 
 @Injectable()
 export class SendEmailService {
@@ -14,7 +14,7 @@ export class SendEmailService {
   private readonly logger = new Logger(SendEmailService.name);
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>("RESEND_API_KEY");
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
   }
 
@@ -32,11 +32,11 @@ export class SendEmailService {
       this.logger.log(
         `Email successfully dispatched from ${sender} to ${receiver}`,
       );
-      return { success: true, message: "Email sent successfully", data };
+      return { success: true, message: 'Email sent successfully', data };
     } catch (error) {
       this.logger.error(`Failed to send email to ${receiver}`, error);
       throw new InternalServerErrorException(
-        "Failed to process email dispatch",
+        'Failed to process email dispatch',
       );
     }
   }

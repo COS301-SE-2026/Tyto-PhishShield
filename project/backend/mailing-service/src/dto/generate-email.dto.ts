@@ -4,8 +4,8 @@ import {
   IsOptional,
   IsEnum,
   IsString,
-} from "class-validator";
-import { EmailDifficulty } from "../entities/generated-emails.entity";
+} from 'class-validator';
+import { EmailDifficulty } from '../entities/generated-emails.entity';
 
 export class GenerateEmailDto {
   @IsNotEmpty()

@@ -3,17 +3,17 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-} from "typeorm";
+} from 'typeorm';
 
 export enum EmailDifficulty {
-  EASY = "easy",
-  MEDIUM = "medium",
-  HARD = "hard",
+  EASY = 'easy',
+  MEDIUM = 'medium',
+  HARD = 'hard',
 }
 
-@Entity({ name: "generated_emails", schema: "mailing-service" })
+@Entity({ name: 'generated_emails', schema: 'mailing-service' })
 export class GeneratedEmail {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   email_id: string;
 
   @Column({ unique: true })
@@ -31,11 +31,11 @@ export class GeneratedEmail {
   @Column()
   subject: string;
 
-  @Column("text")
+  @Column('text')
   content: string;
 
   @Column({
-    type: "enum",
+    type: 'enum',
     enum: EmailDifficulty,
     default: EmailDifficulty.MEDIUM,
   })

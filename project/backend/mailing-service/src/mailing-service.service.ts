@@ -1,10 +1,10 @@
-import { Injectable } from "@nestjs/common";
-import { GenerateEmailDto } from "./dto/generate-email.dto";
+import { Injectable } from '@nestjs/common';
+import { GenerateEmailDto } from './dto/generate-email.dto';
 
 @Injectable()
 export class MailingServiceService {
   create(createMailingServiceDto: GenerateEmailDto) {
-    return "This action adds a new mailingService";
+    return 'This action adds a new mailingService';
   }
 
   findAll() {

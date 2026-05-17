@@ -8,21 +8,21 @@
 		"build:all": "pnpm -r --if-present build",
 		"test:all": "pnpm -r --if-present test",
 		"run:all": "pnpm -r --if-present start:dev",
-		"lint:all": "pnpm -r --if-present eslint",
+		"lint:all": "pnpm -r --if-present lint",
 
 		"build:website": "pnpm --filter website build",
 		"dev:website": "pnpm --filter website dev",
-		"lint:website": "pnpm --filter website eslint",
+		"lint:website": "pnpm --filter website lint",
 		"test:website": "pnpm --filter website test",
 
 		"build:api-gateway": "pnpm --filter api-gateway build",
 		"dev:api-gateway": "pnpm --filter api-gateway start:dev",
-		"lint:api-gateway": "pnpm --filter api-gateway eslint",
+		"lint:api-gateway": "pnpm --filter api-gateway lint",
 		"test:api-gateway": "pnpm --filter api-gateway test",
 
 		"build:accounts-service": "pnpm --filter accounts-service build",
 		"dev:accounts-service": "pnpm --filter accounts-service start:dev",
-		"lint:accounts-service": "pnpm --filter accounts-service eslint",
+		"lint:accounts-service": "pnpm --filter accounts-service lint",
 		"test:accounts-service": "pnpm --filter accounts-service test",
 
 		"build:outlook-addin": "pnpm --filter phishshield_outlook_addin build",
@@ -32,7 +32,7 @@
 
 		"build:mailing-service": "pnpm --filter mailing-service build",
 		"dev:mailing-service": "pnpm --filter mailing-service start:dev",
-		"lint:mailing-service": "pnpm --filter mailing-service eslint",
+		"lint:mailing-service": "pnpm --filter mailing-service lint",
 		"test:mailing-service": "pnpm --filter mailing-service test",
 
 		"clear:dist": "pnpm -r --if-present run clear:dist",
