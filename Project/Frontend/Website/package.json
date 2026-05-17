@@ -11,9 +11,10 @@
     "test": "vitest"
   },
   "dependencies": {
-    "eslint-plugin-react-x": "^5.7.9",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "eslint-plugin-react-x": "^5.7.5",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.15.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
