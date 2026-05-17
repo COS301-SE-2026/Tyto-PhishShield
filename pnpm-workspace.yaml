@@ -3,4 +3,12 @@
 allowBuilds:
   '@nestjs/core': true
   '@scarf/scarf': true
+  '@azure/msal-node-extensions': true
+  '@azure/msal-node-runtime': true
+  '@microsoft/m365agentstoolkit-cli': true
+  core-js: true
+  esbuild: true
+  keytar: true
+  protobufjs: true
+  'protobufjs@8.0.1': true
   unrs-resolver: true
