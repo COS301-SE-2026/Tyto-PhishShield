@@ -1,15 +1,17 @@
-FROM node:18
+FROM ghcr.io/pnpm/pnpm:latest
+
+RUN pnpm runtime set node 22 -g
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY project/backend/mailing-service/package.json ./project/backend/mailing-service/package.json
+COPY project/backend/mailing-service/ ./project/backend/mailing-service/
 
-COPY pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-RUN npm install -g pnpm
+WORKDIR /app/project/backend/mailing-service
 
-RUN pnpm install
-
-COPY . .
+RUN pnpm run build
 
 CMD [ "pnpm", "run", "start:dev" ]
