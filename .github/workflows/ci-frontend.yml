@@ -2,7 +2,7 @@ name: frontend CI
 
 on:
   push:
-    branches: [main, dev, frontend]
+    branches: [main, dev, frontend, (dev)Integration]
   pull_request:
     branches: [main, dev]
 
