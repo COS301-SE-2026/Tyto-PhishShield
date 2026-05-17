@@ -1,6 +1,8 @@
 import {
-  Injectable, ConflictException,
-  UnauthorizedException, InternalServerErrorException,
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -68,7 +70,9 @@ export class AuthService {
     return this.cachedMgmtToken;
   }
 
-  async register(dto: RegisterDto): Promise<{ message: string; userId: string }> {
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ message: string; userId: string }> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
@@ -90,9 +94,13 @@ export class AuthService {
     } catch (err: unknown) {
       const axiosErr = err as AxiosErrorShape;
       if (axiosErr.response?.status === 409) {
-        throw new ConflictException('An account with this email already exists');
+        throw new ConflictException(
+          'An account with this email already exists',
+        );
       }
-      throw new InternalServerErrorException('Could not create account, please try again');
+      throw new InternalServerErrorException(
+        'Could not create account, please try again',
+      );
     }
 
     const user = await this.usersService.create({
@@ -105,7 +113,9 @@ export class AuthService {
     return { message: 'Registration successful', userId: user.id };
   }
 
-  async login(dto: LoginDto): Promise<{ access_token: string; expires_in: number }> {
+  async login(
+    dto: LoginDto,
+  ): Promise<{ access_token: string; expires_in: number }> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
 
     try {
@@ -128,7 +138,10 @@ export class AuthService {
       };
     } catch (err: unknown) {
       const axiosErr = err as AxiosErrorShape;
-      console.error('Login error:', axiosErr.response?.data ?? axiosErr.message);
+      console.error(
+        'Login error:',
+        axiosErr.response?.data ?? axiosErr.message,
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
   }
