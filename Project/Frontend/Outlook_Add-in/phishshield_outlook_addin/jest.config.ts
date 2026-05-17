@@ -3,9 +3,8 @@
  * https://jestjs.io/docs/configuration
  */
 
-import type { Config } from 'jest';
-
-const config: Config = {
+/** @type {import('jest').Config} */
+const config = {
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
@@ -25,7 +24,7 @@ const config: Config = {
   // collectCoverageFrom: undefined,
 
   // The directory where Jest should output its coverage files
-  coverageDirectory: 'coverage',
+  coverageDirectory: "coverage",
 
   // An array of regexp pattern strings used to skip coverage collection
   // coveragePathIgnorePatterns: [
@@ -33,7 +32,7 @@ const config: Config = {
   // ],
 
   // Indicates which provider should be used to instrument code for coverage
-  coverageProvider: 'v8',
+  // coverageProvider: "babel",
 
   // A list of reporter names that Jest uses when writing coverage reports
   // coverageReporters: [
@@ -198,4 +197,4 @@ const config: Config = {
   // watchman: true,
 };
 
-export default config;
+module.exports = config;
