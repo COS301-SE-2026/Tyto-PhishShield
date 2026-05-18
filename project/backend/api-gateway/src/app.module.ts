@@ -9,11 +9,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ProxyMiddleware } from './proxy/proxy.middleware';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      envFilePath: '../.env',
-    }),
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AccountsModule],
   controllers: [AppController],
   providers: [AppService],
 })
