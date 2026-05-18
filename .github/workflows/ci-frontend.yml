@@ -175,3 +175,51 @@ jobs:
               name: node-modules
           - name: build
             run: pnpm run build:outlook-addin
+      
+    design-spec-lint:
+        name: design spec lint
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@v6
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:design-spec
+    
+    design-spec-build:
+        name: design spec build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@v6
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:design-spec
