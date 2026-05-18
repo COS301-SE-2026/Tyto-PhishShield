@@ -1,9 +1,14 @@
 import {
-  Controller, Post, Get, Body, Req,
-  UseGuards, HttpCode,
+  Controller,
+  Post,
+  Get,
+  Body,
+  Req,
+  UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -28,13 +33,19 @@ export class AccountsController {
     );
   }
 
-  // -------------------------------------------------------------------------
-  // POST /api/accounts/auth/register
-  // Public — no JWT required
-  // Forwards the registration payload to the accounts service
-  // -------------------------------------------------------------------------
   @Post('auth/register')
   @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'password'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+        password: { type: 'string', example: 'Password123!' },
+        name: { type: 'string', example: 'Test User' },
+      },
+    },
+  })
   register(@Body() body: unknown) {
     return this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/auth/register`,
@@ -43,15 +54,19 @@ export class AccountsController {
     });
   }
 
-  // -------------------------------------------------------------------------
-  // POST /api/accounts/auth/login
-  // Public — no JWT required
-  // Forwards credentials to the accounts service, which calls Auth0
-  // Returns the JWT to the frontend
-  // -------------------------------------------------------------------------
   @Post('auth/login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Login and receive a JWT' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'password'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+        password: { type: 'string', example: 'Password123!' },
+      },
+    },
+  })
   login(@Body() body: unknown) {
     return this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/auth/login`,
@@ -60,12 +75,6 @@ export class AccountsController {
     });
   }
 
-  // -------------------------------------------------------------------------
-  // GET /api/accounts/auth/me
-  // Protected — JWT required
-  // The gateway validates the JWT, then returns the user info from the token.
-  // No need to call the accounts service again since we already have the data.
-  // -------------------------------------------------------------------------
   @Get('auth/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

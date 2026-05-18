@@ -1,4 +1,8 @@
-import { Injectable, HttpException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import type { AxiosRequestConfig } from 'axios';
@@ -31,13 +35,11 @@ export class ProxyService {
     };
 
     try {
-      const { data } = await firstValueFrom(
-        this.http.request<T>(config),
-      );
+      const { data } = await firstValueFrom(this.http.request<T>(config));
       return data;
     } catch (err: unknown) {
       const downstream = err as DownstreamErrorShape;
-      
+
       if (downstream.response?.status) {
         throw new HttpException(
           downstream.response.data ?? 'Downstream service error',
@@ -45,7 +47,9 @@ export class ProxyService {
         );
       }
 
-      throw new InternalServerErrorException('Could not reach downstream service');
+      throw new InternalServerErrorException(
+        'Could not reach downstream service',
+      );
     }
   }
 }
