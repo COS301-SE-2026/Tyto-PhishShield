@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AuthLayout } from '../../components/layout/AuthLayout';
+import { AuthLayout } from '../../components/layout/auth-layout';
 import { Input, PasswordInput, Select, Button, OtpInput } from '../../components/ui';
 import { authApi } from '../../services/api';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toast-context';
 
 interface RegisterProps {
   onNavigate: (path: string) => void;

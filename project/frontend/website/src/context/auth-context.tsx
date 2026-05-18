@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return arr.includes(user.role);
   };
 
-  // canAccess('analyst') → true for analyst AND admin
+  // canAccess('analyst') : this is true for analyst AND admin
   const canAccess = (minRole: UserRole): boolean => {
     if (!user) return false;
     return ROLE_LEVEL[user.role] >= ROLE_LEVEL[minRole];

@@ -1,7 +1,7 @@
 import React, { type ReactNode } from 'react';
-import { LogoLockup } from '../ui/OwlLogo';
+import { LogoLockup } from '../ui/owl-logo';
 import { ThemeToggle } from '../ui';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../context/theme-context';
 
 interface AuthLayoutProps {
   leftContent: ReactNode;
