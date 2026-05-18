@@ -54,3 +54,7 @@ build/
 # Docker/Postgres runtime volumes
 **/pgdata/
 **/dgdata/
+
+# pg admin runtime volumes
+**/pgadmin_data/
+.pgpass

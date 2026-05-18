@@ -56,11 +56,12 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
       PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
-      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+      PGADMIN_SERVER_JSON_FILE: servers.json
       PGADMIN_REPLACE_SERVERS_ON_STARTUP: 'True'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./mailing-db.json:/pgadmin4/servers.json:ro
+      - ./.pgpass:/var/lib/pgadmin/.pgpass:ro
     ports:
       - "${MAILING_PGADMIN_PORT}:80"
     depends_on:
