@@ -20,6 +20,11 @@ credentials.json
 *.log
 logs/
 npm-debug.log*
+logs
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Compiled class file
 *.class
@@ -34,8 +39,22 @@ npm-debug.log*
 .obsidian/
 
 # IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/
+
+# compiled output
+dist/
+node_modules/
+build/
+*.tsbuildinfo
+.pnpm-store/
+
+# Outlook add-in
+.office-addin-dev-certs/
+
+# Docker/Postgres runtime volumes
+**/pgdata/
+**/dgdata/
+
+# pg admin runtime volumes
+**/pgadmin_data/
+.pgpass
