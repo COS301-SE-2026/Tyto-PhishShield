@@ -178,9 +178,24 @@ importers:
       '@nestjs/swagger':
         specifier: ^11.4.3
         version: 11.4.3(@nestjs/common@11.1.21(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.21)(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)
-      http-proxy-middleware:
-        specifier: ^4.0.0
-        version: 4.0.0
+      axios:
+        specifier: ^1.16.1
+        version: 1.16.1
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.15.1
+        version: 0.15.1
+      jwks-rsa:
+        specifier: ^4.0.1
+        version: 4.0.1
+      passport:
+        specifier: ^0.7.0
+        version: 0.7.0
+      passport-jwt:
+        specifier: ^4.0.1
+        version: 4.0.1
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -3083,16 +3098,9 @@ packages:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
     engines: {node: '>= 0.8'}
 
-  http-proxy-middleware@4.0.0:
-    resolution: {integrity: sha512-wuHwaUtmC0XzJNHqRp41zXtt5ojpHbusXGhq6781VvnjWUYPu7opmOF3eomGNujT07kEOnHWZyV9UZzKimVCKA==}
-    engines: {node: ^22.15.0 || ^24.0.0 || >=26.0.0}
-
   https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
     engines: {node: '>= 6'}
-
-  httpxy@0.5.1:
-    resolution: {integrity: sha512-JPhqYiixe1A1I+MXDewWDZqeudBGU8Q9jCHYN8ML+779RQzLjTi78HBvWz4jMxUD6h2/vUL12g4q/mFM0OUw1A==}
 
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
@@ -3178,10 +3186,6 @@ packages:
   is-number@7.0.0:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
-
-  is-plain-obj@4.1.0:
-    resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
-    engines: {node: '>=12'}
 
   is-potential-custom-element-name@1.0.1:
     resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
@@ -8080,24 +8084,12 @@ snapshots:
       statuses: 2.0.2
       toidentifier: 1.0.1
 
-  http-proxy-middleware@4.0.0:
-    dependencies:
-      debug: 4.4.3
-      httpxy: 0.5.1
-      is-glob: 4.0.3
-      is-plain-obj: 4.1.0
-      micromatch: 4.0.8
-    transitivePeerDependencies:
-      - supports-color
-
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
-
-  httpxy@0.5.1: {}
 
   human-signals@2.1.0: {}
 
@@ -8159,8 +8151,6 @@ snapshots:
   is-interactive@1.0.0: {}
 
   is-number@7.0.0: {}
-
-  is-plain-obj@4.1.0: {}
 
   is-potential-custom-element-name@1.0.1: {}
 
