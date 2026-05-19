@@ -14,4 +14,4 @@ WORKDIR /app/project/backend/accounts-service
 
 RUN pnpm run build
 
-CMD [ "pnpm", "run", "start:dev" ]
+CMD ["node", "dist/main.js"]
