@@ -129,8 +129,8 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
               fontFamily: 'Inter, system-ui, sans-serif', transition: 'all 0.12s',
               borderRight: tab === t.id ? '3px solid var(--color-primary)' : '3px solid transparent',
             }}
-            onMouseEnter={e => { if (tab !== t.id) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={e => { if (tab !== t.id) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+            onMouseEnter={e => { if (tab !== t.id) (e.currentTarget).style.background = 'var(--bg-hover)'; }}
+            onMouseLeave={e => { if (tab !== t.id) (e.currentTarget).style.background = 'transparent'; }}
             >
               <span style={{ display: 'flex', alignItems: 'center', color: tab === t.id ? 'var(--color-primary)' : 'var(--text-muted)' }}>{t.icon}</span> {t.label}
             </button>
@@ -153,7 +153,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                     {(user?.role ?? 'user').charAt(0).toUpperCase() + (user?.role ?? 'user').slice(1)} — contact your administrator to change
                   </div>
                 </div>
-                <Button loading={profileLoading} onClick={handleSaveProfile} style={{ alignSelf: 'flex-start' }}>
+                <Button loading={profileLoading} onClick={() => { void handleSaveProfile(); }} style={{ alignSelf: 'flex-start' }}>
                   Save Changes
                 </Button>
               </div>
@@ -169,7 +169,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 <PasswordInput label="Current password" placeholder="••••••••" value={currentPw} onChange={e => setCurrentPw(e.target.value)} />
                 <PasswordInput label="New password" placeholder="Min. 8 characters" value={newPw} onChange={e => { setNewPw(e.target.value); setPwError(''); }} />
                 <PasswordInput label="Confirm new password" placeholder="Repeat new password" value={confirmPw} onChange={e => { setConfirmPw(e.target.value); setPwError(''); }} error={pwError} />
-                <Button loading={pwLoading} onClick={handleChangePw} style={{ alignSelf: 'flex-start' }}>
+                <Button loading={pwLoading} onClick={() => { void handleChangePw(); }} style={{ alignSelf: 'flex-start' }}>
                   Update Password
                 </Button>
               </div>
@@ -190,7 +190,10 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
               <div style={{ marginBottom: 20 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>Theme</label>
                 <div style={{ display: 'flex', gap: 12 }}>
-                  {([['light', <Icons.Sun />], ['dark', <Icons.Moon />]] as const).map(([t, icon]) => (
+                  {([
+                      ['light', <Icons.Sun key="light-icon" />],
+                      ['dark', <Icons.Moon key="dark-icon" />],
+                    ] as const).map(([t, icon]) => (
                     <button key={t} onClick={() => setTheme(t)} style={{
                       flex: 1, padding: '16px', borderRadius: 12, cursor: 'pointer',
                       border: `2px solid ${theme === t ? 'var(--color-primary)' : 'var(--border)'}`,

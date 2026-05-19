@@ -1,6 +1,5 @@
-import React from 'react';
 import { LogoLockup } from '../components/ui/owl-logo';
-import { Button, ThemeToggle } from '../components/ui';
+import { ThemeToggle } from '../components/ui';
 import { useTheme } from '../context/theme-context';
 
 interface HomeProps {
@@ -173,12 +172,12 @@ export function Home({ onNavigate }: HomeProps) {
               cursor: 'default',
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
-              (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px rgba(37,99,235,0.1)';
+              (e.currentTarget).style.transform = 'translateY(-2px)';
+              (e.currentTarget).style.boxShadow = '0 8px 24px rgba(37,99,235,0.1)';
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLDivElement).style.transform = 'none';
-              (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+              (e.currentTarget).style.transform = 'none';
+              (e.currentTarget).style.boxShadow = 'none';
             }}
             >
               <div style={{

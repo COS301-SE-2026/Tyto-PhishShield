@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
 import { Input, PasswordInput, Select, Button, OtpInput } from '../../components/ui';
 import { authApi } from '../../services/api';
@@ -189,7 +189,7 @@ export function Register({ onNavigate }: RegisterProps) {
     }
   };
 
-  const handleResendOtp = async () => {
+  const handleResendOtp = () => {
     setOtp(''); setOtpError('');
     addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}` });
   };
@@ -320,7 +320,7 @@ export function Register({ onNavigate }: RegisterProps) {
               style={{ padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8, border: '1.5px solid var(--border)' }}>
               Back
             </Button>
-            <Button fullWidth loading={loading} onClick={handleStep2Continue} disabled={!step2Valid} 
+            <Button fullWidth loading={loading} onClick={() => { void handleStep2Continue(); }} disabled={!step2Valid} 
               style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}>
               Continue
             </Button>
@@ -358,7 +358,7 @@ export function Register({ onNavigate }: RegisterProps) {
             </p>
           )}
 
-          <Button fullWidth loading={loading} onClick={handleOtpSubmit}   
+          <Button fullWidth loading={loading} onClick={() => { void handleOtpSubmit(); }} 
             style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}
             disabled={otp.length < 5}>
             Verify &amp; Go to Login

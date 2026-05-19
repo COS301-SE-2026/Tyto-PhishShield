@@ -1,4 +1,3 @@
-import React from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button, Badge } from '../../components/ui';
 import { useToast } from '../../context/toast-context';

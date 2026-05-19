@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { LogoLockup } from '../ui/owl-logo';
 import { useAuth } from '../../context/auth-context';
 

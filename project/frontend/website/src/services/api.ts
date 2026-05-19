@@ -3,7 +3,10 @@ import type {
   RegisterResponse, AuthenticatedUser,
 } from '../types';
 
-const ACCOUNTS_BASE = import.meta.env.VITE_ACCOUNTS_URL ?? 'http://localhost:3002';
+const ACCOUNTS_BASE =
+  typeof import.meta.env.VITE_ACCOUNTS_URL === 'string'
+    ? import.meta.env.VITE_ACCOUNTS_URL
+    : 'http://localhost:3002';
 
 function getToken(): string | null {
   return localStorage.getItem('access_token');
