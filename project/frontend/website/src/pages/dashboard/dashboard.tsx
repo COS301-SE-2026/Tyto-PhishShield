@@ -238,8 +238,8 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
                 cursor: 'pointer',
               }}
               onClick={() => onNavigate(`/users/${u.initials}`)}
-              onMouseEnter={e => { if (i !== 0) (e.currentTarget as HTMLDivElement).style.background = 'var(--bg-hover)'; }}
-              onMouseLeave={e => { if (i !== 0) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+              onMouseEnter={e => { if (i !== 0) (e.currentTarget).style.background = 'var(--bg-hover)'; }}
+              onMouseLeave={e => { if (i !== 0) (e.currentTarget).style.background = 'transparent'; }}
             >
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', width: 14, textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.rank}</span>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', flexShrink: 0 }}>{u.initials}</div>

@@ -10,7 +10,7 @@ interface TrainingProps {
   activePath: string;
 }
 
-type Module = {
+interface Module {
   id: string;
   title: string;
   desc: string;
@@ -20,13 +20,13 @@ type Module = {
   estimatedMinutes: number;
   lessons: number;
   quiz: boolean;
-};
+}
 
 const MODULES: Module[] = [
-  { id: '1', title: 'Introduction to Social Engineering', desc: 'Understand the psychology behind social engineering and how attackers exploit human trust.', status: 'in_progress' as TrainingStatus, score: null, dueDate: '2025-05-20', estimatedMinutes: 25, lessons: 4, quiz: true },
-  { id: '2', title: 'Spear Phishing Awareness', desc: 'Learn to identify targeted phishing attacks that use personal information to appear legitimate.', status: 'not_started' as TrainingStatus, score: null, dueDate: '2025-05-27', estimatedMinutes: 20, lessons: 3, quiz: true },
-  { id: '3', title: 'Phishing in Microsoft Outlook', desc: 'Hands-on training for identifying and reporting suspicious emails directly within Outlook.', status: 'completed' as TrainingStatus, score: 92, dueDate: null, estimatedMinutes: 15, lessons: 3, quiz: true },
-  { id: '4', title: 'Password Security & MFA', desc: 'Best practices for creating strong passwords and enabling multi-factor authentication.', status: 'completed' as TrainingStatus, score: 85, dueDate: null, estimatedMinutes: 18, lessons: 5, quiz: true },
+  { id: '1', title: 'Introduction to Social Engineering', desc: 'Understand the psychology behind social engineering and how attackers exploit human trust.', status: 'in_progress', score: null, dueDate: '2025-05-20', estimatedMinutes: 25, lessons: 4, quiz: true },
+  { id: '2', title: 'Spear Phishing Awareness', desc: 'Learn to identify targeted phishing attacks that use personal information to appear legitimate.', status: 'not_started', score: null, dueDate: '2025-05-27', estimatedMinutes: 20, lessons: 3, quiz: true },
+  { id: '3', title: 'Phishing in Microsoft Outlook', desc: 'Hands-on training for identifying and reporting suspicious emails directly within Outlook.', status: 'completed', score: 92, dueDate: null, estimatedMinutes: 15, lessons: 3, quiz: true },
+  { id: '4', title: 'Password Security & MFA', desc: 'Best practices for creating strong passwords and enabling multi-factor authentication.', status: 'completed', score: 85, dueDate: null, estimatedMinutes: 18, lessons: 5, quiz: true },
 ];
 
 const STATUS_CONFIG: Record<TrainingStatus, { label: string; badge: React.ReactNode }> = {
@@ -126,7 +126,7 @@ export function Training({ onNavigate, activePath }: TrainingProps) {
     if (score >= 70) {
       setModules(prev => prev.map(m =>
         m.id === quizModule.id
-          ? { ...m, status: 'completed' as TrainingStatus, score }
+          ? { ...m, status: 'completed', score }
           : m
       ));
       addToast({ type: 'success', title: 'Module completed!', message: `+120 XP earned. Score: ${score}%` });
@@ -206,7 +206,7 @@ export function Training({ onNavigate, activePath }: TrainingProps) {
                   <Button size="sm"
                     onClick={() => {
                       setModules(prev => prev.map(mod =>
-                        mod.id === m.id ? { ...mod, status: 'in_progress' as TrainingStatus } : mod
+                        mod.id === m.id ? { ...mod, status: 'in_progress' } : mod
                       ));
                       addToast({ type: 'info', title: 'Module started', message: m.title });
                     }}>

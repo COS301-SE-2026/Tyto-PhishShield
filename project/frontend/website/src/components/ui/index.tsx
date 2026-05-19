@@ -39,7 +39,7 @@ export function Button({
   return (
     <button
       {...props}
-      disabled={disabled || loading}
+      disabled={disabled ?? loading}
       className={base}
       style={{
         background: variant === 'primary' ? 'var(--color-primary)' :
@@ -72,7 +72,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({
-  label, error, hint, leftIcon, rightIcon, className = '', ...props
+  label, error, hint, leftIcon, rightIcon, ...props
 }: InputProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>

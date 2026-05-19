@@ -129,8 +129,8 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
               fontFamily: 'Inter, system-ui, sans-serif', transition: 'all 0.12s',
               borderRight: tab === t.id ? '3px solid var(--color-primary)' : '3px solid transparent',
             }}
-            onMouseEnter={e => { if (tab !== t.id) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={e => { if (tab !== t.id) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+            onMouseEnter={e => { if (tab !== t.id) (e.currentTarget).style.background = 'var(--bg-hover)'; }}
+            onMouseLeave={e => { if (tab !== t.id) (e.currentTarget).style.background = 'transparent'; }}
             >
               <span style={{ display: 'flex', alignItems: 'center', color: tab === t.id ? 'var(--color-primary)' : 'var(--text-muted)' }}>{t.icon}</span> {t.label}
             </button>
