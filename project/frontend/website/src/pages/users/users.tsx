@@ -79,11 +79,29 @@ export function Users({ onNavigate, activePath }: UsersProps) {
       return true;
     })
     .sort((a, b) => {
-      let av = 0, bv = 0;
-      if (sortKey === 'xp') { av = a.xp; bv = b.xp; }
-      if (sortKey === 'streak') { av = a.streak; bv = b.streak; }
-      if (sortKey === 'clickRate') { av = parseFloat(a.clickRate); bv = parseFloat(b.clickRate); }
-      if (sortKey === 'name') { av = a.name.localeCompare(b.name); bv = 0; return sortDir === 'asc' ? av : -av; }
+      if (sortKey === 'name') {
+        const comparison = a.name.localeCompare(b.name);
+        return sortDir === 'asc' ? comparison : -comparison;
+      }
+
+      let av = 0;
+      let bv = 0;
+
+      if (sortKey === 'xp') {
+        av = a.xp;
+        bv = b.xp;
+      }
+
+      if (sortKey === 'streak') {
+        av = a.streak;
+        bv = b.streak;
+      }
+
+      if (sortKey === 'clickRate') {
+        av = parseFloat(a.clickRate);
+        bv = parseFloat(b.clickRate);
+      }
+
       return sortDir === 'asc' ? av - bv : bv - av;
     });
 

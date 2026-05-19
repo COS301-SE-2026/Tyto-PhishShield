@@ -190,7 +190,10 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
               <div style={{ marginBottom: 20 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>Theme</label>
                 <div style={{ display: 'flex', gap: 12 }}>
-                  {([['light', <Icons.Sun />], ['dark', <Icons.Moon />]] as const).map(([t, icon]) => (
+                  {([
+                      ['light', <Icons.Sun key="light-icon" />],
+                      ['dark', <Icons.Moon key="dark-icon" />],
+                    ] as const).map(([t, icon]) => (
                     <button key={t} onClick={() => setTheme(t)} style={{
                       flex: 1, padding: '16px', borderRadius: 12, cursor: 'pointer',
                       border: `2px solid ${theme === t ? 'var(--color-primary)' : 'var(--border)'}`,

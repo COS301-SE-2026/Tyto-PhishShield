@@ -189,7 +189,7 @@ export function Register({ onNavigate }: RegisterProps) {
     }
   };
 
-  const handleResendOtp = async () => {
+  const handleResendOtp = () => {
     setOtp(''); setOtpError('');
     addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}` });
   };

@@ -130,7 +130,7 @@ export function Input({
 
 // PasswordInput
 
-interface PasswordInputProps extends Omit<InputProps, 'type'> {}
+type PasswordInputProps = Omit<InputProps, 'type'>;
 
 export function PasswordInput(props: PasswordInputProps) {
   const [show, setShow] = useState(false);
