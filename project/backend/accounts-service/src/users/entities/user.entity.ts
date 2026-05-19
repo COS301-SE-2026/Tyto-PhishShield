@@ -33,10 +33,10 @@ export class User {
   isOtpVerified!: boolean;
 
   @Column({ nullable: true })
-  otpCode!: string;
+  otpCode!: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  otpExpiresAt!: Date;
+  otpExpiresAt!: Date | null;
 
   @CreateDateColumn()
   createdAt!: Date;

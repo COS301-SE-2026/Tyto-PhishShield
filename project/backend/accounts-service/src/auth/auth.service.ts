@@ -1,8 +1,10 @@
+
 import {
   Injectable,
   ConflictException,
   UnauthorizedException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -104,6 +106,7 @@ export class AuthService {
       );
     } catch (err) {
       console.error('Failed to send OTP via Resend:', err);
+
     }
   }
 
@@ -140,9 +143,10 @@ export class AuthService {
       );
     }
 
+
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiryTime = new Date();
-    expiryTime.setMinutes(expiryTime.getMinutes() + 15);
+    expiryTime.setMinutes(expiryTime.getMinutes() + 15); 
 
     const user = await this.usersService.create({
       auth0Id: auth0User.user_id,
@@ -159,10 +163,36 @@ export class AuthService {
     return { message: 'Registration successful. Please verify your OTP.', userId: user.id };
   }
 
+  async verifyOtp(dto: VerifyOtpDto): Promise<{ message: string }> {
+
+    const user = await this.usersService.findByEmail(dto.email);
+    
+    if (!user) {
+      throw new BadRequestException('Invalid email or OTP code');
+    }
+
+    if (user.isOtpVerified) {
+      throw new BadRequestException('Account is already verified. Please proceed to login.');
+    }
+
+    if (user.otpCode !== dto.code) {
+      throw new BadRequestException('Invalid OTP code');
+    }
+
+    if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+      throw new BadRequestException('OTP code has expired. Please register again.');
+    }
+    user.isOtpVerified = true;
+    user.otpCode = null;
+    user.otpExpiresAt = null;
+    await this.usersService.update(user.id, user);
+
+    return { message: 'OTP verified successfully. You may now log in.' };
+  }
+
   async login(
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number }> {
-    // STRICT SECURITY GATE: Check if user exists locally and verified OTP first
     const localUser = await this.usersService.findByEmail(dto.email);
     
     if (!localUser) {
