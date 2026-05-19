@@ -1,8 +1,8 @@
 # PhishShield — Design Specification
 
 > **Version:** 1.0  
-> **Status:** Draft
-
+> **Status:** Draft  
+> [**See design website**](../../project/frontend/design-spec-preview/src/App.tsx)
 ---
 
 ## Table of Contents
