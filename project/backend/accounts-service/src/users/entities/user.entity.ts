@@ -29,6 +29,15 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role!: UserRole;
 
+  @Column({ default: false })
+  isOtpVerified!: boolean;
+
+  @Column({ nullable: true })
+  otpCode!: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  otpExpiresAt!: Date;
+
   @CreateDateColumn()
   createdAt!: Date;
 
