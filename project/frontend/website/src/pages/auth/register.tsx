@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
 import { Input, PasswordInput, Select, Button, OtpInput } from '../../components/ui';
 import { authApi } from '../../services/api';

@@ -85,7 +85,8 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 }
 
 export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
-  const { hasRole, canAccess } = useAuth();
+  //const { hasRole, canAccess } = useAuth();
+  const { hasRole } = useAuth();
   const isAdmin = hasRole('admin');
   const [filter, setFilter] = useState<CampaignStatus | 'all'>('all');
   const [newOpen, setNewOpen] = useState(false);

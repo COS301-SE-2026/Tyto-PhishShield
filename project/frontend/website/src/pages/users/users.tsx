@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
@@ -56,7 +56,7 @@ function UserActionsModal({ user, isOpen, onClose }: { user: typeof MOCK_USERS[0
 }
 
 export function Users({ onNavigate, activePath }: UsersProps) {
-  const { canAccess } = useAuth();
+  //const { canAccess } = useAuth();
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');

@@ -1,6 +1,5 @@
-import React from 'react';
 import { LogoLockup } from '../components/ui/owl-logo';
-import { Button, ThemeToggle } from '../components/ui';
+import { ThemeToggle } from '../components/ui';
 import { useTheme } from '../context/theme-context';
 
 interface HomeProps {

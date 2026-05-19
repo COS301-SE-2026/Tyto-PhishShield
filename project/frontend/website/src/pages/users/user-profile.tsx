@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge, Button, Modal } from '../../components/ui';
+import { Card, Button } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 
@@ -30,7 +29,8 @@ const DEPT_STATS = [
 ];
 
 export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps) {
-  const { user: currentUser, hasRole, canAccess } = useAuth();
+  //const { user: currentUser, hasRole, canAccess } = useAuth();
+  const { user: currentUser, hasRole } = useAuth();
   const { addToast } = useToast();
   const isOwnProfile = !userId;
   const isAdmin = hasRole('admin');

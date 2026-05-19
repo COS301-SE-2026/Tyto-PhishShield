@@ -1,4 +1,4 @@
-import React, { useState, useEffect, JSX } from 'react';
+import { useState, useEffect, JSX } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
@@ -341,7 +341,8 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
 }
 
 export function Dashboard({ onNavigate, activePath }: DashboardProps) {
-  const { user, canAccess } = useAuth();
+  //const { user, canAccess } = useAuth();
+  const { canAccess } = useAuth();
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [showXpAnim, setShowXpAnim] = useState(false);
   const [xpDelta] = useState(120);

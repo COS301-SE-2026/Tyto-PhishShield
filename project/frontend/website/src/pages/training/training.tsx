@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Modal } from '../../components/ui';
-import { useAuth } from '../../context/auth-context';
+//import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import type { TrainingStatus } from '../../types';
 
@@ -115,7 +115,7 @@ function QuizModal({ module: mod, isOpen, onClose, onComplete }: {
 }
 
 export function Training({ onNavigate, activePath }: TrainingProps) {
-  const { canAccess } = useAuth();
+  //const { canAccess } = useAuth();
   const { addToast } = useToast();
   const [quizModule, setQuizModule] = useState<Module | null>(null);
   const [modules, setModules] = useState<Module[]>(MODULES);

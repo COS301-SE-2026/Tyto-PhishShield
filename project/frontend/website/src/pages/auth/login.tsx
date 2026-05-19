@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
-import { Input, PasswordInput, Button, Modal, Spinner } from '../../components/ui';
+import { Input, PasswordInput, Button, Modal } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { authApi } from '../../services/api';
