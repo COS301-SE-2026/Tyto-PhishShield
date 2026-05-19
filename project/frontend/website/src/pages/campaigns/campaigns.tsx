@@ -75,7 +75,7 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           onChange={e => set('scheduledDate', e.target.value)} />
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <Button variant="ghost" onClick={onClose} style={{ paddingLeft: 20, paddingRight: 20 }}>Cancel</Button>
-          <Button fullWidth loading={loading} disabled={!valid} onClick={handleCreate}>
+          <Button fullWidth loading={loading} disabled={!valid} onClick={() => { void handleCreate(); }}>
             Save as Draft
           </Button>
         </div>

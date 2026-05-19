@@ -153,7 +153,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                     {(user?.role ?? 'user').charAt(0).toUpperCase() + (user?.role ?? 'user').slice(1)} — contact your administrator to change
                   </div>
                 </div>
-                <Button loading={profileLoading} onClick={handleSaveProfile} style={{ alignSelf: 'flex-start' }}>
+                <Button loading={profileLoading} onClick={() => { void handleSaveProfile(); }} style={{ alignSelf: 'flex-start' }}>
                   Save Changes
                 </Button>
               </div>
@@ -169,7 +169,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 <PasswordInput label="Current password" placeholder="••••••••" value={currentPw} onChange={e => setCurrentPw(e.target.value)} />
                 <PasswordInput label="New password" placeholder="Min. 8 characters" value={newPw} onChange={e => { setNewPw(e.target.value); setPwError(''); }} />
                 <PasswordInput label="Confirm new password" placeholder="Repeat new password" value={confirmPw} onChange={e => { setConfirmPw(e.target.value); setPwError(''); }} error={pwError} />
-                <Button loading={pwLoading} onClick={handleChangePw} style={{ alignSelf: 'flex-start' }}>
+                <Button loading={pwLoading} onClick={() => { void handleChangePw(); }} style={{ alignSelf: 'flex-start' }}>
                   Update Password
                 </Button>
               </div>

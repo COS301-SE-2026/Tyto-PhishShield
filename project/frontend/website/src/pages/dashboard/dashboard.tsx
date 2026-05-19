@@ -104,7 +104,7 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <Button variant="ghost" onClick={onClose} style={{ flex: '0 0 auto', paddingLeft: 20, paddingRight: 20 }}>Cancel</Button>
-          <Button fullWidth loading={loading} disabled={!valid} onClick={handleCreate}>
+          <Button fullWidth loading={loading} disabled={!valid} onClick={() => { void handleCreate(); }}>
             Save as Draft
           </Button>
         </div>

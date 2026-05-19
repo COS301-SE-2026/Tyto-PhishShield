@@ -1,8 +1,5 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 
-// import AppLayout from './components/layout/app-layout';
-// import AuthLayout from './components/layout/auth-layout';
-
 import { Home } from './pages/home';
 import { Login } from './pages/auth/login';
 import { Register } from './pages/auth/register';
@@ -18,33 +15,35 @@ import { Settings } from './pages/settings/settings';
 function App() {
   const navigate = useNavigate();
 
+  const handleNavigate = (path: string) => {
+    void navigate(path);
+  };
+
   return (
     <Routes>
-      <Route path="/" element={<Home onNavigate={navigate} />} />
+      <Route path="/" element={<Home onNavigate={handleNavigate} />} />
 
-      <Route path="/login" element={<Login onNavigate={navigate} />} />
+      <Route path="/login" element={<Login onNavigate={handleNavigate} />} />
 
-      <Route path="/register" element={<Register onNavigate={navigate} />} />
+      <Route path="/register" element={<Register onNavigate={handleNavigate} />} />
 
-      <Route path="/dashboard" element={<Dashboard onNavigate={navigate} activePath="/dashboard" />} />
+      <Route path="/dashboard" element={<Dashboard onNavigate={handleNavigate} activePath="/dashboard" />} />
 
-      <Route path="/analytics" element={<Analytics onNavigate={navigate} activePath="/analytics" />} />
-        
-      <Route path="/analytics/reports" element={<Reports onNavigate={navigate} activePath="/analytics/reports" />} />
-        
-      <Route path="/training" element={<Training onNavigate={navigate} activePath="/training" />} />
-        
-      <Route path="/campaigns" element={<Campaigns onNavigate={navigate} activePath="/campaigns" />} />
-       
-      <Route path="/users" element={<Users onNavigate={navigate} activePath="/users" />} />
-        
-      <Route path="/users/profile" element={<UserProfile onNavigate={navigate} activePath="/users/profile" />} />
-        
-      <Route path="/settings" element={<Settings onNavigate={navigate} activePath="/settings" />} />
+      <Route path="/analytics" element={<Analytics onNavigate={handleNavigate} activePath="/analytics" />} />
 
+      <Route path="/analytics/reports" element={<Reports onNavigate={handleNavigate} activePath="/analytics/reports" />} />
+
+      <Route path="/training" element={<Training onNavigate={handleNavigate} activePath="/training" />} />
+
+      <Route path="/campaigns" element={<Campaigns onNavigate={handleNavigate} activePath="/campaigns" />} />
+
+      <Route path="/users" element={<Users onNavigate={handleNavigate} activePath="/users" />} />
+
+      <Route path="/users/profile" element={<UserProfile onNavigate={handleNavigate} activePath="/users/profile" />} />
+
+      <Route path="/settings" element={<Settings onNavigate={handleNavigate} activePath="/settings" />} />
     </Routes>
   );
 }
 
 export default App;
-
