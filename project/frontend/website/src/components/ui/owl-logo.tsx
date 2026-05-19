@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function OwlLogo({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 36 36" fill="none" aria-label="PhishShield logo">

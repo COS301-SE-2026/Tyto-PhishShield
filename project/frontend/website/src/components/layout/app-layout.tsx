@@ -1,4 +1,4 @@
-import React, { useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Sidebar } from './sidebar';
 import { ThemeToggle } from '../ui';
 import { useAuth } from '../../context/auth-context';

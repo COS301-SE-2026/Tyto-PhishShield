@@ -10,13 +10,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-const buttonStyles: Record<string, string> = {
-  primary:   'bg-primary text-white border-transparent hover:bg-primary-hover',
-  secondary: 'bg-transparent text-primary border-primary hover:bg-primary-light',
-  danger:    'bg-danger text-white border-transparent hover:opacity-90',
-  ghost:     'bg-transparent text-secondary border-transparent hover:bg-hover',
-  outline:   'bg-transparent text-primary-text border-border hover:bg-hover',
-};
+// const buttonStyles: Record<string, string> = {
+//   primary:   'bg-primary text-white border-transparent hover:bg-primary-hover',
+//   secondary: 'bg-transparent text-primary border-primary hover:bg-primary-light',
+//   danger:    'bg-danger text-white border-transparent hover:opacity-90',
+//   ghost:     'bg-transparent text-secondary border-transparent hover:bg-hover',
+//   outline:   'bg-transparent text-primary-text border-border hover:bg-hover',
+// };
 
 const sizeStyles: Record<string, string> = {
   sm: 'px-3 py-1.5 text-xs font-semibold rounded-md',
@@ -219,7 +219,7 @@ export function Badge({ children, variant = 'primary' }: { children: ReactNode; 
 // Card
 
 export function Card({
-  children, className, style, onClick,
+  children, style, onClick,
 }: { children: ReactNode; className?: string; style?: React.CSSProperties; onClick?: () => void }) {
   return (
     <div
