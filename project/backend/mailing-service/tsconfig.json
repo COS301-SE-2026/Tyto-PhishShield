@@ -15,8 +15,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "skipLibCheck": true,
-    "types": ["jest"]
+    "skipLibCheck": true
   },
-  "exclude": ["node_modules", "dist", "test","eslint.config.mts","jest.config.ts"]
+  "exclude": ["node_modules", "dist", "test", "eslint.config.mts"]
 }
