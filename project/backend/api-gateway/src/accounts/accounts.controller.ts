@@ -67,6 +67,16 @@ export class AccountsController {
       },
     },
   })
+
+  @Post('auth/verify-otp')
+  @ApiOperation({ summary: 'Verify OTP code after registration' })
+  verifyOtp(@Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/verify-otp`,
+      method: 'POST',
+      data: body,
+    });
+  }
   login(@Body() body: unknown) {
     return this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/auth/login`,
