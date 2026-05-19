@@ -71,6 +71,42 @@ export class AuthService {
     return this.cachedMgmtToken;
   }
 
+  private async sendOtpEmail(email: string, otpCode: string): Promise<void> {
+    const resendApiKey = this.config.get<string>('RESEND_API_KEY');
+    const senderEmail = this.config.get<string>('RESEND_EMAIL', 'onboarding@resend.dev');
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          'https://api.resend.com/emails',
+          {
+            from: `PhishShield Verification <${senderEmail}>`,
+            to: [email],
+            subject: 'Your PhishShield Verification Code',
+            html: `
+              <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px;">
+                <h2 style="color: #333;">Welcome to Tyto PhishShield!</h2>
+                <p>Please use the following One-Time Password (OTP) to complete your registration process:</p>
+                <div style="background-color: #f4f4f9; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #4F46E5; margin: 20px 0; border-radius: 5px;">
+                  ${otpCode}
+                </div>
+                <p style="color: #666; font-size: 12px;">This code is valid for 15 minutes. If you did not request this, please ignore this email.</p>
+              </div>
+            `,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${resendApiKey}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+    } catch (err) {
+      console.error('Failed to send OTP via Resend:', err);
+    }
+  }
+
   async register(
     dto: RegisterDto,
   ): Promise<{ message: string; userId: string }> {
@@ -104,19 +140,39 @@ export class AuthService {
       );
     }
 
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 15);
+
     const user = await this.usersService.create({
       auth0Id: auth0User.user_id,
       email: dto.email,
       name: dto.name,
       role: UserRole.USER,
+      isOtpVerified: false,
+      otpCode: generatedOtp,
+      otpExpiresAt: expiryTime,
     });
 
-    return { message: 'Registration successful', userId: user.id };
+    await this.sendOtpEmail(dto.email, generatedOtp);
+
+    return { message: 'Registration successful. Please verify your OTP.', userId: user.id };
   }
 
   async login(
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number }> {
+    // STRICT SECURITY GATE: Check if user exists locally and verified OTP first
+    const localUser = await this.usersService.findByEmail(dto.email);
+    
+    if (!localUser) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    if (!localUser.isOtpVerified) {
+      throw new UnauthorizedException('Please verify your email via OTP before logging in.');
+    }
+
     const domain = this.config.get<string>('AUTH0_DOMAIN');
 
     try {
