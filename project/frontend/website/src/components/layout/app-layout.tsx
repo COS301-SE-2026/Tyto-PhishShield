@@ -1,8 +1,8 @@
 import React, { useState, type ReactNode } from 'react';
-import { Sidebar } from './Sidebar';
+import { Sidebar } from './sidebar';
 import { ThemeToggle } from '../ui';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/auth-context';
+import { useTheme } from '../../context/theme-context';
 
 interface AppLayoutProps {
   children: ReactNode;

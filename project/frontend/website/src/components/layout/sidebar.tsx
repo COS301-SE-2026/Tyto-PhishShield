@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { LogoLockup } from '../ui/OwlLogo';
-import { useAuth } from '../../context/AuthContext';
+import { LogoLockup } from '../ui/owl-logo';
+import { useAuth } from '../../context/auth-context';
 
 interface NavItem {
   id: string;

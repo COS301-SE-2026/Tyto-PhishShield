@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AppLayout } from '../../components/layout/AppLayout';
+import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/auth-context';
+import { useToast } from '../../context/toast-context';
 
 interface UsersProps { onNavigate: (path: string) => void; activePath: string; }
 
@@ -79,7 +79,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
       return true;
     })
     .sort((a, b) => {
-      let av = 0, bv = 0;
+      let av: number = 0, bv: number = 0;
       if (sortKey === 'xp') { av = a.xp; bv = b.xp; }
       if (sortKey === 'streak') { av = a.streak; bv = b.streak; }
       if (sortKey === 'clickRate') { av = parseFloat(a.clickRate); bv = parseFloat(b.clickRate); }

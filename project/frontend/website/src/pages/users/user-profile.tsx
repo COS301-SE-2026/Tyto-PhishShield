@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AppLayout } from '../../components/layout/AppLayout';
+import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Modal } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/auth-context';
+import { useToast } from '../../context/toast-context';
 
 interface UserProfileProps {
   onNavigate: (path: string) => void;

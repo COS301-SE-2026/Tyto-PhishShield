@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AuthLayout } from '../../components/layout/AuthLayout';
+import { AuthLayout } from '../../components/layout/auth-layout';
 import { Input, PasswordInput, Button, Modal, Spinner } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/auth-context';
+import { useToast } from '../../context/toast-context';
 import { authApi } from '../../services/api';
 
 interface LoginProps {
