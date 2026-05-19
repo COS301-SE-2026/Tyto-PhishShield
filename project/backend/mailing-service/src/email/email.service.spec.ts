@@ -10,6 +10,7 @@ import {
   GeneratedEmail,
   EmailDifficulty,
 } from '../entities/generated-emails.entity';
+import { GenerateEmailDto } from '../dto/generate-email.dto';
 
 // Mock Resend client
 // mockResendSend is used to avoid using any.
@@ -83,6 +84,33 @@ describe('EmailService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('createEmail', () => {
+    it('should generate a reference number and save the email', async () => {
+      const createDto: GenerateEmailDto = {
+        sender: 'admin@domain.com',
+        alias: 'Admin',
+        recipient: 'target@company.com',
+        subject: 'Action Required',
+        content: '<p>Click here</p>',
+        difficulty: EmailDifficulty.HARD,
+      };
+
+      mockEmailRepository.create.mockReturnValue(mockEmail);
+      mockEmailRepository.save.mockResolvedValue(mockEmail);
+
+      const result = await service.createEmail(createDto);
+
+      expect(mockEmailRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...createDto,
+          reference_number: expect.stringMatching(/^PHISH-[0-9A-F]{8}$/),
+        }),
+      );
+      expect(mockEmailRepository.save).toHaveBeenCalledWith(mockEmail);
+      expect(result).toEqual(mockEmail);
+    });
+  });
+
   describe('getEmailByReference', () => {
     it('should return an email if it exists', async () => {
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
@@ -123,5 +151,53 @@ describe('EmailService', () => {
         InternalServerErrorException,
       );
     });
+  });
+
+  describe('getAllEmails', () => {
+    it('should return an array of emails', async () => {
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
+
+      const result = await service.getAllEmails();
+
+      expect(mockEmailRepository.find).toHaveBeenCalled();
+      expect(result).toEqual([mockEmail]);
+    });
+  });
+
+  describe('updateEmail', () => {
+    it('should update and return the email', async () => {
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+
+      const updateDto = { subject: 'Updated Phishing Subject' };
+      const updatedEmail = { ...mockEmail, ...updateDto };
+      mockEmailRepository.save.mockResolvedValue(updatedEmail);
+
+      const result = await service.updateEmail('PHISH-001', updateDto);
+
+      expect(mockEmailRepository.findOne).toHaveBeenCalledWith({
+        where: { reference_number: 'PHISH-001' },
+      });
+      expect(mockEmailRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining(updateDto),
+      );
+      expect(result).toEqual(updatedEmail);
+    });
+  });
+
+  it('should successfully send an email without an alias', async () => {
+
+    const emailWithoutAlias = { ...mockEmail };
+    delete emailWithoutAlias.alias;
+
+    mockEmailRepository.findOne.mockResolvedValue(emailWithoutAlias);
+
+    const result = await service.sendEmail('PHISH-001');
+
+    expect(mockResendSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: emailWithoutAlias.sender,
+      }),
+    );
+    expect(result.success).toBe(true);
   });
 });

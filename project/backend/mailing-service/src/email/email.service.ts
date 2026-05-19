@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { GeneratedEmail } from '../entities/generated-emails.entity';
 import { Resend, CreateEmailResponse } from 'resend';
 import { GenerateEmailDto } from '../dto/generate-email.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class EmailService {
@@ -27,7 +28,14 @@ export class EmailService {
   }
 
   async createEmail(dto: GenerateEmailDto): Promise<GeneratedEmail> {
-    const newEmail = this.emailRepository.create(dto);
+    const uniqueHash = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const generatedReference = `PHISH-${uniqueHash}`;
+
+    const newEmail = this.emailRepository.create({
+      ...dto,
+      reference_number: generatedReference,
+    });
+
     return this.emailRepository.save(newEmail);
   }
 

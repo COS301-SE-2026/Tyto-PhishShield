@@ -17,7 +17,7 @@ describe('EmailController', () => {
     sendEmail: jest.fn(),
   };
 
-  // Mock the GenerateEmailDto
+  // Mock the email data returned form db
   const mockEmail = {
     email_id: 'uuid-1234',
     reference_number: 'PHISH-001',
@@ -30,10 +30,20 @@ describe('EmailController', () => {
     created_at: new Date(),
   };
 
+  // Mock the GenerateEmailDto
+  const mockCreateDto: GenerateEmailDto = {
+    sender: 'security@domain.com',
+    alias: 'IT Support',
+    recipient: 'target@company.com',
+    subject: 'Urgent: Password Reset',
+    content: '<p>Please reset your password</p>',
+    difficulty: EmailDifficulty.EASY,
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmailController],
-      providers: [{ provide: EmailService, useValue: mockEmailService}],
+      providers: [{ provide: EmailService, useValue: mockEmailService }],
     }).compile();
 
     controller = module.get<EmailController>(EmailController);
@@ -50,15 +60,14 @@ describe('EmailController', () => {
 
   describe('createEmail', () => {
     it('should create and return an email', async () => {
-      const dto: GenerateEmailDto = { ...mockEmail };
       mockEmailService.createEmail.mockResolvedValue(mockEmail);
 
-      const result = await controller.createEmail(dto);
-      expect(service.createEmail).toHaveBeenCalledWith(dto);
+      const result = await controller.createEmail(mockCreateDto);
+
+      expect(service.createEmail).toHaveBeenCalledWith(mockCreateDto);
       expect(result).toEqual(mockEmail);
     });
   });
-
   describe('getAllEmails', () => {
     it('should return an array of emails', async () => {
       mockEmailService.getAllEmails.mockResolvedValue([mockEmail]);
