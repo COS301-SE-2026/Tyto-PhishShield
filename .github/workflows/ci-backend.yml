@@ -7,24 +7,243 @@ on:
     branches: [main, dev]
 
 jobs:
-    API-Gateway-checks:
-        name: API Gateway Backend CI
+    install:
+      name: Install dependencies
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          node-version: [24]
+      steps:
+        - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        - name: Install pnpm
+          uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+          with:
+            version: 11.1.1
+        - name: Use Node.js ${{ matrix.node-version }}
+          uses: actions/setup-node@v6
+          with:
+            node-version: ${{ matrix.node-version }}
+            cache: "pnpm"
+        - name: Install dependencies
+          run: pnpm install --frozen-lockfile
+        - name: Upload node_modules
+          uses: actions/upload-artifact@v7
+          with:
+            name: node-modules
+            path: node_modules
+    
+    API-Gateway-lint:
+        name: API Gateway Backend lint
+        needs: install
         runs-on: ubuntu-latest
-
+        strategy:
+          matrix:
+            node-version: [24]
         steps:
-            - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-            - uses: pnpm/action-setup@v4.3.0  # v4.3.0
-              with:
-                version: 10.33.4
-            - name: Install dependencies
-              working-directory: ./Project/Backend/API_Gateway
-              run: pnpm install --frozen-lockfile
-            - name: test
-              working-directory: ./Project/Backend/API_Gateway
-              run: pnpm run test
-            - name: lint
-              working-directory: ./Project/Backend/API_Gateway
-              run: pnpm run lint
-            - name: build
-              working-directory: ./Project/Backend/API_Gateway
-              run: pnpm run build
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:api-gateway
+          
+    API-Gateway-tests:
+        name: API Gateway Backend tests
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: test
+            run: pnpm run test:api-gateway
+    
+    API-Gateway-build:
+        name: API Gateway Backend build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:api-gateway
+
+    Accounts-Service-lint:
+        name: Accounts Service Backend lint
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:accounts-service
+
+    Accounts-Service-tests:
+        name: Accounts Service Backend tests
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: test
+            run: pnpm run test:accounts-service
+    
+    Accounts-Service-build:
+        name: Accounts Service Backend build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:accounts-service
+
+    Mailing-Service-lint:
+        name: Mailing Service Backend lint
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:mailing-service
+
+    Mailing-Service-tests:
+        name: Mailing Service Backend tests
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: test
+            run: pnpm run test:mailing-service
+    
+    Mailing-Service-build:
+        name: Mailing Service Backend build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run  build:mailing-service

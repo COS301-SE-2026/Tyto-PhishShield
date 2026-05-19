@@ -1,2 +1,0 @@
-allowBuilds:
-  '@nestjs/core': true

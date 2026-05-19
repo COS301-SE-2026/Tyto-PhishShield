@@ -7,24 +7,219 @@ on:
     branches: [main, dev]
 
 jobs:
-    Website-checks:
-        name: Website Frontend CI
+    install:
+      name: Install dependencies
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          node-version: [24]
+      steps:
+        - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        - name: Install pnpm
+          uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+          with:
+            version: 11.1.1
+        - name: Use Node.js ${{ matrix.node-version }}
+          uses: actions/setup-node@v6
+          with:
+            node-version: ${{ matrix.node-version }}
+            cache: "pnpm"
+        - name: Install dependencies
+          run: pnpm install --frozen-lockfile
+        - name: Upload node_modules
+          uses: actions/upload-artifact@v7
+          with:
+            name: node-modules
+            path: node_modules
+    
+    Website-lint:
+        name: website lint
+        needs: install
         runs-on: ubuntu-latest
-
+        strategy:
+          matrix:
+            node-version: [24]
         steps:
-            - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-            - uses: pnpm/action-setup@v4.3.0  # v4.3.0
-              with:
-                version: 10.33.4
-            - name: Install dependencies
-              working-directory: ./Project/Frontend/Website
-              run: pnpm install --frozen-lockfile
-            - name: test
-              working-directory: ./Project/Frontend/Website
-              run: pnpm test
-            - name: lint
-              working-directory: ./Project/Frontend/Website
-              run: pnpm lint
-            - name: build
-              working-directory: ./Project/Frontend/Website
-              run: pnpm build
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:website
+
+    Website-tests:
+        name: website tests
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: tests
+            run: pnpm run test:website
+    
+    Website-build:
+        name: website build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:website
+    
+    Outlook-Addin-lint:
+        name: Outlook Addin lint
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:outlook-addin
+    
+    Outlook-Addin-tests:
+        name: Outlook Addin tests
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: tests
+            run: pnpm run test:outlook-addin
+    
+    Outlook-Addin-build:
+        name: Outlook Addin build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@v6
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:outlook-addin
+      
+    design-spec-lint:
+        name: design spec lint
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@v6
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:design-spec
+    
+    design-spec-build:
+        name: design spec build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@v6
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:design-spec
