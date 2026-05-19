@@ -8,6 +8,9 @@ interface CreateUserInput {
   email: string;
   name?: string;
   role?: UserRole;
+  isOtpVerified?: boolean; 
+  otpCode?: string; 
+  otpExpiresAt?: Date;
 }
 
 @Injectable()
@@ -20,6 +23,10 @@ export class UsersService {
   create(input: CreateUserInput): Promise<User> {
     const user = this.repo.create(input);
     return this.repo.save(user);
+  }
+
+  update(id: string, updateData: Partial<User>): Promise<User> {
+    return this.repo.save({ id, ...updateData });
   }
 
   findByAuth0Id(auth0Id: string): Promise<User | null> {
