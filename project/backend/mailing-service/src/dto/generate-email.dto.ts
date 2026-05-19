@@ -1,17 +1,7 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsEnum,
-  IsString,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { EmailDifficulty } from '../entities/generated-emails.entity';
 
 export class GenerateEmailDto {
-  @IsNotEmpty()
-  @IsString()
-  reference_number: string;
-
   @IsEmail()
   sender: string;
 
