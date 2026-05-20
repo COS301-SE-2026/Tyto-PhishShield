@@ -32,7 +32,7 @@ export class User {
   @Column({ default: false })
   isOtpVerified!: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   otpCode!: string | null;
 
   @Column({ type: 'timestamp', nullable: true })

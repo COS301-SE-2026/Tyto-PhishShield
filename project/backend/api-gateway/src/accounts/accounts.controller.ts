@@ -67,19 +67,29 @@ export class AccountsController {
       },
     },
   })
-
-  @Post('auth/verify-otp')
-  @ApiOperation({ summary: 'Verify OTP code after registration' })
-  verifyOtp(@Body() body: unknown) {
+  login(@Body() body: unknown) {
     return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/verify-otp`,
+      url: `${this.accountsServiceUrl}/api/auth/login`,
       method: 'POST',
       data: body,
     });
   }
-  login(@Body() body: unknown) {
+
+  @Post('auth/verify-otp')
+  @ApiOperation({ summary: 'Verify OTP code after registration' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'code'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+        code: { type: 'string', example: '123456' },
+      },
+    },
+  })
+  verifyOtp(@Body() body: unknown) {
     return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/login`,
+      url: `${this.accountsServiceUrl}/api/auth/verify-otp`,
       method: 'POST',
       data: body,
     });

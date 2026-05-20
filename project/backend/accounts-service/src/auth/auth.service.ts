@@ -145,6 +145,7 @@ export class AuthService {
 
 
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`OTP for ${dto.email}: ${generatedOtp}`);
     const expiryTime = new Date();
     expiryTime.setMinutes(expiryTime.getMinutes() + 15); 
 
