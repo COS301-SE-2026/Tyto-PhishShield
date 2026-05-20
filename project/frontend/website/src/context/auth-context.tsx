@@ -2,7 +2,6 @@ import {
   createContext, useContext, useState, useEffect, useCallback,
   type ReactNode,
 } from 'react';
-import { authApi, tokenStore } from '../services/api';
 import type { AuthenticatedUser, UserRole } from '../types';
 
 interface AuthContextValue {
@@ -17,20 +16,46 @@ interface AuthContextValue {
 }
 
 const ROLE_LEVEL: Record<UserRole, number> = { admin: 3, analyst: 2, user: 1 };
+const BASE_URL = 'http://localhost:3001/api';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const isTokenExpired = () => {
+  const expiry = localStorage.getItem('token_expiry');
+  if (!expiry) return true;
+  return Date.now() > parseInt(expiry, 10);
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    if (!tokenStore.isValid()) { setIsLoading(false); return; }
+const token = localStorage.getItem('access_token');
+    
+    if (!token || isTokenExpired()) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_expiry');
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const me = await authApi.getMe();
+      const response: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Token verification failed');
+
+      const me: AuthenticatedUser = await response.json() as AuthenticatedUser;
       setUser(me);
     } catch {
-      tokenStore.clear();
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_expiry');
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -40,14 +65,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { void refreshUser(); }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    const response = await authApi.login({ email, password });
-    tokenStore.save(response.access_token, response.expires_in);
-    const me = await authApi.getMe();
-    setUser(me);
+    const response: Response = await fetch(`${BASE_URL}/accounts/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Invalid email or password.');
+    }
+
+    interface Token {
+      access_token: string;
+      expires_in: number;
+    };
+
+    const { access_token, expires_in } = await response.json() as Token;
+    
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
+
+    const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (meResponse.ok) {
+      const me: AuthenticatedUser = await meResponse.json() as AuthenticatedUser;
+      setUser(me);
+    }
   };
 
   const logout = () => {
-    tokenStore.clear();
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('token_expiry');
     setUser(null);
   };
 

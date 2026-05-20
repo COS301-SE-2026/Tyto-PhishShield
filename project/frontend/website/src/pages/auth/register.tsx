@@ -1,8 +1,9 @@
 import { useState} from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
-import { Input, PasswordInput, Select, Button, OtpInput } from '../../components/ui';
-import { authApi } from '../../services/api';
+import { Input, PasswordInput, Select, Button /**, OtpInput**/ } from '../../components/ui';
+//import { authApi } from '../../services/api';
 import { useToast } from '../../context/toast-context';
+import { ErrorResponse } from '../../types/index';
 
 interface RegisterProps {
   onNavigate: (path: string) => void;
@@ -119,9 +120,9 @@ export function Register({ onNavigate }: RegisterProps) {
   const [department, setDepartment] = useState('it_security');
   const [role, setRole] = useState<'User' | 'Analyst' | 'Admin'>('User');
 
-  const [otp, setOtp] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const [registeredUserId, setRegisteredUserId] = useState('');
+  //const [otp, setOtp] = useState('');
+  //const [otpError, setOtpError] = useState('');
+  //const [registeredUserId, setRegisteredUserId] = useState('');
 
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
@@ -158,14 +159,27 @@ export function Register({ onNavigate }: RegisterProps) {
   const handleStep2Continue = async () => {
     setLoading(true);
     try {
-      const result = await authApi.register({
-        email,
-        password,
-        name: `${firstName} ${lastName}`.trim(),
+      const response = await fetch('http://localhost:3001/api/accounts/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          name: `${firstName} ${lastName}`.trim()
+        }),
       });
-      setRegisteredUserId(result.userId);
+      if (!response.ok) {
+        const errorData: ErrorResponse  = await response.json().catch(() => ({})) as ErrorResponse;
+        throw new Error(errorData.message ?? `Server responded with ${response.status}`);
+      }
+      /*setRegisteredUserId(result.userId);
       // OTP (server-side)
-      addToast({ type: 'info', title: 'OTP sent', message: `A verification code has been sent to ${email}` });
+      addToast({ type: 'info', title: 'OTP sent', message: `A verification code has been sent to ${email}` });*/
+      if (!response.ok) {
+        const errorData: ErrorResponse = await response.json().catch(() => ({})) as ErrorResponse;
+        throw new Error(errorData.message ?? `Server responded with ${response.status}`);
+      }
+      addToast({ type: 'success', title: 'Registration complete!', message: 'Account successfully created.' });
       setStep(3);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed. Please try again.';
@@ -175,7 +189,7 @@ export function Register({ onNavigate }: RegisterProps) {
     }
   };
 
-  const handleOtpSubmit = async () => {
+  /* const handleOtpSubmit = async () => {
     if (otp.length < 5) { setOtpError('Please enter the full 5-digit code.'); return; }
     setLoading(true); setOtpError('');
     try {
@@ -192,7 +206,7 @@ export function Register({ onNavigate }: RegisterProps) {
   const handleResendOtp = () => {
     setOtp(''); setOtpError('');
     addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}` });
-  };
+  };  */
 
     const rightPanel = (
     <div style={{ width: '100%', maxWidth: 410 }}>
@@ -322,67 +336,32 @@ export function Register({ onNavigate }: RegisterProps) {
             </Button>
             <Button fullWidth loading={loading} onClick={() => { void handleStep2Continue(); }} disabled={!step2Valid} 
               style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}>
-              Continue
+              Complete Registration
             </Button>
           </div>
         </>
       )}
 
-      {/* Step 3 — OTP */}
       {step === 3 && (
-        <>
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <div style={{
-            display: 'inline-block', background: 'var(--color-primary-light)', color: 'var(--color-primary)',
-            fontSize: 11, fontWeight: 700, padding: '3px 11px', borderRadius: 9999, letterSpacing: '.3px',
-            marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif',
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'var(--color-success-light)', border: '2px solid var(--color-success)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
           }}>
-            STEP 3 OF 3
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <h1 style={{ fontSize: 23, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Confirm your email
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Account Created!
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 8, lineHeight: 1.6, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            We sent a 5-digit verification code to
-          </p>
-          <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, marginBottom: 28, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            {email}
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, marginBottom: 32, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Your account for <strong>{email}</strong> has been successfully configured. You can now access your dashboard using your password credentials.
           </p>
 
-          <div style={{ marginBottom: otpError ? 8 : 20 }}>
-            <OtpInput value={otp} onChange={setOtp} length={5} />
-          </div>
-
-          {otpError && (
-            <p style={{ fontSize: 12, color: 'var(--color-danger)', textAlign: 'center', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              {otpError}
-            </p>
-          )}
-
-          <Button fullWidth loading={loading} onClick={() => { void handleOtpSubmit(); }} 
-            style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}
-            disabled={otp.length < 5}>
-            Verify &amp; Go to Login
+          <Button fullWidth onClick={() => onNavigate('/login')} style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}>
+            Proceed to Login
           </Button>
-
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <button
-              onClick={handleResendOtp}
-              style={{
-                background: 'none', border: 'none', color: 'var(--color-primary)',
-                fontSize: 12, cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif',
-              }}
-            >
-              Didn't receive a code? Resend
-            </button>
-          </div>
-
-          <p style={{
-            textAlign: 'center', marginTop: 10, fontSize: 11,
-            color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif',
-          }}>
-            After verification you'll be redirected to login.
-          </p>
-        </>
+        </div>
       )}
     </div>
   );
