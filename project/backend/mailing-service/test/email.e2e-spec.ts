@@ -39,9 +39,9 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post('/emails')
       .send({
-        sender: 'test@capstone-five-guys.dns.net.za',
+        recipient: process.env.OUR_EMAIL,
+        sender: `test@${process.env.FIVEGUYS_DOMAIN}`,
         alias: 'tester',
-        recipient: 'cos301.fiveguys@gmail.com',
         subject: 'E2E Test',
         content: '<p>This is a test</p>',
         difficulty: EmailDifficulty.MEDIUM,
@@ -49,7 +49,7 @@ describe('Email service integration test', () => {
       .expect(201)
       .expect((res) => {
         expect(res.body.reference_number).toBeDefined();
-        expect(res.body.recipient).toEqual('cos301.fiveguys@gmail.com');
+        expect(res.body.recipient).toEqual(process.env.OUR_EMAIL);
         testReferenceNumber = res.body.reference_number;
       });
   });
