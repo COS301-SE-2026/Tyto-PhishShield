@@ -1,3 +1,9 @@
+/**
+ * Bootstrap for the API Gateway application.
+ *
+ * - Creates and configures the Nest application (validation, CORS, Swagger).
+ * - Starts the HTTP server on the configured port.
+ */
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
@@ -8,7 +14,17 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.setGlobalPrefix('api');
-  app.enableCors();
+  app.enableCors({
+    origin: [
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',  
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',   
+      'http://localhost:3001',  
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
   // Swagger — this gives the frontend team a visual UI to see all endpoints
   // accessible at http://localhost:3001/api-docs

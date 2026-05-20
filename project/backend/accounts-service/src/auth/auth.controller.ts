@@ -1,4 +1,17 @@
-import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
+/**
+ * AuthController — exposes authentication endpoints for registration and login.
+ *
+ * - Provides `register`, `login`, and an authenticated `me` endpoint for user info.
+ */
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  HttpCode,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -20,6 +33,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(200)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }

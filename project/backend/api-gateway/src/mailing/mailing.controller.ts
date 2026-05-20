@@ -9,6 +9,11 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+/**
+ * MailingController — exposes mailing-related HTTP endpoints.
+ *
+ * - Handles creation, retrieval, update and send actions for emails/campaigns.
+ */
 import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,

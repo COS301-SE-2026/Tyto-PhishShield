@@ -1,3 +1,8 @@
+/**
+ * User entity — maps to the users table in the accounts service database.
+ *
+ * - Defines persisted fields for a registered user and role information.
+ */
 import {
   Entity,
   Column,

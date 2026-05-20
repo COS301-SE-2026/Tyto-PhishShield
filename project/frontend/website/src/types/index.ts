@@ -102,3 +102,8 @@ export interface Toast {
   title: string;
   message?: string;
 }
+
+export interface ErrorResponse {
+  message?: string;
+  code?: number;
+}
