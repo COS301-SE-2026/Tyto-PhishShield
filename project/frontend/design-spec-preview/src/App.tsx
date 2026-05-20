@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { OwlLogo } from '../../website/src/components/ui/owl-logo';
 
 const colours = [
   ['Primary Navy', '#0F172A', 'Headers, sidebars, hero sections'],
@@ -30,9 +31,14 @@ function App() {
     <div className={`min-h-screen font-sans ${page}`}>
       <aside className="fixed left-0 top-0 hidden h-screen w-64 border-r border-slate-800 bg-[#0F172A] p-6 text-white lg:block">
         <div className="mb-10">
-          <div className="text-xl font-bold tracking-tight">Tyto</div>
-          <div className="mt-1 text-xs font-medium uppercase tracking-[0.24em] text-blue-300">
-            PhishShield
+          <div className="flex items-center gap-3">
+            <OwlLogo />
+            <div>
+              <div className="text-xl font-bold tracking-tight">Tyto</div>
+              <div className="mt-1 text-xs font-medium uppercase tracking-[0.24em] text-blue-300">
+                PhishShield
+              </div>
+            </div>
           </div>
         </div>
 
