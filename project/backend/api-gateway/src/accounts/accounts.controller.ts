@@ -7,6 +7,11 @@ import {
   UseGuards,
   HttpCode,
 } from '@nestjs/common';
+/**
+ * AccountsController — lightweight controller exposing account-related routes.
+ *
+ * - Endpoints here typically proxy requests to the accounts microservice.
+ */
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';

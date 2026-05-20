@@ -1,3 +1,8 @@
+/**
+ * JwtStrategy — Passport strategy for verifying Auth0-issued JWTs.
+ *
+ * - Uses `jwks-rsa` to fetch signing keys and validates tokens for gateway routes.
+ */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
