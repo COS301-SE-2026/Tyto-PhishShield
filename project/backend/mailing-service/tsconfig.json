@@ -16,7 +16,7 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "skipLibCheck": true,
-    "types": ["jest", "node"]
+    "types": ["jest"]
   },
   "exclude": ["node_modules", "dist", "eslint.config.mts"]
 }
