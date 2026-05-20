@@ -219,6 +219,8 @@ The above domain model describes the Tyto-PhishShield system:
 	Also Users belong to a department so that the Campaign Metrics class can provide metrics related to departmental interactions with the system.
 
 ## Architecture Diagram
+![Architecture Diagram](<../images/Architecture Diagram.png>)
+
 
 ---
 For more details on user stories see: [User Stories](./User_Stories)
