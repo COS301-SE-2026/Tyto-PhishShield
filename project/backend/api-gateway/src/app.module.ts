@@ -3,9 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { AccountsModule } from './accounts/accounts.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { MailingController } from './mailing/mailing.controller';
+
 import { MailingModule } from './mailing/mailing.module';
-import { ReportController } from './report/report.controller';
+
 import { ReportModule } from './report/report.module';
 
 @Module({
@@ -15,7 +15,7 @@ import { ReportModule } from './report/report.module';
     MailingModule,
     ReportModule,
   ],
-  controllers: [AppController, MailingController, ReportController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
