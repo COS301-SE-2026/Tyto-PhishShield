@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GeneratedEmail } from './entities/generated-emails.entity';
-import { SendEmailService } from './send-email/send-email.service';
-import { SendEmailModule } from './send-email/send-email.module';
+import { EmailService } from './email/email.service';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -29,9 +29,9 @@ import { SendEmailModule } from './send-email/send-email.module';
       }),
     }),
 
-    SendEmailModule,
+    EmailModule,
   ],
   controllers: [],
-  providers: [SendEmailService],
+  providers: [EmailService],
 })
 export class MailingServiceModule {}

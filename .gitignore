@@ -58,3 +58,6 @@ build/
 # pg admin runtime volumes
 **/pgadmin_data/
 .pgpass
+
+# coverage file
+**/coverage/

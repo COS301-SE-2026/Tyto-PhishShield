@@ -11,7 +11,7 @@ export enum EmailDifficulty {
   HARD = 'hard',
 }
 
-@Entity({ name: 'generated_emails', schema: 'mailing-service' })
+@Entity({ name: 'generated_emails', schema: 'mailing' })
 export class GeneratedEmail {
   @PrimaryGeneratedColumn('uuid')
   email_id: string;
