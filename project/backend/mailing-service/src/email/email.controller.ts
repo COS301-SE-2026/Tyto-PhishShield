@@ -48,7 +48,23 @@ export class EmailController {
   @HttpCode(HttpStatus.OK)
   async sendEmail(
     @Param('referenceNumber') referenceNumber: string,
+    @Body('recipient') recipient: string,
   ): Promise<{ success: boolean; message: string; data: CreateEmailResponse }> {
-    return this.sendMailService.sendEmail(referenceNumber);
+    return this.sendMailService.sendEmail(referenceNumber, recipient);
+  }
+
+  @Post(':referenceNumber/schedule-send-single')
+  @HttpCode(HttpStatus.OK)
+  async scheduleSendEmail(
+    @Param('referenceNumber') referenceNumber: string,
+    @Body('recipient') recipient: string,
+    @Body('scheduledAt') scheduledAt: string,
+  ): Promise<{ success: boolean; message: string; data: CreateEmailResponse }> {
+    const scheduledDate = new Date(scheduledAt);
+    return this.sendMailService.scheduleSendEmail(
+      referenceNumber,
+      recipient,
+      scheduledDate,
+    );
   }
 }
