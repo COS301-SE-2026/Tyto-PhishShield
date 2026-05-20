@@ -327,6 +327,9 @@ importers:
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
+      '@types/supertest':
+        specifier: ^7.2.0
+        version: 7.2.0
       eslint:
         specifier: '>=10'
         version: 10.4.0(jiti@2.7.0)
@@ -345,6 +348,9 @@ importers:
       prettier:
         specifier: ^3.8.3
         version: 3.8.3
+      supertest:
+        specifier: ^7.2.2
+        version: 7.2.2
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -13489,7 +13495,7 @@ snapshots:
 
   deep-eql@4.1.4:
     dependencies:
-      type-detect: 4.0.8
+      type-detect: 4.1.0
 
   deep-extend@0.6.0: {}
 
