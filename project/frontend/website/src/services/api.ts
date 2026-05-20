@@ -3,18 +3,18 @@ import type {
   RegisterResponse, AuthenticatedUser,
 } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:3001') + '/api';
+export const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:3001') + '/api';
 
 const ACCOUNTS_BASE =
   typeof import.meta.env.VITE_ACCOUNTS_URL === 'string'
     ? import.meta.env.VITE_ACCOUNTS_URL
-    : 'http://localhost:3002';  
+    : 'http://localhost:3002';  //This is communicating directly to the accounts service which is not what we do. We should only send requests to the api-gateway.
 
-function getToken(): string | null {
+export function getToken(): string | null {
   return localStorage.getItem('access_token');
 }
 
-async function parseResponse<T>(res: Response): Promise<T> {
+export async function parseResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   let body: unknown;
   try { body = JSON.parse(text); } catch { body = { message: text }; }
