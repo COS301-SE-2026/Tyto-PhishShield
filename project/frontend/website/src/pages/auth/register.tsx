@@ -1,8 +1,9 @@
 import { useState} from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
-import { Input, PasswordInput, Select, Button, OtpInput } from '../../components/ui';
-import { authApi } from '../../services/api';
+import { Input, PasswordInput, Select, Button /**, OtpInput**/ } from '../../components/ui';
+//import { authApi } from '../../services/api';
 import { useToast } from '../../context/toast-context';
+import { ErrorResponse } from '../../types/index';
 
 interface RegisterProps {
   onNavigate: (path: string) => void;
@@ -168,15 +169,15 @@ export function Register({ onNavigate }: RegisterProps) {
         }),
       });
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server responded with ${response.status}`);
+        const errorData: ErrorResponse  = await response.json().catch(() => ({})) as ErrorResponse;
+        throw new Error(errorData.message ?? `Server responded with ${response.status}`);
       }
       /*setRegisteredUserId(result.userId);
       // OTP (server-side)
       addToast({ type: 'info', title: 'OTP sent', message: `A verification code has been sent to ${email}` });*/
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server responded with ${response.status}`);
+        const errorData: ErrorResponse = await response.json().catch(() => ({})) as ErrorResponse;
+        throw new Error(errorData.message ?? `Server responded with ${response.status}`);
       }
       addToast({ type: 'success', title: 'Registration complete!', message: 'Account successfully created.' });
       setStep(3);

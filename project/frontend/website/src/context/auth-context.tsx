@@ -42,7 +42,7 @@ const token = localStorage.getItem('access_token');
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/accounts/auth/me`, {
+      const response: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -51,7 +51,7 @@ const token = localStorage.getItem('access_token');
       });
       if (!response.ok) throw new Error('Token verification failed');
 
-      const me: AuthenticatedUser = await response.json();
+      const me: AuthenticatedUser = await response.json() as AuthenticatedUser;
       setUser(me);
     } catch {
       localStorage.removeItem('access_token');
@@ -65,7 +65,7 @@ const token = localStorage.getItem('access_token');
   useEffect(() => { void refreshUser(); }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${BASE_URL}/accounts/auth/login`, {
+    const response: Response = await fetch(`${BASE_URL}/accounts/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -75,12 +75,17 @@ const token = localStorage.getItem('access_token');
       throw new Error('Invalid email or password.');
     }
 
-    const { access_token, expires_in } = await response.json();
+    interface Token {
+      access_token: string;
+      expires_in: number;
+    };
+
+    const { access_token, expires_in } = await response.json() as Token;
     
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
 
-    const meResponse = await fetch(`${BASE_URL}/accounts/auth/me`, {
+    const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${access_token}`,
@@ -89,7 +94,7 @@ const token = localStorage.getItem('access_token');
     });
 
     if (meResponse.ok) {
-      const me: AuthenticatedUser = await meResponse.json();
+      const me: AuthenticatedUser = await meResponse.json() as AuthenticatedUser;
       setUser(me);
     }
   };
