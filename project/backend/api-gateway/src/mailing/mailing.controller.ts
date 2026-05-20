@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GenerateEmailDto } from './dto/generate-email.dto';
 
 @ApiTags('Mailing')
 @Controller('emails')
@@ -36,7 +37,7 @@ export class MailingController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new email' })
-  createEmail(@Body() body: unknown) {
+  createEmail(@Body() body: GenerateEmailDto) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails`,
       method: 'POST',
@@ -68,7 +69,7 @@ export class MailingController {
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   updateEmail(
     @Param('referenceNumber') referenceNumber: string,
-    @Body() body: unknown,
+    @Body() body: GenerateEmailDto,
   ) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}`,
