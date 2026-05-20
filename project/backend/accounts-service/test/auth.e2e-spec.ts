@@ -1,12 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
+import { HttpModule, HttpService } from '@nestjs/axios';
 import request from 'supertest';
 import { of, throwError } from 'rxjs';
-import { HttpService } from '@nestjs/axios';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import type { AxiosResponse } from 'axios';
-import { AppModule } from '../src/app.module';
-import { User, UserRole } from '../src/users/entities/user.entity';
+import { AppController } from '../src/app.controller';
+import { AppService } from '../src/app.service';
+import { AuthController } from '../src/auth/auth.controller';
+import { AuthService } from '../src/auth/auth.service';
+import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
+import { UsersService } from '../src/users/users.service';
+import { UserRole } from '../src/users/entities/user.entity';
+import type { User } from '../src/users/entities/user.entity';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,
@@ -30,19 +37,51 @@ describe('Auth Endpoints (Integration)', () => {
   let app: INestApplication;
   let httpService: jest.Mocked<HttpService>;
 
+  const mockUsersService = {
+    create: jest.fn(),
+    findByAuth0Id: jest.fn(),
+    findByEmail: jest.fn(),
+    findAll: jest.fn(),
+  };
+
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          ignoreEnvFile: true,
+          load: [() => ({
+            AUTH0_DOMAIN: 'test.us.auth0.com',
+            AUTH0_CLIENT_ID: 'client-id',
+            AUTH0_CLIENT_SECRET: 'client-secret',
+            AUTH0_AUDIENCE: 'https://phishshield-api',
+            AUTH0_M2M_CLIENT_ID: 'm2m-client-id',
+            AUTH0_M2M_CLIENT_SECRET: 'm2m-client-secret',
+          })],
+        }),
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        HttpModule,
+      ],
+      controllers: [AppController, AuthController],
+      providers: [
+        AppService,
+        AuthService,
+        JwtStrategy,
+        { provide: UsersService, useValue: mockUsersService },
+      ],
     })
       .overrideProvider(HttpService)
       .useValue({ post: jest.fn() })
-      .overrideProvider(getRepositoryToken(User))
-      .useValue({
-        create: jest.fn().mockReturnValue(mockUser),
-        save: jest.fn().mockResolvedValue(mockUser),
-        findOne: jest.fn().mockResolvedValue(null),
-        find: jest.fn().mockResolvedValue([]),
-      })
       .compile();
 
     app = module.createNestApplication();
@@ -54,7 +93,10 @@ describe('Auth Endpoints (Integration)', () => {
   });
 
   afterAll(async () => app.close());
-  afterEach(() => jest.clearAllMocks());
+
+  // resetAllMocks clears both call history AND the mock implementation/queue
+  // This prevents unconsumed mocks from leaking between tests
+  afterEach(() => jest.resetAllMocks());
 
   // ===========================================================================
   // Use Case 1: Registration
@@ -63,9 +105,15 @@ describe('Auth Endpoints (Integration)', () => {
   describe('POST /api/auth/register', () => {
     describe('Success', () => {
       it('should return 201 with success message on valid registration', async () => {
-        httpService.post
-          .mockReturnValueOnce(of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })))
-          .mockReturnValueOnce(of(axiosOf({ user_id: 'auth0|abc123', email: 'test@example.com', name: 'Test User' })));
+        // URL-based mocking — works regardless of whether the management
+        // token is cached or not in the service
+        httpService.post.mockImplementation((url: string) => {
+          if (url.includes('/api/v2/users')) {
+            return of(axiosOf({ user_id: 'auth0|abc123', email: 'test@example.com', name: 'Test User' }));
+          }
+          return of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 }));
+        });
+        mockUsersService.create.mockResolvedValue(mockUser);
 
         return request(app.getHttpServer())
           .post('/api/auth/register')
@@ -78,9 +126,13 @@ describe('Auth Endpoints (Integration)', () => {
       });
 
       it('should return 201 when name is omitted', async () => {
-        httpService.post
-          .mockReturnValueOnce(of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })))
-          .mockReturnValueOnce(of(axiosOf({ user_id: 'auth0|abc123', email: 'test@example.com', name: 'test@example.com' })));
+        httpService.post.mockImplementation((url: string) => {
+          if (url.includes('/api/v2/users')) {
+            return of(axiosOf({ user_id: 'auth0|abc123', email: 'test@example.com', name: 'test@example.com' }));
+          }
+          return of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 }));
+        });
+        mockUsersService.create.mockResolvedValue(mockUser);
 
         return request(app.getHttpServer())
           .post('/api/auth/register')
@@ -121,9 +173,12 @@ describe('Auth Endpoints (Integration)', () => {
 
     describe('Auth0 errors', () => {
       it('should return 409 when email is already registered', async () => {
-        httpService.post
-          .mockReturnValueOnce(of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })))
-          .mockReturnValueOnce(throwError(() => ({ response: { status: 409 } })));
+        httpService.post.mockImplementation((url: string) => {
+          if (url.includes('/api/v2/users')) {
+            return throwError(() => ({ response: { status: 409 } }));
+          }
+          return of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 }));
+        });
 
         return request(app.getHttpServer())
           .post('/api/auth/register')
@@ -132,9 +187,12 @@ describe('Auth Endpoints (Integration)', () => {
       });
 
       it('should return 500 on unexpected Auth0 error', async () => {
-        httpService.post
-          .mockReturnValueOnce(of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })))
-          .mockReturnValueOnce(throwError(() => ({ response: { status: 500 } })));
+        httpService.post.mockImplementation((url: string) => {
+          if (url.includes('/api/v2/users')) {
+            return throwError(() => ({ response: { status: 500 } }));
+          }
+          return of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 }));
+        });
 
         return request(app.getHttpServer())
           .post('/api/auth/register')
@@ -151,7 +209,8 @@ describe('Auth Endpoints (Integration)', () => {
   describe('POST /api/auth/login', () => {
     describe('Success', () => {
       it('should return 200 with access_token and expires_in', async () => {
-        httpService.post.mockReturnValueOnce(
+        // Login only makes one call — no management token needed
+        httpService.post.mockReturnValue(
           of(axiosOf({ access_token: 'jwt-token', expires_in: 86400 })),
         );
 
@@ -192,7 +251,7 @@ describe('Auth Endpoints (Integration)', () => {
 
     describe('Auth0 errors', () => {
       it('should return 401 on invalid credentials', async () => {
-        httpService.post.mockReturnValueOnce(
+        httpService.post.mockReturnValue(
           throwError(() => ({ response: { status: 403 } })),
         );
 

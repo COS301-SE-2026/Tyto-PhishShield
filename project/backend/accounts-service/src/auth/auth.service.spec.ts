@@ -36,6 +36,16 @@ describe('AuthService', () => {
   let httpService: jest.Mocked<HttpService>;
   let usersService: jest.Mocked<UsersService>;
 
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
