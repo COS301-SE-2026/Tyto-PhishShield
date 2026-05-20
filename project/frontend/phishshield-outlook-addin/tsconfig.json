@@ -2,8 +2,8 @@
   "compilerOptions": {
     "allowJs": true,
     "baseUrl": ".",
-    "ignoreDeprecations": "5.0",
-    "types": ["office-js", "node"],
+    "ignoreDeprecations": "6.0",
+    "types": ["office-js", "node", "jest"],
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "jsx": "react",
