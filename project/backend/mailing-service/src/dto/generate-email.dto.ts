@@ -6,7 +6,6 @@ export class GenerateEmailDto {
   sender: string;
 
   @IsOptional()
-  @IsEmail()
   alias?: string;
 
   @IsEmail()

@@ -36,7 +36,7 @@ services:
       - .env
     environment:
       - PORT=3000
-      - MAILING_DB_HOST=db
+      - DB_HOST=db
       - MAILING_DB_PORT=5432
 
     ports:
