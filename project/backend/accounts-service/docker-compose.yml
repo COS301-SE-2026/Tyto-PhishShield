@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     container_name: ${ACCOUNTS_DB_CONTAINER}
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - accounts_pgdata:/var/lib/postgresql/data
     ports:
       - '${ACCOUNTS_DB_PORT}:5432'
     networks:
@@ -47,3 +47,6 @@ networks:
     name: backend_network
     external: true
     driver: bridge
+
+volumes:
+  accounts_pgdata:
