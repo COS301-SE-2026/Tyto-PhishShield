@@ -36,12 +36,12 @@ services:
       - .env
     environment:
       - PORT=3000
-      - MAILING_DB_HOST=db
+      - DB_HOST=db
       - MAILING_DB_PORT=5432
 
     ports:
       # Left side must be unique
-      - "${MAILING_SERVICE_PORT}:3000"
+      - "${MAILING_SERVICE_PORT}:3003"
 
     depends_on:
       - db

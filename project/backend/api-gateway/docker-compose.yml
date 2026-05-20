@@ -3,6 +3,7 @@ services:
     build:
       context: ../../..
       dockerfile: project/backend/api-gateway/Dockerfile
+    restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
       - API_GATEWAY_PORT=3001

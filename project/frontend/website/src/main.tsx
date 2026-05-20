@@ -4,11 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 
 import './index.css';
 
-import App from './App.tsx';
+import App from './app.tsx';
 
-import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
-import { ToastProvider } from './context/ToastContext';
+import { ThemeProvider } from './context/theme-context';
+import { AuthProvider } from './context/auth-context';
+import { ToastProvider } from './context/toast-context';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
