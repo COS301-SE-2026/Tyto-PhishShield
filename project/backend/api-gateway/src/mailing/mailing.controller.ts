@@ -15,6 +15,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiBearerAuth,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -80,12 +81,41 @@ export class MailingController {
 
   @Post(':referenceNumber/send-single')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Dispatch the email via Resend' })
+  @ApiOperation({ summary: 'Dispatch the email with Resend' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
-  sendEmail(@Param('referenceNumber') referenceNumber: string) {
+  @ApiBody({ schema: { example: { recipient: 'target@example.com' } } })
+  sendEmail(
+    @Param('referenceNumber') referenceNumber: string,
+    @Body('recipient') recipient: string,
+  ) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}/send-single`,
       method: 'POST',
+      data: { recipient },
+    });
+  }
+
+  @Post(':referenceNumber/schedule-send-single')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Schedule the email via Resend' })
+  @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
+  @ApiBody({
+    schema: {
+      example: {
+        recipient: 'target@example.com',
+        scheduledAt: '2026-05-25T14:30:00.000Z',
+      },
+    },
+  })
+  scheduleSendEmail(
+    @Param('referenceNumber') referenceNumber: string,
+    @Body('recipient') recipient: string,
+    @Body('scheduledAt') scheduledAt: string,
+  ) {
+    return this.proxy.forward({
+      url: `${this.mailingServiceUrl}/emails/${referenceNumber}/schedule-send-single`,
+      method: 'POST',
+      data: { recipient, scheduledAt },
     });
   }
 }
