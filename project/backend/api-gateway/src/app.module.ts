@@ -1,3 +1,9 @@
+/**
+ * AppModule — API Gateway root module.
+ *
+ * - Configures global configuration and registers backend modules.
+ * - Exposes controllers that forward requests to downstream services.
+ */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AccountsModule } from './accounts/accounts.module';

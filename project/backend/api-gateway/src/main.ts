@@ -1,3 +1,9 @@
+/**
+ * Bootstrap for the API Gateway application.
+ *
+ * - Creates and configures the Nest application (validation, CORS, Swagger).
+ * - Starts the HTTP server on the configured port.
+ */
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';

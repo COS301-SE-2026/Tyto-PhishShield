@@ -1,3 +1,8 @@
+/**
+ * AuthController — exposes authentication endpoints for registration and login.
+ *
+ * - Provides `register`, `login`, and an authenticated `me` endpoint for user info.
+ */
 import {
   Controller,
   Post,

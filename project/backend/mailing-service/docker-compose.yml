@@ -41,7 +41,7 @@ services:
 
     ports:
       # Left side must be unique
-      - "${MAILING_SERVICE_PORT}:3000"
+      - "${MAILING_SERVICE_PORT}:3003"
 
     depends_on:
       - db

@@ -1,3 +1,8 @@
+/**
+ * UsersService — business logic for user management.
+ *
+ * - Handles CRUD operations against the user repository and performs user-related checks.
+ */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';

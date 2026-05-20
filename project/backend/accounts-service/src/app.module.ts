@@ -1,3 +1,9 @@
+/**
+ * AppModule — Accounts service root module.
+ *
+ * - Configures database connection and registers Auth and Users modules.
+ * - Intended for user management and Auth0 integration.
+ */
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
