@@ -22,4 +22,9 @@ To build a specific service use: `pnpm build:<service-project-name>` <br>
 Make sure you have docker on your system. <br>
 To run containers use: `pnpm dc:up:<service-container-name>` <br>
 To stop containers use: `pnpm  dc:down:<service-container-name` <br>
-*Also see the root [package.json](../../package.json) file for all the avaliable commands.
+*Also see the root [package.json](../../package.json) file for all the avaliable commands. <br>
+
+
+To view databases using pgadmin run: `pnpm dc:up:pgadmin`<br>
+This will allow you to login to pgadmin with our credentials on `http://localhost:5050/`.<br>
+Then the databases registered in the [servers.json](/project/backend/pgadmin-container/servers.json) file will be viewable on pgadmin's website. There you can view the servers using the pgadmin credentials for the databases.
