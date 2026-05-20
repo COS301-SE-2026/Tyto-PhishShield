@@ -1,19 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UserXpDto } from './dto/user-xp.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ReportService {
-  private readonly logger = new Logger(ReportService.name);
   private readonly savedReports: CreateReportDto[] = [];
   private readonly userXpStore: Record<string, number> = {};
+
+  constructor(private readonly configService: ConfigService) {}
 
   save(report: CreateReportDto, userId: string) {
     this.savedReports.push(report);
 
-    const isPhishingEmail = report.from.includes(
-      '@capstone-five-guys.dns.net.za',
-    );
+    const domain = this.configService.get<string>('FIVEGUYS_DOMAIN') || '';
+
+    const isPhishingEmail = report.from.includes(domain);
     let returnMessage: string;
 
     if (isPhishingEmail) {
@@ -21,9 +23,6 @@ export class ReportService {
       returnMessage = 'phishing email detected';
     } else {
       returnMessage = 'not a phishing email';
-      this.logger.log(
-        `Report saved for user: ${userId}, but it was not a simulated phishing email.`,
-      );
     }
 
     return {
@@ -44,10 +43,6 @@ export class ReportService {
     }
 
     this.userXpStore[dto.userId] += dto.amount;
-
-    this.logger.log(
-      `Awarded ${dto.amount} XP to ${dto.userId}. Total: ${this.userXpStore[dto.userId]}`,
-    );
 
     return {
       success: true,
