@@ -14,9 +14,12 @@ import { EmailDifficulty } from '../src/entities/generated-emails.entity';
 //   };
 // });
 
-describe('EmailController (e2e)', () => {
+describe('Email service integration test', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
+
+  const hasLivePermission = process.env.TEST_EMAIL_SEND === 'true';
+  const liveTest = hasLivePermission ? it : it.skip;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -38,15 +41,15 @@ describe('EmailController (e2e)', () => {
       .send({
         sender: 'test@capstone-five-guys.dns.net.za',
         alias: 'tester',
-        recipient: 'dariuserasmus.b@gmail.com',
+        recipient: 'cos301.fiveguys@gmail.com',
         subject: 'E2E Test',
-        content: '<p>Click here.</p>',
+        content: '<p>This is a test</p>',
         difficulty: EmailDifficulty.MEDIUM,
       })
       .expect(201)
       .expect((res) => {
         expect(res.body.reference_number).toBeDefined();
-        expect(res.body.recipient).toEqual('dariuserasmus.b@gmail.com');
+        expect(res.body.recipient).toEqual('cos301.fiveguys@gmail.com');
         testReferenceNumber = res.body.reference_number;
       });
   });
@@ -80,16 +83,19 @@ describe('EmailController (e2e)', () => {
       });
   });
 
-  it('/emails/:referenceNumber/send-single (POST) - should trigger live send', () => {
-    return request(app.getHttpServer())
-      .post(`/emails/${testReferenceNumber}/send-single`)
-      .expect(200)
-      .expect((res) => {
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toEqual('Email sent successfully');
+  liveTest(
+    '/emails/:referenceNumber/send-single (POST) - should trigger live send',
+    () => {
+      return request(app.getHttpServer())
+        .post(`/emails/${testReferenceNumber}/send-single`)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.message).toEqual('Email sent successfully');
 
-        expect(res.body.data.data.id).toBeDefined();
-        expect(typeof res.body.data.data.id).toBe('string');
-      });
-  });
+          expect(res.body.data.data.id).toBeDefined();
+          expect(typeof res.body.data.data.id).toBe('string');
+        });
+    },
+  );
 });
