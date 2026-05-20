@@ -1,8 +1,8 @@
-import React, { useState, useEffect, JSX } from 'react';
-import { AppLayout } from '../../components/layout/AppLayout';
+import { useState, useEffect, JSX } from 'react';
+import { AppLayout } from '../../components/layout/app-layout';
 import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/auth-context';
+import { useToast } from '../../context/toast-context';
 import type { Campaign } from '../../types';
 
 interface DashboardProps {
@@ -104,7 +104,7 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <Button variant="ghost" onClick={onClose} style={{ flex: '0 0 auto', paddingLeft: 20, paddingRight: 20 }}>Cancel</Button>
-          <Button fullWidth loading={loading} disabled={!valid} onClick={handleCreate}>
+          <Button fullWidth loading={loading} disabled={!valid} onClick={() => { void handleCreate(); }}>
             Save as Draft
           </Button>
         </div>
@@ -341,7 +341,8 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
 }
 
 export function Dashboard({ onNavigate, activePath }: DashboardProps) {
-  const { user, canAccess } = useAuth();
+  //const { user, canAccess } = useAuth();
+  const { canAccess } = useAuth();
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [showXpAnim, setShowXpAnim] = useState(false);
   const [xpDelta] = useState(120);

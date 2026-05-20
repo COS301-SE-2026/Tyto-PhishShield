@@ -1,7 +1,6 @@
-import React from 'react';
-import { LogoLockup } from '../components/ui/OwlLogo';
-import { Button, ThemeToggle } from '../components/ui';
-import { useTheme } from '../context/ThemeContext';
+import { LogoLockup } from '../components/ui/owl-logo';
+import { ThemeToggle } from '../components/ui';
+import { useTheme } from '../context/theme-context';
 
 interface HomeProps {
   onNavigate: (path: string) => void;

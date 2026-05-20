@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { AuthLayout } from '../../components/layout/AuthLayout';
-import { Input, PasswordInput, Button, Modal, Spinner } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { AuthLayout } from '../../components/layout/auth-layout';
+import { Input, PasswordInput, Button, Modal } from '../../components/ui';
+import { useAuth } from '../../context/auth-context';
+import { useToast } from '../../context/toast-context';
 import { authApi } from '../../services/api';
 
 interface LoginProps {
@@ -64,7 +64,7 @@ function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
           />
           <div style={{ display: 'flex', gap: 10 }}>
             <Button variant="ghost" onClick={handleClose} style={{ flex: 1 }}>Cancel</Button>
-            <Button fullWidth loading={loading} onClick={handleSubmit} style={{ flex: 1 }}>
+            <Button fullWidth loading={loading} onClick={() => { void handleSubmit(); }} style={{ flex: 1 }}>
               Send reset link
             </Button>
           </div>
@@ -147,7 +147,7 @@ export function Login({ onNavigate }: LoginProps) {
         Sign in to your PhishShield account
       </p>
 
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={(e) => { void handleSubmit(e); }} noValidate>
         {errors.general && (
           <div style={{
             background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)',

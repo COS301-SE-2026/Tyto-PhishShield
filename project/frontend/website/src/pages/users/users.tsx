@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { AppLayout } from '../../components/layout/AppLayout';
+import { useState } from 'react';
+import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/auth-context';
+import { useToast } from '../../context/toast-context';
 
 interface UsersProps { onNavigate: (path: string) => void; activePath: string; }
 
@@ -56,7 +56,7 @@ function UserActionsModal({ user, isOpen, onClose }: { user: typeof MOCK_USERS[0
 }
 
 export function Users({ onNavigate, activePath }: UsersProps) {
-  const { canAccess } = useAuth();
+  //const { canAccess } = useAuth();
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -79,11 +79,29 @@ export function Users({ onNavigate, activePath }: UsersProps) {
       return true;
     })
     .sort((a, b) => {
-      let av = 0, bv = 0;
-      if (sortKey === 'xp') { av = a.xp; bv = b.xp; }
-      if (sortKey === 'streak') { av = a.streak; bv = b.streak; }
-      if (sortKey === 'clickRate') { av = parseFloat(a.clickRate); bv = parseFloat(b.clickRate); }
-      if (sortKey === 'name') { av = a.name.localeCompare(b.name); bv = 0; return sortDir === 'asc' ? av : -av; }
+      if (sortKey === 'name') {
+        const comparison = a.name.localeCompare(b.name);
+        return sortDir === 'asc' ? comparison : -comparison;
+      }
+
+      let av = 0;
+      let bv = 0;
+
+      if (sortKey === 'xp') {
+        av = a.xp;
+        bv = b.xp;
+      }
+
+      if (sortKey === 'streak') {
+        av = a.streak;
+        bv = b.streak;
+      }
+
+      if (sortKey === 'clickRate') {
+        av = parseFloat(a.clickRate);
+        bv = parseFloat(b.clickRate);
+      }
+
       return sortDir === 'asc' ? av - bv : bv - av;
     });
 

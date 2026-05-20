@@ -2,7 +2,7 @@
 
 const MOCK_BACKEND_URL = "http://localhost:3001/api/phishing/report";
 
-interface PhishingReportPayload {
+export interface PhishingReportPayload {
   subject: string;
   from: string;
   senderName: string;
@@ -33,7 +33,7 @@ function showNotification(message: string): void {
   });
 }
 
-async function sendReportToMockBackend(reportPayload: PhishingReportPayload): Promise<void> {
+export async function sendPhishingReport(reportPayload: PhishingReportPayload): Promise<any> {
   const response = await fetch(MOCK_BACKEND_URL, {
     method: "POST",
     headers: {
@@ -41,6 +41,12 @@ async function sendReportToMockBackend(reportPayload: PhishingReportPayload): Pr
     },
     body: JSON.stringify(reportPayload),
   });
+
+  return response;
+}
+
+async function sendReportToMockBackend(reportPayload: PhishingReportPayload): Promise<void> {
+  const response = await sendPhishingReport(reportPayload);
 
   if (!response.ok) {
     throw new Error(`Mock backend returned status ${response.status}`);
@@ -76,6 +82,20 @@ function getDateTimeCreatedAsString(dateTimeCreated: Date | undefined): string {
   return dateTimeCreated.toISOString();
 }
 
+export function buildPayload(item: Office.MessageRead, body: string): PhishingReportPayload {
+  return {
+    subject: item.subject || "",
+    from: item.from?.emailAddress || "",
+    senderName: item.from?.displayName || "",
+    itemId: item.itemId || "",
+    internetMessageId: item.internetMessageId || "",
+    dateTimeCreated: getDateTimeCreatedAsString(item.dateTimeCreated),
+    dateReported: new Date().toISOString(),
+    body,
+    source: "outlook-addin",
+  };
+}
+
 export async function action(event: Office.AddinCommands.Event): Promise<void> {
   try {
     console.log("Report Phish button clicked.");
@@ -84,23 +104,11 @@ export async function action(event: Office.AddinCommands.Event): Promise<void> {
 
     if (!item) {
       console.error("No email item selected.");
-      event.completed();
       return;
     }
 
     const emailBody = await getEmailBody(item);
-
-    const reportPayload: PhishingReportPayload = {
-      subject: item.subject || "",
-      from: item.from?.emailAddress || "",
-      senderName: item.from?.displayName || "",
-      itemId: item.itemId || "",
-      internetMessageId: item.internetMessageId || "",
-      dateTimeCreated: getDateTimeCreatedAsString(item.dateTimeCreated),
-      dateReported: new Date().toISOString(),
-      body: emailBody,
-      source: "outlook-addin",
-    };
+    const reportPayload = buildPayload(item, emailBody);
 
     console.log("=== PHISH REPORT PAYLOAD ===");
     console.log(reportPayload);

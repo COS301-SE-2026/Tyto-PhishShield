@@ -59,5 +59,15 @@ build/
 **/pgadmin_data/
 .pgpass
 
+# Jest coverage
+coverage/
+*.lcov
+coverage-final.json
+
+# nyc / istanbul coverage
+.nyc_output/
+
+# Jest cache
+jest-cache/
 # coverage file
 **/coverage/
