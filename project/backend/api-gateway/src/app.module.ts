@@ -6,11 +6,14 @@ import { AppService } from './app.service';
 
 import { MailingModule } from './mailing/mailing.module';
 
+import { ReportModule } from './report/report.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     AccountsModule,
     MailingModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],
