@@ -11,7 +11,7 @@ The Team:
 | Nico      | Theron  | u23565722      |
 | Heindrich | Jansen  | u24711358      |
 # Table of Contents
- - [Overview](#overview)
+ - [Project Vision](#project-vision)
  - [Functional Requirements](#functional-requirements)
  - [Optional Functional Requirements](#optional-functional-requirements-including-wow-factors)
  - [Non-Functional Requirements](#non-functional-requirements)
@@ -21,8 +21,13 @@ The Team:
  - [Domain Model](#domain-model)
  - [Architecture Diagram](#architecture-diagram)
 
-## Overview
-This document contains a list of all the functional and non-functional requirements that needs to be met for the project to be considered as complete. It also contains all the use cases and user stories derived from the functional requirements as well as the test cases to consider for each user story.
+## Project Vision
+Tyto-PhishShield aims to create a platform in which emplyees can be trained to detect phishing attacks. It acts as an enterprise-grade Human Risk Management
+(HRM) platform.
+
+Due to the rise of LLMs for crafting phishing attacks the check for bad grammer is no longer good enough to detect modern phishing attacks. So by using LLMs Tyto-PhishShield can create simulated phishing campaigns in order to train emplyees with realistic phishing attacks.
+
+Tyto-PhishShield aims to provide a gamified experience to emplyees to enhance user learning and thus transform your team into a human firewall.
 
 ## Functional Requirements
 **FR 1**: Outlook Add-in & Reporting Component
@@ -127,6 +132,13 @@ This document contains a list of all the functional and non-functional requireme
 **NFR 7**: Maintainability
 -	**NFR 7.1**: The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
 -	**NFR 7.2**: The system stack must be fully dockerized for handoff.
+
+## User Characteristics
+The system will make use of three types of users: Admin, Analyst, and Employee.
+- An Admin will manage user accounts, creation of phishing campaigns and viewing of user and department statistics.
+- An Analyst will be able to view detailed user and department statistics.
+- An Employee will be a general user who can view their personal XP and their position on the leaderboard. An employee will also be able to see all past interactions which updated their XP.
+
 ## Use Cases + User Stories <a id="use-cases-stories"></a>
 
 | Use Case ID | Use Case Description                                           | Agile User Story                                                                                                                                                                             |
@@ -220,6 +232,13 @@ The above domain model describes the Tyto-PhishShield system:
 
 ## Architecture Diagram
 ![Architecture Diagram](<../images/Architecture Diagram.png>)
+### Overall Software Architecture
+The system consists of three parts namely: The client side, the microservices and the event system.<br>
+The first level of the architecture is that we use a Client-Server architecture where the clients will communicate to the servers through the API gateway. Everything after the API gateway will form the server side of the architecture.<br>
+Going in deeper on the server side, to handle communication between microservices we use event driven messaging by using the event system. On the client side, clients will use a request response model to communicate with the API gateway. The primary communication protocol that will be used accross the system will by HTTP. We may use Remote Procedure Calls (RPC) if it is seen that some services require a response back from the event system.<br>
+As already mentioned two main architecture patterns are being used. Microservices is used to handle each bussiness goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate bussiness logic and create a modular and scalable platform. An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistant with one another.<br>
+
+### Architectural quality requirements
 
 
 ---
