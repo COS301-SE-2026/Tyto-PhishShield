@@ -69,3 +69,5 @@ coverage-final.json
 
 # Jest cache
 jest-cache/
+# coverage file
+**/coverage/
