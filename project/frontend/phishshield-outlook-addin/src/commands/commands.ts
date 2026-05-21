@@ -1,6 +1,6 @@
 /* global Office, console, fetch */
 
-const MOCK_BACKEND_URL = "http://localhost:3001/api/phishing/report";
+const MOCK_BACKEND_URL = "http://localhost:3010/api/phishing/report";
 
 export interface PhishingReportPayload {
   subject: string;
@@ -12,6 +12,7 @@ export interface PhishingReportPayload {
   dateReported: string;
   body: string;
   source: "outlook-addin";
+  reporterEmail: string;
 }
 
 Office.onReady(() => {
@@ -93,6 +94,7 @@ export function buildPayload(item: Office.MessageRead, body: string): PhishingRe
     dateReported: new Date().toISOString(),
     body,
     source: "outlook-addin",
+    reporterEmail: Office.context.mailbox.userProfile.emailAddress || "",
   };
 }
 
