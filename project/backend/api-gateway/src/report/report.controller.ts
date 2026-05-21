@@ -19,7 +19,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 @ApiTags('Report')
-@UseGuards(JwtAuthGuard)
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
@@ -43,24 +42,23 @@ export class ReportController {
       },
     },
   })
-  @HttpCode(201)
   @ApiBearerAuth()
-  createReport(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: CreateReportDto,
-  ) {
-    return this.reportService.save(body, req.user.auth0Id);
+  @HttpCode(201)
+  createReport(@Body() body: CreateReportDto) {
+    return this.reportService.save(body);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiBearerAuth()
   getAllReports() {
     return this.reportService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('xp')
   @ApiBearerAuth()
   getUserXp(@Req() req: AuthenticatedRequest) {
-    return this.reportService.getUserXp(req.user.auth0Id);
+    return this.reportService.getUserXp(req.user.email);
   }
 }

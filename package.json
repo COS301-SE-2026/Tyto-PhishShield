@@ -39,6 +39,9 @@
 		"lint:mailing-service": "pnpm --filter mailing-service lint",
 		"test:mailing-service": "pnpm --filter mailing-service test",
 
+		"test:backend": "pnpm --filter accounts-service test && pnpm --filter api-gateway test && pnpm --filter mailing-service test",
+		"test:backend:e2e": "pnpm --filter accounts-service test:e2e && pnpm --filter api-gateway test:e2e && pnpm --if-present --filter mailing-service test:e2e",
+
 		"build:design-spec": "pnpm --filter design-spec-preview build",
 		"dev:design-spec": "pnpm --filter design-spec-preview dev",
 		"lint:design-spec": "pnpm --filter design-spec-preview lint",
