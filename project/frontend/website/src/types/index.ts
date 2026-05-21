@@ -108,6 +108,12 @@ export interface ErrorResponse {
   statusCode?: number;
 }
 
+export interface SendEmailResponse {
+  message?: string;
+  success?: boolean;
+  data?: unknown;
+}
+
 export interface XPResponse {
   userId: string;
   xp: number;
