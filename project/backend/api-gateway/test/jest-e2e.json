@@ -4,15 +4,13 @@
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "setupFiles": ["dotenv/config"],
+  "testTimeout": 30000,
   "transform": {
-    "^.+\\.(t|j)s$": [
-      "ts-jest",
-      {
-        "tsconfig": {
-          "allowJs": true
-        }
-      }
-    ]
+    "^.+\\.(t|j)s$": ["ts-jest", {
+      "tsconfig": "./tsconfig.json"
+    }]
   },
-  "transformIgnorePatterns": ["/node_modules/(?!.*jose)/"]
+  "transformIgnorePatterns": [
+    "/node_modules/.pnpm/(?!(jose|jwks-rsa|oidc-token-hash|@panva))"
+  ]
 }
