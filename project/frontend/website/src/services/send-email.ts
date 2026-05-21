@@ -1,14 +1,6 @@
-interface SendEmailResponse {
-  message?: string;
-  success?: boolean;
-  data?: unknown;
-}
+import { SendEmailResponse, ErrorResponse } from '../types';
 
-interface ErrorResponse {
-  message?: string;
-}
-
-function isErrorResponse(value: unknown): value is ErrorResponse {
+export function isErrorResponse(value: unknown): value is ErrorResponse {
   return (
     typeof value === 'object' &&
     value !== null &&
