@@ -27,4 +27,7 @@ export class CreateReportDto {
 
   @IsIn(['outlook-addin'])
   source!: 'outlook-addin';
+
+  @IsString()
+  reporterEmail!: string;
 }

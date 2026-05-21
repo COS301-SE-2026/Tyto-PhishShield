@@ -17,27 +17,25 @@ interface AuthenticatedRequest extends Request {
   user: GatewayUser;
 }
 
-@UseGuards(JwtAuthGuard)
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Post()
   @HttpCode(201)
-  createReport(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: CreateReportDto,
-  ) {
-    return this.reportService.save(body, req.user.auth0Id);
+  createReport(@Body() body: CreateReportDto) {
+    return this.reportService.save(body);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   getAllReports() {
     return this.reportService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('xp')
   getUserXp(@Req() req: AuthenticatedRequest) {
-    return this.reportService.getUserXp(req.user.auth0Id);
+    return this.reportService.getUserXp(req.user.email);
   }
 }
