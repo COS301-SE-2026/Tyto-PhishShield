@@ -28,7 +28,17 @@ export class ReportController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['subject', 'from', 'senderName', 'itemId', 'internetMessageId', 'dateTimeCreated', 'dateReported', 'body', 'source'],
+      required: [
+        'subject',
+        'from',
+        'senderName',
+        'itemId',
+        'internetMessageId',
+        'dateTimeCreated',
+        'dateReported',
+        'body',
+        'source',
+      ],
       properties: {
         subject: { type: 'string', example: 'Welcome to Tyto-PhishShield' },
         from: { type: 'string', example: 'fiveguys@gmail.com' },
@@ -36,9 +46,12 @@ export class ReportController {
         itemId: { type: 'string', example: '1234' },
         internetMessageId: { type: 'string', example: 'ab75f23ce2' },
         dateTimeCreated: { type: 'string', example: '2026-05-18' },
-        dateReported:  { type: 'string', example: '2026-05-18' },
-        body: { type: 'string', example: 'Hello, would you like to have some cookies?' },
-        source: { type: 'string', example: 'outlook-addin' }
+        dateReported: { type: 'string', example: '2026-05-18' },
+        body: {
+          type: 'string',
+          example: 'Hello, would you like to have some cookies?',
+        },
+        source: { type: 'string', example: 'outlook-addin' },
       },
     },
   })

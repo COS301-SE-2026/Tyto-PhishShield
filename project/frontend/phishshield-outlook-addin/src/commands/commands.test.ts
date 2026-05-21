@@ -23,11 +23,11 @@
   },
 };
 
-// require is used so the Office mock exists before commands.ts is loaded
+// require is used so the Office mock exists before commands.ts is
 const { buildPayload, sendPhishingReport, action } = require("./commands");
 
 describe("commands.ts phishing report logic", () => {
-  const backendUrl = "http://localhost:3010/api/phishing/report";
+  const backendUrl = "http://localhost:3001/api/report";
   const reporterEmail = "johndaniel@tyto.co.za";
 
   beforeEach(() => {
