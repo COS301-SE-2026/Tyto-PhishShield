@@ -10,7 +10,7 @@ export class ReportService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  save(report: CreateReportDto, userId: string) {
+  save(report: CreateReportDto) {
     this.savedReports.push(report);
 
     const domain = this.configService.get<string>('FIVEGUYS_DOMAIN') || '';
@@ -19,7 +19,8 @@ export class ReportService {
     let returnMessage: string;
 
     if (isPhishingEmail) {
-      this.awardXp({ userId: userId, amount: 10 });
+      const reporterEmail = report.reporterEmail;
+      this.awardXp({ reporterEmail, amount: 10 });
       returnMessage = 'phishing email detected';
     } else {
       returnMessage = 'not a phishing email';
@@ -38,17 +39,17 @@ export class ReportService {
   }
 
   awardXp(dto: UserXpDto) {
-    if (this.userXpStore[dto.userId] === undefined) {
-      this.userXpStore[dto.userId] = 0;
+    if (this.userXpStore[dto.reporterEmail] === undefined) {
+      this.userXpStore[dto.reporterEmail] = 0;
     }
 
-    this.userXpStore[dto.userId] += dto.amount;
+    this.userXpStore[dto.reporterEmail] += dto.amount;
 
     return {
       success: true,
-      userId: dto.userId,
+      userId: dto.reporterEmail,
       added: dto.amount,
-      newTotal: this.userXpStore[dto.userId],
+      newTotal: this.userXpStore[dto.reporterEmail],
     };
   }
 
@@ -56,10 +57,10 @@ export class ReportService {
     return this.userXpStore;
   }
 
-  getUserXp(userId: string) {
+  getUserXp(reporterEmail: string) {
     return {
-      userId,
-      xp: this.userXpStore[userId] || 0,
+      reporterEmail: reporterEmail,
+      xp: this.userXpStore[reporterEmail] || 0,
     };
   }
 }
