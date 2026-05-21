@@ -12,6 +12,7 @@ export const LoadXPController = {
         try {
             const xp = await parseResponse<XPResponse>(response);
             xp.status = "Success";
+            return xp;
         } catch (error) {
             const err: Error = error as Error;
             return {
@@ -21,11 +22,5 @@ export const LoadXPController = {
                 status: "Error",
             }
         }
-        return {
-            xp: 0,
-            userId: '',
-            status: "Error",
-            message: "Not assigned",
-        };
     }
 };
