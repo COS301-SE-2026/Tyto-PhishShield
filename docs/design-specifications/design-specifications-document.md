@@ -1,5 +1,6 @@
 # Tyto-PhishShield Design Specification
-
+> Run: `pnpm dev:design-spec` to 
+> [**See design website**](../../project/frontend/design-spec-preview/src/App.tsx) on ` http://localhost:5174/`
 ---
 
 ## 1. Brand Identity
