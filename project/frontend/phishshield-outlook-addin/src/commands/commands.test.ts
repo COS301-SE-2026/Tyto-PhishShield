@@ -6,6 +6,9 @@
   context: {
     mailbox: {
       item: null,
+      userProfile: {
+        emailAddress: "johndaniel@tyto.co.za",
+      },
     },
   },
   actions: {
@@ -20,11 +23,12 @@
   },
 };
 
-// require is used so the Office mock exists before commands.ts is loaded
+// require is used so the Office mock exists before commands.ts is
 const { buildPayload, sendPhishingReport, action } = require("./commands");
 
 describe("commands.ts phishing report logic", () => {
-  const backendUrl = "http://localhost:3001/api/phishing/report";
+  const backendUrl = "http://localhost:3001/api/report";
+  const reporterEmail = "johndaniel@tyto.co.za";
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -33,7 +37,9 @@ describe("commands.ts phishing report logic", () => {
     jest.setSystemTime(new Date("2026-05-20T12:00:00Z"));
 
     global.fetch = jest.fn();
+
     (global as any).Office.context.mailbox.item = null;
+    (global as any).Office.context.mailbox.userProfile.emailAddress = reporterEmail;
   });
 
   afterEach(() => {
@@ -76,6 +82,7 @@ describe("commands.ts phishing report logic", () => {
       dateReported: "2026-05-20T12:00:00.000Z",
       body: "Suspicious body",
       source: "outlook-addin",
+      reporterEmail,
       ...overrides,
     };
   }
@@ -95,6 +102,7 @@ describe("commands.ts phishing report logic", () => {
       dateReported: "2026-05-20T12:00:00.000Z",
       body: "Click this suspicious link",
       source: "outlook-addin",
+      reporterEmail,
     });
   });
 
@@ -119,6 +127,7 @@ describe("commands.ts phishing report logic", () => {
       dateReported: "2026-05-20T12:00:00.000Z",
       body: "",
       source: "outlook-addin",
+      reporterEmail,
     });
   });
 
@@ -191,6 +200,7 @@ describe("commands.ts phishing report logic", () => {
       dateReported: "2026-05-20T12:00:00.000Z",
       body: "Click this suspicious link",
       source: "outlook-addin",
+      reporterEmail,
     });
 
     expect(fakeItem.notificationMessages.replaceAsync).toHaveBeenCalledWith(
@@ -242,10 +252,12 @@ describe("commands.ts phishing report logic", () => {
 
     await action(fakeEvent);
 
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
     const sentBody = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
 
     expect(sentBody.body).toBe("");
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(sentBody.reporterEmail).toBe(reporterEmail);
     expect(fakeEvent.completed).toHaveBeenCalledTimes(1);
   });
 });
