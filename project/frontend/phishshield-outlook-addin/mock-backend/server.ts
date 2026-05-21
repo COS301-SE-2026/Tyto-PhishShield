@@ -1,6 +1,6 @@
 import http, { IncomingMessage, ServerResponse } from "http";
 
-const PORT = 3001;
+const PORT = 3010;
 
 interface PhishingReportPayload {
   subject?: string;
@@ -11,6 +11,7 @@ interface PhishingReportPayload {
   dateTimeCreated?: string;
   dateReported?: string;
   source?: string;
+  reporterEmail?: string;
 }
 
 function setCorsHeaders(res: ServerResponse): void {
