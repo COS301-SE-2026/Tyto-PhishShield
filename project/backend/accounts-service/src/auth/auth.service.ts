@@ -1,3 +1,8 @@
+/**
+ * AuthService — handles authentication-related operations and Auth0 integration.
+ *
+ * - Requests management tokens, registers users in Auth0, and validates credentials.
+ */
 import {
   Injectable,
   ConflictException,

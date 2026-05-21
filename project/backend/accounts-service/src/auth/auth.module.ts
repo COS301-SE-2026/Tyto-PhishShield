@@ -1,3 +1,8 @@
+/**
+ * AuthModule — authentication wiring for the Accounts service.
+ *
+ * - Registers auth providers, controllers and passport strategies used by the service.
+ */
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { HttpModule } from '@nestjs/axios';

@@ -1,3 +1,8 @@
+/**
+ * ProxyService — service that performs HTTP proxying and request forwarding.
+ *
+ * - Used by controllers to forward or transform requests to downstream services.
+ */
 import {
   Injectable,
   HttpException,

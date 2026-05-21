@@ -1,0 +1,134 @@
+import {
+  createContext, useContext, useState, useEffect, useCallback,
+  type ReactNode,
+} from 'react';
+import type { AuthenticatedUser, UserRole } from '../types';
+
+interface AuthContextValue {
+  user: AuthenticatedUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  hasRole: (roles: UserRole | UserRole[]) => boolean;
+  canAccess: (minRole: UserRole) => boolean;
+  refreshUser: () => Promise<void>;
+}
+
+const ROLE_LEVEL: Record<UserRole, number> = { admin: 3, analyst: 2, user: 1 };
+const BASE_URL = 'http://localhost:3001/api';
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+const isTokenExpired = () => {
+  const expiry = localStorage.getItem('token_expiry');
+  if (!expiry) return true;
+  return Date.now() > parseInt(expiry, 10);
+};
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+const token = localStorage.getItem('access_token');
+    
+    if (!token || isTokenExpired()) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_expiry');
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Token verification failed');
+
+      const me: AuthenticatedUser = await response.json() as AuthenticatedUser;
+      setUser(me);
+    } catch {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_expiry');
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void refreshUser(); }, [refreshUser]);
+
+  const login = async (email: string, password: string) => {
+    const response: Response = await fetch(`${BASE_URL}/accounts/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Invalid email or password.');
+    }
+
+    interface Token {
+      access_token: string;
+      expires_in: number;
+    };
+
+    const { access_token, expires_in } = await response.json() as Token;
+    
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
+
+    const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (meResponse.ok) {
+      const me: AuthenticatedUser = await meResponse.json() as AuthenticatedUser;
+      setUser(me);
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('token_expiry');
+    setUser(null);
+  };
+
+  const hasRole = (roles: UserRole | UserRole[]): boolean => {
+    if (!user) return false;
+    const arr = Array.isArray(roles) ? roles : [roles];
+    return arr.includes(user.role);
+  };
+
+  // canAccess('analyst') : this is true for analyst AND admin
+  const canAccess = (minRole: UserRole): boolean => {
+    if (!user) return false;
+    return ROLE_LEVEL[user.role] >= ROLE_LEVEL[minRole];
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user, isLoading, isAuthenticated: !!user,
+      login, logout, hasRole, canAccess, refreshUser,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  return ctx;
+}

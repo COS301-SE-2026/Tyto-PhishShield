@@ -10,13 +10,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-const buttonStyles: Record<string, string> = {
-  primary:   'bg-primary text-white border-transparent hover:bg-primary-hover',
-  secondary: 'bg-transparent text-primary border-primary hover:bg-primary-light',
-  danger:    'bg-danger text-white border-transparent hover:opacity-90',
-  ghost:     'bg-transparent text-secondary border-transparent hover:bg-hover',
-  outline:   'bg-transparent text-primary-text border-border hover:bg-hover',
-};
+// const buttonStyles: Record<string, string> = {
+//   primary:   'bg-primary text-white border-transparent hover:bg-primary-hover',
+//   secondary: 'bg-transparent text-primary border-primary hover:bg-primary-light',
+//   danger:    'bg-danger text-white border-transparent hover:opacity-90',
+//   ghost:     'bg-transparent text-secondary border-transparent hover:bg-hover',
+//   outline:   'bg-transparent text-primary-text border-border hover:bg-hover',
+// };
 
 const sizeStyles: Record<string, string> = {
   sm: 'px-3 py-1.5 text-xs font-semibold rounded-md',
@@ -39,7 +39,7 @@ export function Button({
   return (
     <button
       {...props}
-      disabled={disabled || loading}
+      disabled={disabled ?? loading}
       className={base}
       style={{
         background: variant === 'primary' ? 'var(--color-primary)' :
@@ -72,7 +72,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({
-  label, error, hint, leftIcon, rightIcon, className = '', ...props
+  label, error, hint, leftIcon, rightIcon, ...props
 }: InputProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -130,7 +130,7 @@ export function Input({
 
 // PasswordInput
 
-interface PasswordInputProps extends Omit<InputProps, 'type'> {}
+type PasswordInputProps = Omit<InputProps, 'type'>;
 
 export function PasswordInput(props: PasswordInputProps) {
   const [show, setShow] = useState(false);
@@ -219,7 +219,7 @@ export function Badge({ children, variant = 'primary' }: { children: ReactNode; 
 // Card
 
 export function Card({
-  children, className, style, onClick,
+  children, style, onClick,
 }: { children: ReactNode; className?: string; style?: React.CSSProperties; onClick?: () => void }) {
   return (
     <div

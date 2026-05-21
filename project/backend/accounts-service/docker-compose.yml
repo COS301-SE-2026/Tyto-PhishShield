@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     container_name: ${ACCOUNTS_DB_CONTAINER}
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - accounts_pgdata:/var/lib/postgresql/data
     ports:
       - '${ACCOUNTS_DB_PORT}:5432'
     networks:
@@ -42,20 +42,11 @@ services:
     networks:
       - backend
 
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-    container_name: ${ACCOUNTS_PGADMIN_CONTAINER}
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
-    ports:
-      - '${ACCOUNTS_PGADMIN_PORT}:80'
-    depends_on:
-      - db
-    networks:
-      - backend
-
 networks:
   backend:
+    name: backend_network
+    external: true
     driver: bridge
+
+volumes:
+  accounts_pgdata:

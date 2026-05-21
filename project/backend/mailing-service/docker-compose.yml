@@ -21,6 +21,9 @@ services:
     ports:
       # Left side must be unique
       - "$MAILING_DB_PORT:5432"
+    
+    networks:
+      - backend
 
   app:
     build:
@@ -33,42 +36,28 @@ services:
       - .env
     environment:
       - PORT=3000
-      - MAILING_DB_HOST=db
+      - DB_HOST=db
       - MAILING_DB_PORT=5432
 
     ports:
       # Left side must be unique
-      - "${MAILING_SERVICE_PORT}:3000"
+      - "${MAILING_SERVICE_PORT}:3003"
 
     depends_on:
       - db
     volumes:
       - ./src:/app/src
 
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-
-    # Must be unique
-    container_name: ${MAILING_PGADMIN_CONTAINER}
-
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
-      PGADMIN_SERVER_JSON_FILE: servers.json
-      PGADMIN_REPLACE_SERVERS_ON_STARTUP: 'True'
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-      - ./mailing-db.json:/pgadmin4/servers.json:ro
-      - ./.pgpass:/var/lib/pgadmin/.pgpass:ro
-    ports:
-      - "${MAILING_PGADMIN_PORT}:80"
-    depends_on:
-      - db
+    networks:
+      - backend
 
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
   mailing_pgdata:
-  pgadmin_data:
+
+networks:
+  backend:
+    name: backend_network
+    external: true
+    driver: bridge
