@@ -1,6 +1,6 @@
 /* global Office, console, fetch */
 
-const MOCK_BACKEND_URL = "http://localhost:3010/api/phishing/report";
+const BACKEND_REPORT_URL = "http://localhost:3001/api/report";
 
 export interface PhishingReportPayload {
   subject: string;
@@ -22,9 +22,7 @@ Office.onReady(() => {
 function showNotification(message: string): void {
   const item = Office.context.mailbox.item;
 
-  if (!item) {
-    return;
-  }
+  if (!item) return;
 
   item.notificationMessages.replaceAsync("phishshield-report", {
     type: "informationalMessage",
@@ -35,26 +33,25 @@ function showNotification(message: string): void {
 }
 
 export async function sendPhishingReport(reportPayload: PhishingReportPayload): Promise<any> {
-  const response = await fetch(MOCK_BACKEND_URL, {
+  return fetch(BACKEND_REPORT_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(reportPayload),
   });
-
-  return response;
 }
 
-async function sendReportToMockBackend(reportPayload: PhishingReportPayload): Promise<void> {
+async function sendReportToBackend(reportPayload: PhishingReportPayload): Promise<void> {
   const response = await sendPhishingReport(reportPayload);
+  const result = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(`Mock backend returned status ${response.status}`);
+    console.error("Backend report failed:", result);
+    throw new Error(`Backend returned status ${response.status}`);
   }
 
-  const result = await response.json();
-  console.log("Mock backend response:", result);
+  console.log("Backend report response:", result);
 }
 
 function getEmailBody(item: Office.MessageRead): Promise<string> {
@@ -76,11 +73,11 @@ function getEmailBody(item: Office.MessageRead): Promise<string> {
 }
 
 function getDateTimeCreatedAsString(dateTimeCreated: Date | undefined): string {
-  if (!dateTimeCreated) {
-    return "";
-  }
+  return dateTimeCreated ? dateTimeCreated.toISOString() : "";
+}
 
-  return dateTimeCreated.toISOString();
+function getReporterEmail(): string {
+  return Office.context.mailbox.userProfile?.emailAddress || "";
 }
 
 export function buildPayload(item: Office.MessageRead, body: string): PhishingReportPayload {
@@ -94,7 +91,7 @@ export function buildPayload(item: Office.MessageRead, body: string): PhishingRe
     dateReported: new Date().toISOString(),
     body,
     source: "outlook-addin",
-    reporterEmail: Office.context.mailbox.userProfile.emailAddress || "",
+    reporterEmail: getReporterEmail(),
   };
 }
 
@@ -115,12 +112,12 @@ export async function action(event: Office.AddinCommands.Event): Promise<void> {
     console.log("=== PHISH REPORT PAYLOAD ===");
     console.log(reportPayload);
 
-    await sendReportToMockBackend(reportPayload);
+    await sendReportToBackend(reportPayload);
 
     showNotification(`Reported: ${reportPayload.subject}`);
   } catch (error) {
     console.error("Failed to report phishing email:", error);
-    showNotification("Could not report email. Check console or mock backend.");
+    showNotification("Could not report email. Check backend and console.");
   } finally {
     event.completed();
   }
