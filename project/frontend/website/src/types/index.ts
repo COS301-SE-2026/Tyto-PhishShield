@@ -105,5 +105,18 @@ export interface Toast {
 
 export interface ErrorResponse {
   message?: string;
-  code?: number;
+  statusCode?: number;
+}
+
+export interface SendEmailResponse {
+  message?: string;
+  success?: boolean;
+  data?: unknown;
+}
+
+export interface XPResponse {
+  userId: string;
+  xp: number;
+  status?: "Success" | "Error";
+  message?: string;
 }

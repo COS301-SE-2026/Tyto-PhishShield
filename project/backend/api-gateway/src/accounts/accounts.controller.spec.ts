@@ -103,24 +103,24 @@ describe('AccountsController', () => {
   // ===========================================================================
 
   describe('getMe()', () => {
-    it('should return the user from req.user', () => {
+    it('should return the user from req.user', async () => {
       const mockUser: GatewayUser = {
         auth0Id: 'auth0|abc123',
         email: 'test@example.com',
         role: 'user',
       };
-
-      expect(controller.getMe({ user: mockUser } as never)).toEqual(mockUser);
+      const result = await controller.getMe({ user: mockUser } as never).then((user) => user);
+      expect(result).toEqual(mockUser);
     });
 
-    it('should return the correct role for admin users', () => {
+    it('should return the correct role for admin users', async () => {
       const adminUser: GatewayUser = {
         auth0Id: 'auth0|admin',
         email: 'admin@example.com',
         role: 'admin',
       };
-
-      expect(controller.getMe({ user: adminUser } as never).role).toBe('admin');
+      const result = await controller.getMe({ user: adminUser } as never).then((user) => user.role);
+      expect(result).toBe('admin');
     });
   });
 });
