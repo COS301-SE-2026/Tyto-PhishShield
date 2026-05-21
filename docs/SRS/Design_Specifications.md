@@ -2,7 +2,8 @@
 
 > **Version:** 1.0  
 > **Status:** Draft  
-> [**See design website**](../../project/frontend/design-spec-preview/src/App.tsx)
+> Run: `pnpm dev:design-spec` to 
+> [**See design website**](../../project/frontend/design-spec-preview/src/App.tsx) on ` http://localhost:5174/`
 ---
 
 ## Table of Contents
