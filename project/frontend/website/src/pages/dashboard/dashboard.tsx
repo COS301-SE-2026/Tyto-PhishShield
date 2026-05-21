@@ -3,7 +3,8 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
-import type { Campaign } from '../../types';
+import type { Campaign, XPResponse } from '../../types';
+import { getXP } from './dashboard.service';
 
 interface DashboardProps {
   onNavigate: (path: string) => void;
@@ -274,12 +275,30 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
 }
 
 function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
+  const [xp, setXP] = useState(0);
+  const { addToast } = useToast();
+  const xpError = (message?: string) =>  addToast({
+            type: 'error',
+            title: 'xp fetch',
+            message: message ?? "unable to fetch xp",
+        });
+  useEffect(() => {
+    const fetchXP = async () => {
+      const res: XPResponse = await getXP();
+      if (res.status == "Error") {
+        xpError(res.message)
+      }
+      const xpValue: number = res.xp;
+      setXP(xpValue);
+    };
+    void fetchXP();
+  }, []);
   return (
     <>
       {/* Personal stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 16 }}>
         {[
-          { lbl: 'XP Points', val: '3,560', delta: '+120 today', deltaColor: 'var(--color-success)' },
+          { lbl: 'XP Points', val: xp, delta: '+120 today', deltaColor: 'var(--color-success)' },
           { lbl: 'Organisation Rank', val: '#4', delta: 'of 87 users', deltaColor: 'var(--text-muted)' },
           { lbl: 'Reports Filed', val: '28', delta: '+2 this week', deltaColor: 'var(--color-success)' },
           { lbl: 'Current Streak', val: '12 days', delta: 'Personal best!', deltaColor: 'var(--color-primary)' },

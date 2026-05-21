@@ -1,3 +1,8 @@
+/**
+ * AccountsController — lightweight controller exposing account-related routes.
+ *
+ * - Endpoints here typically proxy requests to the accounts microservice.
+ */
 import {
   Controller,
   Post,
@@ -7,11 +12,7 @@ import {
   UseGuards,
   HttpCode,
 } from '@nestjs/common';
-/**
- * AccountsController — lightweight controller exposing account-related routes.
- *
- * - Endpoints here typically proxy requests to the accounts microservice.
- */
+
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -21,6 +22,16 @@ import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
+}
+
+interface Auth0UserResponse {
+  sub: string;
+  nickname: string;
+  name: string;
+  picture: string;
+  updated_at: string;
+  email: string;
+  email_verified: boolean;
 }
 
 @ApiTags('Accounts')
@@ -84,7 +95,23 @@ export class AccountsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the currently authenticated user' })
-  getMe(@Req() req: AuthenticatedRequest): GatewayUser {
+  async getMe(@Req() req: AuthenticatedRequest): Promise<GatewayUser> {
+    if (!req.user || !req.user.email) {
+      const token: string = req?.headers?.authorization?.split(' ')[1] ?? '';
+      //console.log("Extracted token:", token);
+      const data: Auth0UserResponse = await this.proxy.forward({
+        url: this.config.get<string>('AUTH0_USERINFO_URL', ''),
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return {
+        auth0Id: data?.sub,
+        email: data?.email,
+        role: req.user.role,
+      };
+    }
     return req.user;
   }
 }

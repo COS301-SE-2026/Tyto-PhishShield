@@ -30,6 +30,7 @@
 
 		"build:outlook-addin": "pnpm --filter office-addin-taskpane build",
 		"dev:outlook-addin": "pnpm --filter office-addin-taskpane dev-server",
+		"start:outlook-addin": "pnpm --filter office-addin-taskpane start",
 		"lint:outlook-addin": "pnpm --filter office-addin-taskpane lint",
 		"test:outlook-addin": "pnpm --filter office-addin-taskpane test",
 
@@ -38,6 +39,9 @@
 		"prod:mailing-service": "pnpm --filter mailing-service start:prod",
 		"lint:mailing-service": "pnpm --filter mailing-service lint",
 		"test:mailing-service": "pnpm --filter mailing-service test",
+
+		"test:backend": "pnpm --filter accounts-service test && pnpm --filter api-gateway test && pnpm --filter mailing-service test",
+		"test:backend:e2e": "pnpm --filter accounts-service test:e2e && pnpm --filter api-gateway test:e2e && pnpm --if-present --filter mailing-service test:e2e",
 
 		"build:design-spec": "pnpm --filter design-spec-preview build",
 		"dev:design-spec": "pnpm --filter design-spec-preview dev",
@@ -65,7 +69,10 @@
 		"dc:down:backend": "docker compose -f project/backend/api-gateway/docker-compose.yml -f project/backend/accounts-service/docker-compose.yml -f project/backend/mailing-service/docker-compose.yml down",
 
 		"dc:up:pgadmin": "docker compose -f project/backend/pgadmin-container/docker-compose.yml up -d",
-		"dc:down:pgadmin": "docker compose -f project/backend/pgadmin-container/docker-compose.yml down"
+		"dc:down:pgadmin": "docker compose -f project/backend/pgadmin-container/docker-compose.yml down",
+
+		"demo1:backend": "pnpm dc:up:accounts && pnpm dc:up:mailing && pnpm build:api-gateway && pnpm prod:api-gateway",
+		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^11.0.21",
