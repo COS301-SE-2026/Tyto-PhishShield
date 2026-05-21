@@ -313,6 +313,6 @@ Each microservice is self contained and receives requests from the API gateway. 
 The event system contains multiple event queues in which an event being processed by the system can attach messages to a given queue and send out the messages to the correct microservice which is subscribed to a specific queue. 
 
 ---
-For more details on user stories see: [User Stories](./User_Stories)
+For more details on user stories see: [User Stories](./User_Stories.md)
 
-For test cases of each user story see: [Test Cases](./Test_Cases)
+For test cases of each user story see: [Test Cases](./Test_Cases.md)
