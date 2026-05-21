@@ -13,6 +13,7 @@ import { ReportService } from './report.service';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ProxyService } from '../proxy/proxy.service';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -21,14 +22,27 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Report')
 @Controller('report')
 export class ReportController {
-  constructor(private readonly reportService: ReportService) {}
+  constructor(
+    private readonly reportService: ReportService,
+    private readonly proxy: ProxyService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'reports an email' })
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['subject', 'from', 'senderName', 'itemId', 'internetMessageId', 'dateTimeCreated', 'dateReported', 'body', 'source'],
+      required: [
+        'subject',
+        'from',
+        'senderName',
+        'itemId',
+        'internetMessageId',
+        'dateTimeCreated',
+        'dateReported',
+        'body',
+        'source',
+      ],
       properties: {
         subject: { type: 'string', example: 'Welcome to Tyto-PhishShield' },
         from: { type: 'string', example: 'fiveguys@gmail.com' },
@@ -36,9 +50,12 @@ export class ReportController {
         itemId: { type: 'string', example: '1234' },
         internetMessageId: { type: 'string', example: 'ab75f23ce2' },
         dateTimeCreated: { type: 'string', example: '2026-05-18' },
-        dateReported:  { type: 'string', example: '2026-05-18' },
-        body: { type: 'string', example: 'Hello, would you like to have some cookies?' },
-        source: { type: 'string', example: 'outlook-addin' }
+        dateReported: { type: 'string', example: '2026-05-18' },
+        body: {
+          type: 'string',
+          example: 'Hello, would you like to have some cookies?',
+        },
+        source: { type: 'string', example: 'outlook-addin' },
       },
     },
   })
@@ -58,7 +75,15 @@ export class ReportController {
   @UseGuards(JwtAuthGuard)
   @Get('xp')
   @ApiBearerAuth()
-  getUserXp(@Req() req: AuthenticatedRequest) {
-    return this.reportService.getUserXp(req.user.email);
+  async getUserXp(@Req() req: AuthenticatedRequest) {
+    const userData: { email: string } = await this.proxy.forward({
+      url: `http://localhost:3001/api/accounts/auth/me`,
+      method: 'GET',
+      headers: {
+        Authorization: req.headers.authorization ?? '',
+      },
+    });
+    //console.log('User data retrieved from accounts service:', userData);
+    return this.reportService.getUserXp(userData.email);
   }
 }
