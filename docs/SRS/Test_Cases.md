@@ -1,4 +1,4 @@
-view the [use cases](./Software_Requirements_Specification) in the SRS document.
+view the [use cases](./Software_Requirements_Specification.md) in the SRS document.
 # Table of contents
 - [UC-01](#uc-01-report-a-suspicious-email)
 - [UC-04](#uc-04-users-can-register-accounts)
