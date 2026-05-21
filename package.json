@@ -1,0 +1,77 @@
+{
+	"name": "tyto-phishshield",
+	"private": true,
+	"packageManager": "pnpm@11.1.1",
+	"scripts": {
+		"bootstrap": "pnpm install",
+		"update:all": "pnpm -r up --latest",
+		"build:all": "pnpm -r --if-present build",
+		"test:all": "pnpm -r --if-present test",
+		"dev:all": "pnpm -r --if-present start:dev",
+		"prod:all": "pnpm -r --if-present start:prod",
+		"lint:all": "pnpm -r --if-present lint",
+
+		"build:website": "pnpm --filter website build",
+		"dev:website": "pnpm --filter website dev",
+		"lint:website": "pnpm --filter website lint",
+		"test:website": "pnpm --filter website test",
+
+		"build:api-gateway": "pnpm --filter api-gateway build",
+		"dev:api-gateway": "pnpm --filter api-gateway start:dev",
+		"prod:api-gateway": "pnpm --filter api-gateway start:prod",
+		"lint:api-gateway": "pnpm --filter api-gateway lint",
+		"test:api-gateway": "pnpm --filter api-gateway test",
+
+		"build:accounts-service": "pnpm --filter accounts-service build",
+		"dev:accounts-service": "pnpm --filter accounts-service start:dev",
+		"prod:accounts-service": "pnpm --filter accounts-service start:prod",
+		"lint:accounts-service": "pnpm --filter accounts-service lint",
+		"test:accounts-service": "pnpm --filter accounts-service test",
+
+		"build:outlook-addin": "pnpm --filter office-addin-taskpane build",
+		"dev:outlook-addin": "pnpm --filter office-addin-taskpane dev-server",
+		"lint:outlook-addin": "pnpm --filter office-addin-taskpane lint",
+		"test:outlook-addin": "pnpm --filter office-addin-taskpane test",
+
+		"build:mailing-service": "pnpm --filter mailing-service build",
+		"dev:mailing-service": "pnpm --filter mailing-service start:dev",
+		"prod:mailing-service": "pnpm --filter mailing-service start:prod",
+		"lint:mailing-service": "pnpm --filter mailing-service lint",
+		"test:mailing-service": "pnpm --filter mailing-service test",
+
+		"build:design-spec": "pnpm --filter design-spec-preview build",
+		"dev:design-spec": "pnpm --filter design-spec-preview dev",
+		"lint:design-spec": "pnpm --filter design-spec-preview lint",
+
+		"clear:dist": "pnpm -r --if-present run clear:dist",
+		"clear:node_modules": "pnpm -r --if-present run clear:node_modules",
+		"clear:all": "pnpm run clear:dist && pnpm run clear:node_modules",
+
+		"dc:up": "docker compose up -d",
+		"dc:down": "docker compose down",
+		"dc:ps": "docker compose ps",
+		"dc:logs": "docker compose logs -f",
+
+		"dc:up:api": "docker compose -f project/backend/api-gateway/docker-compose.yml up -d",
+		"dc:down:api": "docker compose -f project/backend/api-gateway/docker-compose.yml down",
+		
+		"dc:up:accounts": "docker compose -f project/backend/accounts-service/docker-compose.yml up -d",
+		"dc:down:accounts": "docker compose -f project/backend/accounts-service/docker-compose.yml down",
+
+		"dc:up:mailing": "docker compose -f project/backend/mailing-service/docker-compose.yml up -d",
+		"dc:down:mailing": "docker compose -f project/backend/mailing-service/docker-compose.yml down",
+
+		"dc:up:backend": "docker compose -f project/backend/api-gateway/docker-compose.yml -f project/backend/accounts-service/docker-compose.yml -f project/backend/mailing-service/docker-compose.yml up -d",
+		"dc:down:backend": "docker compose -f project/backend/api-gateway/docker-compose.yml -f project/backend/accounts-service/docker-compose.yml -f project/backend/mailing-service/docker-compose.yml down",
+
+		"dc:up:pgadmin": "docker compose -f project/backend/pgadmin-container/docker-compose.yml up -d",
+		"dc:down:pgadmin": "docker compose -f project/backend/pgadmin-container/docker-compose.yml down"
+	},
+	"devDependencies": {
+		"@nestjs/cli": "^11.0.21",
+		"@nestjs/schematics": "^11.1.0"
+	},
+	"dependencies": {
+		"@tailwindcss/postcss": "^4.3.0"
+	}
+}

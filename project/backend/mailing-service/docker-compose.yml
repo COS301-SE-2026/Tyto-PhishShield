@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${MAILING_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MAILING_DB_NAME}
+
+    volumes:
+      # This must be unique not to override other db's data
+      # This must be hard coded
+      - mailing_pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+
+    ports:
+      # Left side must be unique
+      - "$MAILING_DB_PORT:5432"
+    
+    networks:
+      - backend
+
+  app:
+    build:
+      context: ../../..
+      dockerfile: project/backend/mailing-service/Dockerfile
+
+      # Must be unique
+    container_name: ${MAILING_APP_CONTAINER}
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - DB_HOST=db
+      - MAILING_DB_PORT=5432
+
+    ports:
+      # Left side must be unique
+      - "${MAILING_SERVICE_PORT}:3003"
+
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app/src
+
+    networks:
+      - backend
+
+volumes:
+  # Must be same as volume name for db
+  # Must be hard coded
+  mailing_pgdata:
+
+networks:
+  backend:
+    name: backend_network
+    external: true
+    driver: bridge

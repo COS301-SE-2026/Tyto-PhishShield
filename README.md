@@ -6,7 +6,10 @@ The platform gives employees the chance to encounter realistic phishing attacks 
 In this way the employees are trained to detect phishing attacks and prevent company information from being leaked.
 
 ## Documentation
-[View our documentation](Docs/README.md)
+[View our documentation](docs/README.md)
 
 ## Project
-[View our project files](Project/README.md)
+[View our project files](project/README.md)
+
+## Set-up
+[Want to quickly make sure you can set up the project?](docs/setup-instructions/README.md)
