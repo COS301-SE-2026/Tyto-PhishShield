@@ -22,12 +22,12 @@ The Team:
  - [Architecture Diagram](#architecture-diagram)
 
 ## Project Vision
-Tyto-PhishShield aims to create a platform in which emplyees can be trained to detect phishing attacks. It acts as an enterprise-grade Human Risk Management
+Tyto-PhishShield aims to create a platform in which employees can be trained to detect phishing attacks. It acts as an enterprise-grade Human Risk Management
 (HRM) platform.
 
-Due to the rise of LLMs for crafting phishing attacks the check for bad grammer is no longer good enough to detect modern phishing attacks. So by using LLMs Tyto-PhishShield can create simulated phishing campaigns in order to train emplyees with realistic phishing attacks.
+Due to the rise of LLMs for crafting phishing attacks the check for bad grammar is no longer good enough to detect modern phishing attacks. So by using LLMs Tyto-PhishShield can create simulated phishing campaigns in order to train employees with realistic phishing attacks.
 
-Tyto-PhishShield aims to provide a gamified experience to emplyees to enhance user learning and thus transform your team into a human firewall.
+Tyto-PhishShield aims to provide a gamified experience to employees to enhance user learning and thus transform your team into a human firewall.
 
 ## Functional Requirements
 **FR 1**: Outlook Add-in & Reporting Component
@@ -206,7 +206,7 @@ The above domain model describes the Tyto-PhishShield system:
 
 1. Begining with the purple classes we start with the User class:
 	>The User is a generalization of any type of person that interacts with the system. There are 3 types of users namely an Employee, who works for the company, an Analyst, who has some special roles, and an Admin who has even more special roles.
-2. Next we follow the Admin user who can use the yellow Compaign Context class:
+2. Next we follow the Admin user who can use the yellow Campaign Context class:
 	>The Campaign Context is handles the different strategies that an Admin may require for generating a phishing campaign. So the Phishing Campaign Generator class is a generalization of the different stratagies that can be used. In this case we have one strategy namely generating emails through the Email Generator class.<br>
 	>The Campaign Context also uses the AI Simulator to start the raw generation process through prompts.
 3. Next we go to the yellow AI classes:
@@ -240,19 +240,67 @@ As already mentioned two main architecture patterns are being used. Microservice
 
 ### Architectural quality requirements
  1. Flexibility
+
+	The system should be flexible so that through out the development of the platform new subsystems can easily be added and updated by swapping out a certain microservice. This can be measured by checking:<br>
+	- high code modularity
+	- loose coupling between services
+	- ensuring the code is self documented and readable
+
  2. Maintainability
+
+	It is important for the system to be maintainable so that through out the development process and during handover it will be possible for anyone to maintain the life time of the system. It is also important that business operation are not disrupted during the life time of the platform.
+
  3. Scalability
+
+	The system must be horizontally scalable to handle a minimum of 500 concurrent users with 99.9% up time. This can be measured by checking:
+	- concurrent connection requests
+	- testing increasing connection requests
+
  4. Performance
+
+	Performance of the system is important to maintain the live updates of statistics. This can be measured by checking:
+	- the number of requests handled per second
+	- the average response time for requests
+
  5. Reliability
+	
+	The system must be reliable to give reliable scores for employees and not to miss any reports created so that the company can see where they are potentially vulnerable. This can be checked by:
+	- testing the correctness of the system
+	- making sure the system can quickly recover from any failures
+
  6. Security
+
+	The system must be secure as it will be dealing with personal details, and no unauthorized access should be allowed. The security is checked by:
+	- ensuring all data at rest and in transit are encrypted
+	- preventing injection and CSRF attacks
+
  7. Auditability
+
+	The system should be auditable to comply with POPIA and GDPR laws. It also allows any faults to be found and understood. This can be checked by:
+	- error logs, application logs, access logs
+	- adding granular logging abilities to traceback activity
+
  8. Testability
+
+	The system must be testable, all functions and operations must be tested with unit and integration tests. Code coverage should be above 80%. This can be measured by checking:
+	- automation of unit tests on GitHub actions
+	- the build status of the system
+	- the code testing coverage 
+
  9. Usability
- 10. Integrability
+
+	The system must be usable and easy to interact with. Employees should not need to be trained on how to use the system. The system must be intuitive providing good user experience. This can be measured by checking:
+	- development of wireframes
+	- performance of UI tests
+	- WCAG 2.1 AA accessibility compliance
+
+10. Integrability
+
+	Integrability of the system is very important so that future integration with HR systems can take place. Using microservices enables the system to be integrated easily due to the separation of concerns.
 
 ### Architectural Responsibility
-API gateway is repsonsible for recieving client requests, authenticating clients and doing roll-based authentication control. The API gateway then routes user traffic to the correct microservice to handle user bussiness logic.<br>
-Each microservice is self contained and recieves requests from the API gateway. The microservice will handle bussiness logic based on its definition and will also handle it's own transactions with its own database. A microservice may also send an event with data attached (a message) to the event system if other bussiness logic needs to be accomplished but is not within the scope of the microservice.<br>
+API gateway is responsible for receiving client requests, authenticating clients and doing roll-based authentication control. The API gateway then routes user traffic to the correct microservice to handle user business logic.<br>
+Each microservice is self contained and receives requests from the API gateway. The microservice will handle business logic based on its definition and will also handle it's own transactions with its own database. A microservice may also send an event with data attached (a message) to the event system if other business logic needs to be accomplished but is not within the scope of the microservice.<br>
 The event system contains multiple messaging queues in which an event being processed by the system can attach messages to a given queue and send out the messages to the correct microservice which is subscribed to a specific queue. 
 
 ---
