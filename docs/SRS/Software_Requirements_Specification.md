@@ -108,30 +108,39 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
  -   **OFR 9.3**: The system will allow the user to earn XP points based on how well the user did in the test.
 ## Non-Functional Requirements
 **NFR 1**: Security
--	**NFR 1.1**: The system shall authenticate user roles at the API gateway layer.
--	**NFR 1.2**: The system’s data at rest and in transit must be encrypted.
+-	**NFR 1.1**: The system shall authenticate and authorize all protected API requests using Role-Based Access Control (RBAC) enforced at the API gateway layer with server-side validation on 100% of protected endpoints.
+-	**NFR 1.2**: The system shall encrypt all data in transit using TLS 1.3 and encrypt sensitive data at rest using AES-256 encryption standards.
 
 **NFR 2**: Performance
 -	**NFR 2.1**: The system shall handle XP transactions and leader board updates within 500ms of user action.
 - **NFR 2.2**: The system shall load “Teachable moment” screens within 1s of clicking a link on a phishing email.
 -	**NFR 2.3**: The system shall display confirmation toasts in the Outlook Add-in feature within 300ms.
+- **NFR 2.4**: The admin dashboard shall update live analytics and leaderboard data within 2 seconds of receiving new event data through WebSocket communication.
 
 **NFR 3**: Portability and Compatibility
 -	**NFR 3.1**: The system’s admin dashboard shall support standard desktop resolutions and maintain usability across commonly used screen sizes including resolutions from 1280px to 1920px+ . 
 -	**NFR 3.2**: The system’s “report phish” button must appear on the Outlook ribbon on Desktop, Web, and Mobile.
+- **NFR 3.3**: The platform shall be deployable on Ubuntu Server environments using Docker and Docker Compose without requiring platform-specific modifications.
 
 **NFR 4**: Usability
 -	**NFR 4.1**: The system’s “report phish” button must follow the Microsoft Fluent UI design system.
+- **NFR 4.2**: The system shall comply with WCAG 2.1 AA accessibility guidelines for all user-facing dashboards and interfaces.
+- **NFR 4.3**: The system shall provide immediate visual feedback for all critical user actions including reporting phishing emails, completing simulations, and earning XP rewards.
 
 **NFR 5**: Reliability and Availability
 -	**NFR 5.1**: The system must have 99.9% uptime.
+- **NFR 5.2**: In the event of an AI provider failure, the system shall automatically switch to the fallback Llama-3 model within 30 seconds.
 
 **NFR 6**: Scalability:
 -	**NFR 6.1**: The system must be able to scale to handle 500 concurrent users.
+- **NFR 6.2**: The microservices architecture shall support horizontal scaling of the AI Engine, Analytics, and Authentication services independently.
 
 **NFR 7**: Maintainability
 -	**NFR 7.1**: The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
--	**NFR 7.2**: The system stack must be fully dockerized for handoff.
+-	**NFR 7.2**: The complete application stack shall be fully containerized using Docker and orchestrated through Docker Compose for deployment handoff.
+- **NFR 7.3**: All backend endpoints shall be documented using OpenAPI 3.0 documentation standards.
+- **NFR 7.4**: The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
+- **NFR 7.5**: The system shall achieve a minimum automated backend test coverage of 80%.The system shall achieve a minimum automated backend test coverage of 80%.
 
 ## User Characteristics
 The system will make use of three types of users: Admin, Analyst, and Employee.
