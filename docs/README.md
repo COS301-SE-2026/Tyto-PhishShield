@@ -8,3 +8,4 @@ Welcome to the Tyto-PhishShield's documentation.
 - To view how we applied scrum principles: [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum)
 - To view the design specification document: [Design Specification](./design-specifications/design-specifications-document.md)
 - To view the wireframes: [Wireframes](./figma/README.md)
+- Demo 1 Video: [Demo 1])(./demo-1/README.md)
