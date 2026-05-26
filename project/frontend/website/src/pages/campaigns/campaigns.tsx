@@ -128,8 +128,18 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
           const detectionRate = c.sentCount > 0 ? Math.round((c.reportedCount / c.sentCount) * 100) : 0;
           const clickRate = c.sentCount > 0 ? Math.round((c.clickedCount / c.sentCount) * 100) : 0;
           return (
-            <Card key={c.id} style={{ padding: '18px 20px', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
-              onClick={() => onNavigate(`/campaigns/${c.id}`)}>
+            <Card
+              key={c.id}
+              style={{ padding: '18px 20px', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
+              onClick={() => {
+                if (c.id === '4') {
+                  onNavigate('/send-email-test');
+                  return;
+                }
+
+                onNavigate(`/campaigns/${c.id}`);
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
