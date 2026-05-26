@@ -1,6 +1,6 @@
 services:
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:9.15
     restart: always
 
     # Must be unique
@@ -9,7 +9,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
       PGADMIN_SERVER_JSON_FILE: servers.json
       PGADMIN_REPLACE_SERVERS_ON_STARTUP: 'True'
     volumes:

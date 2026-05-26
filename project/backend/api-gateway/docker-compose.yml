@@ -13,8 +13,10 @@ services:
     ports:
       - '${GATEWAY_PORT}:3001'
     networks:
-      - accounts-service_backend  # joins the network accounts service created
+      - backend  # joins the network accounts service created
 
 networks:
-  accounts-service_backend:
-    external: true  # tells Docker this network already exists, don't create it
+  backend:
+    name: backend_network
+    external: true
+    driver: bridge

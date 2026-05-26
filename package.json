@@ -56,13 +56,13 @@
 		"dc:ps": "docker compose ps",
 		"dc:logs": "docker compose logs -f",
 
-		"dc:up:api": "docker compose -f project/backend/api-gateway/docker-compose.yml up -d",
+		"dc:up:api": "docker compose -f project/backend/api-gateway/docker-compose.yml up -d --build",
 		"dc:down:api": "docker compose -f project/backend/api-gateway/docker-compose.yml down",
 		
-		"dc:up:accounts": "docker compose -f project/backend/accounts-service/docker-compose.yml up -d",
+		"dc:up:accounts": "docker compose -f project/backend/accounts-service/docker-compose.yml up -d --build",
 		"dc:down:accounts": "docker compose -f project/backend/accounts-service/docker-compose.yml down",
 
-		"dc:up:mailing": "docker compose -f project/backend/mailing-service/docker-compose.yml up -d",
+		"dc:up:mailing": "docker compose -f project/backend/mailing-service/docker-compose.yml up -d --build",
 		"dc:down:mailing": "docker compose -f project/backend/mailing-service/docker-compose.yml down",
 
 		"dc:up:backend": "docker compose -f project/backend/api-gateway/docker-compose.yml -f project/backend/accounts-service/docker-compose.yml -f project/backend/mailing-service/docker-compose.yml up -d",
