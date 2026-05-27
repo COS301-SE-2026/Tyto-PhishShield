@@ -3,57 +3,51 @@ Tyto-PhishShield
 │   .gitignore
 │   README.md
 │       
-├───Docs
+├───docs
 │   │   README.md
 │   │   
 │   ├───Repository_Layout
-│   │       README.md
+│   │       README.md       #Explains the layout of the repository
 │   │       
-│   ├───Research
-│   │       architecture-style.md
-│   │       auth0-vs-firebase-rbac.md
-│   │       cicd-docker-ubuntu.md
-│   │       data-anonymisation-popia-gdpr.md
-│   │       email-sending-spoofing.md
-│   │       llm-fallback-langchain.md
-│   │       officejs-outlook-addin.md
-│   │       README.md
-│   │       realtime-gamification-websockets.md
-│   │       wcag-react-tailwind.md
+│   ├───research
+│   │       README.md       #Research the team did for the project
 │   │       
-│   ├───Scrum
-│   │       Project_History.md
-│   │       README.md
-│   │       Sprints.md
-│   │       Sprint_Retrospective.md
-│   │       
-│   ├───Setup_Instructions
-│   │       README.md
+│   ├───setup-instructions
+│   │       README.md       #Instructions on how to set up the project
 │   │       
 │   └───SRS
-│           README.md
+│           README.md       #Documents for Software Engineering
 │           Software_Requirements_Specification.md
 │           Test_Cases.md
 │           User_Stories.md
 │           
-└───Project
-    │   README.md
+└───project
+    │   README.md           #Folder to contain all the code
     │   
-    ├───Backend
-    │   │   README.md
+    ├───backend
+    │   │   README.md       #Folder to contain all the backend services
     │   │   
-    │   ├───Accounts_Service
-    │   │       README.md
+    │   ├───accounts-service
+    │   │       README.md   #Project folder for the accounts service source code
     │   │       
-    │   └───API_Gateway
-    │           README.md
+    │   ├───api-gateway
+    │   │       README.md   #Project folder for the api gateway source code
+    │   │
+    │   ├───mailing-service
+    │   │       README.md   #Project folder for the mailing service source code
+    │   │  
+    │   └───pgadmin-container
+    │           README.md   #Folder for accessing pgadmin webview of the databases
     │           
     └───Frontend
-        │   README.md
+        │   README.md       #Folder to contain all the frontend source code
         │   
-        ├───Outlook_Add-in
-        │       README.md
+        ├───design-spec-preview
+        │       README.md   #Folder to contain the web-view of the design specification
+        │
+        ├───phishshield-outlook-addin
+        │       README.md   #Project folder for the outlook addin source code
         │       
-        └───Website
-                README.md
+        └───website
+                README.md   #Project folder for the website source code
 ```
