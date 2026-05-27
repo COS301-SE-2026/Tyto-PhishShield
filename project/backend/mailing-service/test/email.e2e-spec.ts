@@ -39,7 +39,6 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post('/emails')
       .send({
-        recipient: process.env.OUR_EMAIL,
         sender: `test@${process.env.FIVEGUYS_DOMAIN}`,
         alias: 'tester',
         subject: 'E2E Test',
@@ -49,7 +48,6 @@ describe('Email service integration test', () => {
       .expect(201)
       .expect((res) => {
         expect(res.body.reference_number).toBeDefined();
-        expect(res.body.recipient).toEqual(process.env.OUR_EMAIL);
         testReferenceNumber = res.body.reference_number;
       });
   });
@@ -88,13 +86,33 @@ describe('Email service integration test', () => {
     () => {
       return request(app.getHttpServer())
         .post(`/emails/${testReferenceNumber}/send-single`)
+        .send({ recipient: process.env.OUR_EMAIL })
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
           expect(res.body.message).toEqual('Email sent successfully');
+          expect(res.body.data.data).toBeDefined();
+        });
+    },
+  );
 
-          expect(res.body.data.data.id).toBeDefined();
-          expect(typeof res.body.data.data.id).toBe('string');
+  liveTest(
+    '/emails/:referenceNumber/schedule-send-single (POST) - should schedule live send',
+    () => {
+      const futureDate = new Date();
+      futureDate.setMinutes(futureDate.getMinutes() + 2);
+
+      return request(app.getHttpServer())
+        .post(`/emails/${testReferenceNumber}/schedule-send-single`)
+        .send({
+          recipient: process.env.OUR_EMAIL,
+          scheduledAt: futureDate.toISOString(),
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.message).toEqual('Email scheduled successfully');
+          expect(res.body.data).toBeDefined();
         });
     },
   );

@@ -26,9 +26,6 @@ export class GeneratedEmail {
   alias?: string;
 
   @Column()
-  recipient: string;
-
-  @Column()
   subject: string;
 
   @Column('text')

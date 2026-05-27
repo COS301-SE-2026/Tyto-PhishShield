@@ -1,4 +1,3 @@
-// src/send-mail/email.service.ts
 import {
   Injectable,
   Logger,
@@ -68,6 +67,7 @@ export class EmailService {
 
   async sendEmail(
     referenceNumber: string,
+    recipient: string,
   ): Promise<{ success: boolean; message: string; data: CreateEmailResponse }> {
     const email = await this.getEmailByReference(referenceNumber);
 
@@ -78,19 +78,56 @@ export class EmailService {
     try {
       const data = await this.resend.emails.send({
         from: fromString,
-        to: email.recipient,
+        to: recipient,
         subject: email.subject,
         html: email.content,
       });
 
       this.logger.log(
-        `Email successfully dispatched from ${email.sender} to ${email.recipient}`,
+        `Email successfully dispatched from ${email.sender} to ${recipient}`,
       );
       return { success: true, message: 'Email sent successfully', data };
     } catch (error) {
-      this.logger.error(`Failed to send email to ${email.recipient}`, error);
+      this.logger.error(`Failed to send email to ${recipient}`, error);
       throw new InternalServerErrorException(
         'Failed to process email dispatch',
+      );
+    }
+  }
+
+  async scheduleSendEmail(
+    referenceNumber: string,
+    recipient: string,
+    date: Date,
+  ): Promise<{ success: boolean; message: string; data: CreateEmailResponse }> {
+    const email = await this.getEmailByReference(referenceNumber);
+
+    const fromString = email.alias
+      ? `${email.alias} <${email.sender}>`
+      : email.sender;
+
+    try {
+      const data = await this.resend.emails.send({
+        from: fromString,
+        to: recipient,
+        subject: email.subject,
+        html: email.content,
+        scheduledAt: date.toISOString(),
+      });
+
+      this.logger.log(
+        `Email successfully scheduled for dispatch from ${email.sender} to ${recipient} at ${date.toISOString()}`,
+      );
+
+      return {
+        success: true,
+        message: 'Email scheduled successfully',
+        data,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to schedule email to ${recipient}`, error);
+      throw new InternalServerErrorException(
+        'Failed to process email scheduling',
       );
     }
   }
