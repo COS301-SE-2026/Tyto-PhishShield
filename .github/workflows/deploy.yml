@@ -28,6 +28,4 @@ jobs:
                 push: true
                 context: ../../
                 file: ./project/backend/accounts-service/Dockerfile
-                tags: | 
-                    ${{ vars.DOCKERHUB_USERNAME }}/accounts:${{ github.ref_name }} 
-                    ${{ vars.DOCKERHUB_USERNAME }}/accounts:latest
+                tags: ${{ vars.DOCKERHUB_USERNAME }}/accounts:latest
