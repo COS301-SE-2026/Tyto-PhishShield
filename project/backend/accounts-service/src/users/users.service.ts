@@ -3,7 +3,7 @@
  *
  * - Handles CRUD operations against the user repository and performs user-related checks.
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
@@ -37,5 +37,33 @@ export class UsersService {
 
   findAll(): Promise<User[]> {
     return this.repo.find();
+  }
+
+  async findById(id:string): Promise<User> {
+    const user = await this.repo.findOne({ where: {id } });
+    if (!user) {
+      throw new NotFoundException('User ${id} not found');
+    }
+    return user;
+  }
+
+  async updateRole(id: string, role: UserRole): Promise<User> {
+    const user = await this.findById(id);
+    user.role = role;
+    return this.repo.save(user);
+  }
+
+  async updateProfile(auth0Id: string, data: { name?: string; email?: string }): Promise<User> {
+    const user = await this.repo.findOne({ where: { auth0Id } });
+    if (!user) throw new NotFoundException('User not found');
+    if (data.name !== undefined) user.name = data.name;
+    if (data.email !== undefined) user.email = data.email;
+    return this.repo.save(user);
+
+  }
+
+  async remove(id: string): Promise<void> {
+    const user = await this.findById(id);
+    await this.repo.remove(user);
   }
 }
