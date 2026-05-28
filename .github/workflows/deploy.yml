@@ -26,6 +26,6 @@ jobs:
               uses: docker/build-push-action@v7.1.0
               with:
                 push: true
-                context: ../../
+                context: .
                 file: ./project/backend/accounts-service/Dockerfile
                 tags: ${{ vars.DOCKERHUB_USERNAME }}/accounts:latest

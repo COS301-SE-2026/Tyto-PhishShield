@@ -2,9 +2,9 @@ name: backend CI
 
 on:
   push:
-    branches: [main, dev, backend]
+    branches: [dev, backend]
   pull_request:
-    branches: [main, dev]
+    branches: [dev]
 
 jobs:
     install:
