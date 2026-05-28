@@ -37,8 +37,10 @@ export class MailingController {
     private readonly proxy: ProxyService,
     private readonly config: ConfigService,
   ) {
-    const port = this.config.get<number>('MAILING_SERVICE_PORT', 3003);
-    this.mailingServiceUrl = `http://localhost:${port}`;
+    this.mailingServiceUrl = this.config.get<string>(
+      'MAILING_SERVICE_URL',
+      'http://localhost:3003',
+    );
   }
 
   @Post()
