@@ -3,6 +3,14 @@ import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
 import { GenerateEmailDto } from '../dto/generate-email.dto';
 import { EmailDifficulty } from '../entities/generated-emails.entity';
+import { SendSingleEmailDto } from '../dto/send-single-email.dto';
+import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
+
+jest.mock('../dto/mailing-post-return.dto', () => {
+  return {
+    MailingPostReturnDto: jest.fn().mockImplementation((data) => data),
+  };
+});
 
 describe('EmailController', () => {
   let controller: EmailController;
@@ -37,6 +45,17 @@ describe('EmailController', () => {
     subject: 'Urgent: Password Reset',
     content: '<p>Please reset your password</p>',
     difficulty: EmailDifficulty.EASY,
+  };
+  
+  const mockSendSingleEmail: SendSingleEmailDto = {
+    recipient: 'test@domain.com',
+    emailReferenceNumber: 'PHISH-001',
+  }
+  
+  const mockScheduleSingleEmail: ScheduleSingleEmailDto = {
+    recipient: 'test@domain.com',
+    emailReferenceNumber: 'PHISH-001',
+    scheduledAt: new Date('2026-05-25T14:30:00.000Z'),
   };
 
   beforeEach(async () => {
@@ -101,46 +120,48 @@ describe('EmailController', () => {
 
   describe('sendEmail', () => {
     it('should trigger the email send sequence', async () => {
-      const mockResponse = {
+      const serviceResponse = {
         success: true,
         message: 'Email sent successfully',
-        data: { id: 'resend-id' },
+        deliveryId: 'resend-id',
       };
-      mockEmailService.sendEmail.mockResolvedValue(mockResponse);
+      mockEmailService.sendEmail.mockResolvedValue(serviceResponse);
 
-      const recipient = 'test@test.com';
-      const result = await controller.sendEmail('PHISH-001', recipient);
+      const result = await controller.sendEmail(mockSendSingleEmail);
 
-      expect(service.sendEmail).toHaveBeenCalledWith('PHISH-001', recipient);
-      expect(result).toEqual(mockResponse);
+      expect(service.sendEmail).toHaveBeenCalledWith(
+        mockSendSingleEmail.emailReferenceNumber,
+        mockSendSingleEmail.recipient
+      );
+      expect(result).toEqual({
+        success: true,
+        message: 'Email sent successfully',
+        deliveryId: 'resend-id',
+      });
     });
   });
 
   describe('scheduleSendEmail', () => {
     it('should parse the date string and trigger the schedule sequence', async () => {
-      const mockResponse = {
+      const serviceResponse = {
         success: true,
         message: 'Email scheduled successfully',
-        data: { id: 'resend-id' },
+        deliveryId: 'schedule-id',
       };
-      mockEmailService.scheduleSendEmail.mockResolvedValue(mockResponse);
+      mockEmailService.scheduleSendEmail.mockResolvedValue(serviceResponse);
 
-      const recipient = 'test@test.com';
-      const scheduledAtStr = '2026-05-25T14:30:00.000Z';
-      const expectedDate = new Date(scheduledAtStr);
-
-      const result = await controller.scheduleSendEmail(
-        'PHISH-001',
-        recipient,
-        scheduledAtStr,
-      );
+      const result = await controller.scheduleSendEmail(mockScheduleSingleEmail);
 
       expect(service.scheduleSendEmail).toHaveBeenCalledWith(
-        'PHISH-001',
-        recipient,
-        expectedDate,
+        mockScheduleSingleEmail.emailReferenceNumber,
+        mockScheduleSingleEmail.recipient,
+        mockScheduleSingleEmail.scheduledAt
       );
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        success: true,
+        message: 'Email scheduled successfully',
+        deliveryId: 'schedule-id',
+      });
     });
   });
 });
