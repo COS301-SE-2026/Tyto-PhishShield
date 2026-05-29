@@ -86,12 +86,15 @@ describe('Email service integration test', () => {
     () => {
       return request(app.getHttpServer())
         .post(`/emails/${testReferenceNumber}/send-single`)
-        .send({ recipient: process.env.OUR_EMAIL })
+        .send({
+          recipient: process.env.OUR_EMAIL,
+          emailReferenceNumber: testReferenceNumber
+        })
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
-          expect(res.body.message).toEqual('Email sent successfully');
-          expect(res.body.data.data).toBeDefined();
+          expect(res.body.message).toContain('sent instantly.');
+          expect(res.body.deliveryId).toBeDefined();
         });
     },
   );
@@ -100,19 +103,20 @@ describe('Email service integration test', () => {
     '/emails/:referenceNumber/schedule-send-single (POST) - should schedule live send',
     () => {
       const futureDate = new Date();
-      futureDate.setMinutes(futureDate.getMinutes() + 2);
+      futureDate.setMinutes(futureDate.getMinutes() + 10);
 
       return request(app.getHttpServer())
         .post(`/emails/${testReferenceNumber}/schedule-send-single`)
         .send({
           recipient: process.env.OUR_EMAIL,
+          emailReferenceNumber: testReferenceNumber,
           scheduledAt: futureDate.toISOString(),
         })
         .expect(200)
         .expect((res) => {
           expect(res.body.success).toBe(true);
-          expect(res.body.message).toEqual('Email scheduled successfully');
-          expect(res.body.data).toBeDefined();
+          expect(res.body.message).toContain('successfully scheduled');
+          expect(res.body.deliveryId).toBeDefined();
         });
     },
   );
