@@ -11,9 +11,11 @@ import {
   UseGuards,
   Req,
   HttpCode,
+  Param,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -26,6 +28,7 @@ interface AuthenticatedRequest extends Request {
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
@@ -42,5 +45,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: AuthenticatedRequest): AuthenticatedUser {
     return req.user;
+  }
+
+  @Get('by-auth0id/:auth0Id')
+  findByAuth0Id(@Param('auth0Id') auth0Id: string) {
+    return this.usersService.findByAuth0Id(auth0Id);
   }
 }
