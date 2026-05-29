@@ -53,7 +53,8 @@ export class EmailController {
   ): Promise<MailingPostReturnDto> {
     const result = await this.sendMailService.sendEmail(
       sendSingleEmailDto.emailReferenceNumber,
-      sendSingleEmailDto.auth0Id,
+      // sendSingleEmailDto.auth0Id,
+      sendSingleEmailDto.recipient,
     );
 
     return new MailingPostReturnDto({
@@ -70,7 +71,8 @@ export class EmailController {
   ): Promise<MailingPostReturnDto> {
     const result = await this.sendMailService.scheduleSendEmail(
       scheduledSingleEmailDto.emailReferenceNumber,
-      scheduledSingleEmailDto.auth0Id,
+      // scheduledSingleEmailDto.auth0Id,
+      scheduledSingleEmailDto.recipient,
       scheduledSingleEmailDto.scheduledAt,
     );
 

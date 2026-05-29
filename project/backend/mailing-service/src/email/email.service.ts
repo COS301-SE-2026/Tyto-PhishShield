@@ -145,7 +145,7 @@ export class EmailService {
 
   async scheduleSendEmail(
     emailReferenceNumber: string,
-    auth0Id: string,
+    recipient: string,
     scheduledAt: Date,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     const email = await this.getEmailByReference(emailReferenceNumber);
@@ -157,7 +157,7 @@ export class EmailService {
     try {
       const data = await this.resend.emails.send({
         from: fromString,
-        to: auth0Id,
+        to: recipient,
         subject: email.subject,
         html: email.content,
         scheduledAt: scheduledAt.toISOString(),

@@ -3,15 +3,19 @@
  *
  * This DTO is used as the Body of the send-single POST request.
  *
- * Elements: auth0Id, emailReferenceNumber
+ * Elements: recipient, emailReferenceNumber
  */
 
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class SendSingleEmailDto {
+  // @IsNotEmpty()
+  // @IsString()
+  // auth0Id: string;
+
+  @IsEmail()
   @IsNotEmpty()
-  @IsString()
-  auth0Id: string;
+  recipient: string;
 
   @IsNotEmpty()
   @IsString()
