@@ -46,6 +46,10 @@
 		"dc:down": "docker compose -f project/docker-compose/local-compose.yml down",
 		"dc:ps": "docker compose ps",
 		"dc:logs": "docker compose logs -f",
+
+		"dc:up:dev-server": "docker compose -f project/docker-compose/dev-compose.yml up -d --build",
+		"dc:down:dev-server": "docker compose -f project/docker-compose/dev-compose.yml down",
+
 		"demo1:backend": "pnpm dc:up",
 		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website",
 		"server:update:dev": "node ./project/scripts/send-dev-compose.js"
