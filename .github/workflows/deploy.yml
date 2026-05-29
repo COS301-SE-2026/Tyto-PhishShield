@@ -4,7 +4,7 @@ on:
     pull_request:
         branches: [main]
     push:
-        branches: [New-services-setup]
+        branches: [(dev)New-services-setup]
 
 jobs:
     build-and-push-accounts:
