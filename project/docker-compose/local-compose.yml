@@ -111,6 +111,18 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
     ports:
       - '${GATEWAY_PORT}:3001'
+  
+  website:
+    build:
+      context: ../../
+      dockerfile: project/frontend/website/Dockerfile
+    restart: on-failure
+    container_name: website
+    environment:
+      - WEBSITE_PORT=5173
+      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+    ports:
+      - '5173:5173'
 
   pgadmin:
     image: dpage/pgadmin4:9.15

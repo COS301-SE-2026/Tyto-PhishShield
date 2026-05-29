@@ -14,6 +14,8 @@
 		"dev:website": "pnpm --filter website dev",
 		"lint:website": "pnpm --filter website lint",
 		"test:website": "pnpm --filter website test",
+		"preview:website": "pnpm --filter website preview",
+		"serve:website": "pnpm --filter website serve",
 		"build:api-gateway": "pnpm --filter api-gateway build",
 		"dev:api-gateway": "pnpm --filter api-gateway start:dev",
 		"prod:api-gateway": "pnpm --filter api-gateway start:prod",
