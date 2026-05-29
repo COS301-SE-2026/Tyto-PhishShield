@@ -110,6 +110,16 @@ services:
   #   ports:
   #     - '${GATEWAY_PORT}:3001'
 
+  website:
+    image: fiveguys301/website:latest
+    restart: on-failure
+    container_name: website
+    environment:
+      - WEBSITE_PORT=5173
+      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+    ports:
+      - '5173:5173'
+
   caddy:
     image: caddy:2.11.3
     container_name: caddy
