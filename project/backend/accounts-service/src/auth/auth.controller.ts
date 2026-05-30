@@ -63,7 +63,6 @@ export class AuthController {
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
   updateProfile(
-
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateProfileDto,
   ) {
@@ -89,10 +88,10 @@ export class AuthController {
 
   @Get('users/:auth0id')
   @UseGuards(JwtAuthGuard)
-  async getUserByAuth0Id(@Param('auth0id') auth0Id: string, @Req() req: AuthenticatedRequest) {
+  async getUserByAuth0Id(@Param('auth0id') auth0Id: string) {
     const user = await this.usersService.findByAuth0Id(auth0Id);
     if (!user) {
-      throw new NotFoundException('User not found'); 
+      throw new NotFoundException('User not found');
     }
     return {
       email: user.email,

@@ -160,7 +160,10 @@ export class AuthService {
     };
   }
 
-  async updateProfile(auth0Id: string, dto: UpdateProfileDto): Promise<{ message: string }> {
+  async updateProfile(
+    auth0Id: string,
+    dto: UpdateProfileDto,
+  ): Promise<{ message: string }> {
     await this.usersService.updateProfile(auth0Id, dto);
 
     if (dto.email) {
@@ -176,7 +179,9 @@ export class AuthService {
           ),
         );
       } catch {
-        console.warn('Could not sync email to Auth0 — update:users permission may be required');
+        console.warn(
+          'Could not sync email to Auth0 — update:users permission may be required',
+        );
       }
     }
 
