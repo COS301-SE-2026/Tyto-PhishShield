@@ -15,6 +15,7 @@ describe('EmailController', () => {
     getEmailByReference: jest.fn(),
     updateEmail: jest.fn(),
     sendEmail: jest.fn(),
+    scheduleSendEmail: jest.fn(),
   };
 
   // Mock the email data returned form db
@@ -23,7 +24,6 @@ describe('EmailController', () => {
     reference_number: 'PHISH-001',
     sender: 'security@domain.com',
     alias: 'IT Support',
-    recipient: 'target@company.com',
     subject: 'Urgent: Password Reset',
     content: '<p>Please reset your password</p>',
     difficulty: EmailDifficulty.EASY,
@@ -34,7 +34,6 @@ describe('EmailController', () => {
   const mockCreateDto: GenerateEmailDto = {
     sender: 'security@domain.com',
     alias: 'IT Support',
-    recipient: 'target@company.com',
     subject: 'Urgent: Password Reset',
     content: '<p>Please reset your password</p>',
     difficulty: EmailDifficulty.EASY,
@@ -109,8 +108,38 @@ describe('EmailController', () => {
       };
       mockEmailService.sendEmail.mockResolvedValue(mockResponse);
 
-      const result = await controller.sendEmail('PHISH-001');
-      expect(service.sendEmail).toHaveBeenCalledWith('PHISH-001');
+      const recipient = 'test@test.com';
+      const result = await controller.sendEmail('PHISH-001', recipient);
+
+      expect(service.sendEmail).toHaveBeenCalledWith('PHISH-001', recipient);
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe('scheduleSendEmail', () => {
+    it('should parse the date string and trigger the schedule sequence', async () => {
+      const mockResponse = {
+        success: true,
+        message: 'Email scheduled successfully',
+        data: { id: 'resend-id' },
+      };
+      mockEmailService.scheduleSendEmail.mockResolvedValue(mockResponse);
+
+      const recipient = 'test@test.com';
+      const scheduledAtStr = '2026-05-25T14:30:00.000Z';
+      const expectedDate = new Date(scheduledAtStr);
+
+      const result = await controller.scheduleSendEmail(
+        'PHISH-001',
+        recipient,
+        scheduledAtStr,
+      );
+
+      expect(service.scheduleSendEmail).toHaveBeenCalledWith(
+        'PHISH-001',
+        recipient,
+        expectedDate,
+      );
       expect(result).toEqual(mockResponse);
     });
   });

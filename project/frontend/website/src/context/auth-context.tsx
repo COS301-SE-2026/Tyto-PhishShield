@@ -103,6 +103,7 @@ const token = localStorage.getItem('access_token');
     localStorage.removeItem('access_token');
     localStorage.removeItem('token_expiry');
     setUser(null);
+    window.location.href = '/login';
   };
 
   const hasRole = (roles: UserRole | UserRole[]): boolean => {

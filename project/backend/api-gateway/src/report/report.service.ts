@@ -19,7 +19,7 @@ export class ReportService {
     let returnMessage: string;
 
     if (isPhishingEmail) {
-      const reporterEmail = report.reporterEmail;
+      const reporterEmail = report.reporterEmail.toLowerCase();
       this.awardXp({ reporterEmail, amount: 10 });
       returnMessage = 'phishing email detected';
     } else {

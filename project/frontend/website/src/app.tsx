@@ -1,5 +1,6 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 
+import { SendEmailTest } from './pages/send-email-test/send-email-test';
 import { Home } from './pages/home';
 import { Login } from './pages/auth/login';
 import { Register } from './pages/auth/register';
@@ -36,6 +37,8 @@ function App() {
       <Route path="/training" element={<Training onNavigate={handleNavigate} activePath="/training" />} />
 
       <Route path="/campaigns" element={<Campaigns onNavigate={handleNavigate} activePath="/campaigns" />} />
+
+      <Route path="/send-email-test" element={<SendEmailTest onNavigate={handleNavigate} activePath="/send-email-test" />} />
 
       <Route path="/users" element={<Users onNavigate={handleNavigate} activePath="/users" />} />
 
