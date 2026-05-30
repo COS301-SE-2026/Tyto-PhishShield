@@ -66,4 +66,11 @@ export class UsersService {
     const user = await this.findById(id);
     await this.repo.remove(user);
   }
+
+  async removeByAuth0Id(auth0Id: string): Promise<void> {
+    const user = await this.repo.findOne({ where: { auth0Id } });
+    if (user ) {
+      await this.repo.remove(user);
+    }
+  }
 }
