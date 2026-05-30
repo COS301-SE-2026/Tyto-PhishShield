@@ -8,8 +8,10 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
 
-interface RequestWithUser {
-  user: {role: string };
+interface AuthenticatedRequest {
+  user: {
+    role: UserRole;
+  };
 }
 
 @Injectable()
@@ -26,9 +28,10 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const userRole = request.user.role;
 
-    if (!required.includes(user.role as UserRole)) {
+    if (!required.includes(userRole)) {
       throw new ForbiddenException(
         'You do not have permission to access this resource',
       );

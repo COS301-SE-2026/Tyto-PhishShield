@@ -41,7 +41,10 @@ export class UsersController {
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const user = await this.usersService.findById(id);
-    if ((req.user.role as UserRole) === UserRole.USER && user.auth0Id !== req.user.auth0Id) {
+    if (
+      (req.user.role as UserRole) === UserRole.USER &&
+      user.auth0Id !== req.user.auth0Id
+    ) {
       return { message: 'Not Allowed' };
     }
     return user;
