@@ -112,6 +112,106 @@ services:
     ports:
       - '${GATEWAY_PORT}:3001'
   
+  report_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${REPORT_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${REPORT_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${REPORT_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - report_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "$REPORT_DB_PORT:5432"
+
+  report_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/report-service/Dockerfile
+
+      # Must be unique
+    container_name: ${REPORT_APP_CONTAINER}
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - DB_HOST=report_db
+      - REPORT_DB_PORT=5434
+
+    ports:
+      # Left side must be unique
+      - "${REPORT_SERVICE_PORT}:3004"
+
+    depends_on:
+      report_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  xp_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${XP_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${XP_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${XP_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - xp_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "$XP_DB_PORT:5432"
+
+  xp_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/xp-service/Dockerfile
+
+      # Must be unique
+    container_name: ${XP_APP_CONTAINER}
+    env_file:
+      - .env
+    environment:
+      - PORT=3005
+      - DB_HOST=xp_db
+      - XP_DB_PORT=5435
+
+    ports:
+      # Left side must be unique
+      - "${XP_SERVICE_PORT}:3005"
+
+    depends_on:
+      report_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+  
   website:
     build:
       context: ../../
@@ -149,4 +249,6 @@ volumes:
   # Must be hard coded
   mailing_pgdata:
   accounts_pgdata:
+  report_pgdata:
+  xp_pgdata:
   pgadmin_data:
