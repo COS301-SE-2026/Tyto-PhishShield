@@ -39,8 +39,8 @@ export class UsersService {
     return this.repo.find();
   }
 
-  async findById(id:string): Promise<User> {
-    const user = await this.repo.findOne({ where: {id } });
+  async findById(id: string): Promise<User> {
+    const user = await this.repo.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User ${id} not found');
     }
@@ -53,13 +53,15 @@ export class UsersService {
     return this.repo.save(user);
   }
 
-  async updateProfile(auth0Id: string, data: { name?: string; email?: string }): Promise<User> {
+  async updateProfile(
+    auth0Id: string,
+    data: { name?: string; email?: string },
+  ): Promise<User> {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
     if (data.email !== undefined) user.email = data.email;
     return this.repo.save(user);
-
   }
 
   async remove(id: string): Promise<void> {
@@ -69,7 +71,7 @@ export class UsersService {
 
   async removeByAuth0Id(auth0Id: string): Promise<void> {
     const user = await this.repo.findOne({ where: { auth0Id } });
-    if (user ) {
+    if (user) {
       await this.repo.remove(user);
     }
   }

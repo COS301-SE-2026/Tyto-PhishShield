@@ -30,7 +30,10 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService, private readonly usersService: UsersService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
@@ -57,13 +60,19 @@ export class AuthController {
 
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
-  updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateProfileDto) {
+  updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ) {
     return this.authService.updateProfile(req.user.auth0Id, dto);
   }
 
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
-  changePassword(@Req() req: AuthenticatedRequest, @Body() dto: ChangePasswordDto) {
+  changePassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
     return this.authService.changePassword(req.user.auth0Id, dto);
   }
 

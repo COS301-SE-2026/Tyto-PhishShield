@@ -154,11 +154,16 @@ export class AuthService {
     }
   }
 
-  logout(): { message:string } {
-    return { message: 'Logged out sucessfully. Please discard your access token.'};
+  logout(): { message: string } {
+    return {
+      message: 'Logged out sucessfully. Please discard your access token.',
+    };
   }
 
-  async updateProfile(auth0Id:string, dto: UpdateProfileDto): Promise<{ message: string }> {
+  async updateProfile(
+    auth0Id: string,
+    dto: UpdateProfileDto,
+  ): Promise<{ message: string }> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
@@ -169,8 +174,12 @@ export class AuthService {
     if (Object.keys(auth0Payload).length > 0) {
       try {
         await firstValueFrom(
-          this.http.patch( `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`, auth0Payload, {
-            headers: { Authorization: `Bearer ${mgmtToken}` } },
+          this.http.patch(
+            `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+            auth0Payload,
+            {
+              headers: { Authorization: `Bearer ${mgmtToken}` },
+            },
           ),
         );
       } catch (err: unknown) {
@@ -178,7 +187,9 @@ export class AuthService {
         if (e.response?.status === 404) {
           throw new NotFoundException('User not found');
         }
-        throw new InternalServerErrorException('Failed to update profile, please try again');
+        throw new InternalServerErrorException(
+          'Failed to update profile, please try again',
+        );
       }
     }
 
@@ -187,26 +198,34 @@ export class AuthService {
     return { message: 'Profile updated successfully' };
   }
 
-  async changePassword(auth0Id: string, dto: ChangePasswordDto): Promise<{ message: string }> {
+  async changePassword(
+    auth0Id: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
     try {
       await firstValueFrom(
-        this.http.patch( `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`, 
-        { password: dto.newPassword },
-        { headers: {Authorization: `Bearer ${mgmtToken}` } },
+        this.http.patch(
+          `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          { password: dto.newPassword },
+          { headers: { Authorization: `Bearer ${mgmtToken}` } },
         ),
       );
-    } catch (err:unknown) {
+    } catch (err: unknown) {
       const e = err as AxiosErrorShape;
       if (e.response?.status === 400) {
-        throw new InternalServerErrorException('Password does not meet complexity requirements');
+        throw new InternalServerErrorException(
+          'Password does not meet complexity requirements',
+        );
       }
-      throw new InternalServerErrorException('Failed to change password, please try again');
+      throw new InternalServerErrorException(
+        'Failed to change password, please try again',
+      );
     }
 
-    return { message: 'Password changed successfylly' }
+    return { message: 'Password changed successfylly' };
   }
 
   async deleteUser(auth0Id: string): Promise<void> {
@@ -215,8 +234,9 @@ export class AuthService {
 
     try {
       await firstValueFrom(
-        this.http.delete( `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`, 
-        { headers: { Authorization: `Bearer ${mgmtToken}` } },
+        this.http.delete(
+          `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          { headers: { Authorization: `Bearer ${mgmtToken}` } },
         ),
       );
     } catch (err: unknown) {
@@ -224,7 +244,9 @@ export class AuthService {
       if (e.response?.status === 404) {
         throw new NotFoundException('User not found');
       }
-      throw new InternalServerErrorException('Failed to delete user, please try again');
+      throw new InternalServerErrorException(
+        'Failed to delete user, please try again',
+      );
     }
   }
 }
