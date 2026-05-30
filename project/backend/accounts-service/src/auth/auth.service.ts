@@ -8,12 +8,15 @@ import {
   ConflictException,
   UnauthorizedException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 
@@ -148,6 +151,80 @@ export class AuthService {
         axiosErr.response?.data ?? axiosErr.message,
       );
       throw new UnauthorizedException('Invalid email or password');
+    }
+  }
+
+  logout(): { message:string } {
+    return { message: 'Logged out sucessfully. Please discard your access token.'};
+  }
+
+  async updateProfile(auth0Id:string, dto: UpdateProfileDto): Promise<{ message: string }> {
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
+    const mgmtToken = await this.getManagementToken();
+
+    const auth0Payload: Record<string, string> = {};
+    if (dto.name) auth0Payload['name'] = dto.name;
+    if (dto.email) auth0Payload['email'] = dto.email;
+
+    if (Object.keys(auth0Payload).length > 0) {
+      try {
+        await firstValueFrom(
+          this.http.patch( `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`, auth0Payload, {
+            headers: { Authorization: `Bearer ${mgmtToken}` } },
+          ),
+        );
+      } catch (err: unknown) {
+        const e = err as AxiosErrorShape;
+        if (e.response?.status === 404) {
+          throw new NotFoundException('User not found');
+        }
+        throw new InternalServerErrorException('Failed to update profile, please try again');
+      }
+    }
+
+    await this.usersService.updateProfile(auth0Id, dto);
+
+    return { message: 'Profile updated successfully' };
+  }
+
+  async changePassword(auth0Id: string, dto: ChangePasswordDto): Promise<{ message: string }> {
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
+    const mgmtToken = await this.getManagementToken();
+
+    try {
+      await firstValueFrom(
+        this.http.patch( `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`, 
+        { password: dto.newPassword },
+        { headers: {Authorization: `Bearer ${mgmtToken}` } },
+        ),
+      );
+    } catch (err:unknown) {
+      const e = err as AxiosErrorShape;
+      if (e.response?.status === 400) {
+        throw new InternalServerErrorException('Password does not meet complexity requirements');
+      }
+      throw new InternalServerErrorException('Failed to change password, please try again');
+    }
+
+    return { message: 'Password changed successfylly' }
+  }
+
+  async deleteUser(auth0Id: string): Promise<void> {
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
+    const mgmtToken = await this.getManagementToken();
+
+    try {
+      await firstValueFrom(
+        this.http.delete( `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`, 
+        { headers: { Authorization: `Bearer ${mgmtToken}` } },
+        ),
+      );
+    } catch (err: unknown) {
+      const e = err as AxiosErrorShape;
+      if (e.response?.status === 404) {
+        throw new NotFoundException('User not found');
+      }
+      throw new InternalServerErrorException('Failed to delete user, please try again');
     }
   }
 }
