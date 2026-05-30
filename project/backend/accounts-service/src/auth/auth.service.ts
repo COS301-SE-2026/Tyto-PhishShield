@@ -160,40 +160,25 @@ export class AuthService {
     };
   }
 
-  async updateProfile(
-    auth0Id: string,
-    dto: UpdateProfileDto,
-  ): Promise<{ message: string }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-    const mgmtToken = await this.getManagementToken();
+  async updateProfile(auth0Id: string, dto: UpdateProfileDto): Promise<{ message: string }> {
+    await this.usersService.updateProfile(auth0Id, dto);
 
-    const auth0Payload: Record<string, string> = {};
-    if (dto.name) auth0Payload['name'] = dto.name;
-    if (dto.email) auth0Payload['email'] = dto.email;
+    if (dto.email) {
+      const domain = this.config.get<string>('AUTH0_DOMAIN');
+      const mgmtToken = await this.getManagementToken();
 
-    if (Object.keys(auth0Payload).length > 0) {
       try {
         await firstValueFrom(
           this.http.patch(
             `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
-            auth0Payload,
-            {
-              headers: { Authorization: `Bearer ${mgmtToken}` },
-            },
+            { email: dto.email },
+            { headers: { Authorization: `Bearer ${mgmtToken}` } },
           ),
         );
-      } catch (err: unknown) {
-        const e = err as AxiosErrorShape;
-        if (e.response?.status === 404) {
-          throw new NotFoundException('User not found');
-        }
-        throw new InternalServerErrorException(
-          'Failed to update profile, please try again',
-        );
+      } catch {
+        console.warn('Could not sync email to Auth0 — update:users permission may be required');
       }
     }
-
-    await this.usersService.updateProfile(auth0Id, dto);
 
     return { message: 'Profile updated successfully' };
   }

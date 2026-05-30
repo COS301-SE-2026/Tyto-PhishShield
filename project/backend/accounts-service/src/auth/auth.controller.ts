@@ -13,6 +13,8 @@ import {
   UseGuards,
   Req,
   HttpCode,
+  Param,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
@@ -61,6 +63,7 @@ export class AuthController {
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
   updateProfile(
+
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateProfileDto,
   ) {
@@ -82,5 +85,19 @@ export class AuthController {
   async deleteOwnAccount(@Req() req: AuthenticatedRequest) {
     await this.authService.deleteUser(req.user.auth0Id);
     await this.usersService.removeByAuth0Id(req.user.auth0Id);
+  }
+
+  @Get('users/:auth0id')
+  @UseGuards(JwtAuthGuard)
+  async getUserByAuth0Id(@Param('auth0id') auth0Id: string, @Req() req: AuthenticatedRequest) {
+    const user = await this.usersService.findByAuth0Id(auth0Id);
+    if (!user) {
+      throw new NotFoundException('User not found'); 
+    }
+    return {
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    };
   }
 }
