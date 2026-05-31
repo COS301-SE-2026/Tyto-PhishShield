@@ -118,6 +118,7 @@ export interface SendEmailResponse {
 export interface XPResponse {
   userId: string;
   xp: number;
+  xpToday?: number;
   status?: "Success" | "Error";
   message?: string;
 }
