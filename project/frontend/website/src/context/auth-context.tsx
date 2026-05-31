@@ -1,7 +1,5 @@
-import {
-  createContext, useContext, useState, useEffect, useCallback,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useState, useEffect, useCallback,
+  type ReactNode, } from 'react';
 import type { AuthenticatedUser, UserRole } from '../types';
 
 interface AuthContextValue {
@@ -16,8 +14,7 @@ interface AuthContextValue {
 }
 
 const ROLE_LEVEL: Record<UserRole, number> = { admin: 3, analyst: 2, user: 1 };
-const BASE_URL = 'http://localhost:3001/api';
-
+const BASE_URL = '/api';
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const isTokenExpired = () => {
@@ -29,10 +26,8 @@ const isTokenExpired = () => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   const refreshUser = useCallback(async () => {
-const token = localStorage.getItem('access_token');
-    
+  const token = localStorage.getItem('access_token');
     if (!token || isTokenExpired()) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('token_expiry');
@@ -40,7 +35,6 @@ const token = localStorage.getItem('access_token');
       setIsLoading(false);
       return;
     }
-
     try {
       const response: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
         method: 'GET',
@@ -50,7 +44,6 @@ const token = localStorage.getItem('access_token');
         },
       });
       if (!response.ok) throw new Error('Token verification failed');
-
       const me: AuthenticatedUser = await response.json() as AuthenticatedUser;
       setUser(me);
     } catch {
@@ -70,21 +63,14 @@ const token = localStorage.getItem('access_token');
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-
-    if (!response.ok) {
-      throw new Error('Invalid email or password.');
-    }
-
+    if (!response.ok) { throw new Error('Invalid email or password.'); }
     interface Token {
       access_token: string;
       expires_in: number;
     };
-
     const { access_token, expires_in } = await response.json() as Token;
-    
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
-
     const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
       method: 'GET',
       headers: {
@@ -92,7 +78,6 @@ const token = localStorage.getItem('access_token');
         'Content-Type': 'application/json',
       },
     });
-
     if (meResponse.ok) {
       const me: AuthenticatedUser = await meResponse.json() as AuthenticatedUser;
       setUser(me);
@@ -112,7 +97,6 @@ const token = localStorage.getItem('access_token');
     return arr.includes(user.role);
   };
 
-  // canAccess('analyst') : this is true for analyst AND admin
   const canAccess = (minRole: UserRole): boolean => {
     if (!user) return false;
     return ROLE_LEVEL[user.role] >= ROLE_LEVEL[minRole];
