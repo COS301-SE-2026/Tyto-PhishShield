@@ -8,6 +8,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { passportJwtSecret } from 'jwks-rsa';
 import { ConfigService } from '@nestjs/config';
+import { UsersService } from '../../users/users.service';
 
 interface JwtPayload {
   sub: string;
@@ -23,7 +24,10 @@ export interface AuthenticatedUser {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly usersService: UsersService,
+  ) {
     super({
       secretOrKeyProvider: passportJwtSecret({
         cache: true,
@@ -38,11 +42,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload): AuthenticatedUser {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const dbUser = await this.usersService.findByAuth0Id(payload.sub);
     return {
       auth0Id: payload.sub,
-      email: payload.email,
-      role: payload['https://phishshield/roles']?.[0] ?? 'user',
+      email: payload.email ?? dbUser?.email ?? '',
+      role: dbUser?.role ?? payload['https://phishshield/roles']?.[0] ?? 'user',
     };
   }
 }

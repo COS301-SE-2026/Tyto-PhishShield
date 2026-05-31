@@ -3,7 +3,7 @@
  *
  * - Handles CRUD operations against the user repository and performs user-related checks.
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
@@ -13,6 +13,7 @@ interface CreateUserInput {
   email: string;
   name?: string;
   role?: UserRole;
+  department?: string;
 }
 
 @Injectable()
@@ -37,5 +38,67 @@ export class UsersService {
 
   findAll(): Promise<User[]> {
     return this.repo.find();
+  }
+
+  async findById(id: string): Promise<User> {
+    const user = await this.repo.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('User ${id} not found');
+    }
+    return user;
+  }
+
+  async updateRole(id: string, role: UserRole): Promise<User> {
+    const user = await this.findById(id);
+    user.role = role;
+    return this.repo.save(user);
+  }
+
+  async updateProfile(
+    auth0Id: string,
+    data: { name?: string; email?: string },
+  ): Promise<User> {
+    const user = await this.repo.findOne({ where: { auth0Id } });
+    if (!user) throw new NotFoundException('User not found');
+    if (data.name !== undefined) user.name = data.name;
+    if (data.email !== undefined) user.email = data.email;
+    return this.repo.save(user);
+  }
+
+  async awardXp(email: string, amount: number): Promise<{ xp: number; xpToday: number }> {
+    const user = await this.repo.findOne({ where: { email } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    if (user.xpLastDate !== today) {
+      user.xpToday = 0;
+      user.xpLastDate = today;
+    }
+
+    user.xp += amount;
+    user.xpToday += amount;
+    const saved = await this.repo.save(user);
+    return { xp: saved.xp, xpToday: saved.xpToday };
+  }
+
+  async getXpByEmail(email: string): Promise<{ xp: number; xpToday: number }> {
+    const user = await this.repo.findOne({ where: { email } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const today = new Date().toISOString().slice(0, 10);
+    const xpToday = user.xpLastDate === today ? user.xpToday : 0;
+    return { xp: user.xp, xpToday };
+  }
+
+  async remove(id: string): Promise<void> {
+    const user = await this.findById(id);
+    await this.repo.remove(user);
+  }
+
+  async removeByAuth0Id(auth0Id: string): Promise<void> {
+    const user = await this.repo.findOne({ where: { auth0Id } });
+    if (user) {
+      await this.repo.remove(user);
+    }
   }
 }

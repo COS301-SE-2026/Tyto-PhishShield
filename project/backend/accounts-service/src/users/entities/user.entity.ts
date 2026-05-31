@@ -34,6 +34,18 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role!: UserRole;
 
+  @Column({ type: 'varchar', nullable: true })
+  department!: string | null;
+
+  @Column({ type: 'int', default: 0 })
+  xp!: number;
+
+  @Column({ type: 'int', default: 0 })
+  xpToday!: number;
+
+  @Column({ type: 'varchar', length: 10, nullable: true, default: null })
+  xpLastDate!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 
