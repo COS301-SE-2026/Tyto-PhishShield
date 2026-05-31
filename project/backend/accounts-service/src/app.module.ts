@@ -27,7 +27,7 @@ import { AppService } from './app.service';
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
         entities: [User],
-        synchronize: true, //this will auto create tables based on entities, but this is for development only.
+        synchronize: true,
       }),
     }),
     AuthModule,
