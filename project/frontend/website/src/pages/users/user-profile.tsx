@@ -1,12 +1,24 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
+import { useState, useEffect } from 'react';
 import { useToast } from '../../context/toast-context';
+import { API_BASE, authFetch } from '../../services/api';
 
 interface UserProfileProps {
   onNavigate: (path: string) => void;
   activePath: string;
   userId?: string;
+}
+
+interface FetchedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string | null;
+  xp: number;
+  createdAt: string;
 }
 
 const ACHIEVEMENTS = [
@@ -29,25 +41,61 @@ const DEPT_STATS = [
 ];
 
 export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps) {
-  //const { user: currentUser, hasRole, canAccess } = useAuth();
   const { user: currentUser, hasRole } = useAuth();
   const { addToast } = useToast();
   const isOwnProfile = !userId;
   const isAdmin = hasRole('admin');
+  const [fetchedUser, setFetchedUser] = useState<FetchedUser | null>(null);
+  const [loadingUser, setLoadingUser] = useState(!!userId);
+  useEffect(() => {
+    if (!userId) return;
+    setLoadingUser(true);
+    authFetch(`${API_BASE}/accounts/users/${userId}`)
+      .then(r => r.ok ? r.json() as Promise<FetchedUser> : Promise.reject(r.status))
+      .then(data => setFetchedUser(data))
+      .catch(() => addToast({ type: 'error', title: 'Could not load user', message: 'User may not exist or you lack access.' }))
+      .finally(() => setLoadingUser(false));
+  }, [userId]);
 
-  const profileUser = {
-    name: isOwnProfile ? (currentUser?.email?.split('@')[0] ?? 'User') : 'Lebo Dlamini',
-    email: isOwnProfile ? (currentUser?.email ?? '') : 'lebo@tyto.co.za',
-    role: isOwnProfile ? (currentUser?.role ?? 'user') : 'analyst',
-    department: 'IT & Security',
-    xp: 3560, rank: 4, streak: 12, reportsField: 28,
-    initials: isOwnProfile ? (currentUser?.email?.slice(0, 2).toUpperCase() ?? '??') : 'LD',
-    accuracy: 88,
+  const initials = (name?: string | null, email?: string) => {
+    if (name) {
+      const parts = name.trim().split(/\s+/);
+      return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+    }
+    return (email ?? '??').slice(0, 2).toUpperCase();
   };
 
+  const profileUser = isOwnProfile ? {
+    name: currentUser?.name ?? currentUser?.email?.split('@')[0] ?? 'User',
+    email: currentUser?.email ?? '',
+    role: currentUser?.role ?? 'user',
+    department: null as string | null,
+    xp: 0, rank: 4, streak: 12, reportsField: 28,
+    initials: initials(currentUser?.name, currentUser?.email),
+    accuracy: 88,
+  } : fetchedUser ? {
+    name: fetchedUser.name ?? '—',
+    email: fetchedUser.email,
+    role: fetchedUser.role,
+    department: fetchedUser.department,
+    xp: fetchedUser.xp, rank: 4, streak: 12, reportsField: 28,
+    initials: initials(fetchedUser.name, fetchedUser.email),
+    accuracy: 88,
+  } : {
+    name: '…', email: '…', role: 'user', department: null,
+    xp: 0, rank: 0, streak: 0, reportsField: 0, initials: '…', accuracy: 0,
+  };
   const xpTarget = 5000;
   const xpPct = Math.min((profileUser.xp / xpTarget) * 100, 100);
-
+  if (!isOwnProfile && loadingUser) {
+    return (
+      <AppLayout activePath={activePath} onNavigate={onNavigate} title="Loading…" securityScore={72}>
+        <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          Loading user profile.
+        </div>
+      </AppLayout>
+    );
+  }
   return (
     <AppLayout
       activePath={activePath}
@@ -60,8 +108,7 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
       securityScore={72}
     >
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 16, alignItems: 'start' }}>
-
-        {/* Left: profile card */}
+        {/* Profile card */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Card>
             {/* Header */}
@@ -75,7 +122,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
                 {profileUser.role.charAt(0).toUpperCase() + profileUser.role.slice(1)}
               </span>
             </div>
-
             {/* Stats */}
             <div style={{ padding: '12px 16px' }}>
               {[
@@ -84,7 +130,7 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
                 { k: 'Reports Filed', v: String(profileUser.reportsField) },
                 { k: 'Current Streak', v: `${profileUser.streak} days` },
                 { k: 'Detection Accuracy', v: `${profileUser.accuracy}%` },
-                { k: 'Department', v: profileUser.department },
+                { k: 'Department', v: profileUser.department ?? '—' },
               ].map(s => (
                 <div key={s.k} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--bg-hover)' }}>
                   <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{s.k}</span>
@@ -92,7 +138,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
                 </div>
               ))}
             </div>
-
             {/* XP progress */}
             <div style={{ padding: '0 16px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -106,7 +151,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
                 {profileUser.xp.toLocaleString()} / {xpTarget.toLocaleString()} XP
               </div>
             </div>
-
             {/* Admin actions */}
             {isAdmin && !isOwnProfile && (
               <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 7, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
@@ -124,7 +168,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
               </div>
             )}
           </Card>
-
           {/* Department stats */}
           <Card style={{ padding: '16px 18px' }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>Department Stats</h3>
@@ -140,7 +183,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
             ))}
           </Card>
         </div>
-
         {/* Right: achievements + activity */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Card style={{ padding: '18px' }}>
@@ -169,7 +211,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
               ))}
             </div>
           </Card>
-
           <Card style={{ padding: '18px' }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Activity</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
