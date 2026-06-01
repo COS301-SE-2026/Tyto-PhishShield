@@ -13,6 +13,7 @@ import { AppService } from './app.service';
 import { MailingModule } from './mailing/mailing.module';
 
 import { ReportModule } from './report/report.module';
+import { OtpModule } from './otp/otp.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ReportModule } from './report/report.module';
     AccountsModule,
     MailingModule,
     ReportModule,
+    OtpModule,
   ],
   controllers: [AppController],
   providers: [AppService],
