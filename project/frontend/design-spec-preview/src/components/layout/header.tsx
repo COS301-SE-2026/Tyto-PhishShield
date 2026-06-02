@@ -18,6 +18,7 @@ function Header({ darkMode, setDarkMode }: HeaderProps) {
                     </h1>
                 </div>
 
+                {/* Dark Mode button */}
                 <div>
                     <button
                         type='button'

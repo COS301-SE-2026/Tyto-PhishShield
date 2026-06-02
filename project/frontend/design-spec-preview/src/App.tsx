@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import Sidebar from './components/layout/sidebar';
 import Header from './components/layout/header';
+import PageSection from './components/layout/page-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
