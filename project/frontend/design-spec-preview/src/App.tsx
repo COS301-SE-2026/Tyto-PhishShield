@@ -10,11 +10,11 @@ function App() {
   return(
     <div className={`min-h-screen ${pageStyle}`}>
       <Sidebar/>
-      
+
       <main className='lg:ml-64'>
         <Header darkMode={darkMode} setDarkMode={setDarkMode} />
 
-        <section>
+        <section className='p-6 md:p-8'>
           page stuff
         </section>
       </main>
