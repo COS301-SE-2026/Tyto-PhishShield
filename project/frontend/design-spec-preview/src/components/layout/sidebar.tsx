@@ -5,7 +5,7 @@ const navItems = ['Brand', 'Colours', 'Typography', 'Spacing', 'Components', 'Ra
 
 function Sidebar() {
     return (
-        <aside className='fixed left-0 top-0 hidden h-screenw-64 border-r border-slate-800 bg-[#0F172A] p-6 text-white lg:block'>
+        <aside className='fixed left-0 top-0 hidden h-screen w-64 border-r border-slate-800 bg-[#0F172A] p-6 text-white lg:block'>
             {/* Owl Logo */}
             <div className='mb-10 flex items-center gap-3'>
                 <OwlLogo/>
@@ -16,16 +16,17 @@ function Sidebar() {
                 </div>
             </div>
             
+            {/* Sidebar Navigation */}
             <nav>
                 {navItems.map((item) => (
                     <a
                         key = {item}
                         href={`#${item.toLowerCase()}`}
-                        className = 'block rounded-lg px-3 py-2 text-slate-300 transition hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+                        className = 'block rounded-lg px-3 py-2 text-slate-300 transition hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-1'
                     >
                         {item}
                     </a>
-                ))};
+                ))}
             </nav>
         </aside>
     );
