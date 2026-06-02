@@ -1,7 +1,7 @@
 import React from 'react';
 import { OwlLogo } from '../../../../website/src/components/ui/owl-logo';
 
-const navItems = ['Brand', 'Colours', 'Typography', 'Spacing', 'Components', 'Ratio Example', 'Dashboard'];
+const navItems = ['Brand', 'Colours', 'Typography', 'Spacing', 'Components', 'Ratio', 'Dashboard'];
 
 function Sidebar() {
     return (
@@ -17,7 +17,7 @@ function Sidebar() {
             </div>
             
             {/* Sidebar Navigation */}
-            <nav>
+            <nav className='space-y-1' aria-label='Design spec preview'>
                 {navItems.map((item) => (
                     <a
                         key = {item}
