@@ -15,7 +15,18 @@ function Sidebar() {
                     <div className='mt-1 text-xs font-medium uppercase tracking-[0.24em] text-blue-300'>PhishShield</div>
                 </div>
             </div>
-            Sidebar
+            
+            <nav>
+                {navItems.map((item) => (
+                    <a
+                        key = {item}
+                        href={`#${item.toLowerCase()}`}
+                        className = 'block rounded-lg px-3 py-2 text-slate-300 transition hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    >
+                        {item}
+                    </a>
+                ))};
+            </nav>
         </aside>
     );
 }
