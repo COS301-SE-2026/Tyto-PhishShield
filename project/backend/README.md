@@ -6,6 +6,10 @@ ___
 [View the Accounts Service](accounts-service/README.md)
 
 [View the Mailing Service](mailing-service/README.md)
+
+[View the Report Service](report-service/README.md)
+
+[View the XP Service](xp-service/README.md)
 ___
 ## Technologies used
 NestJS, PostgreSQL, Docker, Jest, SuperTest

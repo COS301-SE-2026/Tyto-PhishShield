@@ -1,4 +1,23 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+
+    container_name: rabbitmq
+    hostname: rabbitmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  
   mailing_db:
     image: postgres:15-alpine
     restart: always
@@ -201,6 +220,7 @@ services:
       - PORT=3005
       - DB_HOST=xp_db
       - XP_DB_PORT=5435
+      - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
@@ -252,3 +272,5 @@ volumes:
   report_pgdata:
   xp_pgdata:
   pgadmin_data:
+  rabbitmq_data:
+    driver: local
