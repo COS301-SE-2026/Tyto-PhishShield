@@ -238,7 +238,7 @@ services:
       - "${XP_SERVICE_PORT}:3005"
 
     depends_on:
-      report_db:
+      xp_db:
         condition: service_healthy
     volumes:
       - ./src:/app/src
