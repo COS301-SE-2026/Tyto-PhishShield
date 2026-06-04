@@ -26,6 +26,13 @@ export class AppService implements OnModuleInit {
       console.warn('XP TCP connection unavailable: ', err);
       setTimeout(() => this.connectXPService(), 10000);
     }
+
+    try {
+      await this.reportClient.connect();
+    } catch (err) {
+      console.warn('Report TCP connection unavailable: ', err);
+      setTimeout(() => this.connectXPService(), 10000);
+    }
   }
 
   async checkMicroServiceHealth(): Promise<HealthServices> {
@@ -39,7 +46,7 @@ export class AppService implements OnModuleInit {
       healthServices.xpService = "unavailable";
     }
     try {
-      healthServices.xpService = await firstValueFrom(this.xpClient.send('health.check', {})) ; 
+      healthServices.reportService = await firstValueFrom(this.reportClient.send('health.check', {})) ; 
     } catch (err) {
       healthServices.reportService = "unavailable";
     }
