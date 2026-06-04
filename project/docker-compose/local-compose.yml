@@ -59,6 +59,7 @@ services:
       - PORT=3000
       - DB_HOST=mailing_db
       - MAILING_DB_PORT=5432
+      - TCP_PORT=${MAILING_TCP_PORT}
 
     ports:
       # Left side must be unique
@@ -107,6 +108,7 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - TCP_PORT=${ACCOUNTS_TCP_PORT}
     ports:
       - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:
@@ -125,6 +127,14 @@ services:
       - API_GATEWAY_PORT=3001
       - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_HOST=${XP_APP_CONTAINER}
+      - REPORT_HOST=${REPORT_APP_CONTAINER}
+      - MAILING_HOST=${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - REPORT_TCP_PORT=${REPORT_TCP_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
     ports:
@@ -166,7 +176,8 @@ services:
     env_file:
       - .env
     environment:
-      - PORT=3000
+      - PORT=3004
+      - TCP_PORT=${REPORT_TCP_PORT}
       - DB_HOST=report_db
       - REPORT_DB_PORT=5434
 
@@ -217,6 +228,7 @@ services:
       - .env
     environment:
       - PORT=3005
+      - TCP_PORT=${XP_TCP_PORT}
       - DB_HOST=xp_db
       - XP_DB_PORT=5435
       - RABBITMQ_URL=amqp://rabbitmq:5672
