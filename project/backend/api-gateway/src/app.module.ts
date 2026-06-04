@@ -26,9 +26,17 @@ import { ReportModule } from './report/report.module';
         name: 'XP_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: process.env.XP_SERVICE_HOST ?? 'xp_app',
-          port: Number(process.env.XP_TCP_PORT ?? 3000),
+          host: process.env.XP_HOST ?? 'xp_app',
+          port: Number(process.env.XP_TCP_PORT ?? 4004),
         },
+      },
+      {
+      name: 'REPORT_SERVICE',
+      transport: Transport.TCP,
+      options: {
+        host: process.env.REPORT_HOST ?? 'report_app',
+        port: Number(process.env.REPORT_TCP_PORT ?? 4003),
+      },
       },
     ]),
   ],

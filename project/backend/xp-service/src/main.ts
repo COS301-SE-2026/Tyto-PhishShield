@@ -8,9 +8,10 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
-      // options: {
-      //   port: Number(process.env.PORT ?? 3000),
-      // },
+      options: {
+        host: '0.0.0.0',
+        port: Number(process.env.TCP_PORT ?? 3000),
+      },
     },
   );
 
@@ -32,5 +33,6 @@ async function bootstrap() {
   await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3000);
   console.log("XP service listening on port: " + process.env.PORT);
+  console.log("XP TCP service listening on port: " + process.env.TCP_PORT);
 }
 bootstrap();

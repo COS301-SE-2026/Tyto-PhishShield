@@ -6,12 +6,13 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { HealthServices } from './dto/health-check.dto';
-import { first, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AppService implements OnModuleInit {
   constructor(
-    @Inject('XP_SERVICE') private readonly xpClient: ClientProxy
+    @Inject('XP_SERVICE') private readonly xpClient: ClientProxy,
+    @Inject('REPORT_SERVICE') private readonly reportClient: ClientProxy
   ) {}
 
   async onModuleInit() {
@@ -22,7 +23,7 @@ export class AppService implements OnModuleInit {
     try {
       await this.xpClient.connect();
     } catch (err) {
-      console.warn('XP TCP connection unavailable');
+      console.warn('XP TCP connection unavailable: ', err);
       setTimeout(() => this.connectXPService(), 10000);
     }
   }
@@ -30,11 +31,17 @@ export class AppService implements OnModuleInit {
   async checkMicroServiceHealth(): Promise<HealthServices> {
     const healthServices: HealthServices = {
       xpService: "unavailable",
+      reportService: "unavailable",
     }
     try {
       healthServices.xpService = await firstValueFrom(this.xpClient.send('health.check', {})) ; 
     } catch (err) {
       healthServices.xpService = "unavailable";
+    }
+    try {
+      healthServices.xpService = await firstValueFrom(this.xpClient.send('health.check', {})) ; 
+    } catch (err) {
+      healthServices.reportService = "unavailable";
     }
 
     return healthServices;
