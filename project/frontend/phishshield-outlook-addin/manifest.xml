@@ -23,7 +23,9 @@
 
   <SupportUrl DefaultValue="https://www.tyto-phishshield.com/help"/>
 
+  <!-- Added localhost to AppDomain for now. We can remove it and update the other link once the website is deployed -->
   <AppDomains>
+    <AppDomain>http://localhost:3000</AppDomain>
     <AppDomain>https://www.tyto-phishshield.com</AppDomain>
   </AppDomains>
 
