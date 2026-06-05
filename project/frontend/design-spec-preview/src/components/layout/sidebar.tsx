@@ -1,4 +1,3 @@
-import React from 'react';
 import { OwlLogo } from '../../../../website/src/components/ui/owl-logo';
 
 const navItems = ['Brand', 'Colours', 'Typography', 'Spacing', 'Components', 'Ratio', 'Dashboard'];
