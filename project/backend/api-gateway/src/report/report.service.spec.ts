@@ -36,9 +36,10 @@ describe('ReportService', () => {
       dateReported: new Date().toISOString(),
       body: 'Test body',
       source: 'outlook-addin',
+      reporterEmail: 'user1',
     };
 
-    const result = service.save(report, 'user1');
+    const result = service.save(report);
     expect(result.notification).toBe('phishing email detected');
     expect(service.getUserXp('user1').xp).toBe(10);
   });
@@ -54,9 +55,10 @@ describe('ReportService', () => {
       dateReported: new Date().toISOString(),
       body: 'Test body',
       source: 'outlook-addin',
+      reporterEmail: 'user1',
     };
 
-    const result = service.save(report, 'user1');
+    const result = service.save(report);
     expect(result.notification).toBe('not a phishing email');
     expect(service.getUserXp('user1').xp).toBe(0);
   });
