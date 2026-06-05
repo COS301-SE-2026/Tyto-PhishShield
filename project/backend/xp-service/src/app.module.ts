@@ -12,11 +12,11 @@ import { AppService } from './app.service';
         options: {
           urls: [process.env.RABBITMQ_URL ?? 'amqp://localhost:5672'],
           queue: 'xp-service.queue',
-          queueOptions: { 
-            durable: true 
-          }
-        }
-      }
+          queueOptions: {
+            durable: true,
+          },
+        },
+      },
     ]),
   ],
   controllers: [AppController],

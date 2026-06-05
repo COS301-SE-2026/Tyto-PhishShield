@@ -12,7 +12,7 @@ export class AppController {
   }
 
   @MessagePattern('health.check')
-  health(): string { 
+  health(): string {
     return 'ok';
   }
 }
