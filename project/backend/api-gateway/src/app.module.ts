@@ -31,12 +31,12 @@ import { ReportModule } from './report/report.module';
         },
       },
       {
-      name: 'REPORT_SERVICE',
-      transport: Transport.TCP,
-      options: {
-        host: process.env.REPORT_HOST ?? 'report_app',
-        port: Number(process.env.REPORT_TCP_PORT ?? 4003),
-      },
+        name: 'REPORT_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.REPORT_HOST ?? 'report_app',
+          port: Number(process.env.REPORT_TCP_PORT ?? 4003),
+        },
       },
     ]),
   ],

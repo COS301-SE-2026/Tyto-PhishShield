@@ -1,4 +1,4 @@
 export class HealthServices {
-    xpService!: string;
-    reportService!: string;
+  xpService!: string;
+  reportService!: string;
 }

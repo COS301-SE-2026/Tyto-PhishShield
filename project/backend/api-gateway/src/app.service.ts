@@ -12,11 +12,12 @@ import { firstValueFrom } from 'rxjs';
 export class AppService implements OnModuleInit {
   constructor(
     @Inject('XP_SERVICE') private readonly xpClient: ClientProxy,
-    @Inject('REPORT_SERVICE') private readonly reportClient: ClientProxy
+    @Inject('REPORT_SERVICE') private readonly reportClient: ClientProxy,
   ) {}
 
-  async onModuleInit() {
+  onModuleInit() {
     this.connectXPService();
+    this.connectReportService();
   }
 
   private async connectXPService() {
@@ -24,31 +25,37 @@ export class AppService implements OnModuleInit {
       await this.xpClient.connect();
     } catch (err) {
       console.warn('XP TCP connection unavailable: ', err);
-      setTimeout(() => this.connectXPService(), 10000);
+      setTimeout(() => void this.connectXPService(), 10000);
     }
+  }
 
+  private async connectReportService() {
     try {
       await this.reportClient.connect();
     } catch (err) {
       console.warn('Report TCP connection unavailable: ', err);
-      setTimeout(() => this.connectXPService(), 10000);
+      setTimeout(() => void this.connectReportService(), 10000);
     }
   }
 
   async checkMicroServiceHealth(): Promise<HealthServices> {
     const healthServices: HealthServices = {
-      xpService: "unavailable",
-      reportService: "unavailable",
+      xpService: 'unavailable',
+      reportService: 'unavailable',
+    };
+    try {
+      healthServices.xpService = await firstValueFrom(
+        this.xpClient.send('health.check', {}),
+      );
+    } catch {
+      healthServices.xpService = 'unavailable';
     }
     try {
-      healthServices.xpService = await firstValueFrom(this.xpClient.send('health.check', {})) ; 
-    } catch (err) {
-      healthServices.xpService = "unavailable";
-    }
-    try {
-      healthServices.reportService = await firstValueFrom(this.reportClient.send('health.check', {})) ; 
-    } catch (err) {
-      healthServices.reportService = "unavailable";
+      healthServices.reportService = await firstValueFrom(
+        this.reportClient.send('health.check', {}),
+      );
+    } catch {
+      healthServices.reportService = 'unavailable';
     }
 
     return healthServices;

@@ -13,9 +13,12 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get('health')
-  @ApiOperation({ summary: 'returns all the services in which the tcp transport connections are open' })
+  @ApiOperation({
+    summary:
+      'returns all the services in which the tcp transport connections are open',
+  })
   @ApiResponse({
-    type: HealthServices
+    type: HealthServices,
   })
   checkHealth() {
     return this.appService.checkMicroServiceHealth();
