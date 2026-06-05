@@ -13,9 +13,6 @@ export class GenerateEmailDto {
   @IsOptional()
   alias?: string;
 
-  @IsEmail()
-  recipient!: string;
-
   @IsNotEmpty()
   subject!: string;
 
