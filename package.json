@@ -10,73 +10,68 @@
 		"dev:all": "pnpm -r --if-present start:dev",
 		"prod:all": "pnpm -r --if-present start:prod",
 		"lint:all": "pnpm -r --if-present lint",
-
 		"build:website": "pnpm --filter website build",
 		"dev:website": "pnpm --filter website dev",
 		"lint:website": "pnpm --filter website lint",
 		"test:website": "pnpm --filter website test",
-
+		"preview:website": "pnpm --filter website preview",
+		"serve:website": "pnpm --filter website serve",
 		"build:api-gateway": "pnpm --filter api-gateway build",
 		"dev:api-gateway": "pnpm --filter api-gateway start:dev",
 		"prod:api-gateway": "pnpm --filter api-gateway start:prod",
 		"lint:api-gateway": "pnpm --filter api-gateway lint",
 		"test:api-gateway": "pnpm --filter api-gateway test",
-
 		"build:accounts-service": "pnpm --filter accounts-service build",
 		"dev:accounts-service": "pnpm --filter accounts-service start:dev",
 		"prod:accounts-service": "pnpm --filter accounts-service start:prod",
 		"lint:accounts-service": "pnpm --filter accounts-service lint",
 		"test:accounts-service": "pnpm --filter accounts-service test",
-
 		"build:outlook-addin": "pnpm --filter office-addin-taskpane build",
 		"dev:outlook-addin": "pnpm --filter office-addin-taskpane dev-server",
 		"start:outlook-addin": "pnpm --filter office-addin-taskpane start",
 		"lint:outlook-addin": "pnpm --filter office-addin-taskpane lint",
 		"test:outlook-addin": "pnpm --filter office-addin-taskpane test",
-
 		"build:mailing-service": "pnpm --filter mailing-service build",
 		"dev:mailing-service": "pnpm --filter mailing-service start:dev",
 		"prod:mailing-service": "pnpm --filter mailing-service start:prod",
 		"lint:mailing-service": "pnpm --filter mailing-service lint",
 		"test:mailing-service": "pnpm --filter mailing-service test",
-
-		"test:backend": "pnpm --filter accounts-service test && pnpm --filter api-gateway test && pnpm --filter mailing-service test",
+		"build:report-service": "pnpm --filter report-service build",
+		"dev:report-service": "pnpm --filter report-service start:dev",
+		"prod:report-service": "pnpm --filter report-service start:prod",
+		"lint:report-service": "pnpm --filter report-service lint",
+		"test:report-service": "pnpm --filter report-service test",
+		"build:xp-service": "pnpm --filter xp-service build",
+		"dev:xp-service": "pnpm --filter xp-service start:dev",
+		"prod:xp-service": "pnpm --filter xp-service start:prod",
+		"lint:xp-service": "pnpm --filter xp-service lint",
+		"test:xp-service": "pnpm --filter xp-service test",
+		"test:backend": "pnpm test:accounts-service && pnpm test:api-gateway && pnpm test:mailing-service && pnpm test:report-service && pnpm test:xp-service",
 		"test:backend:e2e": "pnpm --filter accounts-service test:e2e && pnpm --filter api-gateway test:e2e && pnpm --if-present --filter mailing-service test:e2e",
-
 		"build:design-spec": "pnpm --filter design-spec-preview build",
 		"dev:design-spec": "pnpm --filter design-spec-preview dev",
 		"lint:design-spec": "pnpm --filter design-spec-preview lint",
-
 		"clear:dist": "pnpm -r --if-present run clear:dist",
 		"clear:node_modules": "pnpm -r --if-present run clear:node_modules",
 		"clear:all": "pnpm run clear:dist && pnpm run clear:node_modules",
-
-		"dc:up": "docker compose up -d",
-		"dc:down": "docker compose down",
+		"dc:up": "docker compose -f project/docker-compose/local-compose.yml up -d --build",
+		"dc:down": "docker compose -f project/docker-compose/local-compose.yml down",
 		"dc:ps": "docker compose ps",
 		"dc:logs": "docker compose logs -f",
-
-		"dc:up:api": "docker compose -f project/backend/api-gateway/docker-compose.yml up -d",
-		"dc:down:api": "docker compose -f project/backend/api-gateway/docker-compose.yml down",
-		
-		"dc:up:accounts": "docker compose -f project/backend/accounts-service/docker-compose.yml up -d",
-		"dc:down:accounts": "docker compose -f project/backend/accounts-service/docker-compose.yml down",
-
-		"dc:up:mailing": "docker compose -f project/backend/mailing-service/docker-compose.yml up -d",
-		"dc:down:mailing": "docker compose -f project/backend/mailing-service/docker-compose.yml down",
-
-		"dc:up:backend": "docker compose -f project/backend/api-gateway/docker-compose.yml -f project/backend/accounts-service/docker-compose.yml -f project/backend/mailing-service/docker-compose.yml up -d",
-		"dc:down:backend": "docker compose -f project/backend/api-gateway/docker-compose.yml -f project/backend/accounts-service/docker-compose.yml -f project/backend/mailing-service/docker-compose.yml down",
-
-		"dc:up:pgadmin": "docker compose -f project/backend/pgadmin-container/docker-compose.yml up -d",
-		"dc:down:pgadmin": "docker compose -f project/backend/pgadmin-container/docker-compose.yml down",
-
-		"demo1:backend": "pnpm dc:up:accounts && pnpm dc:up:mailing && pnpm build:api-gateway && pnpm prod:api-gateway",
-		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website"
+		"dc:up:dev-server": "docker compose -f project/docker-compose/dev-compose.yml up -d --build",
+		"dc:down:dev-server": "docker compose -f project/docker-compose/dev-compose.yml down",
+		"demo1:backend": "pnpm dc:up",
+		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website",
+		"server:update:dev": "node ./project/scripts/send-dev-compose.js"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^11.0.21",
-		"@nestjs/schematics": "^11.1.0"
+		"@nestjs/microservices": "^11.1.24",
+		"@nestjs/schematics": "^11.1.0",
+		"amqp-connection-manager": "^5.0.0",
+		"amqplib": "^2.0.1",
+		"dotenv": "^17.4.2",
+		"dotenv-cli": "^11.0.0"
 	},
 	"dependencies": {
 		"@tailwindcss/postcss": "^4.3.0"

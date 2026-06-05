@@ -1,0 +1,287 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+
+    container_name: rabbitmq
+    hostname: rabbitmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  
+  mailing_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${MAILING_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MAILING_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${MAILING_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      # This must be unique not to override other db's data
+      # This must be hard coded
+      - mailing_pgdata:/var/lib/postgresql/data
+      - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
+
+    ports:
+      # Left side must be unique
+      - "$MAILING_DB_PORT:5432"
+
+  mailing_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/mailing-service/Dockerfile
+
+      # Must be unique
+    container_name: ${MAILING_APP_CONTAINER}
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - DB_HOST=mailing_db
+      - MAILING_DB_PORT=5432
+      - TCP_PORT=${MAILING_TCP_PORT}
+
+    ports:
+      # Left side must be unique
+      - "${MAILING_SERVICE_PORT}:3003"
+
+    depends_on:
+      mailing_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    
+  accounts_db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${ACCOUNTS_DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ACCOUNTS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    container_name: ${ACCOUNTS_DB_CONTAINER}
+    volumes:
+      - accounts_pgdata:/var/lib/postgresql/data
+    ports:
+      - '${ACCOUNTS_DB_PORT}:5432'
+  
+  accounts_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/accounts-service/Dockerfile
+    container_name: ${ACCOUNTS_APP_CONTAINER}
+    environment:
+      - PORT=3002
+      - DB_HOST=accounts_db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ACCOUNTS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - TCP_PORT=${ACCOUNTS_TCP_PORT}
+    ports:
+      - '${ACCOUNTS_SERVICE_PORT}:3002'
+    depends_on:
+      accounts_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  api_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/api-gateway/Dockerfile
+    restart: on-failure
+    container_name: ${GATEWAY_APP_CONTAINER}
+    environment:
+      - API_GATEWAY_PORT=3001
+      - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_HOST=${XP_APP_CONTAINER}
+      - REPORT_HOST=${REPORT_APP_CONTAINER}
+      - MAILING_HOST=${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - REPORT_TCP_PORT=${REPORT_TCP_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+    ports:
+      - '${GATEWAY_PORT}:3001'
+  
+  report_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${REPORT_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${REPORT_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${REPORT_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - report_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "$REPORT_DB_PORT:5432"
+
+  report_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/report-service/Dockerfile
+
+      # Must be unique
+    container_name: ${REPORT_APP_CONTAINER}
+    env_file:
+      - .env
+    environment:
+      - PORT=3004
+      - TCP_PORT=${REPORT_TCP_PORT}
+      - DB_HOST=report_db
+      - REPORT_DB_PORT=5434
+
+    ports:
+      # Left side must be unique
+      - "${REPORT_SERVICE_PORT}:3004"
+
+    depends_on:
+      report_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  xp_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${XP_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${XP_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${XP_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - xp_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "$XP_DB_PORT:5432"
+
+  xp_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/xp-service/Dockerfile
+
+      # Must be unique
+    container_name: ${XP_APP_CONTAINER}
+    env_file:
+      - .env
+    environment:
+      - PORT=3005
+      - TCP_PORT=${XP_TCP_PORT}
+      - DB_HOST=xp_db
+      - XP_DB_PORT=5435
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      # Left side must be unique
+      - "${XP_SERVICE_PORT}:3005"
+
+    depends_on:
+      xp_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+  
+  website:
+    build:
+      context: ../../
+      dockerfile: project/frontend/website/Dockerfile
+    restart: on-failure
+    container_name: website
+    environment:
+      - WEBSITE_PORT=5173
+      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+    ports:
+      - '5173:5173'
+
+  pgadmin:
+    image: dpage/pgadmin4:9.15
+    restart: always
+
+    # Must be unique
+    container_name: PGADMIN_CONTAINER
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'True'
+      PGADMIN_SERVER_JSON_FILE: servers.json
+      PGADMIN_REPLACE_SERVERS_ON_STARTUP: 'True'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./servers.json:/pgadmin4/servers.json:ro
+      - ./.pgpass:/var/lib/pgadmin/.pgpass:ro
+    ports:
+      - "5050:80"
+
+volumes:
+  # Must be same as volume name for db
+  # Must be hard coded
+  mailing_pgdata:
+  accounts_pgdata:
+  report_pgdata:
+  xp_pgdata:
+  pgadmin_data:
+  rabbitmq_data:
+    driver: local
