@@ -11,7 +11,9 @@ import {
 import { EmailService } from './email.service';
 import { GenerateEmailDto } from '../dto/generate-email.dto';
 import { GeneratedEmail } from '../entities/generated-emails.entity';
-import { CreateEmailResponse } from 'resend';
+import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
+import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
+import { SendSingleEmailDto } from '../dto/send-single-email.dto';
 
 @Controller('emails')
 export class EmailController {
@@ -47,24 +49,37 @@ export class EmailController {
   @Post(':referenceNumber/send-single')
   @HttpCode(HttpStatus.OK)
   async sendEmail(
-    @Param('referenceNumber') referenceNumber: string,
-    @Body('recipient') recipient: string,
-  ): Promise<{ success: boolean; message: string; data: CreateEmailResponse }> {
-    return this.sendMailService.sendEmail(referenceNumber, recipient);
+    @Body() sendSingleEmailDto: SendSingleEmailDto,
+  ): Promise<MailingPostReturnDto> {
+    const result = await this.sendMailService.sendEmail(
+      sendSingleEmailDto.emailReferenceNumber,
+      // sendSingleEmailDto.auth0Id,
+      sendSingleEmailDto.recipient,
+    );
+
+    return new MailingPostReturnDto({
+      success: result.success,
+      message: result.message,
+      deliveryId: result.deliveryId,
+    });
   }
 
   @Post(':referenceNumber/schedule-send-single')
   @HttpCode(HttpStatus.OK)
   async scheduleSendEmail(
-    @Param('referenceNumber') referenceNumber: string,
-    @Body('recipient') recipient: string,
-    @Body('scheduledAt') scheduledAt: string,
-  ): Promise<{ success: boolean; message: string; data: CreateEmailResponse }> {
-    const scheduledDate = new Date(scheduledAt);
-    return this.sendMailService.scheduleSendEmail(
-      referenceNumber,
-      recipient,
-      scheduledDate,
+    @Body() scheduledSingleEmailDto: ScheduleSingleEmailDto,
+  ): Promise<MailingPostReturnDto> {
+    const result = await this.sendMailService.scheduleSendEmail(
+      scheduledSingleEmailDto.emailReferenceNumber,
+      // scheduledSingleEmailDto.auth0Id,
+      scheduledSingleEmailDto.recipient,
+      scheduledSingleEmailDto.scheduledAt,
     );
+
+    return new MailingPostReturnDto({
+      success: result.success,
+      message: result.message,
+      deliveryId: result.deliveryId,
+    });
   }
 }
