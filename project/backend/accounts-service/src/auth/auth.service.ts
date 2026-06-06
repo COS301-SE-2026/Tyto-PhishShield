@@ -160,32 +160,9 @@ export class AuthService {
     };
   }
 
-  async updateProfile(
-    auth0Id: string,
-    dto: UpdateProfileDto,
-  ): Promise<{ message: string }> {
+  async updateProfile(auth0Id: string, dto: UpdateProfileDto): Promise<{message: string}> {
     await this.usersService.updateProfile(auth0Id, dto);
-
-    if (dto.email) {
-      const domain = this.config.get<string>('AUTH0_DOMAIN');
-      const mgmtToken = await this.getManagementToken();
-
-      try {
-        await firstValueFrom(
-          this.http.patch(
-            `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
-            { email: dto.email },
-            { headers: { Authorization: `Bearer ${mgmtToken}` } },
-          ),
-        );
-      } catch {
-        console.warn(
-          'Could not sync email to Auth0 — update:users permission may be required',
-        );
-      }
-    }
-
-    return { message: 'Profile updated successfully' };
+    return { message: 'Profile updated successfully'};
   }
 
   async changePassword(
