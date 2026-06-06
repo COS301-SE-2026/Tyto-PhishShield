@@ -127,7 +127,7 @@ describe('EmailController', () => {
       };
       mockEmailService.sendEmail.mockResolvedValue(serviceResponse);
 
-      const result = await controller.sendEmail(mockSendSingleEmail);
+      const result = await controller.sendEmail('PHISH-001', mockSendSingleEmail);
 
       expect(service.sendEmail).toHaveBeenCalledWith(
         mockSendSingleEmail.emailReferenceNumber,

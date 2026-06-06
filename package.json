@@ -55,7 +55,7 @@
 		"clear:node_modules": "pnpm -r --if-present run clear:node_modules",
 		"clear:all": "pnpm run clear:dist && pnpm run clear:node_modules",
 		"dc:up": "docker compose -f project/docker-compose/local-compose.yml --env-file ./project/docker-compose/.env.local up -d --build",
-		"dc:down": "docker compose -f project/docker-compose/local-compose.yml down",
+		"dc:down": "docker compose -f project/docker-compose/local-compose.yml --env-file ./project/docker-compose/.env.local down",
 		"dc:ps": "docker compose ps",
 		"dc:logs": "docker compose logs -f",
 		"dc:up:dev-server": "docker compose -f project/docker-compose/dev-compose.yml up -d --build",
