@@ -77,7 +77,7 @@ export class UsersService {
     }
   }
 
-  async markVerified(email: string): Promise<void> {
+  async markVerified(auth0Id: string): Promise<void> {
     await this.repo.update({ auth0Id }, {isVerified: true })
   }
 }
