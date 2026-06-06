@@ -1,6 +1,6 @@
 import { IsEmail } from 'class-validator';
 
 export class ResendOtpDto {
-    @IsEmail()
-    email!: string;
+  @IsEmail()
+  email!: string;
 }

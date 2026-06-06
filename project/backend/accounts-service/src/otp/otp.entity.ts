@@ -1,22 +1,27 @@
-import {Entity, Column, PrimaryGeneratedColumn, CreateDateColumn} from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity('otps')
 export class Otp {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @Column()
-    email!:string;
+  @Column()
+  email!: string;
 
-    @Column()
-    code!: string;
+  @Column()
+  code!: string;
 
-    @Column()
-    expiresAt!: Date;
+  @Column()
+  expiresAt!: Date;
 
-    @Column({ default: false})
-    used!: boolean;
+  @Column({ default: false })
+  used!: boolean;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
 }

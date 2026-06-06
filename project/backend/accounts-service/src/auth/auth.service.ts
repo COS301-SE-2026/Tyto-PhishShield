@@ -83,9 +83,7 @@ export class AuthService {
     return this.cachedMgmtToken;
   }
 
-  async register(
-    dto: RegisterDto,
-  ): Promise<{ message: string; }> {
+  async register(dto: RegisterDto): Promise<{ message: string }> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
@@ -125,7 +123,10 @@ export class AuthService {
 
     await this.otpService.generateAndSend(dto.email);
 
-    return { message: 'Registration successful. Please verify your email with the OTP sent to you.' };
+    return {
+      message:
+        'Registration successful. Please verify your email with the OTP sent to you.',
+    };
   }
 
   async login(
@@ -133,7 +134,9 @@ export class AuthService {
   ): Promise<{ access_token: string; expires_in: number }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (user && !user.isVerified) {
-      throw new UnauthorizedException('Email not verified. Please verify your email before logging in.');
+      throw new UnauthorizedException(
+        'Email not verified. Please verify your email before logging in.',
+      );
     }
 
     const domain = this.config.get<string>('AUTH0_DOMAIN');
@@ -179,8 +182,10 @@ export class AuthService {
 
   async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) throw new NotFoundException('No account associated with this email');
-    if (user.isVerified) throw new BadRequestException('Email is already verified');
+    if (!user)
+      throw new NotFoundException('No account associated with this email');
+    if (user.isVerified)
+      throw new BadRequestException('Email is already verified');
 
     await this.otpService.generateAndSend(dto.email);
     return { message: 'A new OTP code has been sent to your email.' };
@@ -192,9 +197,12 @@ export class AuthService {
     };
   }
 
-  async updateProfile(auth0Id: string, dto: UpdateProfileDto): Promise<{message: string}> {
+  async updateProfile(
+    auth0Id: string,
+    dto: UpdateProfileDto,
+  ): Promise<{ message: string }> {
     await this.usersService.updateProfile(auth0Id, dto);
-    return { message: 'Profile updated successfully'};
+    return { message: 'Profile updated successfully' };
   }
 
   async changePassword(

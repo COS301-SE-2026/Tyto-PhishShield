@@ -4,11 +4,9 @@ import { HttpModule } from '@nestjs/axios';
 import { Otp } from './otp.entity';
 import { OtpService } from './otp.service';
 
-
 @Module({
-    imports: [TypeOrmModule.forFeature([Otp]), HttpModule],
-    providers: [OtpService],
-    exports: [OtpService],
+  imports: [TypeOrmModule.forFeature([Otp]), HttpModule],
+  providers: [OtpService],
+  exports: [OtpService],
 })
-
 export class OtpModule {}
