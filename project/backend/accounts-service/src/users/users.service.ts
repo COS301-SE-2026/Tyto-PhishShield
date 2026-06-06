@@ -13,6 +13,7 @@ interface CreateUserInput {
   email: string;
   name?: string;
   role?: UserRole;
+  isVerified?: boolean;
 }
 
 @Injectable()
@@ -60,7 +61,6 @@ export class UsersService {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
-    if (data.email !== undefined) user.email = data.email;
     return this.repo.save(user);
   }
 
@@ -74,5 +74,9 @@ export class UsersService {
     if (user) {
       await this.repo.remove(user);
     }
+  }
+
+  async markVerified(auth0Id: string): Promise<void> {
+    await this.repo.update({ auth0Id }, { isVerified: true });
   }
 }

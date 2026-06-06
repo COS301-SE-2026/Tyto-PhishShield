@@ -79,6 +79,47 @@ export class AccountsController {
     });
   }
 
+  @Post('auth/verify-otp')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Verify OTP for email verification' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'code'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+        code: { type: 'string', example: '123456' },
+      },
+    },
+  })
+  verifyOtp(@Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/verify-otp`,
+      method: 'POST',
+      data: body,
+    });
+  }
+
+  @Post('auth/resend-otp')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Resend OTP for email verification' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+      },
+    },
+  })
+  resendOtp(@Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/resend-otp`,
+      method: 'POST',
+      data: body,
+    });
+  }
+
   @Post('auth/login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Login and receive a JWT' })
@@ -254,6 +295,8 @@ export class AccountsController {
       headers: authHeader(req),
     })
   }
+
+
 
 
 
