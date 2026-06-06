@@ -110,7 +110,7 @@ describe('AuthService', () => {
         });
 
         expect(result).toEqual({
-          message: 'Registration successful. Please check your email for a verification code.',
+        message: 'Registration successful. Please verify your email with the OTP sent to you.',
         });
       });
 
