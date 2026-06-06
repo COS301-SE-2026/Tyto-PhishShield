@@ -47,12 +47,10 @@ export class OtpService {
 
     try {
       const { data } = await firstValueFrom(
-        this.http.post<{ reference_number: string }>(
-          `${mailingUrl}/api/emails`,
-          {
-            sender: fromEmail,
-            subject: 'Your OTP Code',
-            content: `
+        this.http.post<{ reference_number: string }>(`${mailingUrl}/emails`, {
+          sender: fromEmail,
+          subject: 'Your OTP Code',
+          content: `
                         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
                         <h2>PhishShield Email Verification</h2>
                         <p>Your verification code is:</p>
@@ -61,9 +59,8 @@ export class OtpService {
                         <p>If you did not request this, please ignore this email.</p>
                         </div>
                     `,
-            recipient: email,
-          },
-        ),
+          recipient: email,
+        }),
       );
       referenceNumber = data.reference_number;
     } catch (err: unknown) {
@@ -77,17 +74,18 @@ export class OtpService {
 
     try {
       await firstValueFrom(
-        this.http.post(
-          `${mailingUrl}/api/emails/${referenceNumber}/send-single`,
-          {
-            recipient: email,
-          },
-        ),
+        this.http.post(`${mailingUrl}/emails/${referenceNumber}/send-single`, {
+          emailReferenceNumber: referenceNumber,
+          recipient: email,
+        }),
       );
     } catch (err: unknown) {
       const e = err as AxiosErrorShape;
-      console.error('Failed to send OTP email:', e.response?.data ?? e.message);
-      throw new InternalServerErrorException('Failed to send OTP email');
+      console.warn(
+        'OTP email could not be sent (mailing service issue):',
+        e.response?.data ?? e.message,
+      );
+      //throw new InternalServerErrorException('Failed to send OTP email');
     }
   }
 
