@@ -1,3 +1,8 @@
+# Demo 1 documents archive
+[View SRS documents](./README%20copy.md)
+
+[View design specification](./design-specifications/design-specifications-document.md)
+
 # Demo 1 Video
 
 [Introduction](https://drive.google.com/file/d/1fcCHZhL1ddqOoqvRYDASmLVRjItIozIU/view?usp=sharing) 

@@ -1,0 +1,149 @@
+services:
+  mailing_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${MAILING_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MAILING_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${MAILING_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      # This must be unique not to override other db's data
+      # This must be hard coded
+      - mailing_pgdata:/var/lib/postgresql/data
+      - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
+
+    ports:
+      # Left side must be unique
+      - "$MAILING_DB_PORT:5432"
+
+  # mailing_app:
+  #   build:
+  #     context: ../../
+  #     dockerfile: project/backend/mailing-service/Dockerfile
+
+  #     # Must be unique
+  #   container_name: ${MAILING_APP_CONTAINER}
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - PORT=3000
+  #     - DB_HOST=mailing_db
+  #     - MAILING_DB_PORT=5432
+
+  #   ports:
+  #     # Left side must be unique
+  #     - "${MAILING_SERVICE_PORT}:3003"
+
+  #   depends_on:
+  #     mailing_db:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./src:/app/src
+    
+  accounts_db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${ACCOUNTS_DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ACCOUNTS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    container_name: ${ACCOUNTS_DB_CONTAINER}
+    volumes:
+      - accounts_pgdata:/var/lib/postgresql/data
+    ports:
+      - '${ACCOUNTS_DB_PORT}:5432'
+  
+  accounts_app:
+    image: fiveguys301/accounts:latest
+    container_name: ${ACCOUNTS_APP_CONTAINER}
+    environment:
+      - PORT=3002
+      - DB_HOST=accounts_db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ACCOUNTS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+    ports:
+      - '${ACCOUNTS_SERVICE_PORT}:3002'
+    depends_on:
+      accounts_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  # api_app:
+  #   build:
+  #     context: ../../
+  #     dockerfile: project/backend/api-gateway/Dockerfile
+  #   restart: on-failure
+  #   container_name: ${GATEWAY_APP_CONTAINER}
+  #   environment:
+  #     - API_GATEWAY_PORT=3001
+  #     - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+  #     - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+  #     - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+  #     - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+  #   ports:
+  #     - '${GATEWAY_PORT}:3001'
+
+  website:
+    image: fiveguys301/website:latest
+    restart: on-failure
+    container_name: website
+    environment:
+      - WEBSITE_PORT=5173
+      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+    ports:
+      - '5173:5173'
+
+  caddy:
+    image: caddy:2.11.3
+    container_name: caddy
+    restart: unless-stopped
+    ports: 
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./caddy-conf:/etc/caddy/
+      - caddy_data:/data
+      - caddy_config:/config
+  
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 3600
+    
+
+volumes:
+  # Must be same as volume name for db
+  # Must be hard coded
+  mailing_pgdata:
+  accounts_pgdata:
+  caddy_data:
+  caddy_config:

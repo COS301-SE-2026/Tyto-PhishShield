@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+.git
+.gitignore
+.vscode
+**/coverage
+Dockerfile
+.dockerignore
+npm-debug.log
+**/pgdata
+.env
+.pgpass
