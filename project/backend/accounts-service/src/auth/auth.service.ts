@@ -9,6 +9,7 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -19,6 +20,9 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
+import { OtpService } from '../otp/otp.service';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
 
 interface Auth0TokenResponse {
   access_token: string;
@@ -54,6 +58,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly http: HttpService,
     private readonly usersService: UsersService,
+    private readonly otpService: OtpService,
   ) {}
 
   private async getManagementToken(): Promise<string> {
@@ -78,9 +83,7 @@ export class AuthService {
     return this.cachedMgmtToken;
   }
 
-  async register(
-    dto: RegisterDto,
-  ): Promise<{ message: string; userId: string }> {
+  async register(dto: RegisterDto): Promise<{ message: string }> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
@@ -111,19 +114,31 @@ export class AuthService {
       );
     }
 
-    const user = await this.usersService.create({
+    await this.usersService.create({
       auth0Id: auth0User.user_id,
       email: dto.email,
       name: dto.name,
       role: UserRole.USER,
     });
 
-    return { message: 'Registration successful', userId: user.id };
+    await this.otpService.generateAndSend(dto.email);
+
+    return {
+      message:
+        'Registration successful. Please verify your email with the OTP sent to you.',
+    };
   }
 
   async login(
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number }> {
+    const user = await this.usersService.findByEmail(dto.email);
+    if (user && !user.isVerified) {
+      throw new UnauthorizedException(
+        'Email not verified. Please verify your email before logging in.',
+      );
+    }
+
     const domain = this.config.get<string>('AUTH0_DOMAIN');
 
     try {
@@ -154,6 +169,28 @@ export class AuthService {
     }
   }
 
+  async verifyOtp(dto: VerifyOtpDto): Promise<{ message: string }> {
+    const valid = await this.otpService.verify(dto.email, dto.code);
+    if (!valid) throw new BadRequestException('Invalid or expired OTP code');
+
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.usersService.markVerified(user.auth0Id);
+    return { message: 'Email verified successfully. You can now log in.' };
+  }
+
+  async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user)
+      throw new NotFoundException('No account associated with this email');
+    if (user.isVerified)
+      throw new BadRequestException('Email is already verified');
+
+    await this.otpService.generateAndSend(dto.email);
+    return { message: 'A new OTP code has been sent to your email.' };
+  }
+
   logout(): { message: string } {
     return {
       message: 'Logged out sucessfully. Please discard your access token.',
@@ -165,26 +202,6 @@ export class AuthService {
     dto: UpdateProfileDto,
   ): Promise<{ message: string }> {
     await this.usersService.updateProfile(auth0Id, dto);
-
-    if (dto.email) {
-      const domain = this.config.get<string>('AUTH0_DOMAIN');
-      const mgmtToken = await this.getManagementToken();
-
-      try {
-        await firstValueFrom(
-          this.http.patch(
-            `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
-            { email: dto.email },
-            { headers: { Authorization: `Bearer ${mgmtToken}` } },
-          ),
-        );
-      } catch {
-        console.warn(
-          'Could not sync email to Auth0 — update:users permission may be required',
-        );
-      }
-    }
-
     return { message: 'Profile updated successfully' };
   }
 
