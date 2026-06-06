@@ -20,7 +20,7 @@ export class OtpService {
         private readonly config: ConfigService,
     ) {}
 
-    async GenerateAndSend(email: string): Promise<void> {
+    async generateAndSend(email: string): Promise<void> {
         await this.otpRepo.delete({ email });
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const otp = this.otpRepo.create({

@@ -13,6 +13,7 @@ interface CreateUserInput {
   email: string;
   name?: string;
   role?: UserRole;
+  isVerified?: boolean;
 }
 
 @Injectable()
@@ -74,5 +75,9 @@ export class UsersService {
     if (user) {
       await this.repo.remove(user);
     }
+  }
+
+  async markVerified(email: string): Promise<void> {
+    await this.repo.update({ auth0Id }, {isVerified: true })
   }
 }
