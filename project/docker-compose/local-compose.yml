@@ -1,4 +1,5 @@
 services:
+# rabbitmq is used to handle the event messaging between services
   rabbitmq:
     image: rabbitmq:3-management
     restart: unless-stopped
@@ -16,7 +17,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-  
+
+# mailing db sets up the mailing service's postgres database  
   mailing_db:
     image: postgres:15-alpine
     restart: always
@@ -44,8 +46,9 @@ services:
 
     ports:
       # Left side must be unique
-      - "$MAILING_DB_PORT:5432"
+      - "${MAILING_DB_PORT}:${INTERNAL_DB_PORT}"
 
+# mailing app builds the mailing service from the mailing service's dockerfile
   mailing_app:
     build:
       context: ../../
@@ -53,17 +56,16 @@ services:
 
       # Must be unique
     container_name: ${MAILING_APP_CONTAINER}
-    env_file:
-      - .env
     environment:
-      - PORT=3000
-      - DB_HOST=mailing_db
-      - MAILING_DB_PORT=5432
+      - PORT=${MAILING_SERVICE_PORT}
+      - DB_HOST=${MAILING_DB_CONTAINER}
+      - MAILING_DB_PORT=${INTERNAL_DB_PORT}
       - TCP_PORT=${MAILING_TCP_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
-      - "${MAILING_SERVICE_PORT}:3003"
+      - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
 
     depends_on:
       mailing_db:
@@ -71,6 +73,7 @@ services:
     volumes:
       - ./src:/app/src
     
+# accounts db sets up the accounts service's postgres database
   accounts_db:
     image: postgres:15-alpine
     restart: always
@@ -88,17 +91,18 @@ services:
     volumes:
       - accounts_pgdata:/var/lib/postgresql/data
     ports:
-      - '${ACCOUNTS_DB_PORT}:5432'
-  
+      - '${ACCOUNTS_DB_PORT}:${INTERNAL_DB_PORT}'
+
+# accounts app builds the account service from the account's dockerfile
   accounts_app:
     build:
       context: ../../
       dockerfile: project/backend/accounts-service/Dockerfile
     container_name: ${ACCOUNTS_APP_CONTAINER}
     environment:
-      - PORT=3002
-      - DB_HOST=accounts_db
-      - DB_PORT=5432
+      - PORT=${ACCOUNTS_SERVICE_PORT}
+      - DB_HOST=${ACCOUNTS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${ACCOUNTS_DB_NAME}
@@ -109,14 +113,16 @@ services:
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     ports:
-      - '${ACCOUNTS_SERVICE_PORT}:3002'
+      - '${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}'
     depends_on:
       accounts_db:
         condition: service_healthy
     volumes:
       - ./src:/app/src
 
+# api app builds the api service from the api's dockerfile
   api_app:
     build:
       context: ../../
@@ -124,9 +130,11 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
-      - API_GATEWAY_PORT=3001
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
+      - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
@@ -137,9 +145,11 @@ services:
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     ports:
-      - '${GATEWAY_PORT}:3001'
-  
+      - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+
+# report db sets up the report service's postgres database  
   report_db:
     image: postgres:15-alpine
     restart: always
@@ -164,8 +174,9 @@ services:
 
     ports:
       # Left side must be unique
-      - "$REPORT_DB_PORT:5432"
+      - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
 
+# report app builds the report service from the report dockerfile
   report_app:
     build:
       context: ../../
@@ -173,17 +184,16 @@ services:
 
       # Must be unique
     container_name: ${REPORT_APP_CONTAINER}
-    env_file:
-      - .env
     environment:
-      - PORT=3004
+      - PORT=${REPORT_SERVICE_PORT}
       - TCP_PORT=${REPORT_TCP_PORT}
-      - DB_HOST=report_db
-      - REPORT_DB_PORT=5434
+      - DB_HOST=${REPORT_DB_CONTAINER}
+      - REPORT_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
-      - "${REPORT_SERVICE_PORT}:3004"
+      - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
 
     depends_on:
       report_db:
@@ -191,6 +201,7 @@ services:
     volumes:
       - ./src:/app/src
 
+# xp db sets up the xp service's postgres database
   xp_db:
     image: postgres:15-alpine
     restart: always
@@ -215,8 +226,9 @@ services:
 
     ports:
       # Left side must be unique
-      - "$XP_DB_PORT:5432"
+      - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
 
+# xp app build the xp service using the xp dockerfile
   xp_app:
     build:
       context: ../../
@@ -224,18 +236,16 @@ services:
 
       # Must be unique
     container_name: ${XP_APP_CONTAINER}
-    env_file:
-      - .env
     environment:
-      - PORT=3005
+      - PORT=${XP_SERVICE_PORT}
       - TCP_PORT=${XP_TCP_PORT}
-      - DB_HOST=xp_db
-      - XP_DB_PORT=5435
+      - DB_HOST=${XP_DB_CONTAINER}
+      - XP_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
-      - "${XP_SERVICE_PORT}:3005"
+      - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
 
     depends_on:
       xp_db:
@@ -243,6 +253,7 @@ services:
     volumes:
       - ./src:/app/src
   
+# builds the website using the website's dockerfile
   website:
     build:
       context: ../../
@@ -255,6 +266,7 @@ services:
     ports:
       - '5173:5173'
 
+# handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
     image: dpage/pgadmin4:9.15
     restart: always
