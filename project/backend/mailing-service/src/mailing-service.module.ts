@@ -5,7 +5,7 @@ import { GeneratedEmail } from './entities/generated-emails.entity';
 import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
-import { maxLength } from 'class-validator';
+//import { maxLength } from 'class-validator';
 
 @Module({
   imports: [
