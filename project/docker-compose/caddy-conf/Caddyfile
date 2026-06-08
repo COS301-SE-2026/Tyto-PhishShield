@@ -1,3 +1,0 @@
-capstone-five-guys.dns.net.za:443 {
-    reverse_proxy website:5173
-}

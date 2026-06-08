@@ -263,7 +263,7 @@ services:
     container_name: website
     environment:
       - WEBSITE_PORT=5173
-      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+      - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
     ports:
       - '5173:5173'
 
@@ -288,9 +288,23 @@ services:
     ports:
       - "5050:80"
 
+  caddy:
+    image: caddy:2.11.3
+    container_name: caddy
+    restart: unless-stopped
+    ports: 
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./local-caddy-conf:/etc/caddy/
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
+  caddy_data:
+  caddy_config:
   mailing_pgdata:
   accounts_pgdata:
   report_pgdata:
