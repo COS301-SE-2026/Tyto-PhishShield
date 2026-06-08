@@ -16,7 +16,7 @@ interface AuthContextValue {
 }
 
 const ROLE_LEVEL: Record<UserRole, number> = { admin: 3, analyst: 2, user: 1 };
-const BASE_URL = 'http://localhost:3001/api';
+const BASE_URL = '/api';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 

@@ -1,9 +1,9 @@
 import { useState} from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
 import { Input, PasswordInput, Select, Button /**, OtpInput**/ } from '../../components/ui';
-//import { authApi } from '../../services/api';
+import { authApi } from '../../services/api';
 import { useToast } from '../../context/toast-context';
-import { ErrorResponse } from '../../types/index';
+import { ErrorResponse, RegisterResponse } from '../../types/index';
 
 interface RegisterProps {
   onNavigate: (path: string) => void;
@@ -159,26 +159,22 @@ export function Register({ onNavigate }: RegisterProps) {
   const handleStep2Continue = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/accounts/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          name: `${firstName} ${lastName}`.trim()
-        }),
+      const response: RegisterResponse = await authApi.register({
+        email,
+        password,
+        name: `${firstName} ${lastName}`.trim()
       });
-      if (!response.ok) {
-        const errorData: ErrorResponse  = await response.json().catch(() => ({})) as ErrorResponse;
+      if (response.status != 200) {
+        const errorData: ErrorResponse  = response as ErrorResponse;
         throw new Error(errorData.message ?? `Server responded with ${response.status}`);
       }
       /*setRegisteredUserId(result.userId);
       // OTP (server-side)
       addToast({ type: 'info', title: 'OTP sent', message: `A verification code has been sent to ${email}` });*/
-      if (!response.ok) {
-        const errorData: ErrorResponse = await response.json().catch(() => ({})) as ErrorResponse;
-        throw new Error(errorData.message ?? `Server responded with ${response.status}`);
-      }
+      // if (!response.ok) {
+      //   const errorData: ErrorResponse = await response.json().catch(() => ({})) as ErrorResponse;
+      //   throw new Error(errorData.message ?? `Server responded with ${response.status}`);
+      // }
       addToast({ type: 'success', title: 'Registration complete!', message: 'Account successfully created.' });
       setStep(3);
     } catch (err: unknown) {
