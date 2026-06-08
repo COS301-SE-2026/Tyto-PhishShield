@@ -160,12 +160,12 @@ export function Register({ onNavigate }: RegisterProps) {
     setLoading(true);
     try {
       const response: RegisterResponse = await authApi.register({
-        email,
-        password,
+        email: email,
+        password: password,
         name: `${firstName} ${lastName}`.trim()
       });
       if (response.status != 200) {
-        const errorData: ErrorResponse  = response as ErrorResponse;
+        const errorData: ErrorResponse = response;
         throw new Error(errorData.message ?? `Server responded with ${response.status}`);
       }
       /*setRegisteredUserId(result.userId);
