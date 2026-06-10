@@ -21,7 +21,24 @@ import { ReportModule } from './report/report.module';
     AccountsModule,
     MailingModule,
     ReportModule,
+    // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
+      {
+        name: 'ACCOUNTS_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.ACCOUNTS_HOST ?? 'accounts_app',
+          port: Number(process.env.ACCOUNTS_TCP_PORT ?? 4001),
+        },
+      },
+      {
+        name: 'MAILING_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.MAILING_HOST ?? 'mailing_app',
+          port: Number(process.env.MAILING_TCP_PORT ?? 4002),
+        },
+      },
       {
         name: 'XP_SERVICE',
         transport: Transport.TCP,

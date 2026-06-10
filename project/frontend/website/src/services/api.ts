@@ -1,10 +1,23 @@
+/*
+ * Root api service
+ * handles general requests to the api-gateway
+ * Always import the API_BASE in other api service files for specified requests
+ */
 import type {
   LoginDto, RegisterDto, LoginResponse,
   RegisterResponse, AuthenticatedUser,
 } from '../types';
 
-export const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:3001') + '/api';
+/*
+ * Make sure to use API_BASE for all api calls as your base url
+ * API_BASE looks as follows: http://<hostname>:<port>/api
+ * hostname is the machine host (localhost for just plain dev / **api-gateway for containerized dev)
+ * port is the port to the api-gateway
+ * **See .env.local at GATEWAY_APP_CONTAINER
+*/
+export const API_BASE = '/api';
 
+// Can this be removed some time so that we can work only through the api gateway?
 const ACCOUNTS_BASE =
   typeof import.meta.env.VITE_ACCOUNTS_URL === 'string'
     ? import.meta.env.VITE_ACCOUNTS_URL

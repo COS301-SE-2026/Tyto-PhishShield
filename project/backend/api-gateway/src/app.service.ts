@@ -11,53 +11,46 @@ import { firstValueFrom } from 'rxjs';
 @Injectable()
 export class AppService implements OnModuleInit {
   constructor(
+    @Inject('ACCOUNTS_SERVICE') private readonly accountsClient: ClientProxy,
+    @Inject('MAILING_SERVICE') private readonly mailingClient: ClientProxy,
     @Inject('XP_SERVICE') private readonly xpClient: ClientProxy,
     @Inject('REPORT_SERVICE') private readonly reportClient: ClientProxy,
   ) {}
 
   onModuleInit() {
-    this.connectXPService();
-    this.connectReportService();
+    this.connectService(this.accountsClient, 'Accounts');
+    this.connectService(this.mailingClient, 'Mailing');
+    this.connectService(this.xpClient, 'XP');
+    this.connectService(this.reportClient, 'Report');
   }
 
-  private async connectXPService() {
+  private async connectService(client: ClientProxy, serviceName: string) {
     try {
-      await this.xpClient.connect();
+      await client.connect();
     } catch (err) {
-      console.warn('XP TCP connection unavailable: ', err);
-      setTimeout(() => void this.connectXPService(), 10000);
+      console.warn(serviceName + ' TCP connection unavailable: ', err);
+      setTimeout(() => void this.connectService(client, serviceName), 10000);
     }
   }
 
-  private async connectReportService() {
-    try {
-      await this.reportClient.connect();
-    } catch (err) {
-      console.warn('Report TCP connection unavailable: ', err);
-      setTimeout(() => void this.connectReportService(), 10000);
-    }
-  }
-
-  async checkMicroServiceHealth(): Promise<HealthServices> {
+  async checkMicroServicesHealth(): Promise<HealthServices> {
     const healthServices: HealthServices = {
-      xpService: 'unavailable',
-      reportService: 'unavailable',
+      accountsService: await this.checkServiceHealth(this.accountsClient),
+      mailingService: await this.checkServiceHealth(this.mailingClient),
+      xpService: await this.checkServiceHealth(this.xpClient),
+      reportService: await this.checkServiceHealth(this.reportClient),
     };
-    try {
-      healthServices.xpService = await firstValueFrom(
-        this.xpClient.send('health.check', {}),
-      );
-    } catch {
-      healthServices.xpService = 'unavailable';
-    }
-    try {
-      healthServices.reportService = await firstValueFrom(
-        this.reportClient.send('health.check', {}),
-      );
-    } catch {
-      healthServices.reportService = 'unavailable';
-    }
 
     return healthServices;
+  }
+
+  private async checkServiceHealth(client: ClientProxy): Promise<string> {
+    try {
+      return await firstValueFrom(
+        client.send('health.check', {}),
+      );
+    } catch {
+      return 'unavailable';
+    }
   }
 }
