@@ -6,6 +6,7 @@ import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
 //import { maxLength } from 'class-validator';
+import { BatchEmailModule } from './batch-email/batch-email.module';
 
 @Module({
   imports: [
@@ -32,6 +33,8 @@ import { MailingServiceController } from './mailing-service.controller';
     }),
 
     EmailModule,
+
+    BatchEmailModule,
   ],
   controllers: [MailingServiceController],
   providers: [EmailService],
