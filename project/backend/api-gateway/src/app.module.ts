@@ -6,6 +6,7 @@
  */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AccountsModule } from './accounts/accounts.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -20,6 +21,41 @@ import { ReportModule } from './report/report.module';
     AccountsModule,
     MailingModule,
     ReportModule,
+    // Register each microservice tcp client to the api-gateway
+    ClientsModule.register([
+      {
+        name: 'ACCOUNTS_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.ACCOUNTS_HOST ?? 'accounts_app',
+          port: Number(process.env.ACCOUNTS_TCP_PORT ?? 4001),
+        },
+      },
+      {
+        name: 'MAILING_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.MAILING_HOST ?? 'mailing_app',
+          port: Number(process.env.MAILING_TCP_PORT ?? 4002),
+        },
+      },
+      {
+        name: 'XP_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.XP_HOST ?? 'xp_app',
+          port: Number(process.env.XP_TCP_PORT ?? 4004),
+        },
+      },
+      {
+        name: 'REPORT_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.REPORT_HOST ?? 'report_app',
+          port: Number(process.env.REPORT_TCP_PORT ?? 4003),
+        },
+      },
+    ]),
   ],
   controllers: [AppController],
   providers: [AppService],

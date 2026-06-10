@@ -49,10 +49,11 @@ export class EmailController {
   @Post(':referenceNumber/send-single')
   @HttpCode(HttpStatus.OK)
   async sendEmail(
+    @Param('referenceNumber') emailReferenceNumber: string, //using reference number in parameter
     @Body() sendSingleEmailDto: SendSingleEmailDto,
   ): Promise<MailingPostReturnDto> {
     const result = await this.sendMailService.sendEmail(
-      sendSingleEmailDto.emailReferenceNumber,
+      emailReferenceNumber,
       // sendSingleEmailDto.auth0Id,
       sendSingleEmailDto.recipient,
     );

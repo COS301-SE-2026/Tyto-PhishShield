@@ -44,7 +44,6 @@ export class ProxyService {
       return data;
     } catch (err: unknown) {
       const downstream = err as DownstreamErrorShape;
-
       if (downstream.response?.status) {
         throw new HttpException(
           downstream.response.data ?? 'Downstream service error',
