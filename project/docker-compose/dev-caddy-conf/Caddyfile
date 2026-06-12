@@ -1,0 +1,9 @@
+capstone-five-guys.dns.net.za:443 {
+    handle /api/* {
+        reverse_proxy api-gateway:3001
+    }
+
+    handle {
+        reverse_proxy website:5173
+    }
+}

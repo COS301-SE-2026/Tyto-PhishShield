@@ -9,7 +9,7 @@ on:
 jobs:
     install:
       name: Install dependencies
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-24.04
       strategy:
         matrix:
           node-version: [24]
@@ -247,3 +247,147 @@ jobs:
               name: node-modules
           - name: build
             run: pnpm run  build:mailing-service
+    
+    Report-Service-lint:
+        name: Report Service Backend lint
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:report-service
+
+    Report-Service-tests:
+        name: Report Service Backend tests
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: test
+            run: pnpm run test:report-service
+    
+    Report-Service-build:
+        name: Report Service Backend build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:report-service
+    
+    XP-Service-lint:
+        name: XP Service Backend lint
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: lint
+            run: pnpm run lint:xp-service
+
+    XP-Service-tests:
+        name: XP Service Backend tests
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: test
+            run: pnpm run test:xp-service
+    
+    XP-Service-build:
+        name: XP Service Backend build
+        needs: install
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            node-version: [24]
+        steps:
+          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+          - name: Install pnpm
+            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+            with:
+              version: 11.1.1
+          - name: Use Node.js ${{ matrix.node-version }}
+            uses: actions/setup-node@v6
+            with:
+              node-version: ${{ matrix.node-version }}
+          - name: Download node_modules
+            uses: actions/download-artifact@v7
+            with:
+              name: node-modules
+          - name: build
+            run: pnpm run build:xp-service

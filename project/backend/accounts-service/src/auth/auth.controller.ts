@@ -6,18 +6,27 @@
 import {
   Controller,
   Post,
+  Patch,
+  Delete,
   Body,
   Get,
   UseGuards,
   Req,
   HttpCode,
+  Param,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -25,7 +34,10 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
@@ -38,9 +50,67 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  logout() {
+    return this.authService.logout();
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: AuthenticatedRequest): AuthenticatedUser {
     return req.user;
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(req.user.auth0Id, dto);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(req.user.auth0Id, dto);
+  }
+
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(204)
+  async deleteOwnAccount(@Req() req: AuthenticatedRequest) {
+    await this.authService.deleteUser(req.user.auth0Id);
+    await this.usersService.removeByAuth0Id(req.user.auth0Id);
+  }
+
+  @Get('users/:auth0id')
+  @UseGuards(JwtAuthGuard)
+  async getUserByAuth0Id(@Param('auth0id') auth0Id: string) {
+    const user = await this.usersService.findByAuth0Id(auth0Id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return {
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    };
+  }
+
+  @Post('verify-otp')
+  @HttpCode(200)
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto);
+  }
+
+  @Post('resend-otp')
+  @HttpCode(200)
+  resendOtp(@Body() dto: ResendOtpDto) {
+    return this.authService.resendOtp(dto);
   }
 }

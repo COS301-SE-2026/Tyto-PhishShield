@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
 
@@ -15,8 +16,13 @@ describe('AuthController', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: { register: jest.fn(), login: jest.fn() },
+          useValue: { register: jest.fn(), login: jest.fn(), logout: jest.fn(), updateProfile: jest.fn(), changePassword: jest.fn(), deleteUser: jest.fn() },
         },
+        {
+          provide: UsersService,
+          useValue: { removeByAuth0Id: jest.fn()},
+        },
+      
       ],
     }).compile();
 
@@ -115,4 +121,36 @@ describe('AuthController', () => {
       expect(result.role).toBe(UserRole.ADMIN);
     });
   });
+
+  describe('logout()', () => {
+    it('should return a successful logout message', () => {
+      authService.logout.mockReturnValue({ message: 'Logged out sucessfully. Please discard your access token.' });
+      const result = controller.logout();
+      expect(result).toHaveProperty('message');
+      expect(authService.logout).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('updateProfile()', () => {
+    it('should call authService with the correct auth0Id and dto', async () => {
+      authService.updateProfile.mockResolvedValue({message: 'Profile updated successfully'});
+      const mockReq = { user: { auth0Id: 'auth0|abc123', email: 'test@example.com', role: 'user' } } as never;
+      const dto = { name: 'Updated Name' };
+      const result = await controller.updateProfile(mockReq, dto);
+      expect(authService.updateProfile).toHaveBeenCalledWith('auth0|abc123', dto);
+      expect(result).toEqual({message: 'Profile updated successfully'});
+    });
+  });
+
+  describe('changePassword()', () => {
+    it('should call authService with the correct auth0Id and dto', async () => {
+      authService.changePassword.mockResolvedValue({ message: 'Password changed successfully' });
+      const mockReq = { user: { auth0Id: 'auth0|abc123', email: 'test@example.com', role: 'user' } } as never;
+      const dto = { newPassword: 'NewPassword123!' };
+      const result = await controller.changePassword(mockReq, dto);
+
+      expect(authService.changePassword).toHaveBeenCalledWith('auth0|abc123', dto);
+      expect(result).toEqual({message: 'Password changed successfully'});
+    });
+  })
 });

@@ -1,8 +1,12 @@
-FROM ghcr.io/pnpm/pnpm:latest
+FROM ghcr.io/pnpm/pnpm:11.1.1
+
+RUN groupadd phishshield && useradd -m -g phishshield appuser
 
 RUN pnpm runtime set node 22 -g
 
 WORKDIR /app
+
+RUN chown -R appuser:phishshield /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/mailing-service/package.json ./project/backend/mailing-service/package.json
@@ -12,6 +16,8 @@ RUN pnpm install --frozen-lockfile
 
 WORKDIR /app/project/backend/mailing-service
 
-RUN pnpm run build
+RUN rm -f tsconfig.build.tsbuildinfo && pnpm run build
 
-CMD [ "pnpm", "run", "start:dev" ]
+USER appuser
+
+CMD ["node", "dist/main.js"]

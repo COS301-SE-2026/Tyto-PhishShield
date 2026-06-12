@@ -12,9 +12,11 @@ import {
 } from '../entities/generated-emails.entity';
 import { GenerateEmailDto } from '../dto/generate-email.dto';
 
-// Mock Resend client
-// mockResendSend is used to avoid using any.
-const mockResendSend = jest.fn().mockResolvedValue({ id: 'mock-resend-id' });
+// Mock Resend client matching the service's `data.data?.id` structural needs
+const mockResendSend = jest.fn().mockResolvedValue({
+  data: { id: 'mock-resend-id' },
+});
+
 jest.mock('resend', () => {
   return {
     Resend: jest.fn().mockImplementation(() => {
@@ -52,7 +54,6 @@ describe('EmailService', () => {
     reference_number: 'PHISH-001',
     sender: 'admin@domain.com',
     alias: 'Admin',
-    recipient: 'target@company.com',
     subject: 'Action Required',
     content: '<p>Click here</p>',
     difficulty: EmailDifficulty.HARD,
@@ -89,7 +90,6 @@ describe('EmailService', () => {
       const createDto: GenerateEmailDto = {
         sender: 'admin@domain.com',
         alias: 'Admin',
-        recipient: 'target@company.com',
         subject: 'Action Required',
         content: '<p>Click here</p>',
         difficulty: EmailDifficulty.HARD,
@@ -135,21 +135,81 @@ describe('EmailService', () => {
     it('should successfully send an email and use alias', async () => {
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
 
-      const result = await service.sendEmail('PHISH-001');
+      const result = await service.sendEmail('PHISH-001', 'test@test.com');
 
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'test@test.com',
+          from: `${mockEmail.alias} <${mockEmail.sender}>`,
+        }),
+      );
       expect(result.success).toBe(true);
-      expect(result.message).toBe('Email sent successfully');
-      expect(result.data).toEqual({ id: 'mock-resend-id' });
+      expect(result.message).toContain('sent instantly.');
+      expect(result.deliveryId).toBe('mock-resend-id');
+    });
+
+    it('should successfully send an email without an alias', async () => {
+      const emailWithoutAlias = { ...mockEmail };
+      delete emailWithoutAlias.alias;
+
+      mockEmailRepository.findOne.mockResolvedValue(emailWithoutAlias);
+
+      const result = await service.sendEmail('PHISH-001', 'test@test.com');
+
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: emailWithoutAlias.sender,
+          to: 'test@test.com',
+        }),
+      );
+      expect(result.success).toBe(true);
+      expect(result.deliveryId).toBe('mock-resend-id');
     });
 
     it('should throw an InternalServerErrorException if the resend API fails', async () => {
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
-
       mockResendSend.mockRejectedValueOnce(new Error('API Down'));
 
-      await expect(service.sendEmail('PHISH-001')).rejects.toThrow(
-        InternalServerErrorException,
+      await expect(
+        service.sendEmail('PHISH-001', 'test@test.com'),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+  });
+
+  describe('scheduleSendEmail', () => {
+    it('should successfully schedule an email with the provided date', async () => {
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+
+      const targetDate = new Date('2026-05-25T14:30:00.000Z');
+      const result = await service.scheduleSendEmail(
+        'PHISH-001',
+        'test@test.com',
+        targetDate,
       );
+
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'test@test.com',
+          scheduledAt: targetDate.toISOString(),
+        }),
+      );
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('successfully scheduled');
+      expect(result.deliveryId).toBe('mock-resend-id');
+    });
+
+    it('should throw an InternalServerErrorException if scheduling fails', async () => {
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockResendSend.mockRejectedValueOnce(new Error('API Down'));
+
+      const targetDate = new Date();
+      await expect(
+        service.scheduleSendEmail(
+          'PHISH-001',
+          'test@test.com',
+          targetDate,
+        ),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -182,22 +242,5 @@ describe('EmailService', () => {
       );
       expect(result).toEqual(updatedEmail);
     });
-  });
-
-  it('should successfully send an email without an alias', async () => {
-
-    const emailWithoutAlias = { ...mockEmail };
-    delete emailWithoutAlias.alias;
-
-    mockEmailRepository.findOne.mockResolvedValue(emailWithoutAlias);
-
-    const result = await service.sendEmail('PHISH-001');
-
-    expect(mockResendSend).toHaveBeenCalledWith(
-      expect.objectContaining({
-        from: emailWithoutAlias.sender,
-      }),
-    );
-    expect(result.success).toBe(true);
   });
 });
