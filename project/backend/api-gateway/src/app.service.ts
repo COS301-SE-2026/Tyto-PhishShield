@@ -46,9 +46,7 @@ export class AppService implements OnModuleInit {
 
   private async checkServiceHealth(client: ClientProxy): Promise<string> {
     try {
-      return await firstValueFrom(
-        client.send('health.check', {}),
-      );
+      return await firstValueFrom(client.send('health.check', {}));
     } catch {
       return 'unavailable';
     }

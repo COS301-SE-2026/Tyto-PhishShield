@@ -29,6 +29,7 @@ const mockUser: User = {
   name: 'Test User',
   role: UserRole.USER,
   isVerified: true,
+  isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
