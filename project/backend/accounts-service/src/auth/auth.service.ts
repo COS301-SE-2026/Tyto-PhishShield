@@ -133,6 +133,9 @@ export class AuthService {
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number }> {
     const user = await this.usersService.findByEmail(dto.email);
+    if (user && !user.isActive) {
+      throw new UnauthorizedException('Account is deactivated. Please contact support.');
+    }
     if (user && !user.isVerified) {
       throw new UnauthorizedException(
         'Email not verified. Please verify your email before logging in.',

@@ -79,4 +79,8 @@ export class UsersService {
   async markVerified(auth0Id: string): Promise<void> {
     await this.repo.update({ auth0Id }, { isVerified: true });
   }
+
+  async deactivate(id: string): Promise<void> {
+    await this.repo.update({ id }, { isActive: false });
+  }
 }
