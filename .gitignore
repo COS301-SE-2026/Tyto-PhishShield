@@ -12,6 +12,7 @@ Thumbs.db
 # Secrets and Environment Variables
 .env
 .env.*
+!.env.example
 *.env
 secrets.yml
 credentials.json
