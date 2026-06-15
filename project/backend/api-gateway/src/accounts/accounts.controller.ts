@@ -200,26 +200,15 @@ export class AccountsController {
     });
   }
 
-  @Post('auth/change-password')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @Post('auth/forgot-password')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Change password' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['newPassword'],
-      properties: {
-        newPassword: { type: 'string', example: 'NewPassword123!' },
-      },
-    },
-  })
-  changePassword(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+  @ApiOperation({ summary: 'Send a password reset email' })
+  @ApiBody({ schema: { type: 'object', required: ['email'], properties: { email: { type: 'string', example: 'test@example.com' } } } })
+  forgotPassword(@Body() body: unknown) {
     return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/change-password`,
+      url: `${this.accountsServiceUrl}/api/auth/forgot-password`,
       method: 'POST',
       data: body,
-      headers: authHeader(req),
     });
   }
 

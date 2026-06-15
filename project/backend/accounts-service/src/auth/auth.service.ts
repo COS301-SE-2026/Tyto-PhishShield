@@ -205,35 +205,26 @@ export class AuthService {
     return { message: 'Profile updated successfully' };
   }
 
-  async changePassword(
-    auth0Id: string,
-    dto: ChangePasswordDto,
-  ): Promise<{ message: string }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-    const mgmtToken = await this.getManagementToken();
+async forgotPassword(email: string): Promise<{ message: string }> {
+  const domain = this.config.get<string>('AUTH0_DOMAIN');
 
-    try {
-      await firstValueFrom(
-        this.http.patch(
-          `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
-          { password: dto.newPassword },
-          { headers: { Authorization: `Bearer ${mgmtToken}` } },
-        ),
-      );
-    } catch (err: unknown) {
-      const e = err as AxiosErrorShape;
-      if (e.response?.status === 400) {
-        throw new InternalServerErrorException(
-          'Password does not meet complexity requirements',
-        );
-      }
-      throw new InternalServerErrorException(
-        'Failed to change password, please try again',
-      );
-    }
-
-    return { message: 'Password changed successfylly' };
+  try {
+    await firstValueFrom(
+      this.http.post(
+        `https://${domain}/dbconnections/change_password`,
+        {
+          client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
+          email,
+          connection: 'Username-Password-Authentication',
+        },
+      ),
+    );
+  } catch {
+    throw new InternalServerErrorException('Could not send password reset email');
   }
+
+  return { message: 'If an account exists with this email, a password reset link has been sent.' };
+}
 
   async deleteUser(auth0Id: string): Promise<void> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');

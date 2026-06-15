@@ -71,13 +71,10 @@ export class AuthController {
     return this.authService.updateProfile(req.user.auth0Id, dto);
   }
 
-  @Post('change-password')
-  @UseGuards(JwtAuthGuard)
-  changePassword(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: ChangePasswordDto,
-  ) {
-    return this.authService.changePassword(req.user.auth0Id, dto);
+  @Post('forgot-password')
+  @HttpCode(200)
+  forgotPassword(@Body('email') email: string) {
+    return this.authService.forgotPassword(email);
   }
 
   @Delete('account')
