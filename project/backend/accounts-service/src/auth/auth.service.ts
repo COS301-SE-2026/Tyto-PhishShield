@@ -17,7 +17,6 @@ import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
@@ -134,7 +133,9 @@ export class AuthService {
   ): Promise<{ access_token: string; expires_in: number }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (user && !user.isActive) {
-      throw new UnauthorizedException('Account is deactivated. Please contact support.');
+      throw new UnauthorizedException(
+        'Account is deactivated. Please contact support.',
+      );
     }
     if (user && !user.isVerified) {
       throw new UnauthorizedException(
@@ -208,26 +209,28 @@ export class AuthService {
     return { message: 'Profile updated successfully' };
   }
 
-async forgotPassword(email: string): Promise<{ message: string }> {
-  const domain = this.config.get<string>('AUTH0_DOMAIN');
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
 
-  try {
-    await firstValueFrom(
-      this.http.post(
-        `https://${domain}/dbconnections/change_password`,
-        {
+    try {
+      await firstValueFrom(
+        this.http.post(`https://${domain}/dbconnections/change_password`, {
           client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
           email,
           connection: 'Username-Password-Authentication',
-        },
-      ),
-    );
-  } catch {
-    throw new InternalServerErrorException('Could not send password reset email');
-  }
+        }),
+      );
+    } catch {
+      throw new InternalServerErrorException(
+        'Could not send password reset email',
+      );
+    }
 
-  return { message: 'If an account exists with this email, a password reset link has been sent.' };
-}
+    return {
+      message:
+        'If an account exists with this email, a password reset link has been sent.',
+    };
+  }
 
   async deleteUser(auth0Id: string): Promise<void> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');

@@ -23,8 +23,9 @@ export interface AuthenticatedUser {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly config: ConfigService,
-              private readonly usersService: UsersService
+  constructor(
+    private readonly config: ConfigService,
+    private readonly usersService: UsersService,
   ) {
     super({
       secretOrKeyProvider: passportJwtSecret({
@@ -40,13 +41,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload:JwtPayload): Promise<AuthenticatedUser> {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.usersService.findByAuth0Id(payload.sub);
 
     return {
       auth0Id: payload.sub,
       email: payload.email,
       role: user ? user.role : 'USER',
-    }
+    };
   }
 }
