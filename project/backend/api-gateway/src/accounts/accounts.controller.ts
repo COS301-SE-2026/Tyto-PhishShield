@@ -158,24 +158,12 @@ export class AccountsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the currently authenticated user' })
-  async getMe(@Req() req: AuthenticatedRequest): Promise<GatewayUser> {
-    if (!req.user || !req.user.email) {
-      const token: string = req?.headers?.authorization?.split(' ')[1] ?? '';
-      //console.log("Extracted token:", token);
-      const data: Auth0UserResponse = await this.proxy.forward({
-        url: this.config.get<string>('AUTH0_USERINFO_URL', ''),
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return {
-        auth0Id: data?.sub,
-        email: data?.email,
-        role: req.user.role,
-      };
-    }
-    return req.user;
+  getMe(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/me`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
   }
 
   @Patch('auth/profile')
