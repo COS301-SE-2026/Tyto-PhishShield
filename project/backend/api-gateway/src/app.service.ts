@@ -16,6 +16,7 @@ export class AppService implements OnModuleInit {
     @Inject('XP_SERVICE') private readonly xpClient: ClientProxy,
     @Inject('REPORT_SERVICE') private readonly reportClient: ClientProxy,
     @Inject('EDUCATION_SERVICE') private readonly educationClient: ClientProxy,
+    @Inject('ANALYTICS_SERVICE') private readonly analyticsClient: ClientProxy,
   ) {}
 
   onModuleInit() {
@@ -24,6 +25,7 @@ export class AppService implements OnModuleInit {
     this.connectService(this.xpClient, 'XP');
     this.connectService(this.reportClient, 'Report');
     this.connectService(this.educationClient, 'Education');
+    this.connectService(this.analyticsClient, 'Analytics');
   }
 
   private async connectService(client: ClientProxy, serviceName: string) {
@@ -42,6 +44,7 @@ export class AppService implements OnModuleInit {
       xpService: await this.checkServiceHealth(this.xpClient),
       reportService: await this.checkServiceHealth(this.reportClient),
       educationService: await this.checkServiceHealth(this.educationClient),
+      analyticsService: await this.checkServiceHealth(this.analyticsClient),
     };
 
     return healthServices;
