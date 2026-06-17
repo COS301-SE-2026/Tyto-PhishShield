@@ -140,10 +140,12 @@ services:
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
       - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
@@ -253,6 +255,58 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+
+# education db sets up the education service's postgres database
+  education_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${EDUCATION_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${EDUCATION_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${EDUCATION_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - education_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  education_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/education-service/Dockerfile
+
+      # Must be unique
+    container_name: ${EDUCATION_APP_CONTAINER}
+    environment:
+      - PORT=${EDUCATION_SERVICE_PORT}
+      - TCP_PORT=${EDUCATION_TCP_PORT}
+      - DB_HOST=${EDUCATION_DB_CONTAINER}
+      - EDUCATION_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      # Left side must be unique
+      - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
+
+    depends_on:
+      education_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
   
 # builds the website using the website's dockerfile
   website:
@@ -309,6 +363,7 @@ volumes:
   accounts_pgdata:
   report_pgdata:
   xp_pgdata:
+  education_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local

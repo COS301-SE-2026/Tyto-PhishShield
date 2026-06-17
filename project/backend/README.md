@@ -112,7 +112,7 @@ Step 5: update .env (the main env to update should be in `root/docker-compose/.e
 Step 6: update the compose `local-compose.yml`:
 ```yml
 # If using a postgres db
-<service>_db:
+  <service>_db:
     image: postgres:15-alpine
     restart: always
 
@@ -136,7 +136,7 @@ Step 6: update the compose `local-compose.yml`:
 
     ports:
       # Left side must be unique
-      - "$<service>_DB_PORT:5432"
+      - "${<service>_DB_PORT}:${INTERNAL_DB_PORT}"
       
 # Main service app container
   <service>_app:
@@ -146,18 +146,16 @@ Step 6: update the compose `local-compose.yml`:
 
       # Must be unique
     container_name: ${<service>_APP_CONTAINER}
-    env_file:
-      - .env
     environment:
-      - PORT=<port number>
+      - PORT=${<service-name>_PORT}
       - TCP_PORT=${<service>_TCP_PORT}
-      - DB_HOST=<service>_db
-      - <service>_DB_PORT=5435
+      - DB_HOST=${<service>_DB_CONTAINER}
+      - <service>_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
-      - "${<service name>_PORT}:3005"
+      - "${<service-name>_PORT}:${<service-name>_PORT}"
 
     depends_on:
       <service>_db:
