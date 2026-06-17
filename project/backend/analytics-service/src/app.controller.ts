@@ -11,8 +11,8 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @MessagePattern("health.check")
+  @MessagePattern('health.check')
   health(): string {
-    return "ok";
+    return 'ok';
   }
 }
