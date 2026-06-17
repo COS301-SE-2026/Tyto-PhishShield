@@ -141,11 +141,13 @@ services:
       - MAILING_HOST=${MAILING_APP_CONTAINER}
       - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
       - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
       - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
+      - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
@@ -307,6 +309,57 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+
+  analytics_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${ANALYTICS_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${ANALYTICS_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ANALYTICS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - analytics_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  analytics_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/analytics-service/Dockerfile
+
+      # Must be unique
+    container_name: ${ANALYTICS_APP_CONTAINER}
+    environment:
+      - PORT=${ANALYTICS_SERVICE_PORT}
+      - TCP_PORT=${ANALYTICS_TCP_PORT}
+      - DB_HOST=${ANALYTICS_DB_CONTAINER}
+      - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      # Left side must be unique
+      - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
+
+    depends_on:
+      analytics_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
   
 # builds the website using the website's dockerfile
   website:
@@ -364,6 +417,7 @@ volumes:
   report_pgdata:
   xp_pgdata:
   education_pgdata:
+  analytics_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local
