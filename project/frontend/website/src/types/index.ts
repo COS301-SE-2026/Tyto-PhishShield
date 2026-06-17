@@ -42,6 +42,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterResponse {
+  status: number;
   message: string;
   userId: string;
 }

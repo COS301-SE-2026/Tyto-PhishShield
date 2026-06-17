@@ -1,4 +1,7 @@
 import { SendEmailResponse, ErrorResponse } from '../types';
+import { API_BASE } from './api';
+
+const EMAIL_BASE = API_BASE + '/emails';
 
 export function isErrorResponse(value: unknown): value is ErrorResponse {
   return (
@@ -13,7 +16,7 @@ export async function sendEmail(referenceNumber: string): Promise<SendEmailRespo
   const token = localStorage.getItem('access_token');
 
   const response = await fetch(
-    `http://localhost:3001/api/emails/${referenceNumber}/send-single`,
+    `${EMAIL_BASE}/${referenceNumber}/send-single`,
     {
       method: 'POST',
       headers: {

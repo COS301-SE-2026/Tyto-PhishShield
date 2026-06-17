@@ -15,7 +15,6 @@ import {
   HttpCode,
   Param,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
@@ -26,6 +25,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -91,22 +92,25 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getUserByAuth0Id(@Param('auth0id') auth0Id: string) {
     const user = await this.usersService.findByAuth0Id(auth0Id);
-    if (!user) throw new NotFoundException('User not found');
-    return { email: user.email, role: user.role, name: user.name };
-  }
-
-  @Get('xp')
-  @UseGuards(JwtAuthGuard)
-  async getMyXp(@Req() req: AuthenticatedRequest) {
-    return this.usersService.getXpByEmail(req.user.email);
-  }
-
-  @Post('xp/award')
-  @HttpCode(200)
-  async awardXp(@Body() body: { email: string; amount: number }) {
-    if (!body.email || typeof body.amount !== 'number') {
-      throw new BadRequestException('email and amount are required');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
-    return this.usersService.awardXp(body.email, body.amount);
+    return {
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    };
+  }
+
+  @Post('verify-otp')
+  @HttpCode(200)
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto);
+  }
+
+  @Post('resend-otp')
+  @HttpCode(200)
+  resendOtp(@Body() dto: ResendOtpDto) {
+    return this.authService.resendOtp(dto);
   }
 }

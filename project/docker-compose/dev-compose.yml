@@ -1,0 +1,236 @@
+services:
+  mailing_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${MAILING_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MAILING_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${MAILING_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      # This must be unique not to override other db's data
+      # This must be hard coded
+      - mailing_pgdata:/var/lib/postgresql/data
+      - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
+
+    ports:
+      # Left side must be unique
+      - "$MAILING_DB_PORT:5432"
+
+  mailing_app:
+    image: fiveguys301/mailing:latest
+    container_name: ${MAILING_APP_CONTAINER}
+    environment:
+      - PORT=${MAILING_SERVICE_PORT}
+      - DB_HOST=${MAILING_DB_CONTAINER}
+      - MAILING_DB_PORT=${INTERNAL_DB_PORT}
+      - TCP_PORT=${MAILING_TCP_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
+
+    depends_on:
+      mailing_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    
+  accounts_db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${ACCOUNTS_DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ACCOUNTS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    container_name: ${ACCOUNTS_DB_CONTAINER}
+    volumes:
+      - accounts_pgdata:/var/lib/postgresql/data
+    ports:
+      - '${ACCOUNTS_DB_PORT}:5432'
+  
+  accounts_app:
+    image: fiveguys301/accounts:latest
+    container_name: ${ACCOUNTS_APP_CONTAINER}
+    environment:
+      - PORT=${ACCOUNTS_SERVICE_PORT}
+      - DB_HOST=${ACCOUNTS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ACCOUNTS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    ports:
+      - '${ACCOUNTS_SERVICE_PORT}:3002'
+    depends_on:
+      accounts_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  api_app:
+    image: fiveguys301/api:latest
+    restart: on-failure
+    container_name: ${GATEWAY_APP_CONTAINER}
+    environment:
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
+      - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
+      - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - XP_HOST=${XP_APP_CONTAINER}
+      - REPORT_HOST=${REPORT_APP_CONTAINER}
+      - MAILING_HOST=${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - REPORT_TCP_PORT=${REPORT_TCP_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    ports:
+      - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+  
+  report_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${REPORT_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${REPORT_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${REPORT_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - report_pgdata:/var/lib/postgresql/data
+    ports:
+      - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
+
+  report_app:
+    image: fiveguys301/report:latest
+    container_name: ${REPORT_APP_CONTAINER}
+    environment:
+      - PORT=${REPORT_SERVICE_PORT}
+      - TCP_PORT=${REPORT_TCP_PORT}
+      - DB_HOST=${REPORT_DB_CONTAINER}
+      - REPORT_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    ports:
+      - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
+    depends_on:
+      report_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  xp_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${XP_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${XP_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${XP_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - xp_pgdata:/var/lib/postgresql/data
+    ports:
+      - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
+
+  xp_app:
+    image: fiveguys301/xp:latest
+    container_name: ${XP_APP_CONTAINER}
+    environment:
+      - PORT=${XP_SERVICE_PORT}
+      - TCP_PORT=${XP_TCP_PORT}
+      - DB_HOST=${XP_DB_CONTAINER}
+      - XP_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    ports:
+      - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
+    depends_on:
+      xp_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  website:
+    image: fiveguys301/website:latest
+    restart: on-failure
+    container_name: website
+    environment:
+      - WEBSITE_PORT=5173
+      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+    ports:
+      - '5173:5173'
+
+  caddy:
+    image: caddy:2.11.3
+    container_name: caddy
+    restart: unless-stopped
+    ports: 
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./dev-caddy-conf:/etc/caddy/
+      - caddy_data:/data
+      - caddy_config:/config
+  
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_POLL_INTERVAL: "3600"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_DEBUG: "true"
+      DOCKER_API_VERSION: "1.40"
+    
+
+volumes:
+  # Must be same as volume name for db
+  # Must be hard coded
+  mailing_pgdata:
+  accounts_pgdata:
+  xp_pgdata:
+  report_pgdata:
+  caddy_data:
+  caddy_config:
+  rabbitmq_data:
+    driver: local

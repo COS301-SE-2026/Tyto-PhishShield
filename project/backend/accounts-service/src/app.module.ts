@@ -12,6 +12,7 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { Otp } from './otp/otp.entity';
 
 @Module({
   imports: [
@@ -26,8 +27,8 @@ import { AppService } from './app.service';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User],
-        synchronize: true,
+        entities: [User, Otp],
+        synchronize: true, //this will auto create tables based on entities, but this is for development only.
       }),
     }),
     AuthModule,

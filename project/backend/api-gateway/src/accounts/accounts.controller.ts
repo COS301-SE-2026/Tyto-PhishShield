@@ -79,6 +79,47 @@ export class AccountsController {
     });
   }
 
+  @Post('auth/verify-otp')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Verify OTP for email verification' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'code'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+        code: { type: 'string', example: '123456' },
+      },
+    },
+  })
+  verifyOtp(@Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/verify-otp`,
+      method: 'POST',
+      data: body,
+    });
+  }
+
+  @Post('auth/resend-otp')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Resend OTP for email verification' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+      },
+    },
+  })
+  resendOtp(@Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/resend-otp`,
+      method: 'POST',
+      data: body,
+    });
+  }
+
   @Post('auth/login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Login and receive a JWT' })
@@ -104,7 +145,7 @@ export class AccountsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(200)
-  @ApiOperation({ summary: 'Logout (client discards token)'})
+  @ApiOperation({ summary: 'Logout - client should dicard token after this'})
   logout(@Req() req: AuthenticatedRequest) {
     return this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/auth/logout`,
@@ -264,4 +305,127 @@ export class AccountsController {
       headers: authHeader(req),
     });
   }
+
+  @Patch('auth/profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update profile (name or email)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'New Name' },
+        email: { type: 'string', example: 'newemail@example.com' },
+      },
+    },
+  })
+  updateProfile(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/profile`,
+      method: 'PATCH',
+      data: body,
+      headers: authHeader(req),
+    });
+  }
+
+  @Post('auth/change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Change password' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['newPassword'],
+      properties: {
+        newPassword: { type: 'string', example: 'NewPassword123!' },
+      },
+    },
+  })
+  changePassword(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/change-password`,
+      method: 'POST',
+      data: body,
+      headers: authHeader(req),
+    });
+  }
+
+  @Delete('auth/account')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete account'})
+  deleteOwnAccount(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/account`,
+      method: 'DELETE',
+      headers: authHeader(req),
+    });
+  }
+
+  @Get('users')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users (admin/analyst only)' })
+  findAll(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/users`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
+  @Get('users/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a specific user by ID' })
+  findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/users/${id}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
+  @Patch('users/:id/role')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a user role (admin only)'})
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['role'],
+      properties: {
+        role: { type: 'string', enum: ['admin', 'analyst', 'user']},
+      },
+    },
+  })
+
+  updateRole(@Param('id') id: string, @Req() req: AuthenticatedRequest, @Body() body:unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/users/${id}/role`,
+      method: 'PATCH',
+      data: body, 
+      headers: authHeader(req),
+    });
+  }
+
+  @Delete('users/"id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete a user (admin only)'})
+  removeUser(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/users/${id}`,
+      method: 'DELETE',
+      headers: authHeader(req),
+    })
+  }
+
+
+
+
+
 }

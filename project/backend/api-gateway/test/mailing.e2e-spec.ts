@@ -42,7 +42,6 @@ describe('Mailing Gateway (e2e)', () => {
   describe('Sequential Gateway Flow', () => {
     it('/emails (POST) - should create a new email in the downstream service', async () => {
       const payload = {
-        recipient: process.env.OUR_EMAIL,
         sender: `test@${process.env.FIVEGUYS_DOMAIN}`,
         subject: 'E2E Gateway Test',
         content: '<p>This is a test</p>',
@@ -54,7 +53,6 @@ describe('Mailing Gateway (e2e)', () => {
         .expect(201);
 
       expect(response.body).toHaveProperty('reference_number');
-      expect(response.body.recipient).toBe(payload.recipient);
 
       targetReferenceNumber = response.body.reference_number;
     });
@@ -98,12 +96,36 @@ describe('Mailing Gateway (e2e)', () => {
       async () => {
         const response = await request(app.getHttpServer())
           .post(`/emails/${targetReferenceNumber}/send-single`)
+          .send({ recipient: process.env.OUR_EMAIL })
           .expect(200);
 
         expect(response.body).toHaveProperty('success', true);
         expect(response.body).toHaveProperty(
           'message',
           'Email sent successfully',
+        );
+        expect(response.body).toHaveProperty('data');
+      },
+    );
+
+    liveTest(
+      '/emails/:referenceNumber/schedule-send-single (POST) - should schedule with Resend',
+      async () => {
+        const futureDate = new Date();
+        futureDate.setMinutes(futureDate.getMinutes() + 2);
+
+        const response = await request(app.getHttpServer())
+          .post(`/emails/${targetReferenceNumber}/schedule-send-single`)
+          .send({
+            recipient: process.env.OUR_EMAIL,
+            scheduledAt: futureDate.toISOString(),
+          })
+          .expect(200);
+
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body).toHaveProperty(
+          'message',
+          'Email scheduled successfully',
         );
         expect(response.body).toHaveProperty('data');
       },

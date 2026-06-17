@@ -13,7 +13,7 @@ interface CreateUserInput {
   email: string;
   name?: string;
   role?: UserRole;
-  department?: string;
+  isVerified?: boolean;
 }
 
 @Injectable()
@@ -61,33 +61,7 @@ export class UsersService {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
-    if (data.email !== undefined) user.email = data.email;
     return this.repo.save(user);
-  }
-
-  async awardXp(email: string, amount: number): Promise<{ xp: number; xpToday: number }> {
-    const user = await this.repo.findOne({ where: { email } });
-    if (!user) throw new NotFoundException('User not found');
-
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    if (user.xpLastDate !== today) {
-      user.xpToday = 0;
-      user.xpLastDate = today;
-    }
-
-    user.xp += amount;
-    user.xpToday += amount;
-    const saved = await this.repo.save(user);
-    return { xp: saved.xp, xpToday: saved.xpToday };
-  }
-
-  async getXpByEmail(email: string): Promise<{ xp: number; xpToday: number }> {
-    const user = await this.repo.findOne({ where: { email } });
-    if (!user) throw new NotFoundException('User not found');
-
-    const today = new Date().toISOString().slice(0, 10);
-    const xpToday = user.xpLastDate === today ? user.xpToday : 0;
-    return { xp: user.xp, xpToday };
   }
 
   async remove(id: string): Promise<void> {
@@ -100,5 +74,9 @@ export class UsersService {
     if (user) {
       await this.repo.remove(user);
     }
+  }
+
+  async markVerified(auth0Id: string): Promise<void> {
+    await this.repo.update({ auth0Id }, { isVerified: true });
   }
 }

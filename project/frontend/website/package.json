@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "preview": "vite preview",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "serve": "serve -s dist"
   },
   "dependencies": {
     "eslint-plugin-react-x": "^5.7.5",

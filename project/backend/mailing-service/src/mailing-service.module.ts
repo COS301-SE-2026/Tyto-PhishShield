@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GeneratedEmail } from './entities/generated-emails.entity';
 import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
+import { MailingServiceController } from './mailing-service.controller';
+//import { maxLength } from 'class-validator';
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { EmailModule } from './email/email.module';
 
     EmailModule,
   ],
-  controllers: [],
+  controllers: [MailingServiceController],
   providers: [EmailService],
 })
 export class MailingServiceModule {}

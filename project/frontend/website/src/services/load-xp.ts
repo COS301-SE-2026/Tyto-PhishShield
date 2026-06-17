@@ -5,6 +5,7 @@ const REPORT_BASE: string = API_BASE + '/report';
 
 export const LoadXPController = {
     async getUserXp(): Promise<XPResponse> {
+        console.log(REPORT_BASE);
         const response: Response = await fetch(`${REPORT_BASE}/xp`, {
             headers: { 'Content-Type': 'application/json',
             Authorization: `Bearer ${getToken()}`, },
