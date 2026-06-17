@@ -1,17 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GeneratedEmail } from './entities/generated-emails.entity';
+import { Emails } from './entities/emails.entity';
 import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
-//import { maxLength } from 'class-validator';
 import { BatchEmailModule } from './batch-email/batch-email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([GeneratedEmail]),
-
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -26,14 +23,13 @@ import { BatchEmailModule } from './batch-email/batch-email.module';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('MAILING_DB_NAME'),
-        synchronize: configService.get<string>('DB_SYNC') === 'true',
+        synchronize: configService.get<string>('DB_SYNC', 'true') === 'true',
+        entities: [Emails],
         autoLoadEntities: true,
-        schema: 'mailing',
       }),
     }),
-
+    TypeOrmModule.forFeature([Emails]),
     EmailModule,
-
     BatchEmailModule,
   ],
   controllers: [MailingServiceController],
