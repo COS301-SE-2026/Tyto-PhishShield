@@ -15,6 +15,7 @@ export class AppService implements OnModuleInit {
     @Inject('MAILING_SERVICE') private readonly mailingClient: ClientProxy,
     @Inject('XP_SERVICE') private readonly xpClient: ClientProxy,
     @Inject('REPORT_SERVICE') private readonly reportClient: ClientProxy,
+    @Inject('EDUCATION_SERVICE') private readonly educationClient: ClientProxy,
   ) {}
 
   onModuleInit() {
@@ -22,6 +23,7 @@ export class AppService implements OnModuleInit {
     this.connectService(this.mailingClient, 'Mailing');
     this.connectService(this.xpClient, 'XP');
     this.connectService(this.reportClient, 'Report');
+    this.connectService(this.educationClient, 'Education');
   }
 
   private async connectService(client: ClientProxy, serviceName: string) {
@@ -39,6 +41,7 @@ export class AppService implements OnModuleInit {
       mailingService: await this.checkServiceHealth(this.mailingClient),
       xpService: await this.checkServiceHealth(this.xpClient),
       reportService: await this.checkServiceHealth(this.reportClient),
+      educationService: await this.checkServiceHealth(this.educationClient),
     };
 
     return healthServices;

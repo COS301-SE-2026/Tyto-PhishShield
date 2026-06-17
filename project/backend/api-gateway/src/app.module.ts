@@ -55,6 +55,14 @@ import { ReportModule } from './report/report.module';
           port: Number(process.env.REPORT_TCP_PORT ?? 4003),
         },
       },
+      {
+        name: 'EDUCATION_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.EDUCATION_HOST ?? 'education_app',
+          port: Number(process.env.EDUCATION_TCP_PORT ?? 4004),
+        },
+      },
     ]),
   ],
   controllers: [AppController],
