@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
-import { GenerateEmailDto } from '../dto/generate-email.dto';
-import { EmailDifficulty } from '../entities/generated-emails.entity';
+import { EmailsDto } from '../dto/emails.dto';
+import { EmailDifficulty } from '../entities/emails.entity';
 import { SendSingleEmailDto } from '../dto/send-single-email.dto';
 import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
 
@@ -38,8 +38,8 @@ describe('EmailController', () => {
     created_at: new Date(),
   };
 
-  // Mock the GenerateEmailDto
-  const mockCreateDto: GenerateEmailDto = {
+  // Mock the EmailsDto
+  const mockCreateDto: EmailsDto = {
     sender: 'security@domain.com',
     alias: 'IT Support',
     subject: 'Urgent: Password Reset',

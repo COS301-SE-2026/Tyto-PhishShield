@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
-import { EmailDifficulty } from '../src/entities/generated-emails.entity';
+import { EmailDifficulty } from '../src/entities/emails.entity';
 
 // jest.mock('resend', () => {
 //   return {

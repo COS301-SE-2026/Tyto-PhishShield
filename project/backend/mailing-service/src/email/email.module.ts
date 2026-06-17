@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { GeneratedEmail } from '../entities/generated-emails.entity';
+import { Emails } from '../entities/emails.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GeneratedEmail])],
+  imports: [TypeOrmModule.forFeature([Emails])],
   controllers: [EmailController],
   providers: [EmailService],
 })

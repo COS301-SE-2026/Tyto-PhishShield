@@ -7,7 +7,7 @@ import { Resend } from 'resend';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { GeneratedEmail } from '../entities/generated-emails.entity';
+import { Emails } from '../entities/emails.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -18,8 +18,8 @@ export class BatchEmailService {
   constructor(
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
-    @InjectRepository(GeneratedEmail)
-    private readonly emailRepository: Repository<GeneratedEmail>,
+    @InjectRepository(Emails)
+    private readonly emailRepository: Repository<Emails>,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);

@@ -7,9 +7,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { GeneratedEmail } from '../entities/generated-emails.entity';
+import { Emails } from '../entities/emails.entity';
 import { Resend } from 'resend';
-import { GenerateEmailDto } from '../dto/generate-email.dto';
+import { EmailsDto } from '../dto/emails.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -19,21 +19,21 @@ export class EmailService {
 
   constructor(
     private configService: ConfigService,
-    @InjectRepository(GeneratedEmail)
-    private readonly emailRepository: Repository<GeneratedEmail>,
+    @InjectRepository(Emails)
+    private readonly emailRepository: Repository<Emails>,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
   }
 
-  async createEmail(dto: GenerateEmailDto): Promise<GeneratedEmail> {
+  async createEmail(dto: EmailsDto): Promise<Emails> {
     try {
       const uniqueHash = crypto.randomBytes(4).toString('hex').toUpperCase();
       const generatedReference = `PHISH-${uniqueHash}`;
 
       const newEmail = this.emailRepository.create({
         ...dto,
-        reference_number: generatedReference,
+        referenceNumber: generatedReference,
       });
 
       const savedEmail = await this.emailRepository.save(newEmail);
@@ -47,7 +47,7 @@ export class EmailService {
     }
   }
 
-  async getAllEmails(): Promise<GeneratedEmail[]> {
+  async getAllEmails(): Promise<Emails[]> {
     try {
       return await this.emailRepository.find();
     } catch (error) {
@@ -58,16 +58,16 @@ export class EmailService {
     }
   }
 
-  async getEmailByReference(referenceNumber: string): Promise<GeneratedEmail> {
+  async getEmailByReference(referenceNumber: string): Promise<Emails> {
     if (!referenceNumber) {
       throw new NotFoundException('Reference number is required');
     }
 
-    let email: GeneratedEmail | null;
+    let email: Emails | null;
 
     try {
       email = await this.emailRepository.findOne({
-        where: { reference_number: referenceNumber },
+        where: { referenceNumber: referenceNumber },
       });
     } catch (error) {
       this.logger.error(
@@ -92,8 +92,8 @@ export class EmailService {
 
   async updateEmail(
     referenceNumber: string,
-    dto: Partial<GenerateEmailDto>,
-  ): Promise<GeneratedEmail> {
+    dto: Partial<EmailsDto>,
+  ): Promise<Emails> {
     const email = await this.getEmailByReference(referenceNumber);
     Object.assign(email, dto);
 

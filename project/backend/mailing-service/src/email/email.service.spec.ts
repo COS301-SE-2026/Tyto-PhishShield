@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
-  GeneratedEmail,
+  Emails,
   EmailDifficulty,
-} from '../entities/generated-emails.entity';
-import { GenerateEmailDto } from '../dto/generate-email.dto';
+} from '../entities/emails.entity';
+import { EmailsDto } from '../dto/emails.dto';
 
 // Mock Resend client matching the service's `data.data?.id` structural needs
 const mockResendSend = jest.fn().mockResolvedValue({
@@ -64,7 +64,7 @@ describe('EmailService', () => {
       providers: [
         EmailService,
         {
-          provide: getRepositoryToken(GeneratedEmail),
+          provide: getRepositoryToken(Emails),
           useValue: mockEmailRepository,
         },
         {
@@ -87,7 +87,7 @@ describe('EmailService', () => {
 
   describe('createEmail', () => {
     it('should generate a reference number and save the email', async () => {
-      const createDto: GenerateEmailDto = {
+      const createDto: EmailsDto = {
         sender: 'admin@domain.com',
         alias: 'Admin',
         subject: 'Action Required',
