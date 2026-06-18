@@ -13,7 +13,7 @@ interface MicrosoftTokenPayload {
   tid?: string;
 }
 
-interface MicrosoftUserInfo {
+export interface MicrosoftUserInfo {
   microsoftId: string;
   email: string;
   name?: string;

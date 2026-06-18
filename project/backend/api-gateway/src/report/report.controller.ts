@@ -7,6 +7,7 @@ import {
   Param,
   Req,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
@@ -38,6 +39,17 @@ export class ReportController {
       'http://localhost:3004',
     );
   }
+
+  @Post('auth/microsoft')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Exchange Microsoft SSO token for user identity' })
+  exchangeMicrosoft(@Body('token') token: string) {
+  return this.proxy.forward({
+    url: `${this.reportServiceUrl}/api/auth/microsoft`,
+    method: 'POST',
+    data: { token },
+  });
+}
 
   @Post()
   @UseGuards(JwtAuthGuard)
