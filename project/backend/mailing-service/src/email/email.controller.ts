@@ -66,11 +66,11 @@ export class EmailController {
   @Post(':referenceNumber/schedule-send-single')
   @HttpCode(HttpStatus.OK)
   async scheduleSendEmail(
+    @Param('referenceNumber') referenceNumber: string,
     @Body() scheduledSingleEmailDto: ScheduleSingleEmailDto,
   ): Promise<MailingPostReturnDto> {
     const result = await this.sendMailService.scheduleSendEmail(
-      scheduledSingleEmailDto.emailReferenceNumber,
-      // scheduledSingleEmailDto.auth0Id,
+      referenceNumber,
       scheduledSingleEmailDto.recipient,
       scheduledSingleEmailDto.scheduledAt,
     );
