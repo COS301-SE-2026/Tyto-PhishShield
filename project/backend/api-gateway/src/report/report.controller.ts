@@ -1,6 +1,12 @@
 import {
-  Controller, Post, Get, Patch,
-  Body, Param, Req, UseGuards, HttpCode,
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Body,
+  Param,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -15,7 +21,7 @@ interface AuthenticatedRequest extends Request {
 
 function authHeader(req: Request): Record<string, string> {
   const token = req.headers['authorization'];
-  return token ? {Authorization: token} : {};
+  return token ? { Authorization: token } : {};
 }
 
 @ApiTags('Reports')
@@ -27,18 +33,16 @@ export class ReportController {
     private readonly proxy: ProxyService,
     private readonly config: ConfigService,
   ) {
-
     this.reportServiceUrl = this.config.get<string>(
       'REPORT_SERVICE_URL',
-      'http://localhost:3004'
+      'http://localhost:3004',
     );
-    
   }
 
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Submit a phishing report from the Outlook Add-in'})
+  @ApiOperation({ summary: 'Submit a phishing report from the Outlook Add-in' })
   create(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
     return this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report`,
@@ -51,7 +55,7 @@ export class ReportController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all reports (admin/analyst)'})
+  @ApiOperation({ summary: 'Get all reports (admin/analyst)' })
   findAll(@Req() req: AuthenticatedRequest) {
     return this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report`,
@@ -63,7 +67,7 @@ export class ReportController {
   @Get('mine')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user reports'})
+  @ApiOperation({ summary: 'Get current user reports' })
   getMyReports(@Req() req: AuthenticatedRequest) {
     return this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report/mine`,
@@ -75,7 +79,7 @@ export class ReportController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get a specific report'})
+  @ApiOperation({ summary: 'Get a specific report' })
   findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report/${id}`,
@@ -84,16 +88,15 @@ export class ReportController {
     });
   }
 
-  @Get(':id/status')
+  @Patch(':id/status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update report status (admin/analyst)'})
+  @ApiOperation({ summary: 'Update report status (admin/analyst)' })
   updateStatus(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
-  )
-   {
+  ) {
     return this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report/${id}/status`,
       method: 'PATCH',
@@ -101,8 +104,4 @@ export class ReportController {
       headers: authHeader(req),
     });
   }
-
-
-
-
 }
