@@ -119,7 +119,6 @@ export class AuthService {
       email: dto.email,
       name: dto.name,
       role: UserRole.USER,
-      department: dto.department,
     });
 
     await this.otpService.generateAndSend(dto.email);
