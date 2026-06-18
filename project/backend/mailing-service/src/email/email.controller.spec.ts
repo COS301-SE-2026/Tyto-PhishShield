@@ -54,7 +54,6 @@ describe('EmailController', () => {
   
   const mockScheduleSingleEmail: ScheduleSingleEmailDto = {
     recipient: 'test@domain.com',
-    emailReferenceNumber: 'PHISH-001',
     scheduledAt: new Date('2026-05-25T14:30:00.000Z'),
   };
 
@@ -150,10 +149,9 @@ describe('EmailController', () => {
       };
       mockEmailService.scheduleSendEmail.mockResolvedValue(serviceResponse);
 
-      const result = await controller.scheduleSendEmail(mockScheduleSingleEmail);
+      const result = await controller.scheduleSendEmail('PHISH-001', mockScheduleSingleEmail);
 
       expect(service.scheduleSendEmail).toHaveBeenCalledWith(
-        mockScheduleSingleEmail.emailReferenceNumber,
         mockScheduleSingleEmail.recipient,
         mockScheduleSingleEmail.scheduledAt
       );

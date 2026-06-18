@@ -4,16 +4,6 @@ import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
 import { EmailDifficulty } from '../src/entities/emails.entity';
 
-// jest.mock('resend', () => {
-//   return {
-//     Resend: jest.fn().mockImplementation(() => ({
-//       emails: {
-//         send: jest.fn().mockResolvedValue({ id: 'mock-resend-id' }),
-//       },
-//     })),
-//   };
-// });
-
 describe('Email service integration test', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
@@ -47,8 +37,8 @@ describe('Email service integration test', () => {
       })
       .expect(201)
       .expect((res) => {
-        expect(res.body.reference_number).toBeDefined();
-        testReferenceNumber = res.body.reference_number;
+        expect(res.body.referenceNumber).toBeDefined();
+        testReferenceNumber = res.body.referenceNumber;
       });
   });
 
@@ -67,7 +57,7 @@ describe('Email service integration test', () => {
       .get(`/emails/${testReferenceNumber}`)
       .expect(200)
       .expect((res) => {
-        expect(res.body.reference_number).toEqual(testReferenceNumber);
+        expect(res.body.referenceNumber).toEqual(testReferenceNumber);
       });
   });
 
@@ -87,8 +77,7 @@ describe('Email service integration test', () => {
       return request(app.getHttpServer())
         .post(`/emails/${testReferenceNumber}/send-single`)
         .send({
-          recipient: process.env.OUR_EMAIL,
-          emailReferenceNumber: testReferenceNumber
+          recipient: process.env.RESEND_EMAIL_DELIVERED,
         })
         .expect(200)
         .expect((res) => {
@@ -108,8 +97,7 @@ describe('Email service integration test', () => {
       return request(app.getHttpServer())
         .post(`/emails/${testReferenceNumber}/schedule-send-single`)
         .send({
-          recipient: process.env.OUR_EMAIL,
-          emailReferenceNumber: testReferenceNumber,
+          recipient: process.env.RESEND_EMAIL_DELIVERED,
           scheduledAt: futureDate.toISOString(),
         })
         .expect(200)
