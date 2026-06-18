@@ -22,7 +22,7 @@ import { BatchEmailModule } from './batch-email/batch-email.module';
         port: configService.get<number>('MAILING_DB_PORT'),
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('MAILING_DB_NAME'),
+        database: configService.get<string>('DB_NAME'),
         synchronize: configService.get<string>('DB_SYNC', 'true') === 'true',
         entities: [Emails],
         autoLoadEntities: true,

@@ -62,6 +62,17 @@ services:
       - MAILING_DB_PORT=${INTERNAL_DB_PORT}
       - TCP_PORT=${MAILING_TCP_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${MAILING_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - TEST_EMAIL_SEND=${TEST_EMAIL_SEND}
+      - OUR_EMAIL=${OUR_EMAIL}
+      - DOMAIN=${DOMAIN}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - DB_SYNC=${DB_SYNC}
 
     ports:
       # Left side must be unique

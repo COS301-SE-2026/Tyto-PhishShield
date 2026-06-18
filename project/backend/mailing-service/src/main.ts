@@ -28,7 +28,7 @@ async function bootstrap() {
   }
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('MAILING_SERVICE_PORT') || 3003;
+  const port = configService.get<number>('PORT') || 3003;
   await app.listen(port);
   await app.startAllMicroservices();
   console.log(`Application is running on: http://localhost:${port}`);
