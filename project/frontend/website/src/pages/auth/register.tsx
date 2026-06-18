@@ -3,7 +3,7 @@ import { AuthLayout } from '../../components/layout/auth-layout';
 import { Input, PasswordInput, Select, Button /**, OtpInput**/ } from '../../components/ui';
 import { authApi } from '../../services/api';
 import { useToast } from '../../context/toast-context';
-import { ErrorResponse, RegisterResponse } from '../../types/index';
+//import { ErrorResponse, RegisterResponse } from '../../types/index';
 
 interface RegisterProps {
   onNavigate: (path: string) => void;

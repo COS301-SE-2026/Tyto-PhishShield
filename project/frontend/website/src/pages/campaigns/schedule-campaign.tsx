@@ -213,7 +213,7 @@ export function ScheduleCampaign({ onNavigate, activePath }: ScheduleCampaignPro
               <Select
                 label="Difficulty level"
                 value={templateForm.difficulty}
-                onChange={e => setT('difficulty', e.target.value as EmailTemplateForm['difficulty'])}
+                onChange={e => setT('difficulty', e.target.value)}
                 options={DIFFICULTY_OPTIONS}
               />
             </div>
