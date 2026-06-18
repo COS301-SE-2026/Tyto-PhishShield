@@ -8,5 +8,6 @@ import { Emails } from '../entities/emails.entity';
   imports: [TypeOrmModule.forFeature([Emails])],
   controllers: [EmailController],
   providers: [EmailService],
+  exports: [EmailService],
 })
 export class EmailModule {}
