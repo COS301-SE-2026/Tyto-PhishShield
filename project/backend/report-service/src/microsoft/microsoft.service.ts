@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import * as jwt from 'jsonwebtoken';
-import * as jwksRsa from 'jwks-rsa';
+import jwksRsa from 'jwks-rsa';
 
 interface MicrosoftTokenPayload {
   sub: string;
@@ -45,11 +45,11 @@ export class MicrosoftService {
         return callback(err);
       }
 
-      if (!key || !(key as Record<string, unknown>).getPublicKey) {
+      if (!key || !(key as unknown as { getPublicKey?: () => string })?.getPublicKey) {
         return callback(new Error('Failed to retrieve signing key'));
       }
 
-      const signingKey = (key as { getPublicKey(): string }).getPublicKey();
+      const signingKey = (key as unknown as { getPublicKey: () => string }).getPublicKey();
 
       callback(null, signingKey);
     });
