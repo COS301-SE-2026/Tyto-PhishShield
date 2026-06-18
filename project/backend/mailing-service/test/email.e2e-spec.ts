@@ -4,13 +4,14 @@ import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
 import { EmailDifficulty } from '../src/entities/emails.entity';
 
+const TEST_SENDER = 'onboarding@resend.dev';
+const TEST_RECIPIENT = 'delivered@resend.dev';
+
 describe('Email service integration test', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
 
-  const hasLivePermission = process.env.TEST_EMAIL_SEND === 'true';
-  const liveTest = hasLivePermission ? it : it.skip;
-
+  // NestJS boot + TypeORM connection can take longer than Jest's default 5s.
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [MailingServiceModule],
@@ -19,7 +20,7 @@ describe('Email service integration test', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await app.close();
@@ -29,8 +30,8 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post('/emails')
       .send({
-        sender: `test@${process.env.FIVEGUYS_DOMAIN}`,
-        alias: 'tester',
+        sender: TEST_SENDER,
+        alias: 'E2E Tester',
         subject: 'E2E Test',
         content: '<p>This is a test</p>',
         difficulty: EmailDifficulty.MEDIUM,
@@ -71,41 +72,33 @@ describe('Email service integration test', () => {
       });
   });
 
-  liveTest(
-    '/emails/:referenceNumber/send-single (POST) - should trigger live send',
-    () => {
-      return request(app.getHttpServer())
-        .post(`/emails/${testReferenceNumber}/send-single`)
-        .send({
-          recipient: process.env.RESEND_EMAIL_DELIVERED,
-        })
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.success).toBe(true);
-          expect(res.body.message).toContain('sent instantly.');
-          expect(res.body.deliveryId).toBeDefined();
-        });
-    },
-  );
+  it('/emails/:referenceNumber/send-single (POST) - should send email via Resend', () => {
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/send-single`)
+      .send({ recipient: TEST_RECIPIENT })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toContain('sent instantly.');
+        expect(res.body.deliveryId).toBeDefined();
+      });
+  });
 
-  liveTest(
-    '/emails/:referenceNumber/schedule-send-single (POST) - should schedule live send',
-    () => {
-      const futureDate = new Date();
-      futureDate.setMinutes(futureDate.getMinutes() + 10);
+  it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule email via Resend', () => {
+    const futureDate = new Date();
+    futureDate.setMinutes(futureDate.getMinutes() + 15);
 
-      return request(app.getHttpServer())
-        .post(`/emails/${testReferenceNumber}/schedule-send-single`)
-        .send({
-          recipient: process.env.RESEND_EMAIL_DELIVERED,
-          scheduledAt: futureDate.toISOString(),
-        })
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.success).toBe(true);
-          expect(res.body.message).toContain('successfully scheduled');
-          expect(res.body.deliveryId).toBeDefined();
-        });
-    },
-  );
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/schedule-send-single`)
+      .send({
+        recipient: TEST_RECIPIENT,
+        scheduledAt: futureDate.toISOString(),
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toContain('successfully scheduled');
+        expect(res.body.deliveryId).toBeDefined();
+      });
+  });
 });
