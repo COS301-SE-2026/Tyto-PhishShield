@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Report, ReportStatus } from './entities/report.entity';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { ClientProxy } from '@nestjs/microservices';
 
 interface ReporterUser {
     auth0Id: string;
@@ -16,6 +17,7 @@ export class ReportService {
     constructor(
         @InjectRepository(Report)
         private readonly repo: Repository<Report>,
+        @Inject('REPORT_EVENTS') private readonly rmqClient: ClientProxy,
     ) {}
 
     async create(user: ReporterUser, dto: CreateReportDto): Promise<Report> {
@@ -30,7 +32,18 @@ export class ReportService {
             notes: dto.notes,
             status: ReportStatus.PENDING,
         });
-        return this.repo.save(report);
+
+        const saved = await this.repo.save(report);
+
+        this.rmqClient.emit('report.created', {
+            reportId: saved.id,
+            auth0Id: saved.auth0Id,
+            reporterEmail: saved.reporterEmail,
+            emailSubject: saved.emailSubject,
+            emailSender: saved.emailSender,
+            createdAt: saved.createdAt,
+        });
+        return saved;
     }
 
     findAll(): Promise<Report[]> {
