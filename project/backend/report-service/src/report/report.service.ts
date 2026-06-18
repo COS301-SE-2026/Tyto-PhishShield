@@ -23,7 +23,7 @@ export class ReportService {
   async create(user: ReporterUser, dto: CreateReportDto): Promise<Report> {
     const report = this.repo.create({
       auth0Id: user.auth0Id,
-      reporterEmail: user.email,
+      reporterEmail: user.email || 'unknown',
       outlookMessageId: dto.outlookMessageId,
       emailSubject: dto.emailSubject,
       emailSender: dto.emailSender,

@@ -21,8 +21,8 @@ export class Report {
   @Column()
   auth0Id!: string;
 
-  @Column()
-  reporterEmail!: string;
+  @Column({ nullable: true })
+  reporterEmail?: string;
 
   @Column({ nullable: true })
   outlookMessageId?: string;

@@ -25,7 +25,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 @ApiTags('Reports')
-@Controller('reports')
+@Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
