@@ -7,24 +7,25 @@ import { ReportService } from './report.service';
 import { ReportController } from './report.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Report]),
-              ClientsModule.registerAsync([
-                {
-                    name: 'REPORT_EVENTS',
-                    imports: [ConfigModule],
-                    inject: [ConfigService],
-                    useFactory: (config: ConfigService) => ({
-                        transport: Transport.RMQ,
-                        options: {
-                            urls: [config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672')],
-                            queue: 'events.queue',
-                            queueOptions: { durable: true },
-                        },
-                    }),
-                },
-              ]),
-            ],
-    controllers: [ReportController],
-    providers: [ReportService],
+  imports: [
+    TypeOrmModule.forFeature([Report]),
+    ClientsModule.registerAsync([
+      {
+        name: 'REPORT_EVENTS',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672')],
+            queue: 'events.queue',
+            queueOptions: { durable: true },
+          },
+        }),
+      },
+    ]),
+  ],
+  controllers: [ReportController],
+  providers: [ReportService],
 })
 export class ReportModule {}

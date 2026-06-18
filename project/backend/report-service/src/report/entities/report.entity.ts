@@ -1,50 +1,53 @@
 import {
-    Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, } from 'typeorm';
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum ReportStatus {
-    PENDING = 'pending',
-    REVIEWED = 'reviewed',
-    CONFIRMED_PHISHING = 'confirmed_phishing',
-    FALSE_POSITIVE = 'false_positive',
+  PENDING = 'pending',
+  REVIEWED = 'reviewed',
+  CONFIRMED_PHISHING = 'confirmed_phishing',
+  FALSE_POSITIVE = 'false_positive',
 }
 
 @Entity('reports')
 export class Report {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @Column()
-    auth0Id!: string;
+  @Column()
+  auth0Id!: string;
 
-    @Column()
-    reporterEmail!: string;
+  @Column()
+  reporterEmail!: string;
 
-    @Column({nullable: true})
-    outlookMessageId?: string;
+  @Column({ nullable: true })
+  outlookMessageId?: string;
 
-    @Column({nullable: true})
-    emailSubject?: string;
+  @Column({ nullable: true })
+  emailSubject?: string;
 
-    @Column({nullable: true})
-    emailSender?: string;
+  @Column({ nullable: true })
+  emailSender?: string;
 
-    @Column({ nullable: true})
-    emailBody?: string;
+  @Column({ nullable: true })
+  emailBody?: string;
 
-    @Column({ nullable: true})
-    emailReceivedAt?: Date;
+  @Column({ nullable: true })
+  emailReceivedAt?: Date;
 
-    @Column({ type: 'enum', enum: ReportStatus, default: ReportStatus.PENDING })
-    status!: ReportStatus;
+  @Column({ type: 'enum', enum: ReportStatus, default: ReportStatus.PENDING })
+  status!: ReportStatus;
 
-    @Column({ nullable: true, type: 'text'})
-    notes?: string;
+  @Column({ nullable: true, type: 'text' })
+  notes?: string;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
 
-    @UpdateDateColumn()
-    updatedAt!: Date;
-
-
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

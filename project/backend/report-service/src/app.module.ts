@@ -25,7 +25,6 @@ import { AppService } from './app.service';
         database: config.get('DB_NAME'),
         entities: [Report],
         synchronize: true,
-
       }),
     }),
     ReportModule,
