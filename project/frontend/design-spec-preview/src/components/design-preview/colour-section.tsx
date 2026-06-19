@@ -22,7 +22,7 @@ const colourTokens: ColourToken[] = [
 function ColourSection({darkMode}: ColourSectionProps) {
     const cardStyle = darkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-slate-50';
 
-    const mutedText = darkMode ? 'text-slate-400' : 'text-slate-500';
+    const mutedText = darkMode ? 'text-slate-400' : 'text-slate-600';
 
     return(
         <div className = 'grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>

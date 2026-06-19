@@ -4,6 +4,7 @@ import Header from './components/layout/header';
 import PageSection from './components/layout/page-section';
 import BrandSection from './components/design-preview/brand-section';
 import ColourSection from './components/design-preview/colour-section';
+import TypographySection from './components/design-preview/typography-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -27,7 +28,7 @@ function App() {
           </PageSection>
 
           <PageSection id='typography' title='Typography' darkMode={darkMode}>
-            <p>Typography Section</p>
+            <TypographySection darkMode={darkMode} />
           </PageSection>
 
           <PageSection id='spacing' title='Spacing System' darkMode={darkMode}>
