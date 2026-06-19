@@ -51,7 +51,7 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
     if (!userId) return;
     setLoadingUser(true);
     authFetch(`${API_BASE}/accounts/users/${userId}`)
-      .then(r => r.ok ? r.json() as Promise<FetchedUser> : Promise.reject(r.status))
+      .then(r => r.ok ? r.json() as Promise<FetchedUser> : Promise.reject(new Error(String(r.status))))
       .then(data => setFetchedUser(data))
       .catch(() => addToast({ type: 'error', title: 'Could not load user', message: 'User may not exist or you lack access.' }))
       .finally(() => setLoadingUser(false));
