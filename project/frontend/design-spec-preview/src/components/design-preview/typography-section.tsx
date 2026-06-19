@@ -15,8 +15,6 @@ const typeScale = [
 function TypographySection({darkMode}: TypographySectionProps) {
     const mutedText = darkMode ? 'text-slate-400' : 'text-slate-600';
 
-    const sampleBox = darkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-300 bg-slate-100';
-
     return (
         <div className='grid gap-6 lg'>
             <div className='space-y-5'>

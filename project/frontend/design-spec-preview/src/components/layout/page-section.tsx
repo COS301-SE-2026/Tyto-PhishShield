@@ -8,7 +8,7 @@ type PageSectionProps = {
 }
 
 function PageSection({id, title, darkMode, children }: PageSectionProps) {
-    const sectionStyle = darkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'
+    const sectionStyle = darkMode ? 'border-slate-800 bg-slate-900' : 'border-slate-300 bg-slate-50'
 
     return (
         <section
