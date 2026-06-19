@@ -12,7 +12,7 @@ import { EventProducerService } from './event-producer.service';
       exchanges: [
         {
           name: EventProducerService.EVENT_EXCHANGE,
-          type: 'fanout',
+          type: 'topic',
         },
       ],
       uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',

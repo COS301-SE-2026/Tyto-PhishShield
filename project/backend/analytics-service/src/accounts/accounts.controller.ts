@@ -5,7 +5,7 @@ import { User } from './dto/user.dto';
 @Controller('accounts')
 export class AccountsController {
   @RabbitSubscribe({
-    exchange: 'accounts-event-echange',
+    exchange: 'accounts-event-exchange',
     routingKey: 'user.created',
     queue: 'analytics-accounts-queue',
   })
