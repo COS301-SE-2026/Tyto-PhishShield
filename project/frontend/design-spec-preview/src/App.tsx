@@ -2,6 +2,7 @@ import {useState} from 'react';
 import Sidebar from './components/layout/sidebar';
 import Header from './components/layout/header';
 import PageSection from './components/layout/page-section';
+import BrandSection from './components/design-preview/brand-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -17,7 +18,7 @@ function App() {
 
         <div className='space-y-8 p-6 md:p-8'>
           <PageSection id='brand' title='Brand Identity' darkMode={darkMode}>
-            <p>Brand Section</p>
+            <BrandSection darkMode={darkMode} />
           </PageSection>
 
           <PageSection id='colours' title='Colour System' darkMode={darkMode}>
