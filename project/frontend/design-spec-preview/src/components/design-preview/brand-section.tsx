@@ -8,7 +8,7 @@ function BrandSection({darkMode}: BrandSectionProps) {
     return(
         <div className='max-w-3xl text-sm leading-6 md:text-base'>
             <p>
-                Tyto-PhishShield helps organizations to build resiliance against phishing attacks by training employees with realistc phishing simulations.
+                Tyto-PhishShield helps organizations to build resilience against phishing attacks by training employees with realistic phishing simulations.
             </p>
             
             <div className="mt-6 grid gap-4 md:grid-cols-2">
