@@ -3,13 +3,13 @@ type TypographySectionProps = {
 };
 
 const typeScale = [
-    { label: 'Hero H1', size: '32–50px', className: 'text-4xl md:text-5xl font-extrabold' },
-    { label: 'H1', size: '28–32px', className: 'text-3xl font-bold' },
-    { label: 'H2', size: '22–24px', className: 'text-2xl font-bold' },
-    { label: 'H3', size: '18–20px', className: 'text-xl font-semibold' },
-    { label: 'Body', size: '14–16px', className: 'text-base' },
-    { label: 'Caption', size: '11–12px', className: 'text-xs' },
-    { label: 'Micro Label', size: '10–11px', className: 'text-[11px] uppercase tracking-wide font-semibold' },
+    { label: 'Hero H1', size: '32-50px', className: 'text-4xl md:text-5xl font-extrabold' },
+    { label: 'H1', size: '28-32px', className: 'text-3xl font-bold' },
+    { label: 'H2', size: '22-24px', className: 'text-2xl font-bold' },
+    { label: 'H3', size: '18-20px', className: 'text-xl font-semibold' },
+    { label: 'Body', size: '14-16px', className: 'text-base' },
+    { label: 'Caption', size: '11-12px', className: 'text-xs' },
+    { label: 'Micro Label', size: '10-11px', className: 'text-[11px] uppercase tracking-wide font-semibold' },
 ];
 
 function TypographySection({darkMode}: TypographySectionProps) {

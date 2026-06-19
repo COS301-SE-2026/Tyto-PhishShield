@@ -2,10 +2,10 @@ type SpacingSectionProps = {
     darkMode : boolean;
 };
 
-const spacingScale = [4, 8, 12, 16, 20, 24, 32, 40, 48];
+const spacingScale = [8, 16, 24, 32, 48];
 
 function SpacingSection({darkMode}: SpacingSectionProps) {
-    const cardStyle = darkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-slate-50';
+    const cardStyle = darkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-300 bg-slate-100';
 
     const mutedText = darkMode ? 'text-slate-400' : 'text-slate-600';
 
