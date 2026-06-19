@@ -1,6 +1,6 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 
-export class EventUser {
+export class User {
   @IsString()
   id!: string;
 
