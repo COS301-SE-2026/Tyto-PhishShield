@@ -13,6 +13,7 @@ import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Otp } from './otp/otp.entity';
+import { EventProducerModule } from './event-producer/event-producer.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { Otp } from './otp/otp.entity';
     }),
     AuthModule,
     UsersModule,
+    EventProducerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
