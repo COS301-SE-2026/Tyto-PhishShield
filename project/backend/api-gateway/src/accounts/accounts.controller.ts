@@ -28,8 +28,12 @@ interface AuthenticatedRequest extends Request {
 }
 
 function authHeader(req: Request): Record<string, string> {
-  const token = req.headers['authorization'];
-  return token ? { Authorization: token } : {};
+  try {
+    const token = req.headers['authorization'];
+    return token ? { Authorization: token } : {};
+  } catch {
+    return {};
+  }
 }
 
 @ApiTags('Accounts')
