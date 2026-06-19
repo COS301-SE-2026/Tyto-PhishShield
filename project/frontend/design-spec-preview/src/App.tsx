@@ -8,7 +8,7 @@ import ColourSection from './components/design-preview/colour-section';
 function App() {
   const [darkMode, setDarkMode] = useState(true);
 
-  const pageStyle = darkMode? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900';
+  const pageStyle = darkMode? 'bg-slate-950 text-slate-100' : 'bg-slate-200 text-slate-950';
 
   return(
     <div className={`min-h-screen ${pageStyle}`}>
