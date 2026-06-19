@@ -122,7 +122,6 @@ export function Register({ onNavigate }: RegisterProps) {
   const [submitError, setSubmitError] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState('');
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   const validateStep1 = () => {
     const e: Record<string, string> = {};
@@ -151,15 +150,7 @@ export function Register({ onNavigate }: RegisterProps) {
         email, password, name: `${firstName} ${lastName}`.trim(),
         department: DEPARTMENTS.find(d => d.value === department)?.label,
       });
-      const otpRes = await authApi.sendOtp(email);
-      setOtpCode(otpRes.devCode ?? '');
-      setDevCode(otpRes.devCode ?? null);
-      setOtpError('');
-      if (otpRes.devCode) {
-        addToast({ type: 'info', title: 'Dev mode', message: `Email blocked by Resend sandbox — code pre-filled below.` });
-      } else {
-        addToast({ type: 'info', title: 'Verification code sent', message: `Check ${email} for your 6-digit code.` });
-      }
+      addToast({ type: 'info', title: 'Verification code sent', message: `Check ${email} for your 6-digit code.` });
       setStep(3);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed. Please try again.';
@@ -186,7 +177,7 @@ export function Register({ onNavigate }: RegisterProps) {
 
   const handleResendOtp = async () => {
     try {
-      await authApi.sendOtp(email);
+      await authApi.resendOtp(email);
       addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}.` });
     } catch {
       addToast({ type: 'error', title: 'Could not resend', message: 'Please try again in a moment.' });
@@ -357,15 +348,6 @@ export function Register({ onNavigate }: RegisterProps) {
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
             We sent a 6-digit code to <strong>{email}</strong>. Enter it below to complete registration.
           </p>
-          {devCode && (
-            <div style={{
-              background: '#fefce8', border: '1px solid #fde047', borderRadius: 8,
-              padding: '10px 14px', marginBottom: 12, fontSize: 12,
-              color: '#854d0e', fontFamily: 'Inter, system-ui, sans-serif',
-            }}>
-              <strong>Development mode:</strong> Resend sandbox blocked the email. Code is pre-filled: <strong>{devCode}</strong>
-            </div>
-          )}
           <div style={{ marginBottom: 16 }}>
             <Input
               label="Verification code"

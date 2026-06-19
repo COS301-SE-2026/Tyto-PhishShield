@@ -44,20 +44,20 @@ export const authApi = {
     return parseResponse<AuthenticatedUser>(res);
   },
 
-  sendOtp: async (email: string): Promise<{ message: string; devCode?: string }> => {
-    const res = await fetch(`${API_BASE}/auth/otp/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    return parseResponse<{ message: string; devCode?: string }>(res);
-  },
-
   verifyOtp: async (email: string, code: string): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+    const res = await fetch(`${API_BASE}/accounts/auth/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code }),
+    });
+    return parseResponse<{ message: string }>(res);
+  },
+
+  resendOtp: async (email: string): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/accounts/auth/resend-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     });
     return parseResponse<{ message: string }>(res);
   },
