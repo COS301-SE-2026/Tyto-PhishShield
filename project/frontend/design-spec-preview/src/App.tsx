@@ -15,33 +15,36 @@ function App() {
       <main className='lg:ml-64'>
         <Header darkMode={darkMode} setDarkMode={setDarkMode} />
 
-        <PageSection id='brand' title='Brand Identity' darkMode={darkMode}>
-          <p>Brand Section</p>
-        </PageSection>
+        <div className='space-y-8 p-6 md:p-8'>
+          <PageSection id='brand' title='Brand Identity' darkMode={darkMode}>
+            <p>Brand Section</p>
+          </PageSection>
 
-        <PageSection id='colours' title='Colour System' darkMode={darkMode}>
-          <p>Colour Section</p>
-        </PageSection>
+          <PageSection id='colours' title='Colour System' darkMode={darkMode}>
+            <p>Colour Section</p>
+          </PageSection>
 
-        <PageSection id='typography' title='Typography' darkMode={darkMode}>
-          <p>Typography Section</p>
-        </PageSection>
+          <PageSection id='typography' title='Typography' darkMode={darkMode}>
+            <p>Typography Section</p>
+          </PageSection>
 
-        <PageSection id='spacing' title='Spacing System' darkMode={darkMode}>
-          <p>Spacing Section</p>
-        </PageSection>
+          <PageSection id='spacing' title='Spacing System' darkMode={darkMode}>
+            <p>Spacing Section</p>
+          </PageSection>
 
-        <PageSection id='components' title='UI Components' darkMode={darkMode}>
-          <p>Components Section</p>
-        </PageSection>
+          <PageSection id='components' title='UI Components' darkMode={darkMode}>
+            <p>Components Section</p>
+          </PageSection>
 
-        <PageSection id='ratio' title='Ratio Example' darkMode={darkMode}>
-          <p>Ratio Section</p>
-        </PageSection>
+          <PageSection id='ratio' title='Ratio Example' darkMode={darkMode}>
+            <p>Ratio Section</p>
+          </PageSection>
 
-        <PageSection id='dashboard' title='Dashboard Layout' darkMode={darkMode}>
-          <p>Dashboard Section</p>
-        </PageSection>
+          <PageSection id='dashboard' title='Dashboard Layout' darkMode={darkMode}>
+            <p>Dashboard Section</p>
+          </PageSection>
+        </div>
+        
       </main>
     </div>
   )
