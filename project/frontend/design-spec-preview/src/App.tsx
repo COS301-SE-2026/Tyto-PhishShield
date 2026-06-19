@@ -3,6 +3,7 @@ import Sidebar from './components/layout/sidebar';
 import Header from './components/layout/header';
 import PageSection from './components/layout/page-section';
 import BrandSection from './components/design-preview/brand-section';
+import ColourSection from './components/design-preview/colour-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -22,7 +23,7 @@ function App() {
           </PageSection>
 
           <PageSection id='colours' title='Colour System' darkMode={darkMode}>
-            <p>Colour Section</p>
+            <ColourSection darkMode={darkMode} />
           </PageSection>
 
           <PageSection id='typography' title='Typography' darkMode={darkMode}>
