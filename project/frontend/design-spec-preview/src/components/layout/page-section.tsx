@@ -15,7 +15,7 @@ function PageSection({id, title, darkMode, children }: PageSectionProps) {
             id={id}
             className={`rounded-2xl border p-6 shadow-sm ${sectionStyle}`}
         >
-            <h2 className='mb-4 text-2x1 font-bold'>
+            <h2 className='mb-10 text-4x1 font-bold'>
                 {title}
             </h2>
 
