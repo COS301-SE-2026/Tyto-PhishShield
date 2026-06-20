@@ -41,10 +41,6 @@ function App() {
             <ComponentsSection darkMode={darkMode} />
           </PageSection>
 
-          <PageSection id='ratio' title='Ratio Example' darkMode={darkMode}>
-            <p>Ratio Section</p>
-          </PageSection>
-
           <PageSection id='dashboard' title='Dashboard Layout' darkMode={darkMode}>
             <p>Dashboard Section</p>
           </PageSection>
