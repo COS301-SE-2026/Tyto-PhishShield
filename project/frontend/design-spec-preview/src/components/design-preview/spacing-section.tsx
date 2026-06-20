@@ -12,6 +12,10 @@ function SpacingSection({darkMode}: SpacingSectionProps) {
     return(
         <div className='space-y-4'>
 
+            <p className={'mb-6 max-w-3xl text-sm leading-6'}>
+                The interface makes use of an 8px spacing grid where possible.
+            </p>
+
             {spacingScale.map((spacing) => (
                 <div key={spacing} className={`rounded-xl border p-4 ${cardStyle}`}>
 

@@ -17,7 +17,7 @@ function BrandSection({darkMode}: BrandSectionProps) {
                         Mission
                     </h3>
                     <p className={`mt-2 text-sm leading-6 ${mutedText}`}>
-                        Make employees part of the firewall by encouraging safer
+                        Make employees a part of the firewall by encouraging safer
                         behaviour and faster phishing reporting.
                     </p>
                 </div>
