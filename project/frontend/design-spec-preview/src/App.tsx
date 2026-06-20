@@ -7,6 +7,7 @@ import ColourSection from './components/design-preview/colour-section';
 import TypographySection from './components/design-preview/typography-section';
 import SpacingSection from './components/design-preview/spacing-section';
 import ComponentsSection from './components/design-preview/components-section';
+import DashboardSection from './components/design-preview/dashboard-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -42,7 +43,7 @@ function App() {
           </PageSection>
 
           <PageSection id='dashboard' title='Dashboard Layout' darkMode={darkMode}>
-            <p>Dashboard Section</p>
+            <DashboardSection darkMode={darkMode} />
           </PageSection>
         </div>
         
