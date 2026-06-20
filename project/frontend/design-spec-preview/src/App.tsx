@@ -6,6 +6,7 @@ import BrandSection from './components/design-preview/brand-section';
 import ColourSection from './components/design-preview/colour-section';
 import TypographySection from './components/design-preview/typography-section';
 import SpacingSection from './components/design-preview/spacing-section';
+import ComponentsSection from './components/design-preview/components-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -37,7 +38,7 @@ function App() {
           </PageSection>
 
           <PageSection id='components' title='UI Components' darkMode={darkMode}>
-            <p>Components Section</p>
+            <ComponentsSection darkMode={darkMode} />
           </PageSection>
 
           <PageSection id='ratio' title='Ratio Example' darkMode={darkMode}>
