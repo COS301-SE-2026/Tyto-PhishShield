@@ -12,7 +12,7 @@ export function isErrorResponse(value: unknown): value is ErrorResponse {
   );
 }
 
-export async function sendEmail(referenceNumber: string): Promise<SendEmailResponse> {
+export async function sendEmail(referenceNumber: string, recipient = 'FiveGuys301@outlook.com'): Promise<SendEmailResponse> {
   const token = localStorage.getItem('access_token');
 
   const response = await fetch(
@@ -23,6 +23,9 @@ export async function sendEmail(referenceNumber: string): Promise<SendEmailRespo
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      body: JSON.stringify({
+        recipient,
+      })
     }
   );
 

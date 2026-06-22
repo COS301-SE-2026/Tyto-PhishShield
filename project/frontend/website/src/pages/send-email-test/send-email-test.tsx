@@ -12,13 +12,14 @@ interface SendEmailTestProps {
 export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
   const { addToast } = useToast();
   const [referenceNumber, setReferenceNumber] = useState('PHISH-1FA3FB56');
+  const [recipient, setRecipient] = useState('FiveGuys301@outlook.com')
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
     try {
       setLoading(true);
 
-      const result = await sendEmail(referenceNumber.trim());
+      const result = await sendEmail(referenceNumber.trim(), recipient.trim() || undefined); //if it is undefined it will use the default 'FiveGuys301@outlook.com'
 
       addToast({
         type: 'success',
@@ -53,6 +54,13 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
             value={referenceNumber}
             onChange={(e) => setReferenceNumber(e.target.value)}
             placeholder="PHISH-1FA3FB56-001"
+          />
+
+          <Input
+            label="Recipient email"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            placeholder="FiveGuys301@outlook.com"
           />
 
           <Button
