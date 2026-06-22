@@ -37,3 +37,34 @@ export async function sendEmail(referenceNumber: string, recipient = 'FiveGuys30
 
   return data as SendEmailResponse;
 }
+
+export async function scheduleEmail(
+  referenceNumber: string, 
+  recipient: string,
+  scheduleAt: string
+): Promise<SendEmailResponse> {
+  const token = localStorage.getItem('access_token');
+  
+  const response = await fetch(
+    `${EMAIL_BASE}/${referenceNumber}/schedule-send-single`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type' : 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}`} : {}),
+      },
+      body: JSON.stringify({
+        recipient,
+        scheduleAt,
+      }),
+    }
+  );
+
+  const data: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(isErrorResponse(data) ? data.message : 'Failed to schedule single email');
+  }
+
+  return data as SendEmailResponse;
+}
