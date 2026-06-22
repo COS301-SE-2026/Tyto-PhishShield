@@ -41,7 +41,7 @@ export async function sendEmail(referenceNumber: string, recipient = 'FiveGuys30
 export async function scheduleEmail(
   referenceNumber: string, 
   recipient: string,
-  scheduleAt: string
+  scheduledAt: string
 ): Promise<SendEmailResponse> {
   const token = localStorage.getItem('access_token');
   
@@ -55,7 +55,7 @@ export async function scheduleEmail(
       },
       body: JSON.stringify({
         recipient,
-        scheduleAt,
+        scheduledAt,
       }),
     }
   );
