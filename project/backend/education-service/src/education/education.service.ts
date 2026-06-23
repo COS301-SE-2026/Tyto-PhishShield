@@ -32,7 +32,7 @@ export class EducationService {
         return this.questionRepo.save(question);
     }
 
-    findAllQuestion(): Promise<Question[]> {
+    findAllQuestions(): Promise<Question[]> {
         return this.questionRepo.find({ order: {createdAt: 'DESC'}});
     }
 
