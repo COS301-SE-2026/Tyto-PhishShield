@@ -11,5 +11,5 @@ export class CreateQuestionDto {
 
     @IsInt()
     @Min(0)
-    correctOptionInedx!: number;
+    correctOptionIndex!: number;
 }
