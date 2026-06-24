@@ -25,10 +25,10 @@
   --color-navy-mid: #1E3A5F;
 
   /* Surfaces */
-  --bg-page:        #F1F5F9;
-  --bg-card:        #F8FAFC;
+  --bg-page:        #F8FAFC;
+  --bg-card:        #F1F5F9;
   --bg-sidebar:     #0F172A;
-  --bg-topbar:      #F8FAFC;
+  --bg-topbar:      #F1F5F9;
   --bg-input:       #FFFFFF;
   --bg-hover:       #E2E8F0;
 
