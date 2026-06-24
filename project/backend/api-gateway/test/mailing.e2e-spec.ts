@@ -1,35 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { ConfigModule } from '@nestjs/config';
 import { MailingModule } from '../src/mailing/mailing.module';
 import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard';
+
+const TEST_SENDER = 'onboarding@resend.dev';
+const TEST_RECIPIENT = 'delivered@resend.dev';
 
 describe('Mailing Gateway (e2e)', () => {
   let app: INestApplication;
 
   let targetReferenceNumber: string;
 
-  const hasLivePermission = process.env.TEST_EMAIL_SEND === 'true';
-  const liveTest = hasLivePermission ? it : it.skip;
-
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          envFilePath: '.env',
-          isGlobal: true,
-          load: [() => ({ MAILING_SERVICE_PORT: 3003 })],
-        }),
-        MailingModule,
-      ],
+      imports: [ConfigModule.forRoot({ isGlobal: true }), MailingModule],
     })
-
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
   });
 
@@ -41,20 +34,20 @@ describe('Mailing Gateway (e2e)', () => {
 
   describe('Sequential Gateway Flow', () => {
     it('/emails (POST) - should create a new email in the downstream service', async () => {
-      const payload = {
-        sender: `test@${process.env.FIVEGUYS_DOMAIN}`,
-        subject: 'E2E Gateway Test',
-        content: '<p>This is a test</p>',
-      };
-
       const response = await request(app.getHttpServer())
         .post('/emails')
-        .send(payload)
+        .send({
+          sender: TEST_SENDER,
+          alias: 'E2E Tester',
+          subject: 'E2E Gateway Test',
+          content: '<p>This is a test</p>',
+          difficulty: 'medium',
+        })
         .expect(201);
 
-      expect(response.body).toHaveProperty('reference_number');
+      expect(response.body).toHaveProperty('referenceNumber');
 
-      targetReferenceNumber = response.body.reference_number;
+      targetReferenceNumber = response.body.referenceNumber;
     });
 
     it('/emails (GET) - should retrieve all emails', async () => {
@@ -65,7 +58,7 @@ describe('Mailing Gateway (e2e)', () => {
       expect(Array.isArray(response.body)).toBe(true);
 
       const found = response.body.find(
-        (email: any) => email.reference_number === targetReferenceNumber,
+        (email: any) => email.referenceNumber === targetReferenceNumber,
       );
       expect(found).toBeDefined();
     });
@@ -75,61 +68,47 @@ describe('Mailing Gateway (e2e)', () => {
         .get(`/emails/${targetReferenceNumber}`)
         .expect(200);
 
-      expect(response.body.reference_number).toBe(targetReferenceNumber);
+      expect(response.body.referenceNumber).toBe(targetReferenceNumber);
       expect(response.body.subject).toBe('E2E Gateway Test');
     });
 
     it('/emails/:referenceNumber (PATCH) - should update the email', async () => {
-      const updatePayload = { subject: 'Updated E2E Subject' };
-
       const response = await request(app.getHttpServer())
         .patch(`/emails/${targetReferenceNumber}`)
-        .send(updatePayload)
+        .send({ subject: 'Updated E2E Subject' })
         .expect(200);
 
-      expect(response.body.reference_number).toBe(targetReferenceNumber);
-      expect(response.body.subject).toBe(updatePayload.subject);
+      expect(response.body.referenceNumber).toBe(targetReferenceNumber);
+      expect(response.body.subject).toBe('Updated E2E Subject');
     });
 
-    liveTest(
-      '/emails/:referenceNumber/send-single (POST) - should dispatch with Resend',
-      async () => {
-        const response = await request(app.getHttpServer())
-          .post(`/emails/${targetReferenceNumber}/send-single`)
-          .send({ recipient: process.env.OUR_EMAIL })
-          .expect(200);
+    it('/emails/:referenceNumber/send-single (POST) - should dispatch with Resend', async () => {
+      const response = await request(app.getHttpServer())
+        .post(`/emails/${targetReferenceNumber}/send-single`)
+        .send({ recipient: TEST_RECIPIENT })
+        .expect(200);
 
-        expect(response.body).toHaveProperty('success', true);
-        expect(response.body).toHaveProperty(
-          'message',
-          'Email sent successfully',
-        );
-        expect(response.body).toHaveProperty('data');
-      },
-    );
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.message).toContain('sent instantly.');
+      expect(response.body).toHaveProperty('deliveryId');
+    });
 
-    liveTest(
-      '/emails/:referenceNumber/schedule-send-single (POST) - should schedule with Resend',
-      async () => {
-        const futureDate = new Date();
-        futureDate.setMinutes(futureDate.getMinutes() + 2);
+    it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule with Resend', async () => {
+      const futureDate = new Date();
+      futureDate.setMinutes(futureDate.getMinutes() + 2);
 
-        const response = await request(app.getHttpServer())
-          .post(`/emails/${targetReferenceNumber}/schedule-send-single`)
-          .send({
-            recipient: process.env.OUR_EMAIL,
-            scheduledAt: futureDate.toISOString(),
-          })
-          .expect(200);
+      const response = await request(app.getHttpServer())
+        .post(`/emails/${targetReferenceNumber}/schedule-send-single`)
+        .send({
+          recipient: TEST_RECIPIENT,
+          scheduledAt: futureDate.toISOString(),
+        })
+        .expect(200);
 
-        expect(response.body).toHaveProperty('success', true);
-        expect(response.body).toHaveProperty(
-          'message',
-          'Email scheduled successfully',
-        );
-        expect(response.body).toHaveProperty('data');
-      },
-    );
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.message).toContain('successfully scheduled');
+      expect(response.body).toHaveProperty('deliveryId');
+    });
 
     it('Error Handling - should return 404 for a non-existent reference', async () => {
       const badRef = 'PHISH-INVALID99';
