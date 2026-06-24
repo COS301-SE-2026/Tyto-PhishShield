@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { MailingServiceModule } from './mailing-service.module';
 import * as process from 'node:process';
 
 async function bootstrap() {
   const app = await NestFactory.create(MailingServiceModule);
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
     options: {

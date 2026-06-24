@@ -32,7 +32,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${MAILING_DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ${MAILING_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${MAILING_DB_NAME}"]
       interval: 1m30s
       timeout: 30s
       retries: 5
@@ -72,7 +72,6 @@ services:
       - DOMAIN=${DOMAIN}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - DB_SYNC=${DB_SYNC}
 
     ports:
       # Left side must be unique
@@ -80,6 +79,8 @@ services:
 
     depends_on:
       mailing_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
