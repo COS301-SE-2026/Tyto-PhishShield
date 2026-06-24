@@ -139,7 +139,14 @@ export function Login({ onNavigate }: LoginProps) {
   );
 
   const rightPanel = (
-    <div style={{ width: '100%', maxWidth: 380 }}>
+    <div style={{ width: '100%', 
+        maxWidth: 420,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-xl)',
+        boxShadow: 'var(--shadow-sm)',
+        padding: '32px 34px',
+      }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
         Welcome back
       </h1>
