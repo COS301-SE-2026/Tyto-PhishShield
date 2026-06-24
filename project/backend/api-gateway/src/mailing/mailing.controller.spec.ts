@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MailingController } from './mailing.controller';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GenerateEmailDto } from './dto/generate-email.dto';
+import { EmailsDto } from './dto/emails.dto';
 
 describe('MailingController', () => {
   let controller: MailingController;
@@ -51,7 +51,7 @@ describe('MailingController', () => {
 
   describe('createEmail', () => {
     it('should forward a POST request to create an email', async () => {
-      const dto = { subject: 'Test', content: 'Html' } as GenerateEmailDto;
+      const dto = { subject: 'Test', content: 'Html' } as EmailsDto;
       const expectedResponse = { id: '1', ...dto };
       mockProxyService.forward.mockResolvedValue(expectedResponse);
 
@@ -98,7 +98,7 @@ describe('MailingController', () => {
 
   describe('updateEmail', () => {
     it('should forward a PATCH request to update an email', async () => {
-      const dto = { subject: 'Updated' } as GenerateEmailDto;
+      const dto = { subject: 'Updated' } as EmailsDto;
       const expectedResponse = { reference_number: mockReference, ...dto };
       mockProxyService.forward.mockResolvedValue(expectedResponse);
 
