@@ -139,7 +139,8 @@ export function Login({ onNavigate }: LoginProps) {
   );
 
   const rightPanel = (
-    <div style={{ width: '100%', 
+    <div style={{ 
+        width: '100%', 
         maxWidth: 420,
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
