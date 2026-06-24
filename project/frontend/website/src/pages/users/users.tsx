@@ -188,7 +188,12 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                   <td style={{ padding: '11px 16px' }}>
                     <Button size="sm" variant="ghost"
                       onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
-                      style={{ border: '1px solid var(--border)' }}
+                      style={{ 
+                        border: '1px solid var(--border)',
+                        minWidth: 80,
+                        paddingLeft: 16,
+                        paddingRight: 16,
+                      }}
                     >
                       Manage
                     </Button>
