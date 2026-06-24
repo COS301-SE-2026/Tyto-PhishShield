@@ -18,7 +18,7 @@ describe('Email service integration test', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
   }, 30000);
 
@@ -76,6 +76,9 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post(`/emails/${testReferenceNumber}/send-single`)
       .send({ recipient: TEST_RECIPIENT })
+      .expect((res) => {
+        console.log('BODY:', JSON.stringify(res.body));
+      })
       .expect(200)
       .expect((res) => {
         expect(res.body.success).toBe(true);
@@ -86,7 +89,7 @@ describe('Email service integration test', () => {
 
   it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule email via Resend', () => {
     const futureDate = new Date();
-    futureDate.setMinutes(futureDate.getMinutes() + 15);
+    futureDate.setMinutes(futureDate.getMinutes() + 1);
 
     return request(app.getHttpServer())
       .post(`/emails/${testReferenceNumber}/schedule-send-single`)
@@ -96,6 +99,7 @@ describe('Email service integration test', () => {
       })
       .expect(200)
       .expect((res) => {
+        console.log('BODY:', JSON.stringify(res.body));
         expect(res.body.success).toBe(true);
         expect(res.body.message).toContain('successfully scheduled');
         expect(res.body.deliveryId).toBeDefined();
