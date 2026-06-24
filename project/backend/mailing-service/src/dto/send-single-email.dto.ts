@@ -6,7 +6,7 @@
  * Elements: recipient, emailReferenceNumber
  */
 
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty } from 'class-validator';
 
 export class SendSingleEmailDto {
   // @IsNotEmpty()
@@ -16,8 +16,4 @@ export class SendSingleEmailDto {
   @IsEmail()
   @IsNotEmpty()
   recipient: string;
-
-  @IsNotEmpty()
-  @IsString()
-  emailReferenceNumber: string;
 }

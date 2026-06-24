@@ -1,11 +1,4 @@
-import {
-  IsArray,
-  IsEmail,
-  ArrayMinSize,
-  ArrayMaxSize,
-  IsNotEmpty,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsEmail, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 
 export class SendBatchEmailDto {
   @IsArray()
@@ -13,8 +6,4 @@ export class SendBatchEmailDto {
   @ArrayMaxSize(100)
   @IsEmail({}, { each: true })
   recipients: string[];
-
-  @IsNotEmpty()
-  @IsString()
-  emailReferenceNumber: string;
 }
