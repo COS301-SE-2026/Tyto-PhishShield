@@ -40,9 +40,9 @@ describe('BatchEmail service integration tests', () => {
     await app.close();
   });
 
-  it(`/batch-email/:referenceNumber/send-batch-with-reference (POST) - should send one template to all recipients immediately`, () => {
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should send one template to all recipients immediately`, () => {
     return request(app.getHttpServer())
-      .post(`/batch-email/${testReferenceNumber}/send-batch-with-reference`)
+      .post(`/batch-emails/${testReferenceNumber}/send-batch-with-reference`)
       .send({ recipients: TEST_RECIPIENTS })
       .expect(200)
       .expect((res) => {
@@ -52,19 +52,19 @@ describe('BatchEmail service integration tests', () => {
       });
   });
 
-  it(`/batch-email/:referenceNumber/send-batch-with-reference (POST) - should return 404 for unknown reference`, () => {
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 404 for unknown reference`, () => {
     return request(app.getHttpServer())
-      .post(`/batch-email/NON-EXISTENT-REF/send-batch-with-reference`)
+      .post(`/batch-emails/NON-EXISTENT-REF/send-batch-with-reference`)
       .send({ recipients: TEST_RECIPIENTS })
       .expect(404);
   });
 
-  it(`/batch-email/send-batch-random-same-email (POST) - should schedule the same random template to all recipients at a shared future time`, () => {
+  it(`/batch-emails/send-batch-random-same-email (POST) - should schedule the same random template to all recipients at a shared future time`, () => {
     const scheduledAt = new Date();
     const scheduledAtIso = scheduledAt.toISOString();
 
     return request(app.getHttpServer())
-      .post(`/batch-email/send-batch-random-same-email`)
+      .post(`/batch-emails/send-batch-random-same-email`)
       .send({
         recipients: TEST_RECIPIENTS,
         difficulty: EmailDifficulty.MEDIUM,
@@ -79,7 +79,7 @@ describe('BatchEmail service integration tests', () => {
       });
   });
 
-  it(`/batch-email/send-batch-random-same-email (POST) - should schedule each recipient at an independent random time`, () => {
+  it(`/batch-emails/send-batch-random-same-email (POST) - should schedule each recipient at an independent random time`, () => {
     const scheduledFrom = new Date();
     scheduledFrom.setMinutes(scheduledFrom.getMinutes() + 10);
 
@@ -87,7 +87,7 @@ describe('BatchEmail service integration tests', () => {
     scheduledTo.setMinutes(scheduledTo.getMinutes() + 15);
 
     return request(app.getHttpServer())
-      .post(`/batch-email/send-batch-random-same-email`)
+      .post(`/batch-emails/send-batch-random-same-email`)
       .send({
         recipients: TEST_RECIPIENTS,
         difficulty: EmailDifficulty.MEDIUM,
@@ -102,7 +102,7 @@ describe('BatchEmail service integration tests', () => {
       });
   });
 
-  it(`/batch-email/send-batch-random-same-email (POST) - should return 400 when scheduledTo is before scheduledFrom`, () => {
+  it(`/batch-emails/send-batch-random-same-email (POST) - should return 400 when scheduledTo is before scheduledFrom`, () => {
     const scheduledFrom = new Date();
     scheduledFrom.setMinutes(scheduledFrom.getMinutes() + 15);
 
@@ -110,7 +110,7 @@ describe('BatchEmail service integration tests', () => {
     scheduledTo.setMinutes(scheduledTo.getMinutes() + 10);
 
     return request(app.getHttpServer())
-      .post(`/batch-email/send-batch-random-same-email`)
+      .post(`/batch-emails/send-batch-random-same-email`)
       .send({
         recipients: TEST_RECIPIENTS,
         difficulty: EmailDifficulty.MEDIUM,
@@ -121,12 +121,12 @@ describe('BatchEmail service integration tests', () => {
       .expect(400);
   });
 
-  it(`/batch-email/send-batch-random-different-email (POST) - should schedule a different random template per recipient at a shared future time`, () => {
+  it(`/batch-emails/send-batch-random-different-email (POST) - should schedule a different random template per recipient at a shared future time`, () => {
     const scheduledAt = new Date();
     const scheduledAtIso = scheduledAt.toISOString();
 
     return request(app.getHttpServer())
-      .post(`/batch-email/send-batch-random-different-email`)
+      .post(`/batch-emails/send-batch-random-different-email`)
       .send({
         recipients: TEST_RECIPIENTS,
         difficulty: EmailDifficulty.MEDIUM,
@@ -141,7 +141,7 @@ describe('BatchEmail service integration tests', () => {
       });
   });
 
-  it(`/batch-email/send-batch-random-different-email (POST) - should schedule each recipient at an independent random time with different templates`, () => {
+  it(`/batch-emails/send-batch-random-different-email (POST) - should schedule each recipient at an independent random time with different templates`, () => {
     const scheduledFrom = new Date();
     scheduledFrom.setMinutes(scheduledFrom.getMinutes() + 10);
 
@@ -149,7 +149,7 @@ describe('BatchEmail service integration tests', () => {
     scheduledTo.setMinutes(scheduledTo.getMinutes() + 15);
 
     return request(app.getHttpServer())
-      .post(`/batch-email/send-batch-random-different-email`)
+      .post(`/batch-emails/send-batch-random-different-email`)
       .send({
         recipients: TEST_RECIPIENTS,
         difficulty: EmailDifficulty.MEDIUM,
@@ -164,7 +164,7 @@ describe('BatchEmail service integration tests', () => {
       });
   });
 
-  it(`/batch-email/send-batch-random-different-email (POST) - should return 400 when scheduledTo is before scheduledFrom`, () => {
+  it(`/batch-emails/send-batch-random-different-email (POST) - should return 400 when scheduledTo is before scheduledFrom`, () => {
     const scheduledFrom = new Date();
     scheduledFrom.setMinutes(scheduledFrom.getMinutes() + 15);
 
@@ -172,7 +172,7 @@ describe('BatchEmail service integration tests', () => {
     scheduledTo.setMinutes(scheduledTo.getMinutes() + 10);
 
     return request(app.getHttpServer())
-      .post(`/batch-email/send-batch-random-different-email`)
+      .post(`/batch-emails/send-batch-random-different-email`)
       .send({
         recipients: TEST_RECIPIENTS,
         difficulty: EmailDifficulty.MEDIUM,

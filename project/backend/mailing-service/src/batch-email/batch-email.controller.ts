@@ -11,7 +11,7 @@ import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { BatchPostReturnDto } from '../dto/batch-post-return.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
 
-@Controller('batch-email')
+@Controller('batch-emails')
 export class BatchEmailController {
   constructor(private readonly batchEmailService: BatchEmailService) {}
 
