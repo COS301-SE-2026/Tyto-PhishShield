@@ -351,7 +351,17 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
             <Badge variant={t.status === 'in_progress' ? 'warning' : 'neutral'}>
               {t.status === 'in_progress' ? 'In Progress' : 'Not Started'}
             </Badge>
-            <Button size="sm" onClick={() => onNavigate('/training')}>Start</Button>
+            <Button 
+              size="sm" 
+              onClick={() => onNavigate('/training')}
+              style={{
+                minWidth: 72,
+                paddingLeft: 16,
+                paddingRight: 16,
+              }}
+              >
+                Start
+            </Button>
           </div>
         ))}
       </Card>
