@@ -14,6 +14,7 @@ import { AppService } from './app.service';
 import { MailingModule } from './mailing/mailing.module';
 
 import { ReportModule } from './report/report.module';
+import { EducationModule} from './education/education.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ReportModule } from './report/report.module';
     AccountsModule,
     MailingModule,
     ReportModule,
+    EducationModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {

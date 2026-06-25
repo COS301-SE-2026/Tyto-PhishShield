@@ -136,6 +136,7 @@ services:
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://education_app:3006
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
@@ -253,6 +254,41 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+
+  education_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: education_db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${EDUCATION_DB_NAME}
+    volumes:
+      - education_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+
+  education_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/education-service/Dockerfile
+    container_name: education_app
+    environment:
+      - PORT=3006
+      - TCP_PORT=4005
+      - DB_HOST=education_db
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${EDUCATION_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    ports:
+      - "3006:3006"
+      - "4005:4005"
+    depends_on:
+      - education_db
   
 # builds the website using the website's dockerfile
   website:
@@ -309,6 +345,7 @@ volumes:
   accounts_pgdata:
   report_pgdata:
   xp_pgdata:
+  education_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local
