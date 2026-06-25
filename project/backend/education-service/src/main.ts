@@ -40,8 +40,8 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, SwaggerModule.createDocument(app, config));
 
   await app.startAllMicroservices();
-  await app.listen(process.env.PORT ?? 3005);
-  console.log(`Education Service HTTP on port ${process.env.PORT ?? 3005}`);
+  await app.listen(process.env.PORT ?? 3006);
+  console.log(`Education Service HTTP on port ${process.env.PORT ?? 3006}`);
   console.log(`Education Service TCP on port ${process.env.TCP_PORT ?? 4005}`);
 }
 

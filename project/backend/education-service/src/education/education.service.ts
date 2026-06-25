@@ -36,7 +36,7 @@ export class EducationService {
         return this.questionRepo.find({ order: {createdAt: 'DESC'}});
     }
 
-    async CreateAssignment(auth0Id: string): Promise<Assignment> {
+    async createAssignment(auth0Id: string): Promise<Assignment> {
         const existing = await this.assignmentRepo.findOne({
             where: { auth0Id, status: AssignmentStatus.PENDING}
         });
