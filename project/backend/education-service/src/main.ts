@@ -32,12 +32,18 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('PhishShield Education Service')
-    .setDescription('Phishing awareness quizzes for users who fail phishing simulations')
+    .setDescription(
+      'Phishing awareness quizzes for users who fail phishing simulations',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();
 
-  SwaggerModule.setup('api-docs', app, SwaggerModule.createDocument(app, config));
+  SwaggerModule.setup(
+    'api-docs',
+    app,
+    SwaggerModule.createDocument(app, config),
+  );
 
   await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3006);

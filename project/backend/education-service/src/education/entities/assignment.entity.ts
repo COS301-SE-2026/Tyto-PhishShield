@@ -1,36 +1,44 @@
 import {
-    Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn,
-} from 'typeorm'
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum AssignmentStatus {
-    PENDING = 'pending',
-    PASSED = 'passed',
-    FAILED = 'failed'
+  PENDING = 'pending',
+  PASSED = 'passed',
+  FAILED = 'failed',
 }
 
 @Entity('assignments')
 export class Assignment {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @Column()
-    auth0Id!: string;
+  @Column()
+  auth0Id!: string;
 
-    @Column('simple-array')
-    questionIds!: string[];
+  @Column('simple-array')
+  questionIds!: string[];
 
-    @Column({ type: 'enum', enum: AssignmentStatus, default: AssignmentStatus.PENDING})
-    status!: AssignmentStatus;
+  @Column({
+    type: 'enum',
+    enum: AssignmentStatus,
+    default: AssignmentStatus.PENDING,
+  })
+  status!: AssignmentStatus;
 
-    @Column({ default: 0})
-    xpAwarded!: number;
+  @Column({ default: 0 })
+  xpAwarded!: number;
 
-    @Column({ nullable: true})
-    completedAt?: Date;
+  @Column({ nullable: true })
+  completedAt?: Date;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
 
-    @UpdateDateColumn()
-    updatedAt!: Date;
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

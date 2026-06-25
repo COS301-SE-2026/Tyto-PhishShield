@@ -1,10 +1,10 @@
-import { IsString, IsArray, IsInt} from 'class-validator';
+import { IsString, IsArray, IsInt } from 'class-validator';
 
 export class SubmitAnswersDto {
-    @IsString()
-    assignmentId!: string;
+  @IsString()
+  assignmentId!: string;
 
-    @IsArray()
-    @IsInt({ each: true})
-    answers!: number[];
+  @IsArray()
+  @IsInt({ each: true })
+  answers!: number[];
 }
