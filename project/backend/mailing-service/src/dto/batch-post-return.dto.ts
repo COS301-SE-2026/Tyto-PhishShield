@@ -1,10 +1,4 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsDate,
-  IsNotEmpty,
-  IsString,
-} from 'class-validator';
+import { IsBoolean, IsDate, IsNotEmpty, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class BatchPostReturnDto {
