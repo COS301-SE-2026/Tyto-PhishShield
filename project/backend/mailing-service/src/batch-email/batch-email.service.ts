@@ -49,8 +49,6 @@ export class BatchEmailService {
     this.resend = new Resend(apiKey);
   }
 
-  ////////////////////////////////////////
-
   async sendBatchWithReference(
     emailReferenceNumber: string,
     recipients: string[],
@@ -99,8 +97,6 @@ export class BatchEmailService {
       throw new InternalServerErrorException(diagnosticMessage);
     }
   }
-
-  ////////////////////////////////
 
   async sendBatchRandomSameEmail(
     recipients: string[],
@@ -235,8 +231,6 @@ export class BatchEmailService {
       throw new InternalServerErrorException(diagnosticMessage);
     }
   }
-
-  /////////////////////////////////////////
 
   async sendBatchRandomDifferentEmail(
     recipients: string[],
@@ -389,8 +383,6 @@ export class BatchEmailService {
       throw new InternalServerErrorException(diagnosticMessage);
     }
   }
-
-  //////////////////////////////////////////////////////
 
   private randomDateBetween(from: Date, to: Date): Date {
     const fromTime = from.getTime();
