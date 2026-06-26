@@ -162,7 +162,7 @@ export class EmailService {
   async scheduleSendEmail(
     emailReferenceNumber: string,
     recipient: string,
-    scheduledAt: Date,
+    scheduledAt: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     const email = await this.getEmailByReference(emailReferenceNumber);
 
@@ -171,21 +171,23 @@ export class EmailService {
       : email.sender;
 
     try {
+      const scheduledDate = new Date(scheduledAt);
+
       const data = await this.resend.emails.send({
         from: fromString,
         to: recipient,
         subject: email.subject,
         html: email.content,
-        scheduledAt: scheduledAt.toISOString(),
+        scheduledAt: scheduledDate.toISOString(),
       });
 
       this.logger.log(
-        `Email successfully scheduled for dispatch at ${scheduledAt.toISOString()}`,
+        `Email successfully scheduled for dispatch at ${scheduledDate.toISOString()}`,
       );
 
       return {
         success: true,
-        message: `Email referencing ${emailReferenceNumber} has been successfully scheduled for ${scheduledAt.toISOString()}`,
+        message: `Email referencing ${emailReferenceNumber} has been successfully scheduled for ${scheduledDate.toISOString()}`,
         deliveryId: data.data?.id || '',
       };
     } catch (error: any) {
