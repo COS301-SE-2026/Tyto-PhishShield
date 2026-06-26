@@ -5,5 +5,5 @@ export class SendBatchEmailDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
   @IsEmail({}, { each: true })
-  recipients: string[];
+  recipients!: string[];
 }

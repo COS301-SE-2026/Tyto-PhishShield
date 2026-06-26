@@ -1,3 +1,19 @@
+/**
+ * Service: mailing-service
+ *
+ * Handles incoming HTTP requests for single email operations.
+ * Exposes REST endpoints for creating, retrieving, updating,
+ * sending, and scheduling individual emails.
+ *
+ * Functions:
+ * - {@link EmailController#createEmail} - Creates a new email record in the database.
+ * - {@link EmailController#getAllEmails} - Returns all email records from the database.
+ * - {@link EmailController#getEmailByReference} - Returns a single email by its reference number.
+ * - {@link EmailController#updateEmail} - Updates fields on an existing email record.
+ * - {@link EmailController#sendEmail} - Immediately dispatches an email to a recipient via Resend.
+ * - {@link EmailController#scheduleSendEmail} - Schedules an email to be sent at a future date/time.
+ */
+
 import {
   Controller,
   Post,

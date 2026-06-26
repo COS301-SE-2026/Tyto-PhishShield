@@ -1,24 +1,38 @@
+/**
+ * Service: mailing-service
+ *
+ * End-to-end integration tests for single email operations.
+ * Boots the full NestJS application and runs requests against
+ * a live database and Resend API connection.
+ *
+ * Tests:
+ * - POST /emails - Creates a new email record and captures the reference number.
+ * - GET /emails - Retrieves all email records.
+ * - GET /emails/:referenceNumber - Fetches a specific email by reference number.
+ * - PATCH /emails/:referenceNumber - Updates fields on an existing email record.
+ * - POST /emails/:referenceNumber/send-single - Immediately dispatches an email via Resend.
+ * - POST /emails/:referenceNumber/schedule-send-single - Schedules an email for future delivery via Resend.
+ */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
 import { EmailDifficulty } from '../src/entities/emails.entity';
 
-const TEST_SENDER = 'onboarding@resend.dev';
-const TEST_RECIPIENT = 'delivered@resend.dev';
+const TEST_SENDER = process.env.RESEND_EMAIL;
+const TEST_RECIPIENT = process.env.RESEND_EMAIL_DELIVERED;
 
 describe('Email service integration test', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
 
-  // NestJS boot + TypeORM connection can take longer than Jest's default 5s.
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [MailingServiceModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
   }, 30000);
 
@@ -76,6 +90,9 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post(`/emails/${testReferenceNumber}/send-single`)
       .send({ recipient: TEST_RECIPIENT })
+      .expect((res) => {
+        console.log('BODY:', JSON.stringify(res.body));
+      })
       .expect(200)
       .expect((res) => {
         expect(res.body.success).toBe(true);
@@ -86,7 +103,7 @@ describe('Email service integration test', () => {
 
   it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule email via Resend', () => {
     const futureDate = new Date();
-    futureDate.setMinutes(futureDate.getMinutes() + 15);
+    futureDate.setMinutes(futureDate.getMinutes() + 1);
 
     return request(app.getHttpServer())
       .post(`/emails/${testReferenceNumber}/schedule-send-single`)
@@ -96,6 +113,7 @@ describe('Email service integration test', () => {
       })
       .expect(200)
       .expect((res) => {
+        console.log('BODY:', JSON.stringify(res.body));
         expect(res.body.success).toBe(true);
         expect(res.body.message).toContain('successfully scheduled');
         expect(res.body.deliveryId).toBeDefined();
