@@ -1,3 +1,25 @@
+/**
+ * Service: mailing-service
+ *
+ * Contains the business logic for batch email operations.
+ * Supports sending one email template to many recipients, or distributing
+ * randomly selected emails by difficulty — with optional randomised send times.
+ *
+ * Public functions:
+ * - {@link BatchEmailService#sendBatchWithReference} - Dispatches one email template to a list of recipients immediately via Resend batch.
+ * - {@link BatchEmailService#sendBatchRandomSameEmail} - Picks one random email by difficulty and sends it to all recipients, with optional scheduling.
+ * - {@link BatchEmailService#sendBatchRandomDifferentEmail} - Picks a different random email per recipient by difficulty, with optional scheduling.
+ * - {@link BatchEmailService#getRandomEmailByDifficulty} - Returns the reference number of one randomly selected email matching the given difficulty.
+ * - {@link BatchEmailService#getRandomEmailByDifficultyArray} - Returns an array of reference numbers for randomly selected emails matching the given difficulty.
+ *
+ * Private helpers:
+ * - {@link BatchEmailService#sendWithIndependentRandomTimes} - Schedules the same email to each recipient at an independent random time in the given window.
+ * - {@link BatchEmailService#sendBatchAtSameTime} - Sends the same email to all recipients at a single scheduled time via Resend batch.
+ * - {@link BatchEmailService#sendWithIndependentRandomTimesRandomEmails} - Schedules a different random email to each recipient at an independent random time.
+ * - {@link BatchEmailService#sendBatchAtSameTimeRandomEmails} - Sends a different random email to each recipient, all at the same scheduled time via Resend batch.
+ * - {@link BatchEmailService#randomDateBetween} - Returns a random Date between two given dates.
+ */
+
 import {
   BadRequestException,
   Injectable,

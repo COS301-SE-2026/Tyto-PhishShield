@@ -1,3 +1,19 @@
+/**
+ * Service: mailing-service
+ *
+ * Contains the business logic for single email operations.
+ * Manages email records in the database and dispatches or schedules
+ * individual emails through the Resend API.
+ *
+ * Functions:
+ * - {@link EmailService#createEmail} - Generates a unique PHISH reference number and saves a new email record.
+ * - {@link EmailService#getAllEmails} - Fetches all email records from the database.
+ * - {@link EmailService#getEmailByReference} - Looks up a single email record by its reference number.
+ * - {@link EmailService#updateEmail} - Applies partial updates to an existing email record.
+ * - {@link EmailService#sendEmail} - Immediately sends an email to a recipient via the Resend API.
+ * - {@link EmailService#scheduleSendEmail} - Schedules an email for delivery at a specified future date/time via Resend.
+ */
+
 import {
   Injectable,
   InternalServerErrorException,

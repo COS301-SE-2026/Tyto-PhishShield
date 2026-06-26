@@ -1,3 +1,11 @@
+/**
+ * Service: mailing-service
+ *
+ * Declares and wires together the components for single email operations.
+ * Registers EmailController, EmailService, and the Emails TypeORM entity,
+ * and exports EmailService for use in other modules.
+ */
+
 import { Module } from '@nestjs/common';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';

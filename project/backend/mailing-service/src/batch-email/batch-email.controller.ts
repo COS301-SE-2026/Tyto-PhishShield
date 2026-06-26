@@ -1,3 +1,16 @@
+/**
+ * Service: mailing-service
+ *
+ * Handles incoming HTTP requests for batch email operations.
+ * Exposes REST endpoints for sending a single email template to multiple
+ * recipients, or dispatching randomized emails drawn by difficulty.
+ *
+ * Functions:
+ * - {@link BatchEmailController#sendBatchWithReference} - Sends one email template to a list of recipients using a reference number.
+ * - {@link BatchEmailController#sendBatchRandom} - Sends the same randomly selected email (by difficulty) to all recipients.
+ * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Sends a different randomly selected email (by difficulty) to each recipient.
+ */
+
 import {
   Body,
   Controller,
