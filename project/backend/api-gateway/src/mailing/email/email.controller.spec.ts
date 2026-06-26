@@ -1,3 +1,19 @@
+/**
+ * Service: api-gateway
+ *
+ * Unit tests for the api-gateway EmailController.
+ * Verifies that each endpoint correctly forwards requests to the mailing-service
+ * URL via ProxyService and returns the proxy response unchanged.
+ *
+ * Test suites:
+ * - {@link createEmail} - Verifies the correct URL, method, and body are forwarded on email creation.
+ * - {@link getAllEmails} - Verifies a GET request is forwarded to retrieve all email records.
+ * - {@link getEmailByReference} - Verifies the reference number is included in the forwarded URL.
+ * - {@link updateEmail} - Verifies a PATCH request with body is forwarded correctly.
+ * - {@link sendEmail} - Verifies the recipient is forwarded to the send-single endpoint.
+ * - {@link scheduleSendEmail} - Verifies both recipient and scheduledAt are forwarded to the schedule endpoint.
+ */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { EmailController } from './email.controller';

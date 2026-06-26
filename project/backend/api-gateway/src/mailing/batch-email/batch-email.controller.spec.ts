@@ -1,3 +1,16 @@
+/**
+ * Service: api-gateway
+ *
+ * Unit tests for the api-gateway BatchEmailController.
+ * Verifies that each endpoint correctly forwards requests to the mailing-service
+ * URL via ProxyService and returns the proxy response unchanged.
+ *
+ * Test suites:
+ * - {@link sendBatchWithReference} - Verifies the reference number and recipients body are forwarded correctly.
+ * - {@link sendBatchRandomSameEmail} - Verifies the full body is forwarded to the same-email random batch endpoint.
+ * - {@link sendBatchRandomDifferentEmail} - Verifies the full body is forwarded to the different-email random batch endpoint.
+ */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { BatchEmailController } from './batch-email.controller';

@@ -1,3 +1,15 @@
+/**
+ * Service: api-gateway
+ *
+ * Proxies incoming HTTP requests for batch email operations to the mailing-service.
+ * Validates JWT authentication and forwards each request via ProxyService.
+ *
+ * Functions:
+ * - {@link BatchEmailController#sendBatchWithReference} - Forwards a request to send one email template to a list of recipients immediately.
+ * - {@link BatchEmailController#sendBatchRandomSameEmail} - Forwards a request to send one randomly selected email to all recipients.
+ * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Forwards a request to send a different randomly selected email to each recipient.
+ */
+
 import {
   Controller,
   Post,
