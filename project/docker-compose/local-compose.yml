@@ -1,5 +1,5 @@
 services:
-# rabbitmq is used to handle the event messaging between services
+  # rabbitmq is used to handle the event messaging between services
   rabbitmq:
     image: rabbitmq:3-management
     restart: unless-stopped
@@ -18,7 +18,7 @@ services:
       timeout: 5s
       retries: 3
 
-# mailing db sets up the mailing service's postgres database  
+  # mailing db sets up the mailing service's postgres database
   mailing_db:
     image: postgres:15-alpine
     restart: always
@@ -48,7 +48,7 @@ services:
       # Left side must be unique
       - "${MAILING_DB_PORT}:${INTERNAL_DB_PORT}"
 
-# mailing app builds the mailing service from the mailing service's dockerfile
+  # mailing app builds the mailing service from the mailing service's dockerfile
   mailing_app:
     build:
       context: ../../
@@ -57,21 +57,18 @@ services:
       # Must be unique
     container_name: ${MAILING_APP_CONTAINER}
     environment:
-      - PORT=${MAILING_SERVICE_PORT}
-      - DB_HOST=${MAILING_DB_CONTAINER}
-      - MAILING_DB_PORT=${INTERNAL_DB_PORT}
-      - TCP_PORT=${MAILING_TCP_PORT}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - MAILING_DB_CONTAINER=${MAILING_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${MAILING_DB_NAME}
+      - MAILING_DB_NAME=${MAILING_DB_NAME}
       - DB_SYNC=${DB_SYNC}
-      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
-      - TEST_EMAIL_SEND=${TEST_EMAIL_SEND}
-      - OUR_EMAIL=${OUR_EMAIL}
-      - DOMAIN=${DOMAIN}
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
@@ -84,8 +81,8 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
-    
-# accounts db sets up the accounts service's postgres database
+
+  # accounts db sets up the accounts service's postgres database
   accounts_db:
     image: postgres:15-alpine
     restart: always
@@ -105,7 +102,7 @@ services:
     ports:
       - '${ACCOUNTS_DB_PORT}:${INTERNAL_DB_PORT}'
 
-# accounts app builds the account service from the account's dockerfile
+  # accounts app builds the account service from the account's dockerfile
   accounts_app:
     build:
       context: ../../
@@ -135,7 +132,7 @@ services:
     volumes:
       - ./src:/app/src
 
-# api app builds the api service from the api's dockerfile
+  # api app builds the api service from the api's dockerfile
   api_app:
     build:
       context: ../../
@@ -162,7 +159,7 @@ services:
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
 
-# report db sets up the report service's postgres database  
+  # report db sets up the report service's postgres database
   report_db:
     image: postgres:15-alpine
     restart: always
@@ -189,7 +186,7 @@ services:
       # Left side must be unique
       - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
 
-# report app builds the report service from the report dockerfile
+  # report app builds the report service from the report dockerfile
   report_app:
     build:
       context: ../../
@@ -214,7 +211,7 @@ services:
     volumes:
       - ./src:/app/src
 
-# xp db sets up the xp service's postgres database
+  # xp db sets up the xp service's postgres database
   xp_db:
     image: postgres:15-alpine
     restart: always
@@ -241,7 +238,7 @@ services:
       # Left side must be unique
       - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
 
-# xp app build the xp service using the xp dockerfile
+  # xp app build the xp service using the xp dockerfile
   xp_app:
     build:
       context: ../../
@@ -266,7 +263,7 @@ services:
     volumes:
       - ./src:/app/src
   
-# builds the website using the website's dockerfile
+  # builds the website using the website's dockerfile
   website:
     build:
       context: ../../
@@ -279,7 +276,7 @@ services:
     ports:
       - '5173:5173'
 
-# handles pgadmin access for local developers to view the database on thier machine
+  # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
     image: dpage/pgadmin4:9.15
     restart: always
@@ -304,7 +301,7 @@ services:
     image: caddy:2.11.3
     container_name: caddy
     restart: unless-stopped
-    ports: 
+    ports:
       - '80:80'
       - '443:443'
     volumes:

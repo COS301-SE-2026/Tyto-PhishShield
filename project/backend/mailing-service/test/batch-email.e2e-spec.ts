@@ -1,15 +1,24 @@
+/**
+ * Service: mailing-service
+ *
+ * End-to-end integration tests for batch email operations.
+ * Boots the full NestJS application, seeds an email template in beforeAll,
+ * and runs requests against a live database and Resend API connection.
+ *
+ * Tests:
+ * - POST /batch-emails/:referenceNumber/send-batch-with-reference - Sends one template to all recipients immediately; also tests 404 for unknown reference.
+ * - POST /batch-emails/send-batch-random-same-email - Sends the same random template to all recipients; tests shared time, independent random times, and invalid date range (400).
+ * - POST /batch-emails/send-batch-random-different-email - Sends a different random template per recipient; tests shared time, independent random times, and invalid date range (400).
+ */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
 import { EmailDifficulty } from '../src/entities/emails.entity';
 
-const TEST_SENDER = 'onboarding@resend.dev';
-const TEST_RECIPIENTS = [
-  'delivered@resend.dev',
-  'delivered@resend.dev',
-  'delivered@resend.dev',
-];
+const TEST_SENDER = process.env.RESEND_EMAIL;
+const TEST_RECIPIENT_EMAIL = process.env.RESEND_EMAIL_DELIVERED;
+const TEST_RECIPIENTS = [TEST_RECIPIENT_EMAIL, TEST_RECIPIENT_EMAIL, TEST_RECIPIENT_EMAIL];
 
 describe('BatchEmail service integration tests', () => {
   let app: INestApplication;
