@@ -7,6 +7,7 @@ import { MicrosoftModule } from './microsoft/microsoft.module';
 import { Report } from './report/entities/report.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AccountsModule } from './accounts/accounts.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AppService } from './app.service';
     ReportModule,
     AuthModule,
     MicrosoftModule,
+    AccountsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
