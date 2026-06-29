@@ -103,14 +103,27 @@ describe('AccountsController', () => {
   // ===========================================================================
 
   describe('getMe()', () => {
-    it('should return the user from req.user', async () => {
+    it('should proxy the request to the accounts service with the auth header', async () => {
       const mockUser: GatewayUser = {
         auth0Id: 'auth0|abc123',
         email: 'test@example.com',
         role: 'user',
       };
-      const result = await controller.getMe({ user: mockUser } as never).then((user) => user);
-      expect(result).toEqual(mockUser);
+      const mockReq = {
+        user: mockUser,
+        headers: { authorization: 'Bearer test-token' },
+      };
+      const expected = { ...mockUser };
+      proxyService.forward.mockResolvedValue(expected);
+
+      const result = await controller.getMe(mockReq as never);
+
+      expect(proxyService.forward).toHaveBeenCalledWith({
+        url: 'http://accounts-service:3002/api/auth/me',
+        method: 'GET',
+        headers: { Authorization: 'Bearer test-token' },
+      });
+      expect(result).toEqual(expected);
     });
 
     it('should return the correct role for admin users', async () => {
@@ -119,8 +132,21 @@ describe('AccountsController', () => {
         email: 'admin@example.com',
         role: 'admin',
       };
-      const result = await controller.getMe({ user: adminUser } as never).then((user) => user.role);
-      expect(result).toBe('admin');
+      const mockReq = {
+        user: adminUser,
+        headers: { authorization: 'Bearer admin-token' },
+      };
+      const expected = { ...adminUser };
+      proxyService.forward.mockResolvedValue(expected);
+
+      const result = await controller.getMe(mockReq as never);
+
+      expect(proxyService.forward).toHaveBeenCalledWith({
+        url: 'http://accounts-service:3002/api/auth/me',
+        method: 'GET',
+        headers: { Authorization: 'Bearer admin-token' },
+      });
+      expect((result as GatewayUser).role).toBe('admin');
     });
   });
 });
