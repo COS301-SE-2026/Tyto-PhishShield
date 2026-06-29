@@ -20,7 +20,7 @@ import { XpEntity } from './entities/xp.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get<string>('XP_DB_CONTAINER'),
-        port: configService.get<number>('XP_DB_PORT'),
+        port: configService.get<number>('INTERNAL_DB_PORT'),
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('XP_DB_NAME'),
@@ -29,7 +29,7 @@ import { XpEntity } from './entities/xp.entity';
         autoLoadEntities: true,
       }),
     }),
-    TypeOrmModule.forFeature([UserEntity, XpEntity], 'xp-db'),
+    TypeOrmModule.forFeature([UserEntity, XpEntity]),
     AccountsModule,
     XpModule,
   ],
