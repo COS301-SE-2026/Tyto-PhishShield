@@ -1,6 +1,18 @@
-// TODO add comments / add logs / find out what is happening
+/**
+ * Service: xp-service
+ *
+ * Contains the business logic for account (user) operations.
+ * Manages user records in the database, syncing them from Auth0 events via RabbitMQ.
+ *
+ * Functions:
+ * - {@link AccountsService#createUser} - Creates or updates a user in the database.
+ */
 
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
@@ -15,17 +27,30 @@ export class AccountsService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
+  /**
+   * Upserts a user in the database based on their Auth0 ID.
+   * If the user already exists and no values have changed, the update is skipped.
+   *
+   * @param user - The user data received from the RabbitMQ event.
+   */
   async createUser(user: User): Promise<void> {
-    await this.userRepository.upsert(
-      {
-        id: user.id,
-        auth0Id: user.auth0Id,
-        name: user.name,
-        email: user.email,
-        department: user.department,
-      },
-      { conflictPaths: ['auth0Id'], skipUpdateIfNoValuesChanged: true },
-    );
-    this.logger.log(`Upserted user ${user.auth0Id}`);
+    try {
+      await this.userRepository.upsert(
+        {
+          id: user.id,
+          auth0Id: user.auth0Id,
+          name: user.name,
+          email: user.email,
+          department: user.department,
+        },
+        { conflictPaths: ['auth0Id'], skipUpdateIfNoValuesChanged: true },
+      );
+      this.logger.log(`Upserted user ${user.auth0Id}`);
+    } catch (error) {
+      this.logger.error(`Failed to upsert user ${user.auth0Id}`, error);
+      throw new InternalServerErrorException(
+        `Failed to create or update user ${user.auth0Id}`,
+      );
+    }
   }
 }

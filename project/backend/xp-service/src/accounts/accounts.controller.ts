@@ -1,4 +1,11 @@
-// TODO: add comments
+/**
+ * Service: xp-service
+ *
+ * Handles incoming RabbitMQ events for account (user) operations.
+ *
+ * Functions:
+ * - {@link AccountsController#createUser} - Creates or updates a user from a RabbitMQ event.
+ */
 
 import { Controller } from '@nestjs/common';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
