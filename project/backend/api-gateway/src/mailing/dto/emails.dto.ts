@@ -6,7 +6,7 @@ export enum EmailDifficulty {
   HARD = 'hard',
 }
 
-export class GenerateEmailDto {
+export class EmailsDto {
   @IsEmail()
   sender!: string;
 
