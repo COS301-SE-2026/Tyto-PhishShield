@@ -1,3 +1,19 @@
+/**
+ * Service: mailing-service
+ *
+ * Unit tests for EmailService.
+ * Verifies the business logic for email record management and
+ * dispatching/scheduling emails through the mocked Resend API.
+ *
+ * Test suites:
+ * - {@link createEmail} - Verifies a reference number is generated and the email record saved.
+ * - {@link getEmailByReference} - Verifies lookup by reference number, including not-found handling.
+ * - {@link sendEmail} - Verifies immediate dispatch with/without alias and API failure handling.
+ * - {@link scheduleSendEmail} - Verifies scheduled dispatch with a future date and API failure handling.
+ * - {@link getAllEmails} - Verifies all email records are fetched from the repository.
+ * - {@link updateEmail} - Verifies partial updates are applied and the updated record returned.
+ */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -7,10 +23,10 @@ import {
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
-  GeneratedEmail,
+  Emails,
   EmailDifficulty,
-} from '../entities/generated-emails.entity';
-import { GenerateEmailDto } from '../dto/generate-email.dto';
+} from '../entities/emails.entity';
+import { EmailsDto } from '../dto/emails.dto';
 
 // Mock Resend client matching the service's `data.data?.id` structural needs
 const mockResendSend = jest.fn().mockResolvedValue({
@@ -51,7 +67,7 @@ describe('EmailService', () => {
   // Mock email data
   const mockEmail = {
     email_id: 'uuid-1234',
-    reference_number: 'PHISH-001',
+    referenceNumber: 'PHISH-001',
     sender: 'admin@domain.com',
     alias: 'Admin',
     subject: 'Action Required',
@@ -64,7 +80,7 @@ describe('EmailService', () => {
       providers: [
         EmailService,
         {
-          provide: getRepositoryToken(GeneratedEmail),
+          provide: getRepositoryToken(Emails),
           useValue: mockEmailRepository,
         },
         {
@@ -87,7 +103,7 @@ describe('EmailService', () => {
 
   describe('createEmail', () => {
     it('should generate a reference number and save the email', async () => {
-      const createDto: GenerateEmailDto = {
+      const createDto: EmailsDto = {
         sender: 'admin@domain.com',
         alias: 'Admin',
         subject: 'Action Required',
@@ -103,7 +119,7 @@ describe('EmailService', () => {
       expect(mockEmailRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           ...createDto,
-          reference_number: expect.stringMatching(/^PHISH-[0-9A-F]{8}$/),
+          referenceNumber: expect.stringMatching(/^PHISH-[0-9A-F]{8}$/),
         }),
       );
       expect(mockEmailRepository.save).toHaveBeenCalledWith(mockEmail);
@@ -117,7 +133,7 @@ describe('EmailService', () => {
 
       const result = await service.getEmailByReference('PHISH-001');
       expect(mockEmailRepository.findOne).toHaveBeenCalledWith({
-        where: { reference_number: 'PHISH-001' },
+        where: { referenceNumber: 'PHISH-001' },
       });
       expect(result).toEqual(mockEmail);
     });
@@ -235,7 +251,7 @@ describe('EmailService', () => {
       const result = await service.updateEmail('PHISH-001', updateDto);
 
       expect(mockEmailRepository.findOne).toHaveBeenCalledWith({
-        where: { reference_number: 'PHISH-001' },
+        where: { referenceNumber: 'PHISH-001' },
       });
       expect(mockEmailRepository.save).toHaveBeenCalledWith(
         expect.objectContaining(updateDto),

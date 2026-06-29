@@ -1,8 +1,24 @@
+/**
+ * Service: mailing-service
+ *
+ * Unit tests for EmailController.
+ * Verifies that each controller method correctly delegates to EmailService
+ * and maps the response into the expected return shape.
+ *
+ * Test suites:
+ * - {@link createEmail} - Verifies a new email record is created and returned.
+ * - {@link getAllEmails} - Verifies an array of email records is returned.
+ * - {@link getEmailByReference} - Verifies a single email is returned by reference number.
+ * - {@link updateEmail} - Verifies an email record is updated and the result returned.
+ * - {@link sendEmail} - Verifies the send sequence is triggered and the result mapped correctly.
+ * - {@link scheduleSendEmail} - Verifies the schedule sequence is triggered and the result mapped correctly.
+ */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
-import { GenerateEmailDto } from '../dto/generate-email.dto';
-import { EmailDifficulty } from '../entities/generated-emails.entity';
+import { EmailsDto } from '../dto/emails.dto';
+import { EmailDifficulty } from '../entities/emails.entity';
 import { SendSingleEmailDto } from '../dto/send-single-email.dto';
 import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
 
@@ -26,7 +42,7 @@ describe('EmailController', () => {
     scheduleSendEmail: jest.fn(),
   };
 
-  // Mock the email data returned form db
+  // Mock the email data returned from db
   const mockEmail = {
     email_id: 'uuid-1234',
     reference_number: 'PHISH-001',
@@ -38,23 +54,21 @@ describe('EmailController', () => {
     created_at: new Date(),
   };
 
-  // Mock the GenerateEmailDto
-  const mockCreateDto: GenerateEmailDto = {
+  // Mock the EmailsDto
+  const mockCreateDto: EmailsDto = {
     sender: 'security@domain.com',
     alias: 'IT Support',
     subject: 'Urgent: Password Reset',
     content: '<p>Please reset your password</p>',
     difficulty: EmailDifficulty.EASY,
   };
-  
+
   const mockSendSingleEmail: SendSingleEmailDto = {
     recipient: 'test@domain.com',
-    emailReferenceNumber: 'PHISH-001',
-  }
-  
+  };
+
   const mockScheduleSingleEmail: ScheduleSingleEmailDto = {
     recipient: 'test@domain.com',
-    emailReferenceNumber: 'PHISH-001',
     scheduledAt: new Date('2026-05-25T14:30:00.000Z'),
   };
 
@@ -86,6 +100,7 @@ describe('EmailController', () => {
       expect(result).toEqual(mockEmail);
     });
   });
+
   describe('getAllEmails', () => {
     it('should return an array of emails', async () => {
       mockEmailService.getAllEmails.mockResolvedValue([mockEmail]);
@@ -130,8 +145,8 @@ describe('EmailController', () => {
       const result = await controller.sendEmail('PHISH-001', mockSendSingleEmail);
 
       expect(service.sendEmail).toHaveBeenCalledWith(
-        mockSendSingleEmail.emailReferenceNumber,
-        mockSendSingleEmail.recipient
+        'PHISH-001',
+        mockSendSingleEmail.recipient,
       );
       expect(result).toEqual({
         success: true,
@@ -150,12 +165,12 @@ describe('EmailController', () => {
       };
       mockEmailService.scheduleSendEmail.mockResolvedValue(serviceResponse);
 
-      const result = await controller.scheduleSendEmail(mockScheduleSingleEmail);
+      const result = await controller.scheduleSendEmail('PHISH-001', mockScheduleSingleEmail);
 
       expect(service.scheduleSendEmail).toHaveBeenCalledWith(
-        mockScheduleSingleEmail.emailReferenceNumber,
+        'PHISH-001',
         mockScheduleSingleEmail.recipient,
-        mockScheduleSingleEmail.scheduledAt
+        mockScheduleSingleEmail.scheduledAt,
       );
       expect(result).toEqual({
         success: true,

@@ -1,16 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { MailingServiceModule } from './mailing-service.module';
 import * as process from 'node:process';
 
 async function bootstrap() {
   const app = await NestFactory.create(MailingServiceModule);
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
     options: {
       host: '0.0.0.0',
-      port: Number(process.env.TCP_PORT ?? 4002),
+      port: Number(process.env.MAILING_TCP_PORT),
     },
   });
 
@@ -28,7 +30,7 @@ async function bootstrap() {
   }
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('MAILING_SERVICE_PORT') || 3003;
+  const port = configService.get<number>('MAILING_SERVICE_PORT');
   await app.listen(port);
   await app.startAllMicroservices();
   console.log(`Application is running on: http://localhost:${port}`);

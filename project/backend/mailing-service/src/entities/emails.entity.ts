@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum EmailDifficulty {
@@ -11,13 +12,14 @@ export enum EmailDifficulty {
   HARD = 'hard',
 }
 
-@Entity({ name: 'generated_emails', schema: 'mailing' })
-export class GeneratedEmail {
+@Entity({ name: 'emails' })
+export class Emails {
   @PrimaryGeneratedColumn('uuid')
-  email_id: string;
+  id: string;
 
+  @Index()
   @Column({ unique: true })
-  reference_number: string;
+  referenceNumber: string;
 
   @Column()
   sender: string;
@@ -39,5 +41,5 @@ export class GeneratedEmail {
   difficulty: EmailDifficulty;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 }
