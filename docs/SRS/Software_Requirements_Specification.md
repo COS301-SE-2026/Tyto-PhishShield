@@ -50,7 +50,7 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
 	- **FR 3.2.1**: The learning experience shall point out specific phishing indicators.
 	-    **FR 3.2.2**: The learning experience shall provide a short explanation of why the content is malicious.
 	-    **FR 3.2.3**: The learning experience shall display corrective guidance on how to identify similar threats in the future and how the user should handle it.
-- **FR 3.3**: The system shall provide a leader board with department and team rankings.
+- **FR 3.3**: The system shall provide a leaderboard with department and team rankings.
 	-    **FR 3.3.1**: The leaderboard will be updated live.
 
 **FR 4**: Authentication and Authorization 
@@ -105,6 +105,7 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
 -	**OFR 9.1**: The system will allow users who failed to detect phishing content to go through educational material.
  -   **OFR 9.2**: The system will let the user take a test to learn how to detect phishing content.
  -   **OFR 9.3**: The system will allow the user to earn XP points based on how well the user did in the test.
+ -   **OFR 9.4**: The system will allow admins to create or generate educational material with the LLM.
 ## Non-Functional Requirements
 **NFR 1**: Security
 -	**NFR 1.1**: The system shall authenticate and authorize all protected API requests using Role-Based Access Control (RBAC) enforced at the API gateway layer with server-side validation on 100% of protected endpoints.
@@ -165,6 +166,8 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                  |
 | **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                           |
 | UC-14       | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
+| UC-15		  | Admin can create educational material. | As an admin, I want to be able to create educational material for users manually or automatically with the AI engine. |
+
 ## Use Case Diagrams
 
 ![Register and Login Use Cases](<../images/Register and Login Use Cases.jpg>)

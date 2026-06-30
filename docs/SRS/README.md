@@ -2,7 +2,7 @@ This folder contains all the documentation related to the Software Requirements 
 ___
 [Software Requirements Specification](./Software_Requirements_Specification) <br>
 [Software Architecture Specification](./Software-Architecture-Specification) <br>
-[User Stories](./User_Stories) <br>
+[User Stories acceptance criteria and definition of done](./User_Stories) <br>
 [Test Cases](./Test_Cases) <br>
 [Design Specifications](../design-specifications/design-specifications-document.md) <br>
 
