@@ -17,7 +17,6 @@ import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
@@ -133,6 +132,11 @@ export class AuthService {
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number }> {
     const user = await this.usersService.findByEmail(dto.email);
+    if (user && !user.isActive) {
+      throw new UnauthorizedException(
+        'Account is deactivated. Please contact support.',
+      );
+    }
     if (user && !user.isVerified) {
       throw new UnauthorizedException(
         'Email not verified. Please verify your email before logging in.',
@@ -205,34 +209,27 @@ export class AuthService {
     return { message: 'Profile updated successfully' };
   }
 
-  async changePassword(
-    auth0Id: string,
-    dto: ChangePasswordDto,
-  ): Promise<{ message: string }> {
+  async forgotPassword(email: string): Promise<{ message: string }> {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
-    const mgmtToken = await this.getManagementToken();
 
     try {
       await firstValueFrom(
-        this.http.patch(
-          `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
-          { password: dto.newPassword },
-          { headers: { Authorization: `Bearer ${mgmtToken}` } },
-        ),
+        this.http.post(`https://${domain}/dbconnections/change_password`, {
+          client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
+          email,
+          connection: 'Username-Password-Authentication',
+        }),
       );
-    } catch (err: unknown) {
-      const e = err as AxiosErrorShape;
-      if (e.response?.status === 400) {
-        throw new InternalServerErrorException(
-          'Password does not meet complexity requirements',
-        );
-      }
+    } catch {
       throw new InternalServerErrorException(
-        'Failed to change password, please try again',
+        'Could not send password reset email',
       );
     }
 
-    return { message: 'Password changed successfylly' };
+    return {
+      message:
+        'If an account exists with this email, a password reset link has been sent.',
+    };
   }
 
   async deleteUser(auth0Id: string): Promise<void> {

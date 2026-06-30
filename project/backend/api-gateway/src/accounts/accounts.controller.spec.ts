@@ -111,10 +111,12 @@ describe('AccountsController', () => {
       };
       const mockReq = {
         user: mockUser,
-        headers: { authorization: 'Bearer test-token' },
+        headers: {
+          authorization: 'Bearer test-token',
+        },
       };
-      const expected = { ...mockUser };
-      proxyService.forward.mockResolvedValue(expected);
+      const expectedResponse = { ...mockUser };
+      proxyService.forward.mockResolvedValue(expectedResponse);
 
       const result = await controller.getMe(mockReq as never);
 
@@ -123,7 +125,7 @@ describe('AccountsController', () => {
         method: 'GET',
         headers: { Authorization: 'Bearer test-token' },
       });
-      expect(result).toEqual(expected);
+      expect(result).toEqual(expectedResponse);
     });
 
     it('should return the correct role for admin users', async () => {
@@ -134,10 +136,12 @@ describe('AccountsController', () => {
       };
       const mockReq = {
         user: adminUser,
-        headers: { authorization: 'Bearer admin-token' },
+        headers: {
+          authorization: 'Bearer admin-token',
+        },
       };
-      const expected = { ...adminUser };
-      proxyService.forward.mockResolvedValue(expected);
+      const expectedResponse = { ...adminUser };
+      proxyService.forward.mockResolvedValue(expectedResponse);
 
       const result = await controller.getMe(mockReq as never);
 

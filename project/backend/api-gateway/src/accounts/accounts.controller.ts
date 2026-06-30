@@ -28,12 +28,8 @@ interface AuthenticatedRequest extends Request {
 }
 
 function authHeader(req: Request): Record<string, string> {
-  try {
-    const token = req.headers['authorization'];
-    return token ? { Authorization: token } : {};
-  } catch {
-    return {};
-  }
+  const token = req.headers['authorization'];
+  return token ? { Authorization: token } : {};
 }
 
 @ApiTags('Accounts')
@@ -271,18 +267,6 @@ export class AccountsController {
     return this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/users/${id}`,
       method: 'DELETE',
-      headers: authHeader(req),
-    });
-  }
-
-  @Get('auth/xp')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get XP (total and today) for authenticated user' })
-  getMyXp(@Req() req: AuthenticatedRequest) {
-    return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/xp`,
-      method: 'GET',
       headers: authHeader(req),
     });
   }

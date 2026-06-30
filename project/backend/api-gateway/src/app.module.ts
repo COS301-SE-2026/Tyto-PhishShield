@@ -14,6 +14,7 @@ import { AppService } from './app.service';
 import { MailingModule } from './mailing/mailing.module';
 
 import { ReportModule } from './report/report.module';
+import { EducationModule} from './education/education.module'
 //import { OtpModule } from './otp/otp.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { ReportModule } from './report/report.module';
     AccountsModule,
     MailingModule,
     ReportModule,
+    EducationModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {
@@ -54,6 +56,22 @@ import { ReportModule } from './report/report.module';
         options: {
           host: process.env.REPORT_HOST ?? 'report_app',
           port: Number(process.env.REPORT_TCP_PORT ?? 4003),
+        },
+      },
+      {
+        name: 'EDUCATION_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.EDUCATION_HOST ?? 'education_app',
+          port: Number(process.env.EDUCATION_TCP_PORT ?? 4004),
+        },
+      },
+      {
+        name: 'ANALYTICS_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.ANALYTICS_HOST ?? 'analytics_app',
+          port: Number(process.env.ANALYTICS_TCP_PORT ?? 4005),
         },
       },
     ]),

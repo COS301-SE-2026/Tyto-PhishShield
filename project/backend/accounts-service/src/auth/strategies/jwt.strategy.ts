@@ -13,7 +13,6 @@ import { UsersService } from '../../users/users.service';
 interface JwtPayload {
   sub: string;
   email: string;
-  'https://phishshield/roles'?: string[];
 }
 
 export interface AuthenticatedUser {
@@ -43,11 +42,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    const dbUser = await this.usersService.findByAuth0Id(payload.sub);
+    const user = await this.usersService.findByAuth0Id(payload.sub);
+
     return {
       auth0Id: payload.sub,
-      email: payload.email ?? dbUser?.email ?? '',
-      role: dbUser?.role ?? payload['https://phishshield/roles']?.[0] ?? 'user',
+      email: payload.email,
+      role: user ? user.role : 'USER',
     };
   }
 }
