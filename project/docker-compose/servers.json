@@ -1,0 +1,55 @@
+{
+    "Servers": {
+        "mailing-db": {
+            "Name": "Mailing Database",
+            "Group": "Servers",
+            "Host": "mailing_db",
+            "Port": 5432,
+            "MaintenanceDB": "mailing_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
+        },
+
+        "accounts-db" : {
+            "Name": "Accounts Database",
+            "Group": "Servers",
+            "Host": "accounts_db",
+            "Port": 5432,
+            "MaintenanceDB": "accounts_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
+        },
+
+        "report-db" : {
+            "Name": "Report Database",
+            "Group": "Servers",
+            "Host": "report_db",
+            "Port": 5432,
+            "MaintenanceDB": "report_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
+        },
+
+        "education-db" : {
+            "Name": "Education Database",
+            "Group": "Servers",
+            "Host": "education_db",
+            "Port": 5432,
+            "MaintenanceDB": "education_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
+        }
+    }
+}

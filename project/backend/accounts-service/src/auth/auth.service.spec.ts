@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import type { User } from '../users/entities/user.entity';
 import type { AxiosResponse } from 'axios';
+import { OtpService } from '../otp/otp.service';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,
@@ -27,6 +28,8 @@ const mockUser: User = {
   email: 'test@example.com',
   name: 'Test User',
   role: UserRole.USER,
+  isVerified: true,
+  isActive: true,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -35,6 +38,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let httpService: jest.Mocked<HttpService>;
   let usersService: jest.Mocked<UsersService>;
+  let otpService: jest.Mocked<OtpService>;
 
   let consoleErrorSpy: jest.SpyInstance;
 
@@ -75,19 +79,21 @@ describe('AuthService', () => {
             findAll: jest.fn(),
           },
         },
+        {
+          provide: OtpService,
+          useValue: { generateAndSend: jest.fn(), verify: jest.fn() },
+        },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
     httpService = module.get(HttpService);
     usersService = module.get(UsersService);
+    otpService = module.get(OtpService);
   });
 
   afterEach(() => jest.clearAllMocks());
 
-  // ===========================================================================
-  // Use Case 1: Registration
-  // ===========================================================================
 
   describe('register()', () => {
     describe('Success', () => {
@@ -96,6 +102,7 @@ describe('AuthService', () => {
           .mockReturnValueOnce(of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })))
           .mockReturnValueOnce(of(axiosOf({ user_id: 'auth0|abc123', email: 'test@example.com', name: 'Test User' })));
         usersService.create.mockResolvedValue(mockUser);
+        otpService.generateAndSend.mockResolvedValue(undefined);
 
         const result = await service.register({
           email: 'test@example.com',
@@ -103,7 +110,9 @@ describe('AuthService', () => {
           name: 'Test User',
         });
 
-        expect(result).toEqual({ message: 'Registration successful', userId: 'uuid-123' });
+        expect(result).toEqual({
+        message: 'Registration successful. Please verify your email with the OTP sent to you.',
+        });
       });
 
       it('should save user to DB with USER role by default', async () => {
@@ -111,6 +120,7 @@ describe('AuthService', () => {
           .mockReturnValueOnce(of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })))
           .mockReturnValueOnce(of(axiosOf({ user_id: 'auth0|abc123', email: 'test@example.com', name: 'Test User' })));
         usersService.create.mockResolvedValue(mockUser);
+        otpService.generateAndSend.mockResolvedValue(undefined);
 
         await service.register({ email: 'test@example.com', password: 'Password123!' });
 
@@ -124,16 +134,20 @@ describe('AuthService', () => {
           .mockReturnValueOnce(of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })))
           .mockReturnValueOnce(of(axiosOf({ user_id: 'auth0|abc123', email: 'a@example.com', name: 'A' })));
         usersService.create.mockResolvedValue(mockUser);
+        otpService.generateAndSend.mockResolvedValue(undefined);
         await service.register({ email: 'a@example.com', password: 'Password123!' });
 
         jest.clearAllMocks();
+
+
+        otpService.generateAndSend.mockResolvedValue(undefined);
 
         httpService.post
           .mockReturnValueOnce(of(axiosOf({ user_id: 'auth0|def456', email: 'b@example.com', name: 'B' })));
         usersService.create.mockResolvedValue({ ...mockUser, email: 'b@example.com' });
         await service.register({ email: 'b@example.com', password: 'Password123!' });
 
-        // Only 1 call — no token refresh
+
         expect(httpService.post).toHaveBeenCalledTimes(1);
       });
 
@@ -183,13 +197,12 @@ describe('AuthService', () => {
     });
   });
 
-  // ===========================================================================
-  // Use Case 2: Login
-  // ===========================================================================
-
   describe('login()', () => {
     describe('Success', () => {
       it('should return access_token and expires_in on valid credentials', async () => {
+        // The user must be found and verified
+        usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
+
         httpService.post.mockReturnValueOnce(
           of(axiosOf({ access_token: 'jwt-token', expires_in: 86400 })),
         );
@@ -203,6 +216,8 @@ describe('AuthService', () => {
       });
 
       it('should call Auth0 with correct grant type and audience', async () => {
+        usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
+
         httpService.post.mockReturnValueOnce(
           of(axiosOf({ access_token: 'jwt-token', expires_in: 86400 })),
         );
@@ -221,7 +236,17 @@ describe('AuthService', () => {
     });
 
     describe('Failure', () => {
+      it('should throw UnauthorizedException when email is not verified', async () => {
+        usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: false });
+
+        await expect(
+          service.login({ email: 'test@example.com', password: 'Password123!' }),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
       it('should throw UnauthorizedException on invalid credentials', async () => {
+
+        usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
         httpService.post.mockReturnValueOnce(
           throwError(() => ({ response: { status: 403 } })),
         );
@@ -232,6 +257,7 @@ describe('AuthService', () => {
       });
 
       it('should throw UnauthorizedException when Auth0 is unreachable', async () => {
+        usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
         httpService.post.mockReturnValueOnce(
           throwError(() => new Error('Network Error')),
         );

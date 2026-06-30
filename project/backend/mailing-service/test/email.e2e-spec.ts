@@ -1,25 +1,30 @@
+/**
+ * Service: mailing-service
+ *
+ * End-to-end integration tests for single email operations.
+ * Boots the full NestJS application and runs requests against
+ * a live database and Resend API connection.
+ *
+ * Tests:
+ * - POST /emails - Creates a new email record and captures the reference number.
+ * - GET /emails - Retrieves all email records.
+ * - GET /emails/:referenceNumber - Fetches a specific email by reference number.
+ * - PATCH /emails/:referenceNumber - Updates fields on an existing email record.
+ * - POST /emails/:referenceNumber/send-single - Immediately dispatches an email via Resend.
+ * - POST /emails/:referenceNumber/schedule-send-single - Schedules an email for future delivery via Resend.
+ */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
-import { EmailDifficulty } from '../src/entities/generated-emails.entity';
+import { EmailDifficulty } from '../src/entities/emails.entity';
 
-// jest.mock('resend', () => {
-//   return {
-//     Resend: jest.fn().mockImplementation(() => ({
-//       emails: {
-//         send: jest.fn().mockResolvedValue({ id: 'mock-resend-id' }),
-//       },
-//     })),
-//   };
-// });
+const TEST_SENDER = process.env.RESEND_EMAIL;
+const TEST_RECIPIENT = process.env.RESEND_EMAIL_DELIVERED;
 
 describe('Email service integration test', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
-
-  const hasLivePermission = process.env.TEST_EMAIL_SEND === 'true';
-  const liveTest = hasLivePermission ? it : it.skip;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -27,9 +32,9 @@ describe('Email service integration test', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
-  });
+  }, 30000);
 
   afterAll(async () => {
     await app.close();
@@ -39,18 +44,16 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post('/emails')
       .send({
-        recipient: process.env.OUR_EMAIL,
-        sender: `test@${process.env.FIVEGUYS_DOMAIN}`,
-        alias: 'tester',
+        sender: TEST_SENDER,
+        alias: 'E2E Tester',
         subject: 'E2E Test',
         content: '<p>This is a test</p>',
         difficulty: EmailDifficulty.MEDIUM,
       })
       .expect(201)
       .expect((res) => {
-        expect(res.body.reference_number).toBeDefined();
-        expect(res.body.recipient).toEqual(process.env.OUR_EMAIL);
-        testReferenceNumber = res.body.reference_number;
+        expect(res.body.referenceNumber).toBeDefined();
+        testReferenceNumber = res.body.referenceNumber;
       });
   });
 
@@ -69,7 +72,7 @@ describe('Email service integration test', () => {
       .get(`/emails/${testReferenceNumber}`)
       .expect(200)
       .expect((res) => {
-        expect(res.body.reference_number).toEqual(testReferenceNumber);
+        expect(res.body.referenceNumber).toEqual(testReferenceNumber);
       });
   });
 
@@ -83,19 +86,37 @@ describe('Email service integration test', () => {
       });
   });
 
-  liveTest(
-    '/emails/:referenceNumber/send-single (POST) - should trigger live send',
-    () => {
-      return request(app.getHttpServer())
-        .post(`/emails/${testReferenceNumber}/send-single`)
-        .expect(200)
-        .expect((res) => {
-          expect(res.body.success).toBe(true);
-          expect(res.body.message).toEqual('Email sent successfully');
+  it('/emails/:referenceNumber/send-single (POST) - should send email via Resend', () => {
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/send-single`)
+      .send({ recipient: TEST_RECIPIENT })
+      .expect((res) => {
+        console.log('BODY:', JSON.stringify(res.body));
+      })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toContain('sent instantly.');
+        expect(res.body.deliveryId).toBeDefined();
+      });
+  });
 
-          expect(res.body.data.data.id).toBeDefined();
-          expect(typeof res.body.data.data.id).toBe('string');
-        });
-    },
-  );
+  it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule email via Resend', () => {
+    const futureDate = new Date();
+    futureDate.setMinutes(futureDate.getMinutes() + 1);
+
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/schedule-send-single`)
+      .send({
+        recipient: TEST_RECIPIENT,
+        scheduledAt: futureDate.toISOString(),
+      })
+      .expect(200)
+      .expect((res) => {
+        console.log('BODY:', JSON.stringify(res.body));
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toContain('successfully scheduled');
+        expect(res.body.deliveryId).toBeDefined();
+      });
+  });
 });

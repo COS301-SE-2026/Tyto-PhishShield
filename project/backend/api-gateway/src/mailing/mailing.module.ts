@@ -6,10 +6,11 @@
 import { Module } from '@nestjs/common';
 import { ProxyModule } from '../proxy/proxy.module';
 import { AuthModule } from '../auth/auth.module';
-import { MailingController } from './mailing.controller';
+import { EmailController } from './email/email.controller';
+import { BatchEmailController } from './batch-email/batch-email.controller';
 
 @Module({
   imports: [ProxyModule, AuthModule],
-  controllers: [MailingController],
+  controllers: [EmailController, BatchEmailController],
 })
 export class MailingModule {}
