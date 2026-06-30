@@ -12,7 +12,13 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/education-service/package.json ./project/backend/education-service/package.json
 COPY project/backend/education-service/ ./project/backend/education-service/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set fetch-retries 8 -g \
+ && pnpm config set fetch-retry-mintimeout 10000 -g \
+ && pnpm config set fetch-retry-maxtimeout 120000 -g \
+ && pnpm config set fetch-timeout 120000 -g \
+ && pnpm config set network-concurrency 8 -g
+
+RUN pnpm install --frozen-lockfile --prefer-offline
 
 WORKDIR /app/project/backend/education-service
 
