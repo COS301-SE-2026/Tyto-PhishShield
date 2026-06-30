@@ -1,27 +1,7 @@
-/*
- * Root api service
- * handles general requests to the api-gateway
- * Always import the API_BASE in other api service files for specified requests
- */
-import type {
-  LoginDto, RegisterDto, LoginResponse,
-  RegisterResponse, AuthenticatedUser,
+import type { LoginDto, RegisterDto, LoginResponse, RegisterResponse, AuthenticatedUser,
 } from '../types';
 
-/*
- * Make sure to use API_BASE for all api calls as your base url
- * API_BASE looks as follows: http://<hostname>:<port>/api
- * hostname is the machine host (localhost for just plain dev / **api-gateway for containerized dev)
- * port is the port to the api-gateway
- * **See .env.local at GATEWAY_APP_CONTAINER
-*/
-export const API_BASE = '/api';
-
-// Can this be removed some time so that we can work only through the api gateway?
-const ACCOUNTS_BASE =
-  typeof import.meta.env.VITE_ACCOUNTS_URL === 'string'
-    ? import.meta.env.VITE_ACCOUNTS_URL
-    : 'http://localhost:3002';  //This is communicating directly to the accounts service which is not what we do. We should only send requests to the api-gateway.
+export const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? '') + '/api';
 
 export function getToken(): string | null {
   return localStorage.getItem('access_token');
@@ -39,7 +19,6 @@ export async function parseResponse<T>(res: Response): Promise<T> {
 }
 
 export const authApi = {
-
   register: async (dto: RegisterDto): Promise<RegisterResponse> => {
     const res = await fetch(`${API_BASE}/accounts/auth/register`, {
       method: 'POST',
@@ -48,7 +27,6 @@ export const authApi = {
     });
     return parseResponse<RegisterResponse>(res);
   },
-
   login: async (dto: LoginDto): Promise<LoginResponse> => {
     const res = await fetch(`${API_BASE}/accounts/auth/login`, {
       method: 'POST',
@@ -66,26 +44,31 @@ export const authApi = {
     return parseResponse<AuthenticatedUser>(res);
   },
 
-  /*POST /api/auth/forgot-password  (Stub for backend endpoint not yet implemented)*/
+  verifyOtp: async (email: string, code: string): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/accounts/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code }),
+    });
+    return parseResponse<{ message: string }>(res);
+  },
+
+  resendOtp: async (email: string): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/accounts/auth/resend-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    return parseResponse<{ message: string }>(res);
+  },
+
   forgotPassword: async (email: string): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/accounts/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    // Below to handle 404 during development (endpoint not yet implemented)
     if (res.status === 404) return { message: 'Reset email sent (stub)' };
-    return parseResponse<{ message: string }>(res);
-  },
-
-  /*POST /api/auth/verify-otp  (Stub for backend endpoint not yet implemented?)*/
-  verifyOtp: async (userId: string, otp: string): Promise<{ message: string }> => {
-    const res = await fetch(`${ACCOUNTS_BASE}/api/auth/verify-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, otp }),
-    });
-    if (res.status === 404) return { message: 'OTP verified (stub)' };
     return parseResponse<{ message: string }>(res);
   },
 };

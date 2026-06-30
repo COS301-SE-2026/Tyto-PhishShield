@@ -1,124 +1,245 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
+import { API_BASE, authFetch } from '../../services/api';
+
+type UserRole = 'admin' | 'analyst' | 'user';
 
 interface UsersProps { onNavigate: (path: string) => void; activePath: string; }
 
-const MOCK_USERS = [
-  { id: '1', name: 'Sipho Ndlovu', email: 'sipho@tyto.co.za', role: 'user', department: 'IT & Security', xp: 4820, reportsField: 34, clickRate: '2%', streak: 21, status: 'active' },
-  { id: '2', name: 'Aisha Patel', email: 'aisha@tyto.co.za', role: 'analyst', department: 'IT & Security', xp: 4310, reportsField: 28, clickRate: '4%', streak: 14, status: 'active' },
-  { id: '3', name: 'Marco van Dyk', email: 'marco@tyto.co.za', role: 'user', department: 'Finance', xp: 3990, reportsField: 22, clickRate: '6%', streak: 9, status: 'active' },
-  { id: '4', name: 'Lebo Dlamini', email: 'lebo@tyto.co.za', role: 'analyst', department: 'Operations', xp: 3560, reportsField: 28, clickRate: '8%', streak: 12, status: 'active' },
-  { id: '5', name: 'Fatima Hassan', email: 'fatima@tyto.co.za', role: 'user', department: 'Human Resources', xp: 3210, reportsField: 15, clickRate: '12%', streak: 5, status: 'active' },
-  { id: '6', name: 'Jan de Beer', email: 'jan@tyto.co.za', role: 'user', department: 'Finance', xp: 2870, reportsField: 12, clickRate: '18%', streak: 2, status: 'suspended' },
-  { id: '7', name: 'Nadia Botha', email: 'nadia@tyto.co.za', role: 'user', department: 'Legal & Compliance', xp: 2540, reportsField: 9, clickRate: '22%', streak: 0, status: 'active' },
-  { id: '8', name: 'Mark Marshall', email: 'mark@tyto.co.za', role: 'admin', department: 'IT & Security', xp: 1200, reportsField: 6, clickRate: '5%', streak: 3, status: 'active' },
-];
+interface RealUser {
+  id: string;
+  auth0Id: string;
+  email: string;
+  name: string;
+  role: string;
+  department: string | null;
+  xp: number;
+  xpToday: number;
+  createdAt: string;
+  status: 'active' | 'suspended';
+}
 
-type SortKey = 'name' | 'xp' | 'clickRate' | 'streak';
+type SortKey = 'name' | 'xp' | 'email';
 
-function UserActionsModal({ user, isOpen, onClose }: { user: typeof MOCK_USERS[0] | null; isOpen: boolean; onClose: () => void }) {
+const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  admin: 'Full access — manage users, campaigns, analytics',
+  analyst: 'Can view campaigns, analytics and reports',
+  user: 'Standard access — training and personal dashboard only',
+};
+
+function RoleIcon({ size = 14 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+}
+
+function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
+  user: RealUser | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onNavigate: (path: string) => void;
+}) {
   const { addToast } = useToast();
   const { hasRole } = useAuth();
+  const [view, setView] = useState<'actions' | 'editRole'>('actions');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('user');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      setView('actions');
+      setSelectedRole(user.role as UserRole);
+    }}, [isOpen, user]);
   if (!user) return null;
 
-  const actions = [
-    { label: 'Edit Role', icon: '✏️', adminOnly: true, onClick: () => { addToast({ type: 'info', title: 'Edit Role', message: `Role editor for ${user.name} — coming soon.` }); onClose(); } },
-    { label: 'View Full Stats', icon: '📊', adminOnly: false, onClick: () => { onClose(); } },
-    { label: 'Reset Password', icon: '🔑', adminOnly: true, onClick: () => { addToast({ type: 'success', title: 'Reset email sent', message: `Password reset link sent to ${user.email}` }); onClose(); } },
-    { label: user.status === 'suspended' ? 'Reinstate User' : 'Suspend User', icon: user.status === 'suspended' ? '✅' : '🚫', adminOnly: true,
-      danger: user.status !== 'suspended',
-      onClick: () => { addToast({ type: 'warning', title: user.status === 'suspended' ? 'User reinstated' : 'User suspended', message: user.name }); onClose(); } },
-    { label: 'Remove User', icon: '🗑️', adminOnly: true, danger: true, onClick: () => { addToast({ type: 'error', title: 'User removed', message: `${user.name} has been removed.` }); onClose(); } },
-  ];
+  const handleRoleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await authFetch(`${API_BASE}/accounts/users/${user.id}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: selectedRole }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(err.message ?? `Server error ${res.status}`);
+      }
+      addToast({ type: 'success', title: 'Role updated', message: `${user.name} is now ${selectedRole}.` });
+      onClose();
+    } catch (err) {
+      addToast({ type: 'error', title: 'Update failed', message: err instanceof Error ? err.message : 'Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
+  const handleRemove = async () => {
+    setSaving(true);
+    try {
+      const res = await authFetch(`${API_BASE}/accounts/users/${user.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      addToast({ type: 'success', title: 'User removed', message: `${user.name} has been removed.` });
+      onClose();
+    } catch {
+      addToast({ type: 'error', title: 'Remove failed', message: 'Could not remove user. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const actionBtn = (label: string, icon: React.ReactNode, onClick: () => void, danger = false) => (
+    <button key={label} onClick={onClick} style={{
+      background: danger ? 'var(--color-danger-light)' : 'var(--bg-hover)',
+      border: `1px solid ${danger ? 'var(--color-danger-border)' : 'var(--border)'}`,
+      borderRadius: 8, padding: '11px 14px', textAlign: 'left', cursor: 'pointer',
+      fontSize: 13, fontWeight: 500, fontFamily: 'Inter, system-ui, sans-serif',
+      color: danger ? 'var(--color-danger)' : 'var(--text-primary)',
+      display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+      transition: 'opacity 0.12s',
+    }}>
+      <span style={{ opacity: 0.7, display: 'flex' }}>{icon}</span>
+      {label}
+    </button>
+  );
+  if (view === 'editRole') {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title="Edit Role" maxWidth={400}>
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          Changing the role of <strong>{user.name}</strong>. They will see the new permissions on their next page refresh.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+          {(['admin', 'analyst', 'user'] as UserRole[]).map(r => {
+            const isCurrent = r === (user.role as UserRole);
+            const isSelected = r === selectedRole;
+            return (
+              <button key={r} onClick={() => setSelectedRole(r)} style={{
+                border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--border)'}`,
+                borderRadius: 10, padding: '12px 14px', textAlign: 'left', cursor: 'pointer',
+                background: isSelected ? 'var(--color-primary-light)' : 'var(--bg-input)',
+                transition: 'all 0.15s', width: '100%',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? 'var(--color-primary)' : 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', textTransform: 'capitalize' }}>
+                    {r}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {isCurrent && (
+                      <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif', background: 'var(--bg-hover)', borderRadius: 4, padding: '1px 6px' }}>
+                        current
+                      </span>
+                    )}
+                    {isSelected && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    )}
+                  </div>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                  {ROLE_DESCRIPTIONS[r]}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Button variant="ghost" onClick={() => setView('actions')}>Back</Button>
+          <Button fullWidth loading={saving} disabled={selectedRole === (user.role as UserRole)} onClick={() => { void handleRoleSave(); }}>
+            Save Role
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Manage — ${user.name}`} maxWidth={380}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {actions.filter(a => !a.adminOnly || hasRole('admin')).map(a => (
-          <button key={a.label} onClick={a.onClick} style={{
-            background: a.danger ? 'var(--color-danger-light)' : 'var(--bg-hover)',
-            border: `1px solid ${a.danger ? 'var(--color-danger-border)' : 'var(--border)'}`,
-            borderRadius: 8, padding: '11px 14px', textAlign: 'left', cursor: 'pointer',
-            fontSize: 13, fontWeight: 500, fontFamily: 'Inter, system-ui, sans-serif',
-            color: a.danger ? 'var(--color-danger)' : 'var(--text-primary)',
-            display: 'flex', alignItems: 'center', gap: 10,
-            transition: 'background 0.12s',
-          }}>
-            <span style={{ fontSize: 16 }}>{a.icon}</span> {a.label}
-          </button>
-        ))}
+        {hasRole('admin') && actionBtn('Edit Role', <RoleIcon />, () => setView('editRole'))}
+        {actionBtn('View User', (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        ), () => { onClose(); onNavigate(`/users/${user.id}`); })}
+        {hasRole('admin') && actionBtn('Reset Password', (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        ), () => { addToast({ type: 'success', title: 'Reset email sent', message: `Password reset link sent to ${user.email}` }); onClose(); })}
+        {hasRole('admin') && actionBtn(
+          user.status === 'suspended' ? 'Reinstate User' : 'Suspend User',
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
+          () => { addToast({ type: 'warning', title: user.status === 'suspended' ? 'User reinstated' : 'User suspended', message: `${user.name} — note: full Auth0 block requires a backend update.` }); onClose(); },
+          user.status !== 'suspended',
+        )}
+        {hasRole('admin') && actionBtn('Remove User', (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        ), () => { void handleRemove(); }, true)}
       </div>
     </Modal>
   );
 }
 
 export function Users({ onNavigate, activePath }: UsersProps) {
-  //const { canAccess } = useAuth();
+  const [users, setUsers] = useState<RealUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [deptFilter, setDeptFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [sortKey, setSortKey] = useState<SortKey>('xp');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [selectedUser, setSelectedUser] = useState<typeof MOCK_USERS[0] | null>(null);
+  const [deptFilter, setDeptFilter] = useState('all');
+  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [selectedUser, setSelectedUser] = useState<RealUser | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const { addToast } = useToast();
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await authFetch(`${API_BASE}/accounts/users`);
+      if (!res.ok) throw new Error(`${res.status}`);
+      const data = await res.json() as RealUser[];
+      setUsers(data.map(u => ({ ...u, status: 'active' as const })));
+    } catch {
+      addToast({ type: 'error', title: 'Could not load users', message: 'Check that you have admin access.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { void fetchUsers(); }, []);
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(k); setSortDir('desc'); }
+    else { setSortKey(k); setSortDir('asc'); }
   };
+  const departments = Array.from(new Set(users.map(u => u.department).filter(Boolean))) as string[];
 
-  const filtered = MOCK_USERS
+  const filtered = users
     .filter(u => {
       const q = search.toLowerCase();
-      if (q && !u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
-      if (deptFilter !== 'all' && u.department !== deptFilter) return false;
+      if (q && !u.name?.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
       if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (deptFilter !== 'all' && u.department !== deptFilter) return false;
       return true;
     })
     .sort((a, b) => {
-      if (sortKey === 'name') {
-        const comparison = a.name.localeCompare(b.name);
-        return sortDir === 'asc' ? comparison : -comparison;
-      }
-
-      let av = 0;
-      let bv = 0;
-
-      if (sortKey === 'xp') {
-        av = a.xp;
-        bv = b.xp;
-      }
-
-      if (sortKey === 'streak') {
-        av = a.streak;
-        bv = b.streak;
-      }
-
-      if (sortKey === 'clickRate') {
-        av = parseFloat(a.clickRate);
-        bv = parseFloat(b.clickRate);
-      }
-
-      return sortDir === 'asc' ? av - bv : bv - av;
+      let cmp = 0;
+      if (sortKey === 'name') cmp = (a.name ?? '').localeCompare(b.name ?? '');
+      if (sortKey === 'email') cmp = a.email.localeCompare(b.email);
+      if (sortKey === 'xp') cmp = (a.xp ?? 0) - (b.xp ?? 0);
+      return sortDir === 'asc' ? cmp : -cmp;
     });
 
   const SortBtn = ({ k, label }: { k: SortKey; label: string }) => (
-    <th
-      onClick={() => toggleSort(k)}
-      style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', letterSpacing: '0.5px', cursor: 'pointer', userSelect: 'none', fontFamily: 'Inter, system-ui, sans-serif', whiteSpace: 'nowrap' }}
-    >
+    <th onClick={() => toggleSort(k)} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', letterSpacing: '0.5px', cursor: 'pointer', userSelect: 'none', fontFamily: 'Inter, system-ui, sans-serif', whiteSpace: 'nowrap' }}>
       {label} {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : ''}
     </th>
   );
 
-  const depts = ['all', ...new Set(MOCK_USERS.map(u => u.department))];
+  const initials = (name?: string, email?: string) => {
+    if (name) {
+      const parts = name.trim().split(/\s+/);
+      return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase();
+    }
+    return (email ?? '??').slice(0, 2).toUpperCase();
+  };
 
   return (
-    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Users" subtitle={`${filtered.length} of ${MOCK_USERS.length} users`} securityScore={72}>
-      {/* Filters */}
+    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Users"
+      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}
+      securityScore={72}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 220px' }}>
           <Input
@@ -128,84 +249,88 @@ export function Users({ onNavigate, activePath }: UsersProps) {
             leftIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
           />
         </div>
-        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontSize: 12, background: 'var(--bg-input)', color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', cursor: 'pointer' }}>
-          {depts.map(d => <option key={d} value={d}>{d === 'all' ? 'All Departments' : d}</option>)}
-        </select>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontSize: 12, background: 'var(--bg-input)', color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', cursor: 'pointer' }}>
-          {['all','admin','analyst','user'].map(r => <option key={r} value={r}>{r === 'all' ? 'All Roles' : r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+          {['all', 'admin', 'analyst', 'user'].map(r => <option key={r} value={r}>{r === 'all' ? 'All Roles' : r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
         </select>
+        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontSize: 12, background: 'var(--bg-input)', color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', cursor: 'pointer' }}>
+          <option value="all">All Departments</option>
+          {departments.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <Button variant="ghost" onClick={() => { void fetchUsers(); }} style={{ border: '1px solid var(--border)', padding: '0 14px' }}>
+          Refresh
+        </Button>
       </div>
 
       <Card>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: 'var(--bg-hover)' }}>
-                <SortBtn k="name" label="USER" />
-                <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DEPARTMENT</th>
-                <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>ROLE</th>
-                <SortBtn k="xp" label="XP" />
-                <SortBtn k="streak" label="STREAK" />
-                <SortBtn k="clickRate" label="CLICK RATE" />
-                <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>STATUS</th>
-                <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(u => (
-                <tr key={u.id} style={{ borderTop: '1px solid var(--border)', transition: 'background 0.1s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <td style={{ padding: '11px 16px' }}>
-                    <button onClick={() => onNavigate(`/users/${u.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: 0 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', flexShrink: 0 }}>
-                        {u.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.email}</div>
-                      </div>
-                    </button>
-                  </td>
-                  <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.department}</td>
-                  <td style={{ padding: '11px 16px' }}>
-                    <Badge variant={u.role === 'admin' ? 'danger' : u.role === 'analyst' ? 'warning' : 'neutral'}>
-                      {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
-                    </Badge>
-                  </td>
-                  <td style={{ padding: '11px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.xp.toLocaleString()}</td>
-                  <td style={{ padding: '11px 16px', fontSize: 12, color: u.streak > 7 ? 'var(--color-success)' : 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.streak}d</td>
-                  <td style={{ padding: '11px 16px', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif',
-                    color: parseFloat(u.clickRate) > 15 ? 'var(--color-danger)' : parseFloat(u.clickRate) > 8 ? 'var(--color-warning)' : 'var(--color-success)',
-                    fontWeight: 600,
-                  }}>{u.clickRate}</td>
-                  <td style={{ padding: '11px 16px' }}>
-                    <Badge variant={u.status === 'active' ? 'success' : 'danger'}>
-                      {u.status === 'active' ? 'Active' : 'Suspended'}
-                    </Badge>
-                  </td>
-                  <td style={{ padding: '11px 16px' }}>
-                    <Button size="sm" variant="ghost"
-                      onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
-                      style={{ border: '1px solid var(--border)' }}
-                    >
-                      Manage
-                    </Button>
-                  </td>
+          {loading ? (
+            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
+              Loading users...
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-hover)' }}>
+                  <SortBtn k="name" label="USER" />
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>ROLE</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DEPARTMENT</th>
+                  <SortBtn k="xp" label="XP" />
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>JOINED</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>ACTIONS</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
+              </thead>
+              <tbody>
+                {filtered.map(u => (
+                  <tr key={u.id} style={{ borderTop: '1px solid var(--border)', transition: 'background 0.1s' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td style={{ padding: '11px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                          {initials(u.name, u.email)}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.name || '—'}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '11px 16px' }}>
+                      <Badge variant={u.role === 'admin' ? 'danger' : u.role === 'analyst' ? 'warning' : 'neutral'}>
+                        {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                      </Badge>
+                    </td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                      {u.department ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>}
+                    </td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                      {(u.xp ?? 0).toLocaleString()}
+                    </td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-ZA') : '—'}
+                    </td>
+                    <td style={{ padding: '11px 16px' }}>
+                      <Button size="sm" variant="ghost"
+                        onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
+                        style={{ border: '1px solid var(--border)' }}
+                      >
+                        Manage
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {!loading && filtered.length === 0 && (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
               No users match your search criteria.
             </div>
           )}
         </div>
       </Card>
-
-      <UserActionsModal user={selectedUser} isOpen={actionsOpen} onClose={() => setActionsOpen(false)} />
+      <UserActionsModal user={selectedUser} isOpen={actionsOpen} onClose={() => { setActionsOpen(false); void fetchUsers(); }} onNavigate={onNavigate} />
     </AppLayout>
   );
 }
