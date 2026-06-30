@@ -129,6 +129,8 @@ services:
     depends_on:
       accounts_db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
 
@@ -219,6 +221,8 @@ services:
     depends_on:
       report_db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
 
@@ -270,6 +274,8 @@ services:
 
     depends_on:
       xp_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -328,6 +334,8 @@ services:
     depends_on:
       education_db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
 
@@ -378,6 +386,8 @@ services:
 
     depends_on:
       analytics_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
