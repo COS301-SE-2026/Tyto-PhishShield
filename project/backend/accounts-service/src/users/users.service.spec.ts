@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { User, UserRole } from './entities/user.entity';
+import { EventProducerModule } from '../event-producer/event-producer.module';
 
 const mockUser: User = {
   id: 'uuid-123',
@@ -26,6 +27,7 @@ describe('UsersService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [EventProducerModule],
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repo },

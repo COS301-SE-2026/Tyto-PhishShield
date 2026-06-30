@@ -169,3 +169,75 @@ volumes:
     <service>_pgdata:
     #...
 ```
+
+# How to connect event exchanges
+
+step 1: Add event producer component<br>
+event-producer.module.ts:
+```TypeScript
+import { Module } from '@nestjs/common';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { EventProducerService } from './event-producer.service';
+
+@Module({
+  imports: [
+    RabbitMQModule.forRoot({
+      //array of exchanges can have multiple exchanges
+      exchanges: [
+        {
+          name: EventProducerService.EVENT_EXCHANGE,
+          type: 'topic',
+        },
+      ],
+      uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
+    }),
+  ],
+  providers: [EventProducerService],
+  exports: [EventProducerService],
+})
+export class EventProducerModule {}
+```
+eventproducer.service.ts
+```Typescript
+import { Injectable } from '@nestjs/common';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+
+@Injectable()
+export class EventProducerService {
+  public static readonly EVENT_EXCHANGE: string = /*<exchange name>*/; //Can have multiple exchanges
+  constructor(private readonly rmqClient: AmqpConnection) {}
+
+  publishCustomEvent() {
+    this.rmqClient.publish(
+      EventProducerService.EVENT_EXCHANGE,
+      /*<event name>*/,
+      /*<payload>*/,
+    );
+  }
+}
+```
+Step 2: Connect Consumer to producer<br>
+Add this to the module.ts
+```Typescript
+imports: [
+    RabbitMQModule.forRoot({
+      uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
+      exchanges: [
+        {
+          name: /*<exchange name>*/, //must be the same as the one on which the events will be shared
+          type: 'topic',
+        },
+      ],
+      enableControllerDiscovery: true,
+    })
+  ],
+```
+Use RabbitSubscribe in controller to subscribe to an event on an exchange
+```Typescript
+@RabbitSubscribe({
+    exchange: /*<exchange name>*/,
+    routingKey: /*<event name>*/,
+    queue: /*<own personal queue>*/,
+  })
+  somefunction() {}
+```

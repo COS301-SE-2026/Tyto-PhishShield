@@ -1,8 +1,18 @@
 /**
- * MailingController — exposes mailing-related HTTP endpoints.
+ * Service: api-gateway
  *
- * - Handles creation, retrieval, update and send actions for emails/campaigns.
+ * Proxies incoming HTTP requests for single email operations to the mailing-service.
+ * Validates JWT authentication and forwards each request via ProxyService.
+ *
+ * Functions:
+ * - {@link EmailController#createEmail} - Forwards a create-email request to the mailing-service.
+ * - {@link EmailController#getAllEmails} - Forwards a request to retrieve all email records.
+ * - {@link EmailController#getEmailByReference} - Forwards a lookup request for a single email by reference number.
+ * - {@link EmailController#updateEmail} - Forwards a partial update request for an existing email record.
+ * - {@link EmailController#sendEmail} - Forwards an immediate send request for a single email to a recipient.
+ * - {@link EmailController#scheduleSendEmail} - Forwards a scheduled send request for a single email to a recipient.
  */
+
 import {
   Controller,
   Get,
@@ -17,21 +27,21 @@ import {
 
 import { ConfigService } from '@nestjs/config';
 import {
-  ApiTags,
   ApiOperation,
   ApiParam,
   ApiBearerAuth,
   ApiBody,
+  ApiTags,
 } from '@nestjs/swagger';
-import { ProxyService } from '../proxy/proxy.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GenerateEmailDto } from './dto/generate-email.dto';
+import { ProxyService } from '../../proxy/proxy.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { EmailsDto } from '../dto/emails.dto';
 
-@ApiTags('Mailing')
+@ApiTags('Emails')
 @Controller('emails')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-export class MailingController {
+export class EmailController {
   private readonly mailingServiceUrl: string;
 
   constructor(
@@ -46,7 +56,7 @@ export class MailingController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new email' })
-  createEmail(@Body() body: GenerateEmailDto) {
+  createEmail(@Body() body: EmailsDto) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails`,
       method: 'POST',
@@ -78,7 +88,7 @@ export class MailingController {
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   updateEmail(
     @Param('referenceNumber') referenceNumber: string,
-    @Body() body: GenerateEmailDto,
+    @Body() body: Partial<EmailsDto>,
   ) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}`,

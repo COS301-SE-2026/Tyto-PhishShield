@@ -85,15 +85,12 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 }
 
 export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
-  //const { hasRole, canAccess } = useAuth();
   const { hasRole } = useAuth();
   const isAdmin = hasRole('admin');
   const [filter, setFilter] = useState<CampaignStatus | 'all'>('all');
   const [newOpen, setNewOpen] = useState(false);
-
   const displayed = MOCK_CAMPAIGNS.filter(c => filter === 'all' || c.status === filter);
   const tabs: (CampaignStatus | 'all')[] = ['all', 'active', 'scheduled', 'draft', 'complete'];
-
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Campaigns"
       subtitle={`${MOCK_CAMPAIGNS.filter(c => c.status === 'active').length} active campaigns`}
@@ -114,14 +111,20 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
           ))}
         </div>
         {isAdmin && (
-          <Button onClick={() => setNewOpen(true)} icon={
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          }>
-            New Campaign
-          </Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="ghost" onClick={() => onNavigate('/campaigns/schedule')} icon={
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            }>
+              Schedule Campaign
+            </Button>
+            <Button onClick={() => setNewOpen(true)} icon={
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            }>
+              New Campaign
+            </Button>
+          </div>
         )}
       </div>
-
       {/* Campaign cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {displayed.map(c => {
@@ -136,7 +139,6 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
                   onNavigate('/send-email-test');
                   return;
                 }
-
                 onNavigate(`/campaigns/${c.id}`);
               }}
             >
@@ -178,7 +180,6 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
           </div>
         )}
       </div>
-
       <NewCampaignModal isOpen={newOpen} onClose={() => setNewOpen(false)} />
     </AppLayout>
   );
@@ -204,24 +205,20 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
   const { addToast } = useToast();
   const isAdmin = hasRole('admin');
   const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'reported' | 'clicked' | 'no_response'>('all');
-
   const campaign = MOCK_CAMPAIGNS.find(c => c.id === campaignId) ?? MOCK_CAMPAIGNS[0];
   const detRate = campaign.sentCount > 0 ? Math.round((campaign.reportedCount / campaign.sentCount) * 100) : 0;
   const clickRate = campaign.sentCount > 0 ? Math.round((campaign.clickedCount / campaign.sentCount) * 100) : 0;
-
   const filtered = USER_RESULTS.filter(u => outcomeFilter === 'all' || u.outcome === outcomeFilter);
 
   const handleEnd = () => {
     addToast({ type: 'warning', title: 'Campaign ended', message: `"${campaign.name}" has been ended.` });
     onNavigate('/campaigns');
   };
-
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate}
       title={campaign.name}
       breadcrumbs={[{ label: 'Campaigns', path: '/campaigns' }, { label: campaign.name }]}
       securityScore={72}>
-
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -235,7 +232,6 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
           <Button variant="danger" size="sm" onClick={handleEnd}>End Campaign</Button>
         )}
       </div>
-
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 20 }}>
         {[
@@ -250,7 +246,6 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
           </Card>
         ))}
       </div>
-
       {/* Details card */}
       <Card style={{ padding: '18px 20px', marginBottom: 16 }}>
         <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>Campaign Details</h3>
@@ -268,7 +263,6 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
           ))}
         </div>
       </Card>
-
       {/* User results table */}
       <Card>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>

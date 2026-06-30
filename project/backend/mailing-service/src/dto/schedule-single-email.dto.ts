@@ -3,10 +3,11 @@
  *
  * This DTO is used as the Body of the schedule-send-single POST request.
  *
- * Elements: recipient, emailReferenceNumber, scheduledAt
+ * Elements: recipient, scheduledAt
  */
 
-import { IsNotEmpty, IsString, IsDate, IsEmail } from 'class-validator';
+import { IsNotEmpty, IsDate, IsEmail } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ScheduleSingleEmailDto {
   // @IsNotEmpty()
@@ -18,10 +19,7 @@ export class ScheduleSingleEmailDto {
   recipient: string;
 
   @IsNotEmpty()
-  @IsString()
-  emailReferenceNumber: string;
-
-  @IsNotEmpty()
   @IsDate()
+  @Type(() => Date)
   scheduledAt: Date;
 }

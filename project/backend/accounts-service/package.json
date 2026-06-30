@@ -25,6 +25,7 @@
     }
   },
   "dependencies": {
+    "@golevelup/nestjs-rabbitmq": "^9.0.2",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.21",
     "@nestjs/config": "^4.0.4",
@@ -34,6 +35,7 @@
     "@nestjs/platform-express": "^11.1.21",
     "@nestjs/swagger": "^11.4.3",
     "@nestjs/typeorm": "^11.0.1",
+    "amqplib": "^2.0.1",
     "axios": "^1.16.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
@@ -72,16 +74,21 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.3"
   },
-
-    "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverage": true,
-    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

@@ -22,9 +22,9 @@ const NAV_ITEMS: NavItem[] = [
   // Main
   { id: 'dashboard',  label: 'Dashboard',   path: '/dashboard',  section: 'MAIN',
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
-  { id: 'campaigns',  label: 'Campaigns',   path: '/campaigns',  section: 'MAIN',
+  { id: 'campaigns',  label: 'Campaigns',   path: '/campaigns',  section: 'MAIN', minRole: 'analyst',
     icon: <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> },
-  { id: 'users',      label: 'Users',       path: '/users'      , section: 'MAIN',
+  { id: 'users',      label: 'Users',       path: '/users',      section: 'MAIN', minRole: 'analyst',
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
   { id: 'training',   label: 'Training',    path: '/training',   section: 'MAIN',
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> },
@@ -52,18 +52,13 @@ interface SidebarProps {
 export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed = false }: SidebarProps) {
   const { user, logout } = useAuth();
   const userLevel = ROLE_LEVEL[user?.role ?? 'user'];
-
   const visibleItems = NAV_ITEMS.filter(item => {
     if (!item.minRole) return true;
     return userLevel >= ROLE_LEVEL[item.minRole];
   });
-
   const sections = ['MAIN', 'ANALYTICS', 'SYSTEM'];
-
-  const scoreColor = securityScore >= 70 ? 'var(--color-success)' :
-                     securityScore >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
+  const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
   const scoreLabel = securityScore >= 70 ? 'Good' : securityScore >= 40 ? 'Fair' : 'At Risk';
-
   return (
     <aside style={{
       width: collapsed ? 60 : 218, background: 'var(--bg-sidebar)',
@@ -91,7 +86,6 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
           <LogoLockup size={28} dark />
         )}
       </div>
-
       {/* Nav */}
       <nav style={{ flex: 1, padding: '14px 10px', overflowY: 'auto' }}>
         {sections.map(section => {
@@ -116,18 +110,15 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
                     onClick={() => onNavigate(item.path)}
                     title={collapsed ? item.label : undefined}
                     style={{
-                      display: 'flex', alignItems: 'center',
-                      gap: collapsed ? 0 : 9,
+                      display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 9,
                       justifyContent: collapsed ? 'center' : 'flex-start',
-                      width: '100%', padding: '9px 11px',
-                      borderRadius: 7, border: 'none',
+                      width: '100%', padding: '9px 11px', borderRadius: 7, border: 'none',
                       background: isActive ? 'var(--sidebar-active-bg)' : 'transparent',
                       color: isActive ? 'var(--sidebar-text-active)' : 'var(--sidebar-text)',
                       fontSize: 12, fontWeight: isActive ? 600 : 400,
                       cursor: 'pointer', marginBottom: 2, textAlign: 'left',
                       fontFamily: 'Inter, system-ui, sans-serif',
-                      transition: 'background 0.12s, color 0.12s',
-                      whiteSpace: 'nowrap',
+                      transition: 'background 0.12s, color 0.12s', whiteSpace: 'nowrap',
                     }}
                     onMouseEnter={e => {
                       if (!isActive) e.currentTarget.style.background = 'var(--sidebar-hover-bg)';
@@ -147,7 +138,6 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
           );
         })}
       </nav>
-
       {/* Security score */}
       {!collapsed && (
         <div style={{ padding: '0 10px 16px', flexShrink: 0 }}>
@@ -171,7 +161,6 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
           </div>
         </div>
       )}
-
       {/* Logout */}
       <div style={{ padding: '0 10px 14px', flexShrink: 0 }}>
         <button
