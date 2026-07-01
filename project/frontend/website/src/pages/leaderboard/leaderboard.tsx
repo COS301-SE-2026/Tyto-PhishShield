@@ -154,6 +154,7 @@ function LeaderboardCard({title, action, children}: {
                 <h2 style={{fontSize: 18, fontWeight: 700}}>
                     {title}
                 </h2>
+                {action}
             </div>
 
             {children}
