@@ -21,7 +21,7 @@ export default function Leaderboard({onNavigate, activePath}: LeaderboardProps) 
     return(
         <AppLayout activePath={activePath} onNavigate={onNavigate} title='Leaderboard' securityScore={72}> 
             <main style={{ background: 'var(--bg-page)', minHeight: '100%', padding: 24 }}>
-                <section style={{maxWidth: 1100, margin: '0 auto'}}>
+                <section style={{width: '100%'}}>
                     <div
                         style={{
                             background: 'var(--bg-card)',
@@ -35,17 +35,17 @@ export default function Leaderboard({onNavigate, activePath}: LeaderboardProps) 
                         }}
                     >
                         <TabButton 
-                            active={activeTab === 'users'}
-                            onClick={() => setActiveTab('users')}
-                        >
-                            Users
-                        </TabButton>
-
-                        <TabButton 
                             active={activeTab === 'departments'}
                             onClick={() => setActiveTab('departments')}
                         >
                             Departments
+                        </TabButton>
+
+                        <TabButton 
+                            active={activeTab === 'users'}
+                            onClick={() => setActiveTab('users')}
+                        >
+                            Users
                         </TabButton>
                         
                     </div>
