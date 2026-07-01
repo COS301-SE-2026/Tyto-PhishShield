@@ -1,17 +1,17 @@
-export type MockUserLeaderboardEntry = {
+export interface MockUserLeaderboardEntry {
     id: string;
     name: string;
     department: string;
     xp: number;
-};
+}
 
-export type MockDepartmentLeaderboardEntry = {
+export interface MockDepartmentLeaderboardEntry {
     id: string;
     department: string;
     members: number;
     totalXP: number;
     averageXP: number;
-};
+}
 
 export const MockUserLeaderboard: MockUserLeaderboardEntry[] = [
     {id: '1', name: 'Mr Bean', department: 'IT & Security', xp: 9001},
