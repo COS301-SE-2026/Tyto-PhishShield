@@ -12,6 +12,7 @@ import { Campaigns } from './pages/campaigns/campaigns';
 import { Users } from './pages/users/users';
 import { UserProfile } from './pages/users/user-profile';
 import { Settings } from './pages/settings/settings';
+import Leaderboard from './pages/leaderboard/leaderboard';
 
 function App() {
   const navigate = useNavigate();
@@ -45,6 +46,8 @@ function App() {
       <Route path="/users/profile" element={<UserProfile onNavigate={handleNavigate} activePath="/users/profile" />} />
 
       <Route path="/settings" element={<Settings onNavigate={handleNavigate} activePath="/settings" />} />
+
+      <Route path="/leaderboard" element={<Leaderboard onNavigate={handleNavigate} activePath="/leaderboard" />} />
     </Routes>
   );
 }
