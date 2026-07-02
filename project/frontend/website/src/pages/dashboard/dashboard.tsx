@@ -11,7 +11,7 @@ interface DashboardProps {
   activePath: string;
 }
 
-// Below is mock stats data (we have to replace with API calls if these backend endpoints exist)
+// Below is mock stats data (to be replaced with API calls once backend endpoints exist)
 
 const MOCK_CAMPAIGNS: Campaign[] = [
   { id: '1', name: 'IT Support Reset', status: 'active', sentCount: 320, clickedCount: 42, reportedCount: 280, targetDepartments: ['IT & Security'], startDate: '2025-05-01', endDate: null, createdBy: 'admin' },
@@ -42,13 +42,11 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     departments: 'all', scheduledDate: '',
   });
   const [loading, setLoading] = useState(false);
-
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
   const valid = !!form.name.trim() && !!form.emailSubject.trim() && !!form.emailBody.trim();
 
   const handleCreate = async () => {
     setLoading(true);
-    // TODO: POST /api/campaigns (if and when endpoint is available)
     await new Promise(r => setTimeout(r, 800));
     addToast({ type: 'success', title: 'Campaign created', message: `"${form.name}" saved as draft.` });
     setLoading(false);
@@ -60,7 +58,6 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Input label="Campaign name" placeholder="e.g. IT Support Reset" value={form.name}
           onChange={e => set('name', e.target.value)} required />
-
         <Select
           label="Target departments"
           value={form.departments}
@@ -75,17 +72,15 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             { value: 'executive', label: 'Executive' },
           ]}
         />
-
         <Input label="Email subject line" placeholder="e.g. URGENT: Password reset required"
           value={form.emailSubject} onChange={e => set('emailSubject', e.target.value)} required />
-
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 5, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Email body <span style={{ color: 'var(--color-danger)' }}>*</span>
           </label>
           <textarea
             rows={5}
-            placeholder="Paste the phishing email content here…"
+            placeholder="Paste the phishing email content here."
             value={form.emailBody}
             onChange={e => set('emailBody', e.target.value)}
             style={{
@@ -99,10 +94,8 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             AI-generated email selection will be available once the generation microservice is ready.
           </p>
         </div>
-
         <Input label="Schedule date (optional)" type="date" value={form.scheduledDate}
           onChange={e => set('scheduledDate', e.target.value)} />
-
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <Button variant="ghost" onClick={onClose} style={{ flex: '0 0 auto', paddingLeft: 20, paddingRight: 20 }}>Cancel</Button>
           <Button fullWidth loading={loading} disabled={!valid} onClick={() => { void handleCreate(); }}>
@@ -116,7 +109,6 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
 function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string) => void; onNewCampaign: () => void }) {
   const { addToast } = useToast();
-
   const handleAssignTraining = () => {
     addToast({ type: 'info', title: 'Training assigned', message: '17 users have been assigned the Spear Phishing module.' });
   };
@@ -140,7 +132,6 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           </Card>
         ))}
       </div>
-
       {/* Detection over time stub chart */}
       <Card style={{ padding: '18px 20px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -175,7 +166,6 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           ))}
         </svg>
       </Card>
-
       {/* Campaigns + leaderboard */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.9fr) minmax(0,1fr)', gap: 14, marginBottom: 14 }}>
         {/* Campaigns */}
@@ -223,7 +213,6 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
             </table>
           </div>
         </Card>
-
         {/* Leaderboard */}
         <Card>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -251,7 +240,6 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           ))}
         </Card>
       </div>
-
       {/* Alert banner */}
       <div style={{
         background: 'var(--color-warning-light)', border: '1px solid var(--color-warning-border)',
@@ -274,22 +262,20 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
   );
 }
 
-function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
+function UserDashboard({ onNavigate, onXpToday }: { onNavigate: (p: string) => void; onXpToday?: (v: number) => void }) {
   const [xp, setXP] = useState(0);
+  const [xpToday, setXpToday] = useState(0);
   const { addToast } = useToast();
-  const xpError = (message?: string) =>  addToast({
-            type: 'error',
-            title: 'xp fetch',
-            message: message ?? "unable to fetch xp",
-        });
   useEffect(() => {
     const fetchXP = async () => {
       const res: XPResponse = await getXP();
-      if (res.status == "Error") {
-        xpError(res.message)
+      if (res.status === 'Error') {
+        addToast({ type: 'error', title: 'XP fetch failed', message: res.message ?? 'Unable to fetch XP' });
+        return;
       }
-      const xpValue: number = res.xp;
-      setXP(xpValue);
+      setXP(res.xp);
+      setXpToday(res.xpToday ?? 0);
+      onXpToday?.(res.xpToday ?? 0);
     };
     void fetchXP();
   }, []);
@@ -298,7 +284,7 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
       {/* Personal stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 16 }}>
         {[
-          { lbl: 'XP Points', val: xp, delta: '+120 today', deltaColor: 'var(--color-success)' },
+          { lbl: 'XP Points', val: xp, delta: xpToday > 0 ? `+${xpToday} today` : 'No XP earned today', deltaColor: 'var(--color-success)' },
           { lbl: 'Organisation Rank', val: '#4', delta: 'of 87 users', deltaColor: 'var(--text-muted)' },
           { lbl: 'Reports Filed', val: '28', delta: '+2 this week', deltaColor: 'var(--color-success)' },
           { lbl: 'Current Streak', val: '12 days', delta: 'Personal best!', deltaColor: 'var(--color-primary)' },
@@ -312,7 +298,6 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
           </Card>
         ))}
       </div>
-
       {/* Personal detection chart */}
       <Card style={{ padding: '18px 20px', marginBottom: 16 }}>
         <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -332,7 +317,6 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
         </svg>
         <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Your phishing detection accuracy has improved 18% over the last 30 days.</p>
       </Card>
-
       {/* Pending training */}
       <Card>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -370,23 +354,19 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
 }
 
 export function Dashboard({ onNavigate, activePath }: DashboardProps) {
-  //const { user, canAccess } = useAuth();
   const { canAccess } = useAuth();
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [showXpAnim, setShowXpAnim] = useState(false);
-  const [xpDelta] = useState(120);
-
-  useEffect(() => {
-    const shown = sessionStorage.getItem('xp_shown');
-    if (!shown) {
-      setTimeout(() => setShowXpAnim(true), 800);
+  const [xpDelta, setXpDelta] = useState(0);
+  const handleXpToday = (today: number) => {
+    if (today > 0 && !sessionStorage.getItem('xp_shown')) {
+      setXpDelta(today);
       sessionStorage.setItem('xp_shown', '1');
+      setTimeout(() => setShowXpAnim(true), 800);
     }
-  }, []);
-
+  };
   const isAdminOrAnalyst = canAccess('analyst');
   const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
   return (
     <>
       <AppLayout
@@ -398,10 +378,9 @@ export function Dashboard({ onNavigate, activePath }: DashboardProps) {
       >
         {isAdminOrAnalyst
           ? <AdminDashboard onNavigate={onNavigate} onNewCampaign={() => setNewCampaignOpen(true)} />
-          : <UserDashboard onNavigate={onNavigate} />
+          : <UserDashboard onNavigate={onNavigate} onXpToday={handleXpToday} />
         }
       </AppLayout>
-
       <NewCampaignModal isOpen={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} />
       {showXpAnim && <XpAnimationOverlay delta={xpDelta} onDone={() => setShowXpAnim(false)} />}
     </>

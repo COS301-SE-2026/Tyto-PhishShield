@@ -3,10 +3,11 @@
  *
  * - Handles CRUD operations against the user repository and performs user-related checks.
  */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
+import { EventProducerService } from '../event-producer/event-producer.service';
 
 interface CreateUserInput {
   auth0Id: string;
@@ -21,10 +22,18 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly repo: Repository<User>,
+    @Inject() private readonly event: EventProducerService,
   ) {}
 
   create(input: CreateUserInput): Promise<User> {
     const user = this.repo.create(input);
+    this.event.publishUserCreatedEvent({
+      id: user.id,
+      auth0Id: user.auth0Id,
+      name: user.name,
+      email: user.email,
+      department: '',
+    });
     return this.repo.save(user);
   }
 
@@ -78,5 +87,9 @@ export class UsersService {
 
   async markVerified(auth0Id: string): Promise<void> {
     await this.repo.update({ auth0Id }, { isVerified: true });
+  }
+
+  async deactivate(id: string): Promise<void> {
+    await this.repo.update({ id }, { isActive: false });
   }
 }

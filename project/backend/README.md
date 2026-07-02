@@ -112,7 +112,7 @@ Step 5: update .env (the main env to update should be in `root/docker-compose/.e
 Step 6: update the compose `local-compose.yml`:
 ```yml
 # If using a postgres db
-<service>_db:
+  <service>_db:
     image: postgres:15-alpine
     restart: always
 
@@ -136,7 +136,7 @@ Step 6: update the compose `local-compose.yml`:
 
     ports:
       # Left side must be unique
-      - "$<service>_DB_PORT:5432"
+      - "${<service>_DB_PORT}:${INTERNAL_DB_PORT}"
       
 # Main service app container
   <service>_app:
@@ -146,18 +146,16 @@ Step 6: update the compose `local-compose.yml`:
 
       # Must be unique
     container_name: ${<service>_APP_CONTAINER}
-    env_file:
-      - .env
     environment:
-      - PORT=<port number>
+      - PORT=${<service-name>_PORT}
       - TCP_PORT=${<service>_TCP_PORT}
-      - DB_HOST=<service>_db
-      - <service>_DB_PORT=5435
+      - DB_HOST=${<service>_DB_CONTAINER}
+      - <service>_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
-      - "${<service name>_PORT}:3005"
+      - "${<service-name>_PORT}:${<service-name>_PORT}"
 
     depends_on:
       <service>_db:
@@ -170,4 +168,76 @@ volumes:
     #...
     <service>_pgdata:
     #...
+```
+
+# How to connect event exchanges
+
+step 1: Add event producer component<br>
+event-producer.module.ts:
+```TypeScript
+import { Module } from '@nestjs/common';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { EventProducerService } from './event-producer.service';
+
+@Module({
+  imports: [
+    RabbitMQModule.forRoot({
+      //array of exchanges can have multiple exchanges
+      exchanges: [
+        {
+          name: EventProducerService.EVENT_EXCHANGE,
+          type: 'topic',
+        },
+      ],
+      uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
+    }),
+  ],
+  providers: [EventProducerService],
+  exports: [EventProducerService],
+})
+export class EventProducerModule {}
+```
+eventproducer.service.ts
+```Typescript
+import { Injectable } from '@nestjs/common';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+
+@Injectable()
+export class EventProducerService {
+  public static readonly EVENT_EXCHANGE: string = /*<exchange name>*/; //Can have multiple exchanges
+  constructor(private readonly rmqClient: AmqpConnection) {}
+
+  publishCustomEvent() {
+    this.rmqClient.publish(
+      EventProducerService.EVENT_EXCHANGE,
+      /*<event name>*/,
+      /*<payload>*/,
+    );
+  }
+}
+```
+Step 2: Connect Consumer to producer<br>
+Add this to the module.ts
+```Typescript
+imports: [
+    RabbitMQModule.forRoot({
+      uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
+      exchanges: [
+        {
+          name: /*<exchange name>*/, //must be the same as the one on which the events will be shared
+          type: 'topic',
+        },
+      ],
+      enableControllerDiscovery: true,
+    })
+  ],
+```
+Use RabbitSubscribe in controller to subscribe to an event on an exchange
+```Typescript
+@RabbitSubscribe({
+    exchange: /*<exchange name>*/,
+    routingKey: /*<event name>*/,
+    queue: /*<own personal queue>*/,
+  })
+  somefunction() {}
 ```
