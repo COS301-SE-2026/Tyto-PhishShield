@@ -209,7 +209,13 @@ export function Training({ onNavigate, activePath }: TrainingProps) {
                         mod.id === m.id ? { ...mod, status: 'in_progress' } : mod
                       ));
                       addToast({ type: 'info', title: 'Module started', message: m.title });
-                    }}>
+                    }}
+                    style={{
+                      minWidth: 72,
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                    }}
+                    >
                     Start
                   </Button>
                 )}

@@ -25,15 +25,16 @@
   --color-navy-mid: #1E3A5F;
 
   /* Surfaces */
-  --bg-page:        #F1F5F9;
-  --bg-card:        #FFFFFF;
+  --bg-page:        #F8FAFC;
+  --bg-card:        #F1F5F9;
   --bg-sidebar:     #0F172A;
-  --bg-topbar:      #FFFFFF;
+  --bg-topbar:      #F1F5F9;
   --bg-input:       #FFFFFF;
-  --bg-hover:       #F8FAFC;
+  --bg-hover:       #E2E8F0;
 
   /* Borders */
-  --border:         #E2E8F0;
+  --border:         #CBD5E1;
+  --border-strong:  #CBD5E1;
   --border-focus:   #2563EB;
 
   /* Text */
@@ -71,6 +72,7 @@
   --bg-hover:       #1C2128;
 
   --border:         #30363D;
+  --border-strong:  #3B4553;
   --border-focus:   #2563EB;
 
   --text-primary:   #F0F6FC;
