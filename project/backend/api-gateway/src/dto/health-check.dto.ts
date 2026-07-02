@@ -3,4 +3,6 @@ export class HealthServices {
   mailingService!: string;
   xpService!: string;
   reportService!: string;
+  educationService!: string;
+  analyticsService!: string;
 }

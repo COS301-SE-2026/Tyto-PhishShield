@@ -16,7 +16,7 @@ describe('AuthController', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: { register: jest.fn(), login: jest.fn(), logout: jest.fn(), updateProfile: jest.fn(), changePassword: jest.fn(), deleteUser: jest.fn() },
+          useValue: { register: jest.fn(), login: jest.fn(), logout: jest.fn(), updateProfile: jest.fn(), deleteUser: jest.fn() },
         },
         {
           provide: UsersService,
@@ -141,16 +141,4 @@ describe('AuthController', () => {
       expect(result).toEqual({message: 'Profile updated successfully'});
     });
   });
-
-  describe('changePassword()', () => {
-    it('should call authService with the correct auth0Id and dto', async () => {
-      authService.changePassword.mockResolvedValue({ message: 'Password changed successfully' });
-      const mockReq = { user: { auth0Id: 'auth0|abc123', email: 'test@example.com', role: 'user' } } as never;
-      const dto = { newPassword: 'NewPassword123!' };
-      const result = await controller.changePassword(mockReq, dto);
-
-      expect(authService.changePassword).toHaveBeenCalledWith('auth0|abc123', dto);
-      expect(result).toEqual({message: 'Password changed successfully'});
-    });
-  })
 });

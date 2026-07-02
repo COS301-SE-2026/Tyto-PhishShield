@@ -1,16 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GeneratedEmail } from './entities/generated-emails.entity';
+import { Emails } from './entities/emails.entity';
 import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
-//import { maxLength } from 'class-validator';
+import { BatchEmailModule } from './batch-email/batch-email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([GeneratedEmail]),
-
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -20,18 +18,19 @@ import { MailingServiceController } from './mailing-service.controller';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('MAILING_DB_PORT'),
+        host: configService.get<string>('MAILING_DB_CONTAINER'),
+        port: configService.get<number>('INTERNAL_DB_PORT'),
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('MAILING_DB_NAME'),
-        synchronize: configService.get<string>('DB_SYNC') === 'true',
+        synchronize: configService.get<string>('DB_SYNC', 'true') === 'true',
+        entities: [Emails],
         autoLoadEntities: true,
-        schema: 'mailing',
       }),
     }),
-
+    TypeOrmModule.forFeature([Emails]),
     EmailModule,
+    BatchEmailModule,
   ],
   controllers: [MailingServiceController],
   providers: [EmailService],

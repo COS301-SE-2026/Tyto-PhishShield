@@ -9,9 +9,10 @@ import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { AuthModule } from '../auth/auth.module';
+import { EventProducerModule } from '../event-producer/event-producer.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), forwardRef(() => AuthModule)],
+  imports: [TypeOrmModule.forFeature([User]), forwardRef(() => AuthModule), EventProducerModule],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService], // exported so AuthModule can use it

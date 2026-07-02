@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { User, UserRole } from './entities/user.entity';
+import { EventProducerService } from '../event-producer/event-producer.service';
 
 const mockUser: User = {
   id: 'uuid-123',
@@ -29,6 +30,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repo },
+        { provide: EventProducerService, useValue: { publishUserCreatedEvent: jest.fn() } },
       ],
     }).compile();
 
