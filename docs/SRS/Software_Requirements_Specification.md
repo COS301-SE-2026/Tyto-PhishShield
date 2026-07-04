@@ -54,10 +54,11 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
 	-    **FR 3.3.1**: The leaderboard will be updated live.
 
 **FR 4**: Authentication and Authorization 
-- **FR 4.1**: The system shall allow user registration and login.
+-    **FR 4.1**: The system shall allow user registration and login.
 -    **FR 4.2**: The system shall use Auth0/Firebase Authentication for user functionalities such as user login and registration, session management (JWT/token handling) and password reset.
 -    **FR 4.3**: The system shall enforce Role-Based Access Control (RBAC) supporting three distinct roles: Admin, Analyst and User.
 -    **FR 4.4**: The system shall evaluate RBAC server-side on every protected backend endpoint (API Gateway layer).
+-    **FR 4.5**: The system shall provide user state management with the following states: inactive and unverified, active and unverified, inactive and verified, active and verified.
 
 **FR 5**: Admin campaign portal
 -	**FR 5.1**: The system shall allow administrators to configure the difficulty level and context of generated phishing campaigns.
@@ -165,8 +166,9 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **UC-11**   | User can view their personal dashboard                         | As a user, I want to view my personal XP, progress history, and past campaign results, so that I can track my own improvement over time.                                                     |
 | **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                  |
 | **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                           |
-| UC-14       | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
-| UC-15       | Admin can create educational material.                         | As an admin, I want to be able to create educational material for users manually or automatically with the AI engine.                                                                        |
+| **UC-14**       | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
+| **UC-15**       | Admin can create educational material.                         | As an admin, I want to be able to create educational material for users manually or automatically with the AI engine.                                                                        |
+| **UC-16**       | Admin can manage user states.                                  | As an admin, I want to be able to activate or deactivate user accounts to manage user access to the system.                                                                                  |
 
 ## Use Case Diagrams
 
@@ -180,36 +182,37 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 
 ## Requirements Use Case Traceability Matrix
 
-|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 | UC-15 |
-| ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |
-| **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |
-| **FR 1.3**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |
-| **FR 2.1**   | 3               |        |        |       |       |       | X      |       | X     |       | X     |       |       |       |       |       |
-| **FR 2.1.1** | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |       |
-| **FR 2.2**   | 3               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |       |
-| **FR 2.3**   | 2               |        |        |       |       |       |        |       |       |       |       |       | X     |       |       |       |
-| **FR 3.1**   | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |
-| **FR 3.1.1** | 2               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |       |
-| **FR 3.1.2** | 2               |        | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |
-| **FR 3.1.3** | 1               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |       |
-| **FR 3.1.4** | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |
-| **FR 3.2**   | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |
-| **FR 3.2.1** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |
-| **FR 3.2.2** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |
-| **FR 3.2.3** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |
-| **FR 3.3**   | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |       |
-| **FR 3.3.1** | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |       |
-| **FR 4.1**   | 3               |        |        |       | X     | X     |        |       |       |       |       |       |       |       | X     |       |
-| **FR 4.2**   | 2               |        |        |       | X     | X     |        |       |       |       |       |       |       |       |       |       |
-| **FR 4.3**   | 2               |        |        |       |       | X     |        |       |       | X     |       |       |       |       | X     |       |
-| **FR 4.4**   | 2               |        |        |       |       | X     |        |       |       |       |       |       |       |       |       |       |
-| **FR 5.1**   | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |       |
-| **FR 5.2**   | 2               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |       |
-| **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |
-| **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |
-| **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |       |       |
-| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | 5     | 4     |
+|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 | UC-15 | **UC-16** |
+| ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | --------- |
+| **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 1.3**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 2.1**   | 3               |        |        |       |       |       | X      |       | X     |       | X     |       |       |       |       |       |           |
+| **FR 2.1.1** | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |       |           |
+| **FR 2.2**   | 3               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |       |           |
+| **FR 2.3**   | 2               |        |        |       |       |       |        |       |       |       |       |       | X     |       |       |       |           |
+| **FR 3.1**   | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.1** | 2               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.2** | 2               |        | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.3** | 1               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.4** | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.2**   | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.2.1** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.2.2** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.2.3** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.3**   | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |       |           |
+| **FR 3.3.1** | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |       |           |
+| **FR 4.1**   | 3               |        |        |       | X     | X     |        |       |       |       |       |       |       |       | X     |       | X         |
+| **FR 4.2**   | 2               |        |        |       | X     | X     |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 4.3**   | 2               |        |        |       |       | X     |        |       |       | X     |       |       |       |       | X     |       |           |
+| **FR 4.4**   | 2               |        |        |       |       | X     |        |       |       |       |       |       |       |       | X     |       | X         |
+| **FR 4.5**   | 2               |        |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 5.1**   | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |       |           |
+| **FR 5.2**   | 2               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |       |           |
+| **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
+| **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
+| **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |       |       |           |
+| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | 7     | 4     | 5         |
 ## Domain Model
 ![Domain model](<../images/Domain Model.jpg>)
 
