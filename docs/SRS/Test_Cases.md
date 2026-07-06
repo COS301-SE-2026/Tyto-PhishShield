@@ -1,11 +1,23 @@
 view the [use cases](./Software_Requirements_Specification.md) in the SRS document.
 # Table of contents
-- [UC-01](#uc-01-report-a-suspicious-email)
-- [UC-04](#uc-04-users-can-register-accounts)
-- [UC-05](#uc-05-users-can-be-authenticated-by-the-system)
-- [UC-06](#uc-06-admin-can-control-and-schedule-campaigns)
-- [UC-10](#uc-10-system-can-send-a-scheduled-simulated-phishing-campaign-email)
-- [UC-13](#uc-13-user-receives-xp-update-after-an-action)
+- [UC-01](#uc-01-report-a-suspicious-email) Report a suspicious email
+- [UC-02](#uc-02-experience-a-teachable-moment) Experience a teachable moment
+- [UC-03](#uc-03-view-the-live-leaderboard) View live leaderboard
+- [UC-04](#uc-04-users-can-register-accounts) Register account
+- [UC-05](#uc-05-users-can-be-authenticated-by-the-system) Authentication
+- [UC-06](#uc-06-admin-can-control-and-schedule-campaigns) Control and schedule campaigns
+- [UC-07](#uc-07-view-organizational-metrics) View organizational metrics
+- [UC-08](#uc-08-configure-campaign-difficulty) Configure campaign difficulty
+- [UC-09](#uc-09-manage-user-roles) Manage user roles
+- [UC-10](#uc-10-system-can-send-a-scheduled-simulated-phishing-campaign-email) Send scheduled emails
+- [UC-11](#uc-11--view-personal-dashboard) View personal dashboard
+- [UC-12](#uc-12-scrub-sensitive-data-before-external-api-calls) Scrub sensitive data
+- [UC-13](#uc-13-user-receives-xp-update-after-an-action) Recieve XP
+- [UC-14](#uc-14-create-and-import-accounts) Create and import accounts
+- [UC-15](#uc-15-create-educational-material) Create educational material
+- [UC-16](#uc-16-manage-user-states) Manage user states
+<br>
+<br>
 # UC-01: Report a suspicious email
 ## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
 Inputs for reporting an email:
@@ -30,6 +42,51 @@ V = Valid, I = Invalid, NA = Not Applicable
 | **TC3**      | Invalid Item Selected | `eyJhbGciOiJIUz...` (Valid JWT) | Outlook `AppointmentItem`   | NA             | Display error msg: "Only emails can be reported.” |
 | **TC4**      | System Unavailable    | `eyJhbGciOiJIUz...` (Valid JWT) | Standard Outlook `MailItem` | I              | Display error msg: "Network timeout."             |
 | **TC5**      | User Quits/Cancels    | `eyJhbGciOiJIUz...` (Valid JWT) | Standard Outlook `MailItem` | NA             | Action aborted, back to inbox view.               |
+# UC-02: Experience a teachable moment
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for Experiencing a teachable moment:
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+# UC-03: View the live leaderboard
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for viewing the live leaderboard:
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+
 # UC-04: Users can register accounts
 ## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
 Inputs for user registration:
@@ -104,6 +161,75 @@ V = Valid, I = Invalid, NA = Not Applicable
 |**TC3**|Invalid Campaign Parameters|Valid Admin JWT|Empty target group, invalid past date|NA|Display validation errors for invalid fields.|
 |**TC4**|Scheduler Service Offline|Valid Admin JWT|Valid campaign configuration|I|Display error: "Unable to schedule campaign."|
 |**TC5**|Admin Cancels Configuration|Valid Admin JWT|Valid campaign configuration|NA|Campaign creation aborted without saving.|
+# UC-07: View organizational metrics
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for viewing organizational metrics:
+- Account Role
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+# UC-08: Configure campaign difficulty
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for configuring campaign difficulty:
+- Account Role
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+# UC-09: Manage user roles
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for managing user roles:
+- Account Role
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+
 # UC-10: System can send a scheduled simulated phishing campaign email
 ## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
 Inputs for sending scheduled phishing emails:
@@ -128,6 +254,51 @@ V = Valid, I = Invalid, NA = Not Applicable
 | **TC3**      | Empty Target Group        | Valid scheduled time    | Empty user group                           | NA                  | Display error: "No recipients found."                      |
 | **TC4**      | Mail Service Failure      | Valid scheduled time    | `[john@example.com, sam@example.com, ...]` | I                   | Email delivery fails and system logs error.                |
 | **TC5**      | Partial Delivery Failure  | Valid scheduled time    | `[john, sa m@, ...]`                       | I                   | Failed recipients logged while valid users receive emails. |
+# UC-11:  View personal dashboard
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for viewing personal dashboard:
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+# UC-12: Scrub sensitive data before external API calls
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for scrubbing sensitive data:
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario |     |     |     | Expected Result |
+| ------------ | -------- | --- | --- | --- | --------------- |
+| **TC1**      |          |     |     |     |                 |
+| **TC2**      |          |     |     |     |                 |
+| **TC3**      |          |     |     |     |                 |
+| **TC4**      |          |     |     |     |                 |
+| **TC5**      |          |     |     |     |                 |
+
 # UC-13: User receives XP update after an action
 ## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
 Inputs for updating user XP:
@@ -152,3 +323,72 @@ V = Valid, I = Invalid, NA = Not Applicable
 |**TC3**|Invalid User Action|Valid User JWT|Unsupported action type|NA|No XP changes applied.|
 |**TC4**|XP Service Failure|Valid User JWT|Clicked phishing simulation link|I|Display error and log failed XP update.|
 |**TC5**|Duplicate XP Trigger|Valid User JWT|Same phishing report submitted twice|V|XP update prevented to avoid duplication.|
+# UC-14: Create and import accounts
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for creating and importing accounts:
+- Account Role
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+# UC-15: Create educational material
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for imports for creating educational material:
+- Account Role
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+# UC-16: Manage user states
+## 1. Use Case Based Test Case Generation (The V/I/NA Matrix)
+Inputs for managing user states:
+- Account Role
+- 
+V = Valid, I = Invalid, NA = Not Applicable
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
+## 2. Identifying Test Data Values (The Concrete Data Matrix)
+
+| Test Case ID | Scenario | Account Role |     |     | Expected Result |
+| ------------ | -------- | ------------ | --- | --- | --------------- |
+| **TC1**      |          |              |     |     |                 |
+| **TC2**      |          |              |     |     |                 |
+| **TC3**      |          |              |     |     |                 |
+| **TC4**      |          |              |     |     |                 |
+| **TC5**      |          |              |     |     |                 |
