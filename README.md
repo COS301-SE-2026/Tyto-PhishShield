@@ -109,14 +109,48 @@ Built using a scalable microservice architecture with Docker support, making the
 </tr>
 </table>
 
-## Documentation
-[View our documentation](docs/README.md)
+<br>
 
-## Project
-[View our project files](project/README.md)
+---
 
-## Set-up
-[Want to quickly make sure you can set up the project?](docs/setup-instructions/README.md)
+<h1 align="center">Get Started</h1>
+
+Follow our setup guide
+
+[Setup Instructions](docs/setup-instructions/README.md)
+
+<br>
+
+---
+
+<h1 align="center">📚 Documentation</h1>
+
+All project documentation can be found in our
+[Documentation Hub](docs/README.md).
+
+### Important / Frequently Used Documents
+
+| Document |
+|-----------|
+| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
+| 📖 [Project Documentation](project/README.md) |
+| 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
+| 🎨 [Design Specification Preview](docs/design-specifications/design-specifications-document.md) |
+| 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
+
+<br>
+
+---
+
+<br>
+
+---
+
+<h1 align="center">📅 Project Board</h1>
+
+Track our current development progress and issues on our GitHub Project Board.
+
+➡️ **[Open the Project Board](https://github.com/orgs/COS301-SE-2026/projects/43)**
 
 <br>
 
