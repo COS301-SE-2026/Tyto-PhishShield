@@ -163,6 +163,8 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - LOCAL_CORS=https://127.0.0.1
+      - OUTLOOK_ADDIN_CORS=
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
 
