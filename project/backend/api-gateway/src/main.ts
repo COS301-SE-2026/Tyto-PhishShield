@@ -23,7 +23,8 @@ async function bootstrap() {
 
   const allowedOrigins = new Set([
     'https://capstone-five-guys.dns.net.za',
-
+    process.env.LOCAL_CORS,
+    process.env.OUTLOOK_ADDIN_CORS
   ]);
 
   app.enableCors({
