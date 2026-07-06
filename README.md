@@ -142,10 +142,6 @@ All project documentation can be found in our
 
 ---
 
-<br>
-
----
-
 <h1 align="center">📅 Project Board</h1>
 
 Track our current development progress and issues on our GitHub Project Board.
