@@ -115,8 +115,8 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - OUTLOOK_ADDIN_CORS=
-    ports:
-      - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+    # ports:
+    #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
   
   report_db:
     image: postgres:15-alpine
