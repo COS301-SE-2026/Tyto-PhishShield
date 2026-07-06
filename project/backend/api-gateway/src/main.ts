@@ -9,6 +9,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { rateLimit } from 'express-rate-limit';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,13 +21,31 @@ async function bootstrap() {
     }),
   );
 
+  const allowedOrigins = new Set([
+    'https://capstone-five-guys.dns.net.za',
+
+  ]);
+
   app.enableCors({
-    origin: '*',
+    origin: (origin: any, callback: (error: any, value: boolean) => {}) => {
+      if (origin && allowedOrigins.has(origin)) return callback(null, true);
+      else return callback(new Error('CORS denied'), false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.setGlobalPrefix('api');
+
+  app.use('/api',
+    rateLimit({
+      windowMs: 60 * 1000,
+      max: 120,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: 'Too many requests. '}
+    })
+  );
 
   const config = new DocumentBuilder()
     .setTitle('PhishShield API Gateway')
