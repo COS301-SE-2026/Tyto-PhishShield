@@ -2,6 +2,7 @@ capstone-five-guys.dns.net.za:443 {
     @api path /api/*
     @badApiOrigin {
         path /api/*
+        header Origin *
         not header Origin https://capstone-five-guys.dns.net.za
     }
 

@@ -30,7 +30,7 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin: any, callback: (error: any, value: boolean) => {}) => {
       if (origin && allowedOrigins.has(origin)) return callback(null, true);
-      else return callback(new Error('CORS denied'), false);
+      else return callback(null, false);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
