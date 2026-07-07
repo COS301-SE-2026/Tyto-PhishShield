@@ -11,6 +11,16 @@ University of Pretoria • Tyto Insights • DNS Business
 
 <br>
 
+<p align="center">
+  <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2026/Tyto-PhishShield/ci-frontend.yml?branch=main&style=for-the-badge&label=Frontend%20CI&logo=github" alt="Frontend CI"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/COS301-SE-2026/Tyto-PhishShield/ci-backend.yml?branch=main&style=for-the-badge&label=Backend%20CI&logo=github" alt="Backend CI"/>
+  <img src="https://sonarcloud.io/api/project_badges/measure?project=COS301-SE-2026_Tyto-PhishShield&metric=alert_status" alt="Quality Gate Status"/>
+
+  <img src="https://img.shields.io/github/issues/COS301-SE-2026/Tyto-PhishShield?branch=main&style=for-the-badge&logo=github" alt="Open Issues"/>
+  <img src="https://img.shields.io/github/issues-pr/COS301-SE-2026/Tyto-PhishShield?branch=main&style=for-the-badge&logo=github" alt="Open Pull Requests"/>
+  <img src="https://img.shields.io/github/last-commit/COS301-SE-2026/Tyto-PhishShield/main?style=for-the-badge&logo=github" alt="Last Commit"/>
+</p>
+
 </div>
 
 ---
