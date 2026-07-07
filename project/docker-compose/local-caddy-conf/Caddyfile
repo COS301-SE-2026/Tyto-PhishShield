@@ -1,4 +1,15 @@
 :80 {
+    @api path /api/*
+    @badApiOrigin {
+        path /api/*
+        not header Origin https://capstone-five-guys.dns.net.za
+        not header Origin https://127.0.0.1
+    }
+
+    handle @badApiOrigin {
+        respond "Forbidden origin" 403
+    }
+
     handle /api/* {
         reverse_proxy api-gateway:3001
     }
