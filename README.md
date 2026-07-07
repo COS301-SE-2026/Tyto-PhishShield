@@ -1,4 +1,19 @@
-# Tyto-PhishShield
+<div align="center">
+
+# Tyto PhishShield
+
+### AI-Powered Phishing Awareness & Simulation Platform
+
+Developed by **Team FIVE GUYS**
+
+University of Pretoria • Tyto Insights • DNS Business
+<img src="docs/assets/logos/up-tyto-dns.png" alt="UP TYTO DNS Logos" width="800" height="320"/>
+
+<br>
+
+</div>
+
+---
 
 <h1 align="center">ℹ️Description</h1>
 Tyto-PhishShield is an AI-powered phishing awareness and simulation platform. 
