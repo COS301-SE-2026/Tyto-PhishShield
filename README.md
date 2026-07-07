@@ -57,7 +57,7 @@ Tyto PhishShield helps to make employees part of the firewall. It provides reali
 
 ---
 
-<h1 align="center">🚀 Features</h1>
+<h1 align="center">Features</h1>
 
 <table>
 <tr>
