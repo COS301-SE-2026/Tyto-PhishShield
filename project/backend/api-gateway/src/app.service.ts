@@ -7,6 +7,7 @@ import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { HealthServices } from './dto/health-check.dto';
 import { firstValueFrom } from 'rxjs';
+import { logger } from './logger/logger.service';
 
 @Injectable()
 export class AppService implements OnModuleInit {
@@ -32,7 +33,7 @@ export class AppService implements OnModuleInit {
     try {
       await client.connect();
     } catch (err) {
-      console.warn(serviceName + ' TCP connection unavailable: ', err);
+      logger.warn(serviceName + ' TCP connection unavailable: ', err);
       setTimeout(() => void this.connectService(client, serviceName), 10000);
     }
   }

@@ -11,6 +11,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { rateLimit } from 'express-rate-limit';
 import { logger } from './logger/logger.service';
+import { requestIdMiddleware } from './middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -48,6 +49,7 @@ async function bootstrap() {
       message: { message: 'Too many requests. '}
     })
   );
+  app.use(requestIdMiddleware);
 
   const config = new DocumentBuilder()
     .setTitle('PhishShield API Gateway')
