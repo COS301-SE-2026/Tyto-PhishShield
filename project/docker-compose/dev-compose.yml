@@ -330,6 +330,7 @@ services:
       - '443:443'
     volumes:
       - ./dev-caddy-conf:/etc/caddy/
+      - ./logs/caddy:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
   
@@ -356,5 +357,6 @@ volumes:
   analytics_pgdata:
   caddy_data:
   caddy_config:
+  caddy_logs:
   rabbitmq_data:
     driver: local

@@ -439,6 +439,7 @@ services:
       - '443:443'
     volumes:
       - ./local-caddy-conf:/etc/caddy/
+      - ./logs/caddy:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
 
@@ -447,6 +448,7 @@ volumes:
   # Must be hard coded
   caddy_data:
   caddy_config:
+  caddy_logs:
   mailing_pgdata:
   accounts_pgdata:
   report_pgdata:
