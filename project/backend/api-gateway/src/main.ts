@@ -26,11 +26,11 @@ async function bootstrap() {
   const allowedOrigins = new Set([
     'https://' + process.env.SERVER_DOMAIN,
     process.env.LOCAL_CORS,
-    process.env.OUTLOOK_ADDIN_CORS
+    process.env.OUTLOOK_ADDIN_CORS,
   ]);
 
   app.enableCors({
-    origin: (origin: any, callback: (error: any, value: boolean) => {}) => {
+    origin: (origin: any, callback: (error: any, value: boolean) => boolean) => {
       if (origin && allowedOrigins.has(origin)) return callback(null, true);
       else return callback(null, false);
     },
@@ -40,16 +40,17 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  app.use('/api',
+  app.use(requestIdMiddleware);
+  app.use(
+    '/api',
     rateLimit({
       windowMs: 60 * 1000,
       max: 120,
       standardHeaders: true,
       legacyHeaders: false,
-      message: { message: 'Too many requests. '}
-    })
+      message: { message: 'Too many requests. ' },
+    }),
   );
-  app.use(requestIdMiddleware);
 
   const config = new DocumentBuilder()
     .setTitle('PhishShield API Gateway')

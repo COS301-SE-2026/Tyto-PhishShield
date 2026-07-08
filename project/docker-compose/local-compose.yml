@@ -167,8 +167,11 @@ services:
       - LOCAL_CORS=https://127.0.0.1
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
+      - LOG_DIR=/var/log/api-gateway
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+    volumes:
+      - api_gateway_logs:/var/log/api-gateway
 
   # report db sets up the report service's postgres database
   report_db:
@@ -446,6 +449,7 @@ services:
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
+  api_gateway_logs:
   caddy_data:
   caddy_config:
   caddy_logs:
