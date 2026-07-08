@@ -10,6 +10,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { rateLimit } from 'express-rate-limit';
+import { logger } from './logger/logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -61,7 +62,7 @@ async function bootstrap() {
 
   await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
 
-  console.log(
+  logger.info(
     `API Gateway running on port ${process.env.API_GATEWAY_PORT ?? 3001}`,
   );
 }
