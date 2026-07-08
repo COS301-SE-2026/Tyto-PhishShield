@@ -21,7 +21,9 @@
     }
 
     handle /api/* {
-        reverse_proxy api-gateway:3001
+        reverse_proxy api-gateway:3001 {
+            header_up X-Request-ID {http.request.header.X-Request-ID}
+        }
     }
 
     handle {
