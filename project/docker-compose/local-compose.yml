@@ -164,7 +164,7 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-      - LOCAL_CORS=https://127.0.0.1
+      - LOCAL_CORS=http://127.0.0.1
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - LOG_DIR=/var/log/api-gateway
@@ -409,8 +409,8 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
-    ports:
-      - '5173:5173'
+    # ports:
+    #   - '5173:5173'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
@@ -442,7 +442,7 @@ services:
       - '443:443'
     volumes:
       - ./local-caddy-conf:/etc/caddy/
-      - ./logs/caddy:/var/log/caddy
+      - caddy_logs:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
 
