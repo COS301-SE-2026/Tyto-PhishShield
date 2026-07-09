@@ -15,6 +15,8 @@ import { MailingModule } from './mailing/mailing.module';
 
 import { ReportModule } from './report/report.module';
 import { EducationModule } from './education/education.module';
+import { APP_GUARD, Reflector } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 //import { OtpModule } from './otp/otp.module';
 
 @Module({
@@ -77,6 +79,13 @@ import { EducationModule } from './education/education.module';
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    Reflector,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    AppService,
+  ],
 })
 export class AppModule {}

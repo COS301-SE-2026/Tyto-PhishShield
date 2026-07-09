@@ -12,14 +12,15 @@ import { AppModule } from './app.module';
 import { rateLimit } from 'express-rate-limit';
 import { logger } from './logger/logger.service';
 import { requestIdMiddleware } from './middleware';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   if (process.env.ENVIRONMENT != 'local') {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
   }
-  
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -27,14 +28,19 @@ async function bootstrap() {
     }),
   );
 
-  const allowedOrigins = new Set([
-    'https://' + process.env.SERVER_DOMAIN,
-    process.env.LOCAL_CORS,
-    process.env.OUTLOOK_ADDIN_CORS,
-  ]);
+  const allowedOrigins = new Set(
+    [
+      'https://' + process.env.SERVER_DOMAIN,
+      process.env.LOCAL_CORS,
+      process.env.OUTLOOK_ADDIN_CORS,
+    ].filter((value): value is string => Boolean(value)),
+  );
 
   app.enableCors({
-    origin: (origin: any, callback: (error: any, value: boolean) => boolean) => {
+    origin: (
+      origin: string | undefined,
+      callback: (error: any, allow?: boolean) => void,
+    ) => {
       if (origin && allowedOrigins.has(origin)) return callback(null, true);
       else return callback(null, false);
     },
@@ -58,11 +64,11 @@ async function bootstrap() {
 
   if (process.env.ENVIRONMENT == 'local') {
     const config = new DocumentBuilder()
-    .setTitle('PhishShield API Gateway')
-    .setDescription('Single entry point for all PhishShield backend services')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+      .setTitle('PhishShield API Gateway')
+      .setDescription('Single entry point for all PhishShield backend services')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
     const document = SwaggerModule.createDocument(app, config);
 

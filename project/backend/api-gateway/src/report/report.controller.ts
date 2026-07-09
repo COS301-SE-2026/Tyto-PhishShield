@@ -15,6 +15,7 @@ import { Request } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import { Public } from '../auth/public.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -40,6 +41,7 @@ export class ReportController {
     );
   }
 
+  @Public()
   @Post('auth/microsoft')
   @HttpCode(200)
   @ApiOperation({ summary: 'Exchange Microsoft SSO token for user identity' })
