@@ -190,7 +190,7 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
 
           <Button
             loading={batchLoading}
-            disabled={!referenceNumber.trim() || parseBatchRecipients.length === 0}
+            disabled={!referenceNumber.trim() || parseBatchRecipients().length === 0}
             onClick={() => {
               void handleBatchWithReference();
             }}
