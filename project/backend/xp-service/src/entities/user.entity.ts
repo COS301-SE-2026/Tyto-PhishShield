@@ -1,9 +1,4 @@
-import {
-  Entity,
-  Column,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { XpEntity } from './xp.entity';
 
 @Entity('users')
