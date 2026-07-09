@@ -52,18 +52,20 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
+  if (process.env.ENVIRONMENT == 'local') {
+    const config = new DocumentBuilder()
     .setTitle('PhishShield API Gateway')
     .setDescription('Single entry point for all PhishShield backend services')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+    const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('api-docs', app, document);
+    SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
+    await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
+  }
 
   logger.info(
     `API Gateway running on port ${process.env.API_GATEWAY_PORT ?? 3001}`,
