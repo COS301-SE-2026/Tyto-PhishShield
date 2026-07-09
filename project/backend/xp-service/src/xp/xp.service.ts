@@ -23,6 +23,7 @@ import { Repository } from 'typeorm';
 import { XpEntity } from '../entities/xp.entity';
 import { UserEntity } from '../entities/user.entity';
 import { GiveXpDto } from '../dto/give-xp.dto';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 @Injectable()
 export class XpService {
@@ -33,6 +34,7 @@ export class XpService {
     private readonly xpRepository: Repository<XpEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    private readonly amqpConnection: AmqpConnection,
   ) {}
 
   async giveXp(dto: GiveXpDto): Promise<XpEntity> {
@@ -54,6 +56,19 @@ export class XpService {
       this.logger.log(
         `Awarded ${dto.amount} XP to user ${dto.auth0Id}, reason: ${dto.reason})`,
       );
+
+      try {
+        await this.amqpConnection.publish('xp-event-exchange', 'xp.given', {
+          auth0Id: user.auth0Id,
+          amount: dto.amount,
+        });
+      } catch (publishError) {
+        this.logger.error(
+          `Failed to publish xp.given event for user ${dto.auth0Id}`,
+          publishError,
+        );
+      }
+
       return saved;
     } catch (error) {
       this.logger.error(`Failed to award XP to user ${dto.auth0Id}`, error);
