@@ -162,6 +162,9 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   # report db sets up the report service's postgres database
   report_db:
