@@ -144,7 +144,7 @@ export class XpService {
         .groupBy('u.id')
         .addGroupBy('u.auth0Id')
         .addGroupBy('u.name')
-        .orderBy('totalXp', 'DESC')
+        .orderBy('COALESCE(SUM(xp.amount), 0)', 'DESC')
         .getRawMany<{ auth0Id: string; name: string; totalXp: string }>();
 
       this.logger.log(`Fetched net XP leaderboard for ${rows.length} users`);
