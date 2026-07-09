@@ -1,5 +1,3 @@
-// TODO: add comments / find out what this module is doing
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';

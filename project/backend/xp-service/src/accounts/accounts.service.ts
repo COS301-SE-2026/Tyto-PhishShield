@@ -27,12 +27,6 @@ export class AccountsService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  /**
-   * Upserts a user in the database based on their Auth0 ID.
-   * If the user already exists and no values have changed, the update is skipped.
-   *
-   * @param user - The user data received from the RabbitMQ event.
-   */
   async createUser(user: User): Promise<void> {
     try {
       await this.userRepository.upsert(

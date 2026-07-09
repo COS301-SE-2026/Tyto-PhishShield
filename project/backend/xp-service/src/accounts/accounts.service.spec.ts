@@ -39,7 +39,7 @@ describe('AccountsService', () => {
       department: 'Engineering',
     };
 
-    it('should upsert the user with the correct data and conflict config', async () => {
+    it('should upsert the user with the correct data', async () => {
       mockUserRepository.upsert.mockResolvedValue(undefined);
 
       await service.createUser(user);
