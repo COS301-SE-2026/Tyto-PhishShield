@@ -16,6 +16,10 @@ import { requestIdMiddleware } from './middleware';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  if (process.env.ENVIRONMENT != 'local') {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -63,9 +67,9 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
 
     SwaggerModule.setup('api-docs', app, document);
-
-    await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
   }
+
+  await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
 
   logger.info(
     `API Gateway running on port ${process.env.API_GATEWAY_PORT ?? 3001}`,
