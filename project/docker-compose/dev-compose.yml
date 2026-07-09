@@ -39,9 +39,9 @@ services:
       - mailing_pgdata:/var/lib/postgresql/data
       - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
 
-    ports:
-      # Left side must be unique
-      - "$MAILING_DB_PORT:5432"
+    # ports:
+    #   # Left side must be unique
+    #   - "$MAILING_DB_PORT:5432"
 
   mailing_app:
     image: fiveguys301/mailing:latest
@@ -60,8 +60,8 @@ services:
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
-    ports:
-      - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
+    # ports:
+    #   - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
 
     depends_on:
       mailing_db:
@@ -87,8 +87,8 @@ services:
     container_name: ${ACCOUNTS_DB_CONTAINER}
     volumes:
       - accounts_pgdata:/var/lib/postgresql/data
-    ports:
-      - '${ACCOUNTS_DB_PORT}:5432'
+    # ports:
+    #   - '${ACCOUNTS_DB_PORT}:5432'
   
   accounts_app:
     image: fiveguys301/accounts:latest
@@ -109,8 +109,8 @@ services:
       - TCP_PORT=${ACCOUNTS_TCP_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - '${ACCOUNTS_SERVICE_PORT}:3002'
+    # ports:
+    #   - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:
       accounts_db:
         condition: service_healthy
@@ -167,8 +167,8 @@ services:
       start_period: 30s
     volumes:
       - report_pgdata:/var/lib/postgresql/data
-    ports:
-      - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
+    # ports:
+    #   - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
 
   report_app:
     image: fiveguys301/report:latest
@@ -179,8 +179,8 @@ services:
       - DB_HOST=${REPORT_DB_CONTAINER}
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
+    # ports:
+    #   - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
     depends_on:
       report_db:
         condition: service_healthy
@@ -205,8 +205,8 @@ services:
       start_period: 30s
     volumes:
       - xp_pgdata:/var/lib/postgresql/data
-    ports:
-      - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
+    # ports:
+    #   - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
 
   xp_app:
     image: fiveguys301/xp:latest
@@ -217,8 +217,8 @@ services:
       - DB_HOST=${XP_DB_CONTAINER}
       - XP_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
+    # ports:
+    #   - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
     depends_on:
       xp_db:
         condition: service_healthy
@@ -243,8 +243,8 @@ services:
       start_period: 30s
     volumes:
       - education_pgdata:/var/lib/postgresql/data
-    ports:
-      - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
+    # ports:
+    #   - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
       
   education_app:
     image: fiveguys301/education:latest
@@ -260,8 +260,8 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
+    # ports:
+    #   - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
 
     depends_on:
       education_db:
@@ -289,8 +289,8 @@ services:
     volumes:
       - analytics_pgdata:/var/lib/postgresql/data
 
-    ports:
-      - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
+    # ports:
+    #   - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
       
   analytics_app:
     image: fiveguys301/analytics:latest
@@ -302,8 +302,8 @@ services:
       - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
-    ports:
-      - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
+    # ports:
+    #   - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
 
     depends_on:
       analytics_db:
