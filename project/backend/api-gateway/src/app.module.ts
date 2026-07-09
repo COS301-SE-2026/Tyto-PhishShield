@@ -14,6 +14,8 @@ import { AppService } from './app.service';
 import { MailingModule } from './mailing/mailing.module';
 
 import { ReportModule } from './report/report.module';
+import { XpModule } from './xp/xp.module';
+import { WebsocketModule } from './websocket/websocket.module';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { ReportModule } from './report/report.module';
     AccountsModule,
     MailingModule,
     ReportModule,
+    XpModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {
@@ -72,6 +75,7 @@ import { ReportModule } from './report/report.module';
         },
       },
     ]),
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],
