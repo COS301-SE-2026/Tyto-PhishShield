@@ -1,4 +1,3 @@
-import { ErrorResponse } from '../types';
 import { API_BASE } from './api';
 import { isErrorResponse } from './send-email';
 
