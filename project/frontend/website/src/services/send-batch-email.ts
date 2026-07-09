@@ -10,6 +10,8 @@ export interface BatchEmailResponse{
     date?:string;
 }
 
+export type EmailDifficulty = 'easy' | 'medium' | 'hard';
+
 export async function sendBatchWithReference(referenceNumber: string, recipients: string[],): Promise<BatchEmailResponse> {
   const token = localStorage.getItem('access_token');
 
@@ -31,6 +33,36 @@ export async function sendBatchWithReference(referenceNumber: string, recipients
 
   if (!response.ok) {
     throw new Error(isErrorResponse(data as ErrorResponse) ? (data as ErrorResponse).message : 'Failed to send batch email');
+  }
+
+  return data as BatchEmailResponse;
+}
+
+export async function sendBatchRandomSameEmail(recipients: string[], difficulty: EmailDifficulty, scheduledFrom: string, scheduledTo: string, randomisedTimes: boolean,): Promise<BatchEmailResponse> {
+  const token = localStorage.getItem('access_token');
+
+  const response = await fetch(
+    `${BATCH_EMAIL_BASE}/send-batch-random-same-email`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        recipients,
+        difficulty,
+        scheduledFrom,
+        scheduledTo,
+        randomisedTimes,
+      })
+    }
+  );
+
+  const data: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(isErrorResponse(data) ? data.message : 'Failed to send random times same-email batch');
   }
 
   return data as BatchEmailResponse;
