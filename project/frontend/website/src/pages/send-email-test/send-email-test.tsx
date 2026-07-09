@@ -3,6 +3,7 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button, Input } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
 import { sendEmail, scheduleEmail } from '../../services/send-email';
+import { sendBatchWithReference } from '../../services/send-batch-email';
 
 interface SendEmailTestProps {
   onNavigate: (path: string) => void;
@@ -16,6 +17,14 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
   const [loading, setLoading] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleAt, setScheduleAt] = useState('');
+  const [batchRecipients, setBatchRecipients] = useState('delivered@resend.dev');
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const parseBatchRecipients = () =>
+    batchRecipients
+      .split(',')
+      .map((email) => email.trim())
+      .filter(Boolean);
 
   const handleSend = async () => {
     try {
@@ -66,6 +75,31 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
       setScheduleLoading(false);
     }
   };
+
+    const handleBatchWithReference = async () => {
+    try {
+      setBatchLoading(true);
+
+      const result = await sendBatchWithReference(referenceNumber.trim(), parseBatchRecipients(),);
+
+      addToast({
+          type: 'success',
+          title: 'Batch sent',
+          message: result.message ?? 'Batch email sent successfully.',
+      });
+    }catch (error) {
+      console.error(error);
+
+      addToast({
+          type: 'error',
+          title: 'Batch Failed',
+          message: 'Could not send batch email. check recipient, reference num, auth and logs',
+      });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
 
   return (
     <AppLayout
@@ -134,6 +168,34 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
             }}
           >
             Schedule Test Email
+          </Button>
+        </div>
+      </Card>
+
+      <Card style={{ padding: 24, maxWidth: 520 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Input
+            label="Reference number"
+            value={referenceNumber}
+            onChange={(e) => setReferenceNumber(e.target.value)}
+            placeholder="PHISH-1FA3FB56"
+          />
+
+          <Input
+            label="Batch recipients"
+            value={batchRecipients}
+            onChange={(e) => setBatchRecipients(e.target.value)}
+            placeholder="delivered@resend.dev, Another@example.com"
+          />
+
+          <Button
+            loading={batchLoading}
+            disabled={!referenceNumber.trim() || parseBatchRecipients.length === 0}
+            onClick={() => {
+              void handleBatchWithReference();
+            }}
+          >
+            Send Batch with Reference
           </Button>
         </div>
       </Card>
