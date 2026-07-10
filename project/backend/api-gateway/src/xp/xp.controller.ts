@@ -63,7 +63,6 @@ export class XpController {
     });
   }
 
-  // NOTE: Static paths like 'net' must come BEFORE parameterized paths like ':auth0Id'
   @Get('net')
   @ApiOperation({
     summary: 'Retrieve aggregated net XP leaderboard for all users',

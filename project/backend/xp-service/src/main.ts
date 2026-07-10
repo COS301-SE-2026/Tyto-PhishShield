@@ -31,4 +31,4 @@ async function bootstrap() {
   console.log('XP service listening on port: ' + process.env.XP_SERVICE_PORT);
   console.log('XP TCP service listening on port: ' + process.env.XP_TCP_PORT);
 }
-bootstrap();
+void bootstrap();

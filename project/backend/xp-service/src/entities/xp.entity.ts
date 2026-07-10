@@ -14,7 +14,7 @@ export enum XpReason {
   QUIZ = 'quiz', // Redemption: completed quiz after a miss
   REFUSED = 'refused', // Partial: replied to refuse (better than clicking, but still interacted)
   IGNORED = 'ignored', // Passive: no interaction after extended time
-  COMPROMISED = 'compromised', // Fell for the attack — use with negative amount
+  COMPROMISED = 'compromised', // Fell for the attack, use with negative amount
 }
 
 @Entity('xp')
