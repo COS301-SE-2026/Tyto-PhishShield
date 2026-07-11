@@ -16,6 +16,8 @@ import { MailingModule } from './mailing/mailing.module';
 import { ReportModule } from './report/report.module';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { EducationModule} from './education/education.module'
+//import { OtpModule } from './otp/otp.module';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { WebsocketModule } from './websocket/websocket.module';
     MailingModule,
     ReportModule,
     XpModule,
+    EducationModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {

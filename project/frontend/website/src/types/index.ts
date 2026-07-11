@@ -11,17 +11,17 @@ export interface User {
   updatedAt: string;
   xp: number;
   rank: number;
-  // Extended profile fields below (future backend fields), not sure if it will be ready for Demo 1
+  // Extended profile fields below (maybe for Demo2?)
   //streak?: number;
   //reportsField?: number;
   //securityScore?: number;
-  //avatarInitials?: string;
 }
 
 export interface AuthenticatedUser {
   auth0Id: string;
   email: string;
   role: UserRole;
+  name?: string;
 }
 
 export interface LoginDto {
@@ -33,6 +33,7 @@ export interface RegisterDto {
   email: string;
   password: string;
   name?: string;
+  department?: string;
 }
 
 export interface LoginResponse {
@@ -63,7 +64,7 @@ export interface Campaign {
   emailBody?: string;
 }
 
-// Below is for Training; currently stubbed; future microservice; not sure if it will be ready for Demo 1
+// Training (ready for Demo 2?)
 
 export type TrainingStatus = 'not_started' | 'in_progress' | 'completed';
 
@@ -118,6 +119,7 @@ export interface SendEmailResponse {
 export interface XPResponse {
   userId: string;
   xp: number;
+  xpToday?: number;
   status?: "Success" | "Error";
   message?: string;
 }

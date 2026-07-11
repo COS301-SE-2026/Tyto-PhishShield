@@ -129,6 +129,8 @@ services:
     depends_on:
       accounts_db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
 
@@ -145,6 +147,7 @@ services:
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://education_app:3006
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
@@ -220,6 +223,8 @@ services:
 
     depends_on:
       report_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -321,7 +326,12 @@ services:
       - PORT=${EDUCATION_SERVICE_PORT}
       - TCP_PORT=${EDUCATION_TCP_PORT}
       - DB_HOST=${EDUCATION_DB_CONTAINER}
-      - EDUCATION_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${EDUCATION_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
@@ -330,6 +340,8 @@ services:
 
     depends_on:
       education_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -381,6 +393,8 @@ services:
 
     depends_on:
       analytics_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
