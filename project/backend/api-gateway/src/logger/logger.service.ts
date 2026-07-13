@@ -21,15 +21,7 @@ if (!isTestOrCi) {
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || undefined,
   format: combine(timestamp(), errors({ stack: true }), json()),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.DailyRotateFile({
-      dirname: logDir,
-      filename: 'standard-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      maxFiles: '14d',
-    }),
-  ],
+  transports: normalTransports,
   exceptionHandlers: isTestOrCi ?
     [new winston.transports.Console() ] :
     [
