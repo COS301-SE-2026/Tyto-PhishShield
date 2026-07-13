@@ -246,7 +246,7 @@ describe('sendBatchRandomSameEmail', () => {
 
     it('should throw backend error message when sendingg fails', async () => {
         mockFetch.mockResolvedValue(createMockResponse(false, {
-            message: 'Email reference was not found'
+            message: 'No matching email template was found'
         }));
 
         await expect(
@@ -257,7 +257,7 @@ describe('sendBatchRandomSameEmail', () => {
                 '2026-10-20T12:00:00.000Z',
                 false,
             ),
-        ).rejects.toThrow('Email reference was not found');
+        ).rejects.toThrow('No matching email template was found');
     });
 
     it('should throw fallback error if backend response has no valid message', async () => {
@@ -295,5 +295,172 @@ describe('sendBatchRandomSameEmail', () => {
                 false,
             ),
         ).rejects.toThrow('Failed to send random times same-email batch');
+    });
+});
+
+describe('sendBatchRandomDifferentEmail', () => {
+    beforeEach(() => {
+        mockFetch.mockReset();
+        localStorage.clear();
+        vi.stubGlobal('fetch', mockFetch);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('should send a random different-email batch and return the response', async () => {
+        const backendResponse: BatchEmailResponse = {
+            success: true,
+            message: 'Different-email batch scheduled successfully',
+            date: '2026-10-20T10:30:00.000Z',
+        }
+
+        localStorage.setItem('access_token', 'test-token');
+
+        mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
+
+        const result = await sendBatchRandomDifferentEmail(
+            [
+                'a@example.com',
+                'b@example.com',
+            ],
+            'hard',
+            '2026-10-20T10:00:00.000Z',
+            '2026-10-20T12:00:00.000Z',
+            true,
+        );
+
+        expect(result).toEqual(backendResponse);
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            `${API_BASE}/batch-emails/send-batch-random-different-email`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer test-token',
+                },
+                body: JSON.stringify({
+                    recipients: [
+                        'a@example.com',
+                        'b@example.com',
+                    ],
+                    difficulty: 'hard',
+                    scheduledFrom: '2026-10-20T10:00:00.000Z',
+                    scheduledTo: '2026-10-20T12:00:00.000Z',
+                    randomisedTimes: true,
+                }),
+            },
+        );
+    });
+
+    it('should not include an authorisation header when there is no token', async () => {
+        const backendResponse: BatchEmailResponse ={
+            success: true,
+            message: 'Different-email batch scheduled successfully',
+        };
+    
+        mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
+    
+        await sendBatchRandomDifferentEmail(
+            ['recipient@example.com'],
+            'medium',
+            '2026-10-20T10:00:00.000Z',
+            '2026-10-20T12:00:00.000Z',
+            false,
+        );
+    
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }),
+        );
+    });
+
+    it('should correctly send false for randomisedTimes', async () => {
+        const backendResponse: BatchEmailResponse ={
+            success: true,
+            message: 'Different-email batch scheduled successfully',
+        };
+
+        mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
+
+        await sendBatchRandomDifferentEmail(
+            ['recipient@example.com'],
+            'medium',
+            '2026-10-20T10:00:00.000Z',
+            '2026-10-20T12:00:00.000Z',
+            false,
+        );
+    
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                body: JSON.stringify({
+                    recipients: ['recipient@example.com'],
+                    difficulty: 'medium',
+                    scheduledFrom: '2026-10-20T10:00:00.000Z',
+                    scheduledTo: '2026-10-20T12:00:00.000Z',
+                    randomisedTimes: false,
+                })
+            }),
+        );
+    });
+
+    it('should throw backend error message when sendingg fails', async () => {
+        mockFetch.mockResolvedValue(createMockResponse(false, {
+            message: 'No matching email template was found'
+        }));
+
+        await expect(
+            sendBatchRandomDifferentEmail(
+                ['recipient@example.com'],
+                'hard',
+                '2026-10-20T10:00:00.000Z',
+                '2026-10-20T12:00:00.000Z',
+                false,
+            ),
+        ).rejects.toThrow('No matching email template was found');
+    });
+
+    it('should throw fallback error if backend response has no valid message', async () => {
+        mockFetch.mockResolvedValue(createMockResponse(false, {
+            error: 'Unknown error',
+        }));
+
+        await expect(
+            sendBatchRandomDifferentEmail(
+                ['recipient@example.com'],
+                'easy',
+                '2026-10-20T10:00:00.000Z',
+                '2026-10-20T12:00:00.000Z',
+                false,
+            ),
+        ).rejects.toThrow('Failed to send random times different-email batch');
+    });
+
+    it('should throw fallback error if the error response is not valid JSON', async () => {
+        const response = {
+            ok: false,
+            json: vi.fn().mockRejectedValue(
+                new Error('Invalid JSON'),
+            ),
+        } as unknown as Response;
+
+        mockFetch.mockResolvedValue(response);
+
+        await expect(
+            sendBatchRandomDifferentEmail(
+                ['recipient@example.com'],
+                'easy',
+                '2026-10-20T10:00:00.000Z',
+                '2026-10-20T12:00:00.000Z',
+                false,
+            ),
+        ).rejects.toThrow('Failed to send random times different-email batch');
     });
 });
