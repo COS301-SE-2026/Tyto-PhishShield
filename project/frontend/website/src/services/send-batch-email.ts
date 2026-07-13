@@ -11,6 +11,42 @@ export interface BatchEmailResponse{
 
 export type EmailDifficulty = 'easy' | 'medium' | 'hard';
 
+interface RandomBatchRequest {
+  recipients: string[];
+  difficulty: EmailDifficulty;
+  scheduledFrom: string;
+  scheduledTo: string;
+  randomisedTimes: boolean;
+}
+
+async function postBatchEmail(
+  endpoint: string,
+  body: object,
+  fallbackErrorMessage: string,
+): Promise<BatchEmailResponse> {
+  const token = localStorage.getItem('access_token');
+
+  const response = await fetch(
+    `${BATCH_EMAIL_BASE}/${endpoint}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    }
+  );
+
+  const data: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(isErrorResponse(data) ? data.message : fallbackErrorMessage);
+  }
+
+  return data as BatchEmailResponse;
+}
+
 export async function sendBatchWithReference(referenceNumber: string, recipients: string[],): Promise<BatchEmailResponse> {
   const token = localStorage.getItem('access_token');
 
@@ -44,33 +80,19 @@ export async function sendBatchRandomSameEmail(
     scheduledTo: string, 
     randomisedTimes: boolean,
 ): Promise<BatchEmailResponse> {
-  const token = localStorage.getItem('access_token');
+  const request: RandomBatchRequest = {
+    recipients,
+    difficulty,
+    scheduledFrom,
+    scheduledTo,
+    randomisedTimes
+  };
 
-  const response = await fetch(
-    `${BATCH_EMAIL_BASE}/send-batch-random-same-email`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        recipients,
-        difficulty,
-        scheduledFrom,
-        scheduledTo,
-        randomisedTimes,
-      })
-    }
+  return postBatchEmail(
+    'send-batch-random-same-email',
+    request,
+    'Failed to send random times same-email batch'
   );
-
-  const data: unknown = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(isErrorResponse(data) ? data.message : 'Failed to send random times same-email batch');
-  }
-
-  return data as BatchEmailResponse;
 }
 
 export async function sendBatchRandomDifferentEmail(
@@ -80,31 +102,17 @@ export async function sendBatchRandomDifferentEmail(
     scheduledTo: string, 
     randomisedTimes: boolean,
 ): Promise<BatchEmailResponse> {
-  const token = localStorage.getItem('access_token');
+  const request: RandomBatchRequest = {
+    recipients,
+    difficulty,
+    scheduledFrom,
+    scheduledTo,
+    randomisedTimes
+  };
 
-  const response = await fetch(
-    `${BATCH_EMAIL_BASE}/send-batch-random-different-email`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        recipients,
-        difficulty,
-        scheduledFrom,
-        scheduledTo,
-        randomisedTimes,
-      })
-    }
+  return postBatchEmail(
+    'send-batch-random-different-email',
+    request,
+    'Failed to send random times different-email batch'
   );
-
-  const data: unknown = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(isErrorResponse(data) ? data.message : 'Failed to send random times different-email batch');
-  }
-
-  return data as BatchEmailResponse;
 }

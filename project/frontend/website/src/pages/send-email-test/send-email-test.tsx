@@ -10,6 +10,92 @@ interface SendEmailTestProps {
   activePath: string;
 }
 
+interface RandomBatchCardProps {
+  batchRecipients: string;
+  difficulty: EmailDifficulty;
+  scheduledFrom: string;
+  scheduledTo: string;
+  randomisedTimes: boolean;
+  loading: boolean;
+  buttonText: string;
+  disabled: boolean;
+  onBatchRecipientsChange: (value: string) => void;
+  onDifficultyChange: (value: EmailDifficulty) => void;
+  onScheduledFromChange: (value: string) => void;
+  onScheduledToChange: (value: string) => void;
+  onRandomisedTimesChange: (value: boolean) => void;
+  onSubmit: () => void;
+}
+
+function RandomBatchCard({
+  batchRecipients,
+  difficulty,
+  scheduledFrom,
+  scheduledTo,
+  randomisedTimes,
+  loading,
+  buttonText,
+  disabled,
+  onBatchRecipientsChange,
+  onDifficultyChange,
+  onScheduledFromChange,
+  onScheduledToChange,
+  onRandomisedTimesChange,
+  onSubmit,
+}: RandomBatchCardProps) {
+  return(
+    <Card style={{ padding: 24, maxWidth: 520 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Input
+            label="Batch recipients"
+            value={batchRecipients}
+            onChange={(event) => onBatchRecipientsChange(event.target.value)}
+            placeholder="delivered@resend.dev"
+          />
+
+          <Input
+            label="Difficulty"
+            value={difficulty}
+            onChange={(event) => onDifficultyChange(event.target.value as EmailDifficulty)}
+            placeholder="easy, medium or hard"
+          />
+
+          <Input
+            label="Scheduled from"
+            type='datetime-local'
+            value={scheduledFrom}
+            onChange={(event) => onScheduledFromChange(event.target.value)}
+          />
+
+          <Input
+            label="Scheduled to"
+            type='datetime-local'
+            value={scheduledTo}
+            onChange={(event) => onScheduledToChange(event.target.value)}
+          />
+
+          <label >
+            <input 
+              type="checkbox"
+              checked={randomisedTimes}
+              onChange={(event) => onRandomisedTimesChange(event.target.checked)} />
+              {' '}Randomised times
+          </label>
+
+          <Button
+            loading={loading}
+            disabled={disabled}
+            onClick={() => {
+              onSubmit();
+            }}
+          >
+            {buttonText}
+          </Button>
+        </div>
+      </Card>
+  );
+}
+
 export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
   const { addToast } = useToast();
   const [referenceNumber, setReferenceNumber] = useState('PHISH-1FA3FB56');
@@ -166,6 +252,7 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
     }
   };
 
+  const randomBatchDisabled = parseBatchRecipients().length === 0 ||!scheduledFrom || !scheduledTo;
 
   return (
     <AppLayout
@@ -266,105 +353,43 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
         </div>
       </Card>
 
-      <Card style={{ padding: 24, maxWidth: 520 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input
-            label="Batch recipients"
-            value={batchRecipients}
-            onChange={(e) => setBatchRecipients(e.target.value)}
-            placeholder="delivered@resend.dev"
-          />
+      <RandomBatchCard
+        batchRecipients={batchRecipients}
+        difficulty={difficulty}
+        scheduledFrom={scheduledFrom}
+        scheduledTo={scheduledTo}
+        randomisedTimes={randomisedTimes}
+        loading={randomBatchLoading}
+        buttonText="Send Batch Random Times Same Email"
+        disabled={randomBatchDisabled}
+        onBatchRecipientsChange={setBatchRecipients}
+        onDifficultyChange={setDifficulty}
+        onScheduledFromChange={setScheduledFrom}
+        onScheduledToChange={setScheduledTo}
+        onRandomisedTimesChange={setRandomisedTimes}
+        onSubmit={() => {
+          void handleBatchRandomSameEmail();
+        }}
+      />
 
-          <Input
-            label="Difficulty"
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as EmailDifficulty)}
-            placeholder="easy, medium or hard"
-          />
-
-          <Input
-            label="Scheduled from"
-            type='datetime-local'
-            value={scheduledFrom}
-            onChange={(e) => setScheduledFrom(e.target.value)}
-          />
-
-          <Input
-            label="Scheduled to"
-            type='datetime-local'
-            value={scheduledTo}
-            onChange={(e) => setScheduledTo(e.target.value)}
-          />
-
-          <label >
-            <input 
-              type="checkbox"
-              checked={randomisedTimes}
-              onChange={(e) => setRandomisedTimes(e.target.checked)} />
-              {' '}Randomised times
-          </label>
-
-          <Button
-            loading={randomBatchLoading}
-            disabled={parseBatchRecipients().length === 0 || !difficulty || !scheduledFrom || !scheduledTo}
-            onClick={() => {
-              void handleBatchRandomSameEmail();
-            }}
-          >
-            Send Batch Random Times Same Email
-          </Button>
-        </div>
-      </Card>
-
-      <Card style={{ padding: 24, maxWidth: 520 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input
-            label="Batch recipients"
-            value={batchRecipients}
-            onChange={(e) => setBatchRecipients(e.target.value)}
-            placeholder="delivered@resend.dev"
-          />
-
-          <Input
-            label="Difficulty"
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as EmailDifficulty)}
-            placeholder="easy, medium or hard"
-          />
-
-          <Input
-            label="Scheduled from"
-            type='datetime-local'
-            value={scheduledFrom}
-            onChange={(e) => setScheduledFrom(e.target.value)}
-          />
-
-          <Input
-            label="Scheduled to"
-            type='datetime-local'
-            value={scheduledTo}
-            onChange={(e) => setScheduledTo(e.target.value)}
-          />
-
-          <label >
-            <input 
-              type="checkbox"
-              checked={randomisedTimes}
-              onChange={(e) => setRandomisedTimes(e.target.checked)} />
-              {' '}Randomised times
-          </label>
-
-          <Button
-            loading={differentBatchLoading}
-            disabled={parseBatchRecipients().length === 0 || !difficulty || !scheduledFrom || !scheduledTo}
-            onClick={() => {
-              void handleBatchRandomDifferentEmail();
-            }}
-          >
-            Send Batch Random Times Different Emails
-          </Button>
-        </div>
-      </Card>
+      <RandomBatchCard
+        batchRecipients={batchRecipients}
+        difficulty={difficulty}
+        scheduledFrom={scheduledFrom}
+        scheduledTo={scheduledTo}
+        randomisedTimes={randomisedTimes}
+        loading={differentBatchLoading}
+        buttonText="Send Batch Random Times Different Email"
+        disabled={randomBatchDisabled}
+        onBatchRecipientsChange={setBatchRecipients}
+        onDifficultyChange={setDifficulty}
+        onScheduledFromChange={setScheduledFrom}
+        onScheduledToChange={setScheduledTo}
+        onRandomisedTimesChange={setRandomisedTimes}
+        onSubmit={() => {
+          void handleBatchRandomDifferentEmail();
+        }}
+      />
     </AppLayout>
   );
 }
