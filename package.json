@@ -20,7 +20,7 @@
 		"dev:api-gateway": "pnpm --filter api-gateway start:dev",
 		"prod:api-gateway": "pnpm --filter api-gateway start:prod",
 		"lint:api-gateway": "pnpm --filter api-gateway lint",
-		"test:api-gateway": "pnpm --filter api-gateway test",
+		"test:api-gateway": "cross-env NODE_ENV=test LOG_TO_FILE=false pnpm --filter api-gateway test",
 		"build:accounts-service": "pnpm --filter accounts-service build",
 		"dev:accounts-service": "pnpm --filter accounts-service start:dev",
 		"prod:accounts-service": "pnpm --filter accounts-service start:prod",
@@ -91,6 +91,7 @@
 		"@types/passport-jwt": "^4.0.1",
 		"amqp-connection-manager": "^5.0.0",
 		"amqplib": "^2.0.1",
+		"cross-env": "^10.1.0",
 		"dotenv": "^17.4.2",
 		"dotenv-cli": "^11.0.0"
 	},
