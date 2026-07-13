@@ -8,6 +8,10 @@ WORKDIR /app
 
 RUN chown -R appuser:phishshield /app
 
+RUN mkdir -p ../var/log/api-gateway
+
+RUN chown -R appuser:phishshield ../var/log/api-gateway
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/api-gateway/package.json ./project/backend/api-gateway/package.json
 COPY project/backend/api-gateway/ ./project/backend/api-gateway/

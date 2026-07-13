@@ -20,7 +20,7 @@
 		"dev:api-gateway": "pnpm --filter api-gateway start:dev",
 		"prod:api-gateway": "pnpm --filter api-gateway start:prod",
 		"lint:api-gateway": "pnpm --filter api-gateway lint",
-		"test:api-gateway": "pnpm --filter api-gateway test",
+		"test:api-gateway": "cross-env NODE_ENV=test LOG_TO_FILE=false pnpm --filter api-gateway test",
 		"build:accounts-service": "pnpm --filter accounts-service build",
 		"dev:accounts-service": "pnpm --filter accounts-service start:dev",
 		"prod:accounts-service": "pnpm --filter accounts-service start:prod",
@@ -91,25 +91,28 @@
 		"@types/passport-jwt": "^4.0.1",
 		"amqp-connection-manager": "^5.0.0",
 		"amqplib": "^2.0.1",
+		"cross-env": "^10.1.0",
 		"dotenv": "^17.4.2",
 		"dotenv-cli": "^11.0.0"
 	},
 	"dependencies": {
+		"@golevelup/nestjs-rabbitmq": "^9.0.2",
 		"@nestjs/axios": "^4.0.1",
 		"@nestjs/config": "^4.0.4",
 		"@nestjs/passport": "^11.0.5",
 		"@nestjs/swagger": "^11.4.3",
 		"@nestjs/typeorm": "^11.0.1",
-		"@golevelup/nestjs-rabbitmq": "^9.0.2",
 		"@tailwindcss/postcss": "^4.3.0",
-		"class-validator": "^0.15.1",
 		"class-transformer": "^0.5.1",
+		"class-validator": "^0.15.1",
 		"jwks-rsa": "^4.0.1",
 		"passport": "^0.7.0",
 		"passport-jwt": "^4.0.1",
 		"pg": "^8.20.0",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.2",
-		"typeorm": "^0.3.29"
+		"typeorm": "^0.3.29",
+		"winston": "^3.19.0",
+		"winston-daily-rotate-file": "^5.0.0"
 	}
 }
