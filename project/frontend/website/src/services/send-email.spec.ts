@@ -1,4 +1,4 @@
-import { isErrorResponse, sendEmail } from './send-email';
+import { isErrorResponse, sendEmail, scheduleEmail } from './send-email';
 import { SendEmailResponse, ErrorResponse } from '../types';
 import { API_BASE } from './api';
 
@@ -138,5 +138,122 @@ describe('sendEmail', () => {
         await expect(
             sendEmail('PHISH-123', 'recipient@example.com'),
         ).rejects.toThrow('Failed to send email');
+    });
+});
+
+describe('scheduleEmail', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        localStorage.clear();
+        vi.stubGlobal('fetch', mockFetch);
+    }
+    );
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('should schedule an email and return response', async () => {
+        const backendResponse: SendEmailResponse ={
+            success: true,
+            message: 'Email scheduled successfully',
+        };
+
+        localStorage.setItem('access_token', 'test-token');
+
+        mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
+
+        const result = await scheduleEmail(
+            'PHISH-567',
+            'recipient@example.com',
+            '2026-10-20T10:30:00.000Z',
+        );
+
+        expect(result).toEqual(backendResponse);
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            `${API_BASE}/emails/PHISH-567/schedule-send-single`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer test-token',
+                },
+                body: JSON.stringify({
+                    recipient: 'recipient@example.com',
+                    scheduledAt: '2026-10-20T10:30:00.000Z',
+                }),
+            },
+        );
+    });
+
+    it('should not include an authorisation header when there is no token', async () => {
+        const backendResponse: SendEmailResponse ={
+            success: true,
+        };
+
+        mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
+
+        await scheduleEmail(
+            'PHISH-567',
+            'recipient@example.com',
+            '2026-10-20T10:30:00.000Z',
+        );
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }),
+        );
+    });
+
+    it('should throw beckend error if the scheduling fails', async () => {
+        mockFetch.mockResolvedValue(createMockResponse(false, {
+            message: 'The scheduled date must be in the future',
+        }));
+
+        await expect(
+            scheduleEmail(
+                'PHISH-567',
+                'recipient@example.com',
+                '2020-01-01T10:30:00.000Z',
+            ),
+        ).rejects.toThrow('The scheduled date must be in the future');
+    });
+
+    it('should throw fallback error if backend response has no valid message', async () => {
+        mockFetch.mockResolvedValue(createMockResponse(false, {
+            error: 'Unknown scheduling error',
+        }));
+
+        await expect(
+            scheduleEmail(
+                'PHISH-567', 
+                'recipient@example.com',
+                '2026-10-20T10:30:00.000Z',
+            ),
+        ).rejects.toThrow('Failed to schedule single email');
+    });
+
+    it('should throw fallback error if the error response is not valid JSON', async () => {
+        const response = {
+            ok: false,
+            json: vi.fn().mockRejectedValue(
+                new Error('Invalid JSON'),
+            ),
+        } as unknown as Response;
+
+        mockFetch.mockResolvedValue(response);
+
+        await expect(
+            scheduleEmail(
+                'PHISH-567', 
+                'recipient@example.com',
+                '2026-10-20T10:30:00.000Z',
+            ),
+        ).rejects.toThrow('Failed to schedule single email');
     });
 });
