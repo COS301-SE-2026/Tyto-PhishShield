@@ -269,13 +269,13 @@ function EmptyState({ message }: Readonly<{ message: string }>) {
     );
 }
 
-function LeaderboardBody({ loading, loadError, isEmpty, emptyMessage, children }: {
+function LeaderboardBody({ loading, loadError, isEmpty, emptyMessage, children }: Readonly<{
     loading: boolean;
     loadError: LoadError;
     isEmpty: boolean;
     emptyMessage: string;
     children: React.ReactNode;
-}) {
+}>) {
     if (loading) {
         return (
             <div style={{ padding: 48, display: 'flex', justifyContent: 'center' }}>
@@ -297,11 +297,11 @@ function LeaderboardBody({ loading, loadError, isEmpty, emptyMessage, children }
     return <>{children}</>;
 }
 
-function LeaderboardCard({title, action, children}: {
+function LeaderboardCard({title, action, children}: Readonly<{
     title:string;
     action?: React.ReactNode;
     children: React.ReactNode;
-}) {
+}>) {
     return (
         <Card>
             <div
