@@ -1,4 +1,4 @@
-﻿packages:
+packages:
   - 'project/**'
 allowBuilds:
   '@nestjs/core': true
@@ -12,3 +12,5 @@ allowBuilds:
   protobufjs: true
   'protobufjs@8.0.1': true
   unrs-resolver: true
+  cpu-features: true
+  ssh2: true

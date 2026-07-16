@@ -93,7 +93,9 @@
 		"amqplib": "^2.0.1",
 		"cross-env": "^10.1.0",
 		"dotenv": "^17.4.2",
-		"dotenv-cli": "^11.0.0"
+		"dotenv-cli": "^11.0.0",
+		"pg": "^8.20.0",
+		"testcontainers": "^12.0.4"
 	},
 	"dependencies": {
 		"@golevelup/nestjs-rabbitmq": "^9.0.2",
@@ -108,7 +110,6 @@
 		"jwks-rsa": "^4.0.1",
 		"passport": "^0.7.0",
 		"passport-jwt": "^4.0.1",
-		"pg": "^8.20.0",
 		"reflect-metadata": "^0.2.2",
 		"rxjs": "^7.8.2",
 		"typeorm": "^0.3.29",
