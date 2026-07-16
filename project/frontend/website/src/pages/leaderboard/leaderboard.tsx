@@ -146,7 +146,9 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
                             >
                                 <LeaderboardTable
                                     headers ={['Rank', 'Name', 'Department', 'XP']}
-                                    rows={filteredUserRows.map((u, index) =>[
+                                    rows={filteredUserRows.map((u, index) => ({
+                                        id: u.id,
+                                        cells: [
                                         `#${index + 1}`,
                                         <UserCell
                                            key={u.id}
@@ -156,7 +158,8 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
                                         />,
                                         u.department,
                                         u.xp.toLocaleString(),
-                                    ])}
+                                        ],
+                                    }))}
                                 />
                             </LeaderboardBody>
                         </LeaderboardCard>
@@ -200,13 +203,16 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
                             >
                                 <LeaderboardTable
                                     headers ={['Rank', 'Department', 'Members', 'Total XP', 'Average XP']}
-                                    rows={sortedDepartments.map((department, index) =>[
-                                      `#${index + 1}`,
-                                      department.department,
-                                      department.members.toString(),
-                                      department.totalXP.toLocaleString(),
-                                      department.averageXP.toLocaleString(),
-                                    ])}
+                                    rows={sortedDepartments.map((department, index) => ({
+                                        id: department.department,
+                                        cells: [
+                                        `#${index + 1}`,
+                                        department.department,
+                                        department.members.toString(),
+                                        department.totalXP.toLocaleString(),
+                                        department.averageXP.toLocaleString(),
+                                        ],
+                                    }))}
                                 />
                             </LeaderboardBody>
                         </LeaderboardCard>
