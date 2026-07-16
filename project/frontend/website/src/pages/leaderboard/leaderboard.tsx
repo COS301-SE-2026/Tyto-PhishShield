@@ -328,10 +328,15 @@ function LeaderboardCard({title, action, children}: Readonly<{
     );
 }
 
-function LeaderboardTable({headers, rows}: {
+interface LeaderboardRow {
+    id: string;
+    cells: React.ReactNode[];
+}
+
+function LeaderboardTable({headers, rows}: Readonly<{
     headers: string[];
-    rows: React.ReactNode[][];
-}) {
+    rows: LeaderboardRow[];
+}>) {
     return(
         <div style={{overflowX: 'auto'}}>
             <table style={{ width: '100%', borderCollapse: 'collapse'}}>
@@ -355,11 +360,11 @@ function LeaderboardTable({headers, rows}: {
                 </thead>
 
                 <tbody>
-                    {rows.map((row, i) => (
-                        <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
-                            {row.map((cell, j) => (
+                    {rows.map((row) => (
+                        <tr key={row.id} style={{ borderTop: '1px solid var(--border)' }}>
+                            {row.cells.map((cell, j) => (
                                 <td
-                                    key={j}
+                                    key={headers[j]}
                                     style={{
                                       padding: '14px 16px',
                                       color: 'var(--text-primary)',
