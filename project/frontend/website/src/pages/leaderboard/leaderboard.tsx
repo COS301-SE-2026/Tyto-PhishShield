@@ -25,7 +25,7 @@ interface UserRow {
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-export default function Leaderboard({onNavigate, activePath}: LeaderboardProps) {
+export default function Leaderboard({onNavigate, activePath}: Readonly<LeaderboardProps>) {
     const { user } = useAuth();
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<LeaderboardTab>('departments');
@@ -217,11 +217,11 @@ export default function Leaderboard({onNavigate, activePath}: LeaderboardProps) 
     );
 }
 
-function TabButton ({active, onClick, children,} : {
+function TabButton ({active, onClick, children,} : Readonly<{
     active: boolean;
     onClick: () => void;
     children: React.ReactNode;
-}) {
+}>) {
     return (
         <button
             type='button'
@@ -241,7 +241,7 @@ function TabButton ({active, onClick, children,} : {
     );
 }
 
-function UserCell({ name, isSelf, medal }: { name: string; isSelf: boolean; medal?: string }) {
+function UserCell({ name, isSelf, medal }: Readonly<{ name: string; isSelf: boolean; medal?: string }>) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
@@ -260,7 +260,7 @@ function UserCell({ name, isSelf, medal }: { name: string; isSelf: boolean; meda
     );
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ message }: Readonly<{ message: string }>) {
     return (
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, 
             fontFamily: 'Inter, system-ui, sans-serif' }}>
