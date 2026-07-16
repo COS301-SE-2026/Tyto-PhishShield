@@ -10,6 +10,7 @@
 		"dev:all": "pnpm -r --if-present start:dev",
 		"prod:all": "pnpm -r --if-present start:prod",
 		"lint:all": "pnpm -r --if-present lint",
+		"test:integration": "pnpm --filter integration-tests test",
 		"build:website": "pnpm --filter website build",
 		"dev:website": "pnpm --filter website dev",
 		"lint:website": "pnpm --filter website lint",
