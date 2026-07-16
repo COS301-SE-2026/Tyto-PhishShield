@@ -21,7 +21,7 @@ export function getInitials(name?: string, email?: string): string {
   if (name?.trim()) {
     const parts = name.trim().split(/\s+/);
     return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      ? (parts[0][0] + parts.at(-1)![0]).toUpperCase()
       : parts[0].slice(0, 2).toUpperCase();
   }
   return (email ?? '??').slice(0, 2).toUpperCase();
