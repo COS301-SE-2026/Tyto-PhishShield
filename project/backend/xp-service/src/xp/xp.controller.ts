@@ -5,6 +5,7 @@
  * Exposes REST endpoints for awarding XP and querying XP records or totals.
  *
  * Functions:
+ * - {@link XpController#eventGiveXp} - Awards XP to a user from the event exchange
  * - {@link XpController#giveXp} - Awards XP to a user.
  * - {@link XpController#getAllXp} - Returns all XP records from the database.
  * - {@link XpController#getNetXpAllUsers} - Returns aggregated XP totals for all users.
@@ -16,10 +17,20 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { XpService } from './xp.service';
 import { GiveXpDto } from '../dto/give-xp.dto';
 import { XpEntity } from '../entities/xp.entity';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 @Controller('xp')
 export class XpController {
   constructor(private readonly xpService: XpService) {}
+
+  @RabbitSubscribe({
+    exchange: 'xp-event-exchange',
+    routingKey: 'xp.give',
+    queue: 'xp-queue',
+  })
+  async eventGiveXp(xpObject: GiveXpDto): Promise<XpEntity> {
+    return this.xpService.giveXp(xpObject);
+  }
 
   @Post()
   async giveXp(@Body() dto: GiveXpDto): Promise<XpEntity> {
