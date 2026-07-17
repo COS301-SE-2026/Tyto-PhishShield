@@ -3,8 +3,7 @@
 ## Introducation
 The system consists of three parts namely: The client side, the microservices and the event system.<br>
 The first level of the architecture is that we use a Client-Server architecture where the clients will communicate to the servers through the API gateway. Everything after the API gateway will form the server side of the architecture.<br>
-Going in deeper on the server side, to handle communication between microservices we use event driven messaging by using the event system. On the client side, clients will use a request response model to communicate with the API gateway. The API gateway will also use request response communication with the micrservices. The primary communication protocol that will be used accross the system will by HTTP. We may use Remote Procedure Calls (RPC) if it is seen that some services require a response back from the event system.<br>
-As already mentioned two main architecture patterns are being used. Microservices is used to handle each bussiness goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate bussiness logic and create a modular and scalable platform. An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistant with one another.<br>
+Going in deeper on the server side, to handle communication between microservices we use event driven messaging by using the event system. On the client side, clients will use a request response model to communicate with the API gateway. The API gateway will also use request response communication with the micrservices. The primary communication protocol that will be used accross the system will be HTTP. We may use Remote Procedure Calls (RPC) if it is seen that some services require a response back from the event system.<br>
 
 ## Architecture Diagram
 ![Architecture Diagram](<../images/Architecture Diagram.png>)
@@ -12,8 +11,13 @@ As already mentioned two main architecture patterns are being used. Microservice
 ## Architectural Requirements
 
 ### Architecture Patterns
+As already alluded to, there are two main architecture patterns being used. Microservices is used to handle each bussiness goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate bussiness logic and create a modular and scalable platform. An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistant with one another.<br>
+Thus in using these two architectural patterns the system essentially uses event driven microservices as its official architectural pattern.
 
 ### Design Patterns
+Analyising the system on a design level we can point out the usage of a few design patterns:<br>
+Firstly the API gateway acts as a facade, creating an interface through which the rest of the system can be used. This improves maintainablity since we make use of one entry point through which requests enter into the system which is easier to maintain than having multiple entry points.<br>
+Then the event driven system acts as a mediator for the services. The event driven system can have multiple event exchanges through which services can recieve different types of event messages and handle some system logic on the backend. This improves flexibility allowing system logic to be handled independantly by separate services.
 
 ### Constriants 
 
