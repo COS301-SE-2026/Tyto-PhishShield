@@ -26,7 +26,6 @@
   <!-- Added localhost to AppDomain for now. We can remove it and update the other link once the website is deployed -->
   <AppDomains>
     <AppDomain>http://localhost:3000</AppDomain>
-    <AppDomain>https://www.tyto-phishshield.com</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -80,28 +79,6 @@
 
                 <Label resid="GroupLabel"/>
 
-                <!-- Open Taskpane Button -->
-                <Control xsi:type="Button" id="msgReadOpenPaneButton">
-
-                  <Label resid="TaskpaneButton.Label"/>
-
-                  <Supertip>
-                    <Title resid="TaskpaneButton.Label"/>
-                    <Description resid="TaskpaneButton.Tooltip"/>
-                  </Supertip>
-
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
-                  </Icon>
-
-                  <Action xsi:type="ShowTaskpane">
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-
-                </Control>
-
                 <!-- Report Phish Button -->
                 <Control xsi:type="Button" id="ActionButton">
 
@@ -118,8 +95,8 @@
                     <bt:Image size="80" resid="Icon.80x80"/>
                   </Icon>
 
-                  <Action xsi:type="ExecuteFunction">
-                    <FunctionName>action</FunctionName>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url"/>
                   </Action>
 
                 </Control>
