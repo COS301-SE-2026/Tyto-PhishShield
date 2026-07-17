@@ -1,17 +1,18 @@
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 export class PostgreSQLFactory {
-    private containers: StartedPostgreSqlContainer[] = [];
+    private static containers: StartedPostgreSqlContainer[] = [];
 
-    public async createContainer() {
-        const postgres = await new PostgreSqlContainer('15-alpine').start();
+    public static async createContainer() {
+        const postgres = await new PostgreSqlContainer('postgres:15-alpine').start();
         this.containers.push(postgres);
         return postgres;
     }
 
-    public async stopAllContainers() {
-        this.containers.forEach(container => (
-            container.stop()
+    public static async stopAllContainers() {
+        this.containers.forEach(async container => (
+            await container?.stop()
         ));
+        this.containers = [];
     }
 }
