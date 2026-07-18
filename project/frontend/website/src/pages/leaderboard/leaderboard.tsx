@@ -3,7 +3,8 @@ import { AppLayout } from "../../components/layout/app-layout";
 import { Badge, Card, Input, Select, Spinner } from "../../components/ui";
 import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../context/toast-context";
-import { fetchLeaderboardUsers, getInitials, groupUsersByDepartment, resolveDepartment, type RealUser, } from "./leaderboard.service";
+import { fetchLeaderboardUsers, fetchLeaderboardXp, getInitials, groupUsersByDepartment, resolveDepartment, type RealUser, 
+    type XpNetEntry, } from "./leaderboard.service";
 
 interface LeaderboardProps {
   onNavigate: (path: string) => void;
@@ -35,6 +36,7 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     const [realUsers, setRealUsers] = useState<RealUser[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<LoadError>(null);
+    const [xpEntries, setXpEntries] = useState<XpNetEntry[] | null>(null);
 
     //Important: Leaderboard nav item should have no minRole as every registered user is supposed to be able
     //to see it, not just admin/analyst. GET /api/accounts/users is restricted server-side to admin/analyst (RolesGuard)
