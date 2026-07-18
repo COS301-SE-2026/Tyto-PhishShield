@@ -7,7 +7,7 @@
 
   <Id>714d3484-e042-4987-b0be-ec38e16ccbd5</Id>
 
-  <Version>1.0.0.0</Version>
+  <Version>1.0.1.0</Version>
 
   <ProviderName>Tyto</ProviderName>
 
@@ -25,7 +25,7 @@
 
   <!-- Added localhost to AppDomain for now. We can remove it and update the other link once the website is deployed -->
   <AppDomains>
-    <AppDomain>http://localhost:3000</AppDomain>
+    <AppDomain>https://localhost:3000</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -127,16 +127,12 @@
 
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="Tyto PhishShield"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Open PhishShield"/>
-        <bt:String id="ActionButton.Label" DefaultValue="Report Phish"/>
+        <bt:String id="ActionButton.Label" DefaultValue="Report Phishing"/>
       </bt:ShortStrings>
 
       <bt:LongStrings>
-        <bt:String id="TaskpaneButton.Tooltip"
-                   DefaultValue="Open the Tyto PhishShield add-in."/>
-
         <bt:String id="ActionButton.Tooltip"
-                   DefaultValue="Report this selected email as suspicious."/>
+                   DefaultValue="Open Tyto PhishShield to report the selected email"/>
       </bt:LongStrings>
 
     </Resources>
