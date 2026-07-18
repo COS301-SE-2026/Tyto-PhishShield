@@ -17,6 +17,23 @@ export async function fetchLeaderboardUsers(): Promise<RealUser[]> {
   return res.json() as Promise<RealUser[]>;
 }
 
+export interface XpNetEntry {
+  auth0Id: string;
+  totalXp: number;
+}
+
+export interface XpNetEntry {
+  auth0Id: string;
+  totalXp: number;
+}
+
+// Only includes users with at least one XP entry (below)
+export async function fetchLeaderboardXp(): Promise<XpNetEntry[]> {
+  const res = await authFetch(`${API_BASE}/xp/net`);
+  if (!res.ok) throw new Error(`Failed to load XP (${res.status})`);
+  return res.json() as Promise<XpNetEntry[]>;
+}
+
 export function getInitials(name?: string, email?: string): string {
   if (name?.trim()) {
     const parts = name.trim().split(/\s+/);
