@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Unique,
 } from 'typeorm';
 
 export enum ReportStatus {
@@ -12,6 +13,8 @@ export enum ReportStatus {
   CONFIRMED_PHISHING = 'confirmed_phishing',
   FALSE_POSITIVE = 'false_positive',
 }
+
+@Unique('UQ_report_user_outlook_message', ['auth0Id', 'outlookMessageId'])
 
 @Entity('reports')
 export class Report {
