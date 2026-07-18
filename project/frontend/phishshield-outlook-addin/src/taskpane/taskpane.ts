@@ -3,6 +3,8 @@
  * See LICENSE in the project root for license information.
  */
 
+import { error } from "console";
+
 /* global document, Office, fetch, localStorage, console */
 
 const API_BASE = 'http://localhost:3001/api';
@@ -22,7 +24,7 @@ interface AuthenticatedUser {
 }
 
 interface PhishingReportPayload  {
-  outlookMessageId?: string;
+  outlookMessageId: string;
   emailSubject?: string;
   emailSender?: string;
   emailReceivedAt?: string;
@@ -114,7 +116,7 @@ async function getCurrentUser(
   }
 
   return response.json() as Promise<AuthenticatedUser>;
-  
+
 }
 
 async function restoreSession(): Promise<void> {
@@ -246,9 +248,14 @@ function getEmailBody(item: Office.MessageRead,): Promise<string> {
 
 async function buildReportPayload(item: Office.MessageRead,): Promise<PhishingReportPayload>{
   const emailBody = await getEmailBody(item);
+  const outlookMessageId =item.itemId || item.internetMessageId;
+
+  if(!outlookMessageId) {
+    throw new Error('Outlook could not determine the selected email ID')
+  }
 
   return {
-    outlookMessageId: item.itemId || item.internetMessageId || undefined,
+    outlookMessageId,
     emailSubject: item.subject || undefined,
     emailSender: item.from?.emailAddress || undefined,
     emailReceivedAt: item.dateTimeCreated?.toISOString(),
