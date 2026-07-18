@@ -2,13 +2,14 @@
 <!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Contoso Task Pane Add-in</title>
+
+    <title>Tyto PhishShield</title>
 
     <!-- Office JavaScript API -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
@@ -20,36 +21,95 @@
     <link href="taskpane.css" rel="stylesheet" type="text/css" />
 </head>
 
-<body class="ms-font-m ms-welcome ms-Fabric">
-    <header class="ms-welcome__header ms-bgColor-neutralLighter">
-        <img width="90" height="90" src="../../assets/logo-filled.png" alt="Contoso" title="Contoso" />
-        <h1 class="ms-font-su">Welcome</h1>
+<body class="ms-font-m ms-Fabric">
+  <main class="phishshield-container">
+    <header class="phishshield-header">
+      <img
+        class="phishshield-logo"
+        src="../../assets/logo-filled.png"
+        alt="Tyto PhishShield"
+      />
+
+      <div>
+        <h1>Tyto PhishShield</h1>
+        <p>Report suspicious emails</p>
+      </div>
     </header>
-    <section id="sideload-msg" class="ms-welcome__main">
-        <h2 class="ms-font-xl">Please <a target="_blank" href="https://learn.microsoft.com/office/dev/add-ins/testing/test-debug-office-add-ins#sideload-an-office-add-in-for-testing">sideload</a> your add-in to see app body.</h2>
+
+    <section id="status-message" class="status-message" hidden></section>
+
+    <section id="login-section">
+      <h2>Sign in</h2>
+
+      <p class="section-description">
+        Sign in with your PhishShield account
+      </p>
+
+      <form id="login-form">
+        <label for="login-email">Email address</label>
+
+        <input
+          id="login-email"
+          type="email"
+          autocomplete="username"
+          placeholder="you@example.com"
+          required
+        />
+
+        <label for="login-password">Password</label>
+
+        <input
+          id="login-password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Enter your password"
+          required
+        />
+
+        <button id="login-button" type="submit">
+          Sign in
+        </button>
+      </form>
     </section>
-    <main id="app-body" class="ms-welcome__main" style="display: none;">
-        <h2 class="ms-font-xl"> Discover what Office Add-ins can do for you today! </h2>
-        <ul class="ms-List ms-welcome__features">
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Ribbon ms-font-xl"></i>
-                <span class="ms-font-m">Achieve more with Office integration</span>
-            </li>
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Unlock ms-font-xl"></i>
-                <span class="ms-font-m">Unlock features and functionality</span>
-            </li>
-            <li class="ms-ListItem">
-                <i class="ms-Icon ms-Icon--Design ms-font-xl"></i>
-                <span class="ms-font-m">Create and visualize like a pro</span>
-            </li>
-        </ul>
-        <p class="ms-font-l">Modify the source files, then click <b>Run</b>.</p>
-        <div role="button" id="run" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Run</span>
+
+    <section id="report-section" hidden>
+      <div class="signed-in-row">
+        <div>
+          <span class="signed-in-label">Signed in</span>
+          <p id="current-user-details">Authenticated user</p>
         </div>
-        <p><label id="item-subject"></label></p>
-    </main>
+
+        <button
+          id="logout-button"
+          type="button"
+          class="secondary-button"
+        >
+          Sign out
+        </button>
+      </div>
+
+      <hr />
+
+      <h2>Selected email</h2>
+
+      <dl class="email-details">
+        <div>
+          <dt>Subject</dt>
+          <dd id="email-subject">No subject</dd>
+        </div>
+
+        <div>
+          <dt>Sender</dt>
+          <dd id="email-sender">Unknown sender</dd>
+        </div>
+      </dl>
+
+      <button id="report-button" type="button">
+        Report selected email
+      </button>
+    </section>
+
+  </main>
 </body>
 
 </html>

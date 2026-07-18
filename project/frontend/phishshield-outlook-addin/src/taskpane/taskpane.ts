@@ -3,41 +3,361 @@
  * See LICENSE in the project root for license information.
  */
 
-/* global document, Office */
+/* global document, Office, fetch, localStorage, console */
 
-Office.onReady((info: any) => {
-  if (info.host === Office.HostType.Outlook) {
-    const sideloadMsg = document.getElementById("sideload-msg");
-    const appBody = document.getElementById("app-body");
-    const runButton = document.getElementById("run");
+const API_BASE = 'http://localhost:3001/api';
 
-    if (sideloadMsg) {
-      sideloadMsg.style.display = "none";
+const LOGIN_URL = `${API_BASE}/accounts/auth/login`;
+const ME_URL = `${API_BASE}/accounts/auth/me`;
+const REPORT_URL = `${API_BASE}/report`;
+
+interface LoginResponse {
+  access_token: string;
+  expires_in: number;
+}
+
+interface AuthenticatedUser {
+  auth0Id: string;
+  role: string;
+}
+
+interface PhishingReportPayload  {
+  outlookMessageId?: string;
+  emailSubject?: string;
+  emailSender?: string;
+  emailReceivedAt?: string;
+  emailBody?: string;
+}
+
+function getElement<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+
+  if (!element) {
+    throw new Error(`Element with ID "${id}" was not found.`);
+  }
+
+  return element as T;
+}
+
+function getAccessToken(): string| null{
+  return localStorage.getItem('access_token');
+}
+
+function clearSession(): void{
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('token_expiry');
+}
+
+function isTokenExpired(): boolean {
+  const expiry = Number(localStorage.getItem('token_expiry') ?? 0);
+
+  return !expiry || Date.now() >= expiry;
+}
+
+function showStatus(message: string, type: 'info' | 'success' | 'error' = 'info',): void {
+  const statusElement = getElement<HTMLElement>('status-message');
+
+  statusElement.textContent = message;
+  statusElement.className = `status-message status-${type}`;
+  statusElement.hidden = false;
+}
+
+function hideStatus(): void {
+  const statusElement = getElement<HTMLElement>('status-message');
+
+  statusElement.hidden = true;
+  statusElement.textContent = '';
+}
+
+function showLoginSection(): void {
+  getElement<HTMLElement>('login-section').hidden = false;
+  getElement<HTMLElement>('report-section').hidden = true;
+}
+
+function showReportSection(user: AuthenticatedUser): void{
+  getElement<HTMLElement>('login-section').hidden = true;
+  getElement<HTMLElement>('report-section').hidden = false;
+  getElement<HTMLElement>('current-user-details').textContent = `Role: ${user.role}`;
+}
+
+async function parseErrorMessage(response: Response,): Promise<string>{
+  const body: unknown = await response.json().catch(() => null);
+
+  if (typeof body === 'object' && body !== null && 'message' in body) {
+    const message = (body as { message?: unknown }).message;
+
+    if (Array.isArray(message)) {
+      return message.join('; ');
     }
 
-    if (appBody) {
-      appBody.style.display = "flex";
-    }
-
-    if (runButton) {
-      runButton.onclick = run;
+    if (typeof message === 'string') {
+      return message;
     }
   }
-});
 
-export async function run(): Promise<void> {
-  const item = Office.context.mailbox.item;
-  const insertAt = document.getElementById("item-subject");
+  return `Request failed with status ${response.status}`;
+}
 
-  if (!insertAt || !item) {
+async function getCurrentUser(
+  token: string,
+): Promise<AuthenticatedUser> {
+  const response = await fetch(ME_URL, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok){
+    throw new Error(await parseErrorMessage(response));
+  }
+
+  return response.json() as Promise<AuthenticatedUser>;
+  
+}
+
+async function restoreSession(): Promise<void> {
+  const token = getAccessToken();
+
+  if (!token || isTokenExpired()){
+    clearSession();
+    showLoginSection();
     return;
   }
 
-  const label = document.createElement("b");
-  label.appendChild(document.createTextNode("Subject: "));
+  try {
+    const user = await getCurrentUser(token);
 
-  insertAt.appendChild(label);
-  insertAt.appendChild(document.createElement("br"));
-  insertAt.appendChild(document.createTextNode(item.subject || ""));
-  insertAt.appendChild(document.createElement("br"));
+    showReportSection(user);
+  } catch (error) {
+    console.error('Could not restore session:', error);
+
+    clearSession();
+    showLoginSection();
+  }
 }
+
+async function login(email: string, password: string): Promise<void> {
+  const response = await fetch(LOGIN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response));
+  }
+
+  const result = (await response.json()) as LoginResponse;
+
+  if (!result.access_token || !result.expires_in) {
+    throw new Error('the login response did not contain a valid accesss token.');
+  }
+
+  localStorage.setItem('access_token', result.access_token);
+  localStorage.setItem('token_expiry', String(Date.now() + result.expires_in *1000));
+
+  const user = await getCurrentUser(result.access_token);
+
+  showReportSection(user);
+}
+
+async function handleLogin(event: Event): Promise<void> {
+  event.preventDefault();
+
+  hideStatus();
+
+  const emailInput = getElement<HTMLInputElement>('login-email');
+  const passwordInput = getElement<HTMLInputElement>('login-password');
+  const loginButton = getElement<HTMLButtonElement>('login-button');
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  if (!email || !password) {
+    showStatus(
+      'Enter both your email address and password.',
+      'error',
+    );
+
+    return;
+  }
+
+  loginButton.disabled = true;
+  loginButton.textContent = 'Signing in...';
+
+  try {
+    await login(email, password);
+
+    passwordInput.value = '';
+
+    showStatus('Signed in successfully.', 'success');
+  } catch (error) {
+    console.error('Login failed:', error);
+
+    showStatus(
+      error instanceof Error
+        ? error.message
+        : 'Could not sign in.',
+      'error',
+    );
+  } finally {
+    loginButton.disabled = false;
+    loginButton.textContent = 'Sign in';
+  }
+}
+
+function logout(): void {
+  clearSession();
+  hideStatus();
+  showLoginSection();
+}
+
+function getEmailBody(item: Office.MessageRead,): Promise<string> {
+  return new Promise((resolve) => {
+    if (!item.body) {
+      resolve('');
+
+      return;
+    }
+
+    item.body.getAsync(
+      Office.CoercionType.Text,
+      (result: Office.AsyncResult<string>) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded){
+          resolve(result.value || '');
+
+          return;
+        }
+
+        console.error('Could not read the email body:',result.error,);
+
+        resolve('');
+      },
+    );
+  });
+}
+
+async function buildReportPayload(item: Office.MessageRead,): Promise<PhishingReportPayload>{
+  const emailBody = await getEmailBody(item);
+
+  return {
+    outlookMessageId: item.itemId || item.internetMessageId || undefined,
+    emailSubject: item.subject || undefined,
+    emailSender: item.from?.emailAddress || undefined,
+    emailReceivedAt: item.dateTimeCreated?.toISOString(),
+    emailBody: emailBody ||undefined,
+  };
+}
+
+function displaySelectedEmail(item: Office.MessageRead,): void{
+  getElement<HTMLElement>('email-subject').textContent = item.subject || 'No Subject';
+
+  getElement<HTMLElement>('email-sender').textContent = item.from?.emailAddress || 'Unknown sender';
+}
+
+async function reportSelectedEmail(): Promise<void> {
+  hideStatus();
+  const token = getAccessToken();
+
+  if (!token || isTokenExpired()) {
+    clearSession();
+    showLoginSection();
+
+    showStatus('Your session has expired. Please sign in again.','error');
+
+    return;
+  }
+
+  const item = Office.context.mailbox.item;
+
+  if (!item) {
+    showStatus('No email is currently selected.', 'error');
+
+    return;
+  }
+
+  const reportButton = getElement<HTMLButtonElement>('report-button');
+  reportButton.disabled = true;
+  reportButton.textContent = 'Reporting..';
+
+  try{
+    const payload = await buildReportPayload(item);
+    console.log('Submitting report:', payload);
+
+    const response = await fetch(REPORT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401){
+        clearSession();
+        showLoginSection();
+
+        throw new Error(
+          'Your session is invalid or has expired. Please sign in again.',
+        );
+      }
+
+      throw new Error(await parseErrorMessage(response));
+    }
+
+    const result: unknown =await response.json().catch(() => null);
+
+    console.log('Report created:', result);
+
+    showStatus(
+      'The selected email was reported successfully.',
+      'success',
+    );
+  } catch (error) {
+    console.error('Could not report email:', error);
+
+    showStatus(
+      error instanceof Error ? error.message : 'Could not report the selected email.',
+      'error',
+    );
+  } finally {
+    reportButton.disabled = false;
+    reportButton.textContent = 'Report selected email';
+  }
+}
+
+Office.onReady((info) => {
+  if (info.host !== Office.HostType.Outlook) {
+    return;
+  }
+  const item = Office.context.mailbox.item;
+
+  if (item) {
+    displaySelectedEmail(item);
+  }
+
+  const loginForm = getElement<HTMLFormElement>('login-form');
+  const logoutButton = getElement<HTMLButtonElement>('logout-button');
+  const reportButton =getElement<HTMLButtonElement>('report-button');
+
+  loginForm.addEventListener('submit', (event) => {
+    void handleLogin(event);
+  });
+
+  logoutButton.addEventListener('click', logout);
+
+  reportButton.addEventListener('click', () => {
+    void reportSelectedEmail();
+  });
+
+  void restoreSession();
+
+});
