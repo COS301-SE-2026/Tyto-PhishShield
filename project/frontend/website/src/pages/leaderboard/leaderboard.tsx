@@ -60,19 +60,44 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
         return () => { cancelled = true; };
     }, []);
 
+    //Supplementary XP, no role restriction
+    useEffect(() => {
+        let cancelled = false;
+        fetchLeaderboardXp().then(data => { if (!cancelled) setXpEntries(data); })
+            .catch(() => {
+                if (!cancelled) {
+                    addToast({ type: 'error', title: 'Could not load XP totals', message: 'Showing 0 XP until this loads.' });
+                }
+            });
+        return () => { cancelled = true; };
+    }, []);
+
+    // xp-service only returns users with at least one XP entry (I think its because of the inner join)
+    const xpByAuth0Id = useMemo(() => {
+        const map = new Map<string, number>();
+        for (const entry of xpEntries ?? []) {
+            map.set(entry.auth0Id, entry.totalXp);
+        }
+        return map;
+    }, [xpEntries]);
+
+    const enrichedUsers: RealUser[] = useMemo(
+        () => (realUsers ?? []).map(u => ({ ...u, xp: xpByAuth0Id.get(u.auth0Id) ?? 0 })),
+        [realUsers, xpByAuth0Id],
+    );
+
     const userRows: UserRow[] = useMemo(() => {
-        if (!realUsers) return [];
-        return realUsers
+        return enrichedUsers
             .map(u => ({
                 id: u.id,
                 name: u.name?.trim() ? u.name.trim() : u.email,
                 // resolveDepartment() falls back to "Unassigned" until it is tracked server-side
                 department: resolveDepartment(u.department),
-                xp: u.xp ?? 0,
+                xp: u.xp,
                 isSelf: !!user && u.email === user.email,
             }))
             .sort((a, b) => b.xp - a.xp);
-    }, [realUsers, user]);
+    }, [enrichedUsers, user]);
 
     const filteredUserRows = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -81,8 +106,8 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     }, [userRows, search]);
 
     const departmentGroups = useMemo(
-        () => (realUsers ? groupUsersByDepartment(realUsers) : []),
-        [realUsers],
+        () => groupUsersByDepartment(enrichedUsers),
+        [enrichedUsers],
     );
 
     const sortedDepartments = useMemo(() => {
