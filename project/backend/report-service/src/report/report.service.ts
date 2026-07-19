@@ -1,4 +1,9 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Report, ReportStatus } from './entities/report.entity';
@@ -26,10 +31,10 @@ export class ReportService {
       where: {
         auth0Id: user.auth0Id,
         outlookMessageId: dto.outlookMessageId,
-      }
+      },
     });
 
-    if(existing) {
+    if (existing) {
       throw new ConflictException('You have already reported this email.');
     }
 

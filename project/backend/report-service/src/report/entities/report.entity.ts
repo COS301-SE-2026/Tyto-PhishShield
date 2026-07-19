@@ -15,7 +15,6 @@ export enum ReportStatus {
 }
 
 @Unique('UQ_report_user_outlook_message', ['auth0Id', 'outlookMessageId'])
-
 @Entity('reports')
 export class Report {
   @PrimaryGeneratedColumn('uuid')
