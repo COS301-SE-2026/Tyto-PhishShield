@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { XpWebsocketController } from './xp-websocket/xp-websocket.controller';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { XpWebsocketGateway } from './xp-websocket/xp-websocket.gateway';
+import { WebsocketTicketService } from './websocket-ticket.service';
 
 @Module({
   imports: [
@@ -17,6 +18,6 @@ import { XpWebsocketGateway } from './xp-websocket/xp-websocket.gateway';
     }),
   ],
   controllers: [XpWebsocketController],
-  providers: [XpWebsocketGateway],
+  providers: [XpWebsocketGateway, WebsocketTicketService],
 })
 export class WebsocketModule {}
