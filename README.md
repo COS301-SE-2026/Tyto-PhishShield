@@ -158,11 +158,27 @@ All project documentation can be found in our
 | Document |
 |-----------|
 | 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
+| 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
+| 📝 [User Manual](docs/setup-instructions/user-manual.md) |
 | 📖 [Project Documentation](project/README.md) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
-| 🎨 [Design Specification Preview](docs/design-specifications/design-specifications-document.md) |
+| 🎨 [Brand Style Guide Preview](docs/design-specifications/design-specifications-document.md) |
 | 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
+|🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
 
+<h2 align="center"> 📁 Documentation Archive<h2>
+<details style="font-size: 16px;">
+<summary>Demo 1 Documentation</summary>
+
+| Document |
+|-----------|
+|📋 [Software Requirements Specification (SRS)](docs/demo-1/Software_Requirements_Specification.md) |
+| 🎨 [Brand Style Guide Preview](docs/demo-1/design-specifications/index.html) |
+| 🎨 [Design Specification Document](docs/demo-1/design-specifications/design-specifications-document.md) |
+
+</details> 
 <br>
 
 ---
