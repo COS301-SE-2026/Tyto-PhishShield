@@ -153,7 +153,13 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                     {(user?.role ?? 'user').charAt(0).toUpperCase() + (user?.role ?? 'user').slice(1)} — contact your administrator to change
                   </div>
                 </div>
-                <Button loading={profileLoading} onClick={() => { void handleSaveProfile(); }} style={{ alignSelf: 'flex-start' }}>
+                <Button loading={profileLoading} onClick={() => { void handleSaveProfile(); }} 
+                  style={{ 
+                    alignSelf: 'flex-start',
+                    minWidth: 80,
+                    paddingLeft: 16,
+                    paddingRight: 16,
+                    }}>
                   Save Changes
                 </Button>
               </div>
@@ -169,14 +175,26 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 <PasswordInput label="Current password" placeholder="••••••••" value={currentPw} onChange={e => setCurrentPw(e.target.value)} />
                 <PasswordInput label="New password" placeholder="Min. 8 characters" value={newPw} onChange={e => { setNewPw(e.target.value); setPwError(''); }} />
                 <PasswordInput label="Confirm new password" placeholder="Repeat new password" value={confirmPw} onChange={e => { setConfirmPw(e.target.value); setPwError(''); }} error={pwError} />
-                <Button loading={pwLoading} onClick={() => { void handleChangePw(); }} style={{ alignSelf: 'flex-start' }}>
+                <Button loading={pwLoading} onClick={() => { void handleChangePw(); }} 
+                  style={{ 
+                    alignSelf: 'flex-start',
+                    minWidth: 80,
+                    paddingLeft: 16,
+                    paddingRight: 16, 
+                  }}>
                   Update Password
                 </Button>
               </div>
               <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Active Sessions</h3>
                 <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>You are currently signed in on this device.</p>
-                <Button variant="danger" size="sm" onClick={() => addToast({ type: 'warning', title: 'All sessions ended' })}>
+                <Button variant="danger" size="sm" onClick={() => addToast({ type: 'warning', title: 'All sessions ended' })}
+                  style={{
+                    alignSelf: 'flex-start',
+                    minWidth: 80,
+                    paddingLeft: 16,
+                    paddingRight: 16, 
+                  }}>
                   Sign out all devices
                 </Button>
               </div>
@@ -270,7 +288,14 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
               <Toggle value={notifDigest} onChange={setNotifDigest}
                 label="Weekly security digest"
                 desc="A weekly email summary of your performance and security score." />
-              <Button onClick={() => addToast({ type: 'success', title: 'Notification preferences saved' })} style={{ marginTop: 20, alignSelf: 'flex-start' }}>
+              <Button onClick={() => addToast({ type: 'success', title: 'Notification preferences saved' })} 
+                style={{ 
+                  marginTop: 20, 
+                  alignSelf: 'flex-start',
+                  minWidth: 80,
+                  paddingLeft: 16,
+                  paddingRight: 16, 
+                }}>
                 Save Preferences
               </Button>
             </div>

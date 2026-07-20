@@ -19,7 +19,6 @@ The Team:
  - [Use Case Diagrams](#use-case-diagrams)
  - [Requirements Use Case Traceability Matrix](#requirements-use-case-traceability-matrix)
  - [Domain Model](#domain-model)
- - [Architecture Diagram](#architecture-diagram)
 
 ## Project Vision
 Tyto-PhishShield aims to create a platform in which employees can be trained to detect phishing attacks. It acts as an enterprise-grade Human Risk Management
@@ -51,14 +50,15 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
 	- **FR 3.2.1**: The learning experience shall point out specific phishing indicators.
 	-    **FR 3.2.2**: The learning experience shall provide a short explanation of why the content is malicious.
 	-    **FR 3.2.3**: The learning experience shall display corrective guidance on how to identify similar threats in the future and how the user should handle it.
-- **FR 3.3**: The system shall provide a leader board with department and team rankings.
+- **FR 3.3**: The system shall provide a leaderboard with department and team rankings.
 	-    **FR 3.3.1**: The leaderboard will be updated live.
 
 **FR 4**: Authentication and Authorization 
-- **FR 4.1**: The system shall allow user registration and login.
+-    **FR 4.1**: The system shall allow user registration and login.
 -    **FR 4.2**: The system shall use Auth0/Firebase Authentication for user functionalities such as user login and registration, session management (JWT/token handling) and password reset.
 -    **FR 4.3**: The system shall enforce Role-Based Access Control (RBAC) supporting three distinct roles: Admin, Analyst and User.
 -    **FR 4.4**: The system shall evaluate RBAC server-side on every protected backend endpoint (API Gateway layer).
+-    **FR 4.5**: The system shall provide user state management with the following states: inactive and unverified, active and unverified, inactive and verified, active and verified.
 
 **FR 5**: Admin campaign portal
 -	**FR 5.1**: The system shall allow administrators to configure the difficulty level and context of generated phishing campaigns.
@@ -106,6 +106,7 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
 -	**OFR 9.1**: The system will allow users who failed to detect phishing content to go through educational material.
  -   **OFR 9.2**: The system will let the user take a test to learn how to detect phishing content.
  -   **OFR 9.3**: The system will allow the user to earn XP points based on how well the user did in the test.
+ -   **OFR 9.4**: The system will allow admins to create or generate educational material with the LLM.
 ## Non-Functional Requirements
 **NFR 1**: Security
 -	**NFR 1.1**: The system shall authenticate and authorize all protected API requests using Role-Based Access Control (RBAC) enforced at the API gateway layer with server-side validation on 100% of protected endpoints.
@@ -160,12 +161,15 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **UC-06**   | Admin can control and schedule campaigns.                      | As an Admin, I want to configure campaign parameters such as target group and schedule, so that the AI-generated phishing campaigns are tailored and executed at the scheduled times.        |
 | **UC-07**   | Admin and Analyst can view organizational metrics.             | As an Admin or Analyst, I want to view aggregated organizational metrics, so that I can identify common failure points and track the company's overall security posture.                     |
 | **UC-08**   | Admin can configure campaign difficulty.                       | As an Admin, I want to configure the difficulty level and context of AI-generated campaigns, so that the simulations match the evolving skill levels of our employees.                       |
-| **UC-09**   | Admin can manage users and roles .                             | As an Admin, I want to assign roles (Admin, Analyst, User) for registered accounts, so that I can control what each person can access within the platform.                                   |
+| **UC-09**   | Admin can manage users and roles.                              | As an Admin, I want to assign roles (Admin, Analyst, User) for registered accounts, so that I can control what each person can access within the platform.                                   |
 | **UC-10**   | System can send a scheduled simulated phishing campaign email. | As the system, I want to automatically deliver AI-generated phishing emails to targeted user groups at the scheduled times, so that employees are tested without manual intervention.        |
-| **UC-11**   | User can view their personal dashboard                         | As a user, I want to view my personal XP, progress history, and past campaign results, so that I can track my own improvement over time.                                                     |
-| **UC-12**   | System scrubs sensitive data before external API calls         | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                  |
-| **UC-13**   | User receives XP update after an action                        | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                           |
-| UC-14       | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
+| **UC-11**   | User can view their personal dashboard.                        | As a user, I want to view my personal XP, progress history, and past campaign results, so that I can track my own improvement over time.                                                     |
+| **UC-12**   | System scrubs sensitive data before external API calls.        | As the system, I want to automatically redact sensitive information from email content before sending it to external LLM APIs, so that POPIA/GDPR compliance is maintained.                  |
+| **UC-13**   | User receives XP update after an action.                       | As a user, I want my XP to be automatically updated after I report a phishing email or fall for a simulation, so that my score accurately reflects my performance.                           |
+| **UC-14**   | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
+| **UC-15**   | Admin can create educational material.                         | As an admin, I want to be able to create educational material for users manually or automatically with the AI engine.                                                                        |
+| **UC-16**   | Admin can manage user states.                                  | As an admin, I want to be able to activate or deactivate user accounts to manage user access to the system.                                                                                  |
+
 ## Use Case Diagrams
 
 ![Register and Login Use Cases](<../images/Register and Login Use Cases.jpg>)
@@ -178,36 +182,37 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 
 ## Requirements Use Case Traceability Matrix
 
-|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 |
-| ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |
-| **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |
-| **FR 1.3**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |
-| **FR 2.1**   | 3               |        |        |       |       |       | X      |       | X     |       | X     |       |       |       |       |
-| **FR 2.1.1** | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |
-| **FR 2.2**   | 3               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |
-| **FR 2.3**   | 2               |        |        |       |       |       |        |       |       |       |       |       | X     |       |       |
-| **FR 3.1**   | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |
-| **FR 3.1.1** | 2               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |
-| **FR 3.1.2** | 2               |        | X      |       |       |       |        |       |       |       |       |       |       | X     |       |
-| **FR 3.1.3** | 1               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |
-| **FR 3.1.4** | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |
-| **FR 3.2**   | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
-| **FR 3.2.1** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
-| **FR 3.2.2** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
-| **FR 3.2.3** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       |
-| **FR 3.3**   | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |
-| **FR 3.3.1** | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |
-| **FR 4.1**   | 3               |        |        |       | X     | X     |        |       |       |       |       |       |       |       | X     |
-| **FR 4.2**   | 2               |        |        |       | X     | X     |        |       |       |       |       |       |       |       |       |
-| **FR 4.3**   | 2               |        |        |       |       | X     |        |       |       | X     |       |       |       |       | X     |
-| **FR 4.4**   | 2               |        |        |       |       | X     |        |       |       |       |       |       |       |       |       |
-| **FR 5.1**   | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |
-| **FR 5.2**   | 2               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |
-| **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |
-| **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |
-| **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |       |
-| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | 5     |
+|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 | UC-15 | **UC-16** |
+| ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | --------- |
+| **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 1.3**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 2.1**   | 3               |        |        |       |       |       | X      |       | X     |       | X     |       |       |       |       |       |           |
+| **FR 2.1.1** | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |       |           |
+| **FR 2.2**   | 3               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |       |           |
+| **FR 2.3**   | 2               |        |        |       |       |       |        |       |       |       |       |       | X     |       |       |       |           |
+| **FR 3.1**   | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.1** | 2               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.2** | 2               |        | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.3** | 1               | X      |        |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.1.4** | 2               | X      | X      |       |       |       |        |       |       |       |       |       |       | X     |       |       |           |
+| **FR 3.2**   | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.2.1** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.2.2** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.2.3** | 1               |        | X      |       |       |       |        |       |       |       |       |       |       |       |       | X     |           |
+| **FR 3.3**   | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |       |           |
+| **FR 3.3.1** | 2               |        |        | X     |       |       |        |       |       |       |       | X     |       |       |       |       |           |
+| **FR 4.1**   | 3               |        |        |       | X     | X     |        |       |       |       |       |       |       |       | X     |       | X         |
+| **FR 4.2**   | 2               |        |        |       | X     | X     |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 4.3**   | 2               |        |        |       |       | X     |        |       |       | X     |       |       |       |       | X     |       |           |
+| **FR 4.4**   | 2               |        |        |       |       | X     |        |       |       |       |       |       |       |       | X     |       | X         |
+| **FR 4.5**   | 2               |        |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
+| **FR 5.1**   | 1               |        |        |       |       |       | X      |       | X     |       |       |       |       |       |       |       |           |
+| **FR 5.2**   | 2               |        |        |       |       |       | X      |       |       |       | X     |       |       |       |       |       |           |
+| **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
+| **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
+| **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |       |       |           |
+| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | 7     | 4     | 5         |
 ## Domain Model
 ![Domain model](<../images/Domain Model.jpg>)
 
@@ -238,79 +243,6 @@ The above domain model describes the Tyto-PhishShield system:
 	>A User can view thier position on the Leader Board and can view thier personal XP.<br>
 	A User can also view learning material which can also update their personal XP.<br>
 	Also Users belong to a department so that the Campaign Metrics class can provide metrics related to departmental interactions with the system.
-
-## Architecture Diagram
-![Architecture Diagram](<../images/Architecture Diagram.png>)
-### Overall Software Architecture
-The system consists of three parts namely: The client side, the microservices and the event system.<br>
-The first level of the architecture is that we use a Client-Server architecture where the clients will communicate to the servers through the API gateway. Everything after the API gateway will form the server side of the architecture.<br>
-Going in deeper on the server side, to handle communication between microservices we use event driven messaging by using the event system. On the client side, clients will use a request response model to communicate with the API gateway. The API gateway will also use request response communication with the micrservices. The primary communication protocol that will be used accross the system will by HTTP. We may use Remote Procedure Calls (RPC) if it is seen that some services require a response back from the event system.<br>
-As already mentioned two main architecture patterns are being used. Microservices is used to handle each bussiness goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate bussiness logic and create a modular and scalable platform. An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistant with one another.<br>
-
-### Architectural quality requirements
- 1. Flexibility
-
-	The system should be flexible so that through out the development of the platform new subsystems can easily be added and updated by swapping out a certain microservice. This can be measured by checking:<br>
-	- high code modularity
-	- loose coupling between services
-	- ensuring the code is self documented and readable
-
- 2. Maintainability
-
-	It is important for the system to be maintainable so that through out the development process and during handover it will be possible for anyone to maintain the life time of the system. It is also important that business operation are not disrupted during the life time of the platform.
-
- 3. Scalability
-
-	The system must be horizontally scalable to handle a minimum of 500 concurrent users with 99.9% up time. This can be measured by checking:
-	- concurrent connection requests
-	- testing increasing connection requests
-
- 4. Performance
-
-	Performance of the system is important to maintain the live updates of statistics. This can be measured by checking:
-	- the number of requests handled per second
-	- the average response time for requests
-
- 5. Reliability
-	
-	The system must be reliable to give reliable scores for employees and not to miss any reports created so that the company can see where they are potentially vulnerable. This can be checked by:
-	- testing the correctness of the system
-	- making sure the system can quickly recover from any failures
-
- 6. Security
-
-	The system must be secure as it will be dealing with personal details, and no unauthorized access should be allowed. The security is checked by:
-	- ensuring all data at rest and in transit are encrypted
-	- preventing injection and CSRF attacks
-
- 7. Auditability
-
-	The system should be auditable to comply with POPIA and GDPR laws. It also allows any faults to be found and understood. This can be checked by:
-	- error logs, application logs, access logs
-	- adding granular logging abilities to traceback activity
-
- 8. Testability
-
-	The system must be testable, all functions and operations must be tested with unit and integration tests. Code coverage should be above 80%. This can be measured by checking:
-	- automation of unit tests on GitHub actions
-	- the build status of the system
-	- the code testing coverage 
-
- 9. Usability
-
-	The system must be usable and easy to interact with. Employees should not need to be trained on how to use the system. The system must be intuitive providing good user experience. This can be measured by checking:
-	- development of wireframes
-	- performance of UI tests
-	- WCAG 2.1 AA accessibility compliance
-
-10. Integrability
-
-	Integrability of the system is very important so that future integration with HR systems can take place. Using microservices enables the system to be integrated easily due to the separation of concerns.
-
-### Architectural Responsibility
-API gateway is responsible for receiving client requests, authenticating clients and doing roll-based authentication control. The API gateway then routes user traffic to the correct microservice to handle user business logic.<br>
-Each microservice is self contained and receives requests from the API gateway. The microservice will handle business logic based on its definition and will also handle it's own transactions with its own database. A microservice may also send an event with data attached (a message) to the event system if other business logic needs to be accomplished but is not within the scope of the microservice.<br>
-The event system contains multiple event queues in which an event being processed by the system can attach messages to a given queue and send out the messages to the correct microservice which is subscribed to a specific queue. 
 
 ---
 For more details on user stories see: [User Stories](./User_Stories.md)

@@ -204,7 +204,15 @@ export function Register({ onNavigate }: RegisterProps) {
   };  */
 
     const rightPanel = (
-    <div style={{ width: '100%', maxWidth: 410 }}>
+    <div style={{ 
+        width: '100%', 
+        maxWidth: 450,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-xl)',
+        boxShadow: 'var(--shadow-sm)',
+        padding: '32px 34px',
+     }}>
       {/* Step 1 */}
       {step === 1 && (
         <>
