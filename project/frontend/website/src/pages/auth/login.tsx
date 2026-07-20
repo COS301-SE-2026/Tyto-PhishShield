@@ -11,7 +11,7 @@ interface LoginProps {
 
 // OTP verification moved here from registration: the idea is a user only has to confirm a 1-time code the first time
 // they log in after registering. I left disabled for now because the OTP email itself isn't reliably sending yet.
-const OTP_LOGIN_ENABLED: boolean = false;
+const OTP_LOGIN_ENABLED = false;
 
 function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [email, setEmail] = useState('');
