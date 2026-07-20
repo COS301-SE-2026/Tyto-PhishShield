@@ -1,18 +1,18 @@
 import { isErrorResponse } from './send-email';
-import { EmailDifficulty } from './send-batch-email';
+import type { EmailDifficulty } from './send-batch-email';
 import { API_BASE,authFetch } from './api';
 
 const EMAIL_BASE = `${API_BASE}/emails`;
 
 export interface EmailTemplate {
+    id: string;
     referenceNumber: string;
     sender: string;
     alias?: string;
     subject: string;
     content: string;
     difficulty: EmailDifficulty;
-    createdAt?: string;
-    updatedAt?: string;
+    createdAt: string;
 }
 
 export interface CreateEmailTemplateRequest {
@@ -77,7 +77,7 @@ export async function createEmailTemplate(request: CreateEmailTemplateRequest): 
 
 export async function updateEmailTemplate(
     referenceNumber: 
-    string, request: CreateEmailTemplateRequest
+    string, request: UpdateEmailTemplateRequest
 ): Promise<EmailTemplate> {
     const response = await authFetch(
         `${EMAIL_BASE}/${encodeURIComponent(referenceNumber)}`,
