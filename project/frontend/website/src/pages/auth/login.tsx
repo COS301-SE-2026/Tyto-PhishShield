@@ -9,6 +9,10 @@ interface LoginProps {
   onNavigate: (path: string) => void;
 }
 
+// OTP verification moved here from registration: the idea is a user only has to confirm a 1-time code the first time
+// they log in after registering. I left disabled for now because the OTP email itself isn't reliably sending yet.
+const OTP_LOGIN_ENABLED: boolean = false;
+
 function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,6 +86,11 @@ export function Login({ onNavigate }: LoginProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [forgotOpen, setForgotOpen] = useState(false);
+   
+  const [otpStep, setOtpStep] = useState(false); // First-login OTP step; see OTP_LOGIN_ENABLED above
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const validate = () => {
     const e: typeof errors = {};
