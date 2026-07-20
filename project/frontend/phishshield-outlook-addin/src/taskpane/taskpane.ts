@@ -48,7 +48,7 @@ function clearSession(): void {
   localStorage.removeItem("token_expiry");
 }
 
-function isTokenExpired(): boolean {
+export function isTokenExpired(): boolean {
   const expiry = Number(localStorage.getItem("token_expiry") ?? 0);
 
   return !expiry || Date.now() >= expiry;
@@ -80,7 +80,7 @@ function showReportSection(user: AuthenticatedUser): void {
   getElement<HTMLElement>("current-user-details").textContent = `Role: ${user.role}`;
 }
 
-async function parseErrorMessage(response: Response): Promise<string> {
+export async function parseErrorMessage(response: Response): Promise<string> {
   const body: unknown = await response.json().catch(() => null);
 
   if (typeof body === "object" && body !== null && "message" in body) {
@@ -98,7 +98,7 @@ async function parseErrorMessage(response: Response): Promise<string> {
   return `Request failed with status ${response.status}`;
 }
 
-async function getCurrentUser(token: string): Promise<AuthenticatedUser> {
+export async function getCurrentUser(token: string): Promise<AuthenticatedUser> {
   const response = await fetch(ME_URL, {
     method: "GET",
     headers: {
@@ -114,7 +114,7 @@ async function getCurrentUser(token: string): Promise<AuthenticatedUser> {
   return response.json() as Promise<AuthenticatedUser>;
 }
 
-async function restoreSession(): Promise<void> {
+export async function restoreSession(): Promise<void> {
   const token = getAccessToken();
 
   if (!token || isTokenExpired()) {
@@ -135,7 +135,7 @@ async function restoreSession(): Promise<void> {
   }
 }
 
-async function login(email: string, password: string): Promise<void> {
+export async function login(email: string, password: string): Promise<void> {
   const response = await fetch(LOGIN_URL, {
     method: "POST",
     headers: {
@@ -165,7 +165,7 @@ async function login(email: string, password: string): Promise<void> {
   showReportSection(user);
 }
 
-async function handleLogin(event: Event): Promise<void> {
+export async function handleLogin(event: Event): Promise<void> {
   event.preventDefault();
 
   hideStatus();
@@ -202,13 +202,13 @@ async function handleLogin(event: Event): Promise<void> {
   }
 }
 
-function logout(): void {
+export function logout(): void {
   clearSession();
   hideStatus();
   showLoginSection();
 }
 
-function getEmailBody(item: Office.MessageRead): Promise<string> {
+export function getEmailBody(item: Office.MessageRead): Promise<string> {
   return new Promise((resolve) => {
     if (!item.body) {
       resolve("");
@@ -230,7 +230,7 @@ function getEmailBody(item: Office.MessageRead): Promise<string> {
   });
 }
 
-async function buildReportPayload(item: Office.MessageRead): Promise<PhishingReportPayload> {
+export async function buildReportPayload(item: Office.MessageRead): Promise<PhishingReportPayload> {
   const emailBody = await getEmailBody(item);
   const outlookMessageId = item.itemId || item.internetMessageId;
 
@@ -247,13 +247,13 @@ async function buildReportPayload(item: Office.MessageRead): Promise<PhishingRep
   };
 }
 
-function displaySelectedEmail(item: Office.MessageRead): void {
+export function displaySelectedEmail(item: Office.MessageRead): void {
   getElement<HTMLElement>("email-subject").textContent = item.subject || "No Subject";
 
   getElement<HTMLElement>("email-sender").textContent = item.from?.emailAddress || "Unknown sender";
 }
 
-async function reportSelectedEmail(): Promise<void> {
+export async function reportSelectedEmail(): Promise<void> {
   hideStatus();
   const token = getAccessToken();
 
