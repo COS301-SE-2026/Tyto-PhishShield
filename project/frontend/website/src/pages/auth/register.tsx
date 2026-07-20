@@ -307,35 +307,15 @@ export function Register({ onNavigate }: RegisterProps) {
             STEP 3 OF 3
           </div>
           <h1 style={{ fontSize: 23, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Verify your email
+            Check your email
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            We sent a 6-digit code to <strong>{email}</strong>. Enter it below to complete registration.
+            A confirmation email has been sent to <strong>{email}</strong>. Click the link in that email to verify and activate your account.
           </p>
-          <div style={{ marginBottom: 16 }}>
-            <Input
-              label="Verification code"
-              placeholder="123456"
-              value={otpCode}
-              onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
-              error={otpError}
-              required
-              style={{ letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
-            />
-          </div>
-          <Button fullWidth loading={loading} onClick={() => { void handleOtpVerify(); }}
-            style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8, marginBottom: 14 }}>
-            Verify and Complete Registration
+          <Button fullWidth size="lg" onClick={() => onNavigate('/login')}
+            style={{ width: '100%', padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8 }}>
+            Go to login
           </Button>
-          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Didn't receive it?{' '}
-            <button
-              onClick={() => { void handleResendOtp(); }}
-              style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}
-            >
-              Resend code
-            </button>
-          </p>
         </>
       )}
     </div>
