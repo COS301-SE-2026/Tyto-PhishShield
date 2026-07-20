@@ -1,115 +1,102 @@
 <!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->
 <!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Tyto PhishShield</title>
 
     <!-- Office JavaScript API -->
-    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script
+      type="text/javascript"
+      src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"
+    ></script>
 
     <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->
-    <link rel="stylesheet" href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"/>
+    <link
+      rel="stylesheet"
+      href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"
+    />
 
     <!-- Template styles -->
     <link href="taskpane.css" rel="stylesheet" type="text/css" />
-</head>
+  </head>
 
-<body class="ms-font-m ms-Fabric">
-  <main class="phishshield-container">
-    <header class="phishshield-header">
-      <img
-        class="phishshield-logo"
-        src="../../assets/logo-filled.png"
-        alt="Tyto PhishShield"
-      />
-
-      <div>
-        <h1>Tyto PhishShield</h1>
-        <p>Report suspicious emails</p>
-      </div>
-    </header>
-
-    <section id="status-message" class="status-message" hidden></section>
-
-    <section id="login-section">
-      <h2>Sign in</h2>
-
-      <p class="section-description">
-        Sign in with your PhishShield account
-      </p>
-
-      <form id="login-form">
-        <label for="login-email">Email address</label>
-
-        <input
-          id="login-email"
-          type="email"
-          autocomplete="username"
-          placeholder="Enter your email"
-          required
-        />
-
-        <label for="login-password">Password</label>
-
-        <input
-          id="login-password"
-          type="password"
-          autocomplete="current-password"
-          placeholder="Enter your password"
-          required
-        />
-
-        <button id="login-button" type="submit">
-          Sign in
-        </button>
-      </form>
-    </section>
-
-    <section id="report-section" hidden>
-      <div class="signed-in-row">
-        <div>
-          <span class="signed-in-label">Signed in</span>
-          <p id="current-user-details">Authenticated user</p>
-        </div>
-
-        <button
-          id="logout-button"
-          type="button"
-          class="secondary-button"
-        >
-          Sign out
-        </button>
-      </div>
-
-      <hr />
-
-      <h2>Selected email</h2>
-
-      <dl class="email-details">
-        <div>
-          <dt>Subject</dt>
-          <dd id="email-subject">No subject</dd>
-        </div>
+  <body class="ms-font-m ms-Fabric">
+    <main class="phishshield-container">
+      <header class="phishshield-header">
+        <img class="phishshield-logo" src="../../assets/logo-filled.png" alt="Tyto PhishShield" />
 
         <div>
-          <dt>Sender</dt>
-          <dd id="email-sender">Unknown sender</dd>
+          <h1>Tyto PhishShield</h1>
+          <p>Report suspicious emails</p>
         </div>
-      </dl>
+      </header>
 
-      <button id="report-button" type="button">
-        Report selected email
-      </button>
-    </section>
+      <section id="status-message" class="status-message" hidden></section>
 
-  </main>
-</body>
+      <section id="login-section">
+        <h2>Sign in</h2>
 
+        <p class="section-description">Sign in with your PhishShield account</p>
+
+        <form id="login-form">
+          <label for="login-email">Email address</label>
+
+          <input
+            id="login-email"
+            type="email"
+            autocomplete="username"
+            placeholder="Enter your email"
+            required
+          />
+
+          <label for="login-password">Password</label>
+
+          <input
+            id="login-password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter your password"
+            required
+          />
+
+          <button id="login-button" type="submit">Sign in</button>
+        </form>
+      </section>
+
+      <section id="report-section" hidden>
+        <div class="signed-in-row">
+          <div>
+            <span class="signed-in-label">Signed in</span>
+            <p id="current-user-details">Authenticated user</p>
+          </div>
+
+          <button id="logout-button" type="button" class="secondary-button">Sign out</button>
+        </div>
+
+        <hr />
+
+        <h2>Selected email</h2>
+
+        <dl class="email-details">
+          <div>
+            <dt>Subject</dt>
+            <dd id="email-subject">No subject</dd>
+          </div>
+
+          <div>
+            <dt>Sender</dt>
+            <dd id="email-sender">Unknown sender</dd>
+          </div>
+        </dl>
+
+        <button id="report-button" type="button">Report selected email</button>
+      </section>
+    </main>
+  </body>
 </html>

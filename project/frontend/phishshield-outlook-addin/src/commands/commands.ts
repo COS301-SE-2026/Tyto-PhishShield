@@ -2,6 +2,6 @@
 
 Office.onReady((info) => {
   if (info.host === Office.HostType.Outlook) {
-    console.log('Tyto PhishShield commands file')
+    console.log("Tyto PhishShield commands file");
   }
-})
+});

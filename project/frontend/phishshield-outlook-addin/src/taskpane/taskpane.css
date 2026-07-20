@@ -5,53 +5,53 @@
 
 html,
 body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: #f8fafc;
-    color: #0f1722;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f8fafc;
+  color: #0f1722;
 }
 
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
- 
+
 button,
 input {
-    font: inherit;
+  font: inherit;
 }
 
 .phishshield-container {
-    width: 100%;
-    padding: 24px;
+  width: 100%;
+  padding: 24px;
 }
 
 .phishshield-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .phishshield-logo {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .phishshield-header h1 {
-    margin: 0 0 4px;
-    font-size: 20px;
+  margin: 0 0 4px;
+  font-size: 20px;
 }
 
 .phishshield-header p {
-    margin: 0;
-    color: #697b95;
-    font-size: 13px;
+  margin: 0;
+  color: #697b95;
+  font-size: 13px;
 }
- 
+
 h2 {
   margin: 0 0 8px;
   font-size: 17px;
@@ -135,20 +135,19 @@ button:disabled {
   color: #1d4ed8;
 }
 
-.status-success{
+.status-success {
   border: 1px solid #bbf7d0;
   background: #f0fdf4;
   color: #15803d;
 }
 
-.status-error{
+.status-error {
   border: 1px solid #fecaca;
   background: #fef2f2;
   color: #b91c1c;
 }
 
-
-.signed-in-row{
+.signed-in-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -187,7 +186,7 @@ hr {
   font-weight: 600;
 }
 
-.email-details dd{
+.email-details dd {
   margin: 0;
   overflow-wrap: anywhere;
   font-size: 13px;
