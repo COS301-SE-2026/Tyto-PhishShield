@@ -29,6 +29,7 @@ const {
   buildReportPayload,
   reportSelectedEmail,
   restoreSession,
+  getEmailBody,
 } = require("./taskpane");
 
 describe("taskpane authentication and reporting", () => {
@@ -299,5 +300,40 @@ describe("taskpane authentication and reporting", () => {
 
     expect(document.getElementById("login-section")?.hidden).toBe(false);
     expect(document.getElementById("report-section")?.hidden).toBe(true);
+  });
+
+  test("reportSelectedEmail should not send a request if no email selected", async () => {
+    setValidSession();
+
+    officeMock.context.mailbox.item = null;
+    await reportSelectedEmail();
+
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    expect(document.getElementById("status-message")?.textContent).toBe(
+      "No email is currently selected."
+    );
+    expect(document.getElementById("status-message")?.className).toBe(
+      "status-message status-error"
+    );
+  });
+
+  test("getEmailBody returns an empty string when Outlook cannot read the body", async () => {
+    const fakeItem = createFakeItem({
+      body: {
+        getAsync: jest.fn((_coercionType, callback) => {
+          callback({
+            status: officeMock.AsyncResultStatus.Failed,
+            error: {
+              message: "Could not read the email body",
+            },
+          });
+        }),
+      },
+    });
+
+    const body = await getEmailBody(fakeItem);
+
+    expect(body).toBe("");
   });
 });
