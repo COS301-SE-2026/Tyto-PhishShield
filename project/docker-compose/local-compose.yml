@@ -147,7 +147,8 @@ services:
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
-      - EDUCATION_SERVICE_URL=http://education_app:3006
+      - EDUCATION_SERVICE_URL=http://${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
@@ -163,8 +164,14 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - LOCAL_CORS=http://127.0.0.1
+      - SERVER_DOMAIN=${DOMAIN}
+      - OUTLOOK_ADDIN_CORS=
+      - LOG_DIR=/var/log/api-gateway
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+    volumes:
+      - api_gateway_logs:/var/log/api-gateway
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -409,8 +416,8 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
-    ports:
-      - '5173:5173'
+    # ports:
+    #   - '5173:5173'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
@@ -442,14 +449,17 @@ services:
       - '443:443'
     volumes:
       - ./local-caddy-conf:/etc/caddy/
+      - caddy_logs:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
 
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
+  api_gateway_logs:
   caddy_data:
   caddy_config:
+  caddy_logs:
   mailing_pgdata:
   accounts_pgdata:
   report_pgdata:

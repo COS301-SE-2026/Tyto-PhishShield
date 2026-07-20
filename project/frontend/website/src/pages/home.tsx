@@ -167,8 +167,12 @@ export function Home({ onNavigate }: HomeProps) {
         }}>
           {FEATURES.map((f, i) => (
             <div key={i} style={{
-              background: 'var(--bg-card)', borderRadius: 14, padding: '28px 22px',
-              border: '1px solid var(--border)', transition: 'transform 0.2s, box-shadow 0.2s',
+              background: 'var(--bg-card)', 
+              borderRadius: 14, 
+              padding: '28px 22px',
+              border: '1px solid var(--border)', 
+              boxShadow: 'var(--shadow-sm)',
+              transition: 'transform 0.2s, box-shadow 0.2s',
               cursor: 'default',
             }}
             onMouseEnter={e => {
@@ -177,7 +181,7 @@ export function Home({ onNavigate }: HomeProps) {
             }}
             onMouseLeave={e => {
               (e.currentTarget).style.transform = 'none';
-              (e.currentTarget).style.boxShadow = 'none';
+              (e.currentTarget).style.boxShadow = 'var(--shadow-sm)';
             }}
             >
               <div style={{

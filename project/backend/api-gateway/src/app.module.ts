@@ -14,6 +14,9 @@ import { AppService } from './app.service';
 import { MailingModule } from './mailing/mailing.module';
 
 import { ReportModule } from './report/report.module';
+import { EducationModule } from './education/education.module';
+import { APP_GUARD, Reflector } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { EducationModule} from './education/education.module'
@@ -81,6 +84,13 @@ import { EducationModule} from './education/education.module'
     WebsocketModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    Reflector,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    AppService,
+  ],
 })
 export class AppModule {}
