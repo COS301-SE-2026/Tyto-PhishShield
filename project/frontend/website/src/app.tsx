@@ -32,7 +32,7 @@ function App() {
       <Route path="/training" element={ <ProtectedRoute><Training onNavigate={handleNavigate} activePath="/training" /></ProtectedRoute> } />
       <Route path="/users/profile" element={ <ProtectedRoute><UserProfile onNavigate={handleNavigate} activePath="/users/profile" /></ProtectedRoute> } />
       <Route path="/settings" element={ <ProtectedRoute><Settings onNavigate={handleNavigate} activePath="/settings" /></ProtectedRoute> } />
-      <Route path="/send-email-test" element={ <ProtectedRoute><SendEmailTest onNavigate={handleNavigate} activePath="/send-email-test" /></ProtectedRoute> } />
+      <Route path="/send-email-test" element={ <ProtectedRoute minRole="analyst"><SendEmailTest onNavigate={handleNavigate} activePath="/send-email-test" /></ProtectedRoute> } />
       <Route path="/analytics" element={ <ProtectedRoute minRole="analyst"><Analytics onNavigate={handleNavigate} activePath="/analytics" /></ProtectedRoute> } />
       <Route path="/analytics/reports" element={ <ProtectedRoute minRole="analyst"><Reports onNavigate={handleNavigate} activePath="/analytics/reports" /></ProtectedRoute> } />
       <Route path="/campaigns" element={ <ProtectedRoute minRole="analyst"><Campaigns onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
