@@ -1,4 +1,19 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+
+    container_name: rabbitmq
+    hostname: rabbitmq-server
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   mailing_db:
     image: postgres:15-alpine
     restart: always
@@ -24,25 +39,34 @@ services:
       - mailing_pgdata:/var/lib/postgresql/data
       - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
 
-    ports:
-      # Left side must be unique
-      - "$MAILING_DB_PORT:5432"
+    # ports:
+    #   # Left side must be unique
+    #   - "$MAILING_DB_PORT:5432"
 
   mailing_app:
     image: fiveguys301/mailing:latest
     container_name: ${MAILING_APP_CONTAINER}
     environment:
-      - PORT=${MAILING_SERVICE_PORT}
-      - DB_HOST=${MAILING_DB_CONTAINER}
-      - MAILING_DB_PORT=${INTERNAL_DB_PORT}
-      - TCP_PORT=${MAILING_TCP_PORT}
+      - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - MAILING_DB_CONTAINER=${MAILING_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MAILING_DB_NAME=${MAILING_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
-    ports:
-      - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
+    # ports:
+    #   - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
 
     depends_on:
       mailing_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -63,8 +87,8 @@ services:
     container_name: ${ACCOUNTS_DB_CONTAINER}
     volumes:
       - accounts_pgdata:/var/lib/postgresql/data
-    ports:
-      - '${ACCOUNTS_DB_PORT}:5432'
+    # ports:
+    #   - '${ACCOUNTS_DB_PORT}:5432'
   
   accounts_app:
     image: fiveguys301/accounts:latest
@@ -85,10 +109,12 @@ services:
       - TCP_PORT=${ACCOUNTS_TCP_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - '${ACCOUNTS_SERVICE_PORT}:3002'
+    # ports:
+    #   - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:
       accounts_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -103,19 +129,27 @@ services:
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
       - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
+      - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+      - SERVER_DOMAIN=${DOMAIN}
+      - OUTLOOK_ADDIN_CORS=
+    # ports:
+    #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
   
   report_db:
     image: postgres:15-alpine
@@ -133,8 +167,8 @@ services:
       start_period: 30s
     volumes:
       - report_pgdata:/var/lib/postgresql/data
-    ports:
-      - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
+    # ports:
+    #   - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
 
   report_app:
     image: fiveguys301/report:latest
@@ -145,10 +179,12 @@ services:
       - DB_HOST=${REPORT_DB_CONTAINER}
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
+    # ports:
+    #   - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
     depends_on:
       report_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -169,8 +205,8 @@ services:
       start_period: 30s
     volumes:
       - xp_pgdata:/var/lib/postgresql/data
-    ports:
-      - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
+    # ports:
+    #   - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
 
   xp_app:
     image: fiveguys301/xp:latest
@@ -181,10 +217,98 @@ services:
       - DB_HOST=${XP_DB_CONTAINER}
       - XP_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    ports:
-      - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
+    # ports:
+    #   - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
     depends_on:
       xp_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  education_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${EDUCATION_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${EDUCATION_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${EDUCATION_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - education_pgdata:/var/lib/postgresql/data
+    # ports:
+    #   - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+  education_app:
+    image: fiveguys301/education:latest
+    container_name: ${EDUCATION_APP_CONTAINER}
+    environment:
+      - PORT=${EDUCATION_SERVICE_PORT}
+      - TCP_PORT=${EDUCATION_TCP_PORT}
+      - DB_HOST=${EDUCATION_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${EDUCATION_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    # ports:
+    #   - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
+
+    depends_on:
+      education_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  analytics_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${ANALYTICS_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${ANALYTICS_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ANALYTICS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - analytics_pgdata:/var/lib/postgresql/data
+
+    # ports:
+    #   - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+  analytics_app:
+    image: fiveguys301/analytics:latest
+    container_name: ${ANALYTICS_APP_CONTAINER}
+    environment:
+      - PORT=${ANALYTICS_SERVICE_PORT}
+      - TCP_PORT=${ANALYTICS_TCP_PORT}
+      - DB_HOST=${ANALYTICS_DB_CONTAINER}
+      - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    # ports:
+    #   - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
+
+    depends_on:
+      analytics_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -196,8 +320,6 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
-    ports:
-      - '5173:5173'
 
   caddy:
     image: caddy:2.11.3
@@ -208,6 +330,7 @@ services:
       - '443:443'
     volumes:
       - ./dev-caddy-conf:/etc/caddy/
+      - caddy_logs:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
   
@@ -230,7 +353,10 @@ volumes:
   accounts_pgdata:
   xp_pgdata:
   report_pgdata:
+  education_pgdata:
+  analytics_pgdata:
   caddy_data:
   caddy_config:
+  caddy_logs:
   rabbitmq_data:
     driver: local

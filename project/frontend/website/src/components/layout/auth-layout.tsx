@@ -35,7 +35,7 @@ export function AuthLayout({ leftContent, rightContent, onLogoClick }: AuthLayou
 
       {/* Right panel — form area */}
       <div style={{
-        flex: 1, background: 'var(--bg-card)',
+        flex: 1, background: 'var(--bg-[page])',
         display: 'flex', flexDirection: 'column',
         overflow: 'auto',
       }}>
