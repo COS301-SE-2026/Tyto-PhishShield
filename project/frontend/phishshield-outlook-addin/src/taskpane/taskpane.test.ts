@@ -23,7 +23,13 @@ const officeMock = {
 
 (global as any).Office = officeMock;
 
-const { isTokenExpired, login, buildReportPayload, reportSelectedEmail } = require("./taskpane");
+const {
+  isTokenExpired,
+  login,
+  buildReportPayload,
+  reportSelectedEmail,
+  restoreSession,
+} = require("./taskpane");
 
 describe("taskpane authentication and reporting", () => {
   beforeEach(() => {
@@ -207,5 +213,91 @@ describe("taskpane authentication and reporting", () => {
     expect(document.getElementById("status-message")?.textContent).toBe(
       "Your session is invalid or has expired. Please sign in again."
     );
+  });
+
+  test("login should store the token. This also displays the report section", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValueOnce({
+          access_token: "new-jwt",
+          expires_in: 3600,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValueOnce({
+          auth0Id: "auth0|123",
+          role: "user",
+        }),
+      });
+
+    await login("user@example.com", "correct_password");
+
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      "http://localhost:3001/api/accounts/auth/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "user@example.com",
+          password: "correct_password",
+        }),
+      }
+    );
+
+    expect(localStorage.getItem("access_token")).toBe("new-jwt");
+
+    expect(localStorage.getItem("token_expiry")).toBe(
+      String(new Date("2026-07-19T14:00:00.000Z").getTime())
+    );
+
+    expect(document.getElementById("login-section")?.hidden).toBe(true);
+    expect(document.getElementById("report-section")?.hidden).toBe(false);
+
+    expect(document.getElementById("current-user-details")?.textContent).toBe("Role: user");
+  });
+
+  test("should restore a valid signed in session using restoreSession", async () => {
+    setValidSession();
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        auth0Id: "auth0|123",
+        role: "analyst",
+      }),
+    });
+
+    await restoreSession();
+
+    expect(global.fetch).toHaveBeenCalledWith("http://localhost:3001/api/accounts/auth/me", {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer valid-jwt",
+        "Content-Type": "application/json",
+      },
+    });
+
+    expect(document.getElementById("login-section")?.hidden).toBe(true);
+    expect(document.getElementById("report-section")?.hidden).toBe(false);
+    expect(document.getElementById("current-user-details")?.textContent).toBe("Role: analyst");
+  });
+
+  test("restoreSession removes an expired session without calling the backend", async () => {
+    localStorage.setItem("access_token", "expired-jwt");
+    localStorage.setItem("token_expiry", String(new Date("2026-07-19T12:00:00.000Z").getTime()));
+
+    await restoreSession();
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(localStorage.getItem("access_token")).toBeNull();
+    expect(localStorage.getItem("token_expiry")).toBeNull();
+
+    expect(document.getElementById("login-section")?.hidden).toBe(false);
+    expect(document.getElementById("report-section")?.hidden).toBe(true);
   });
 });
