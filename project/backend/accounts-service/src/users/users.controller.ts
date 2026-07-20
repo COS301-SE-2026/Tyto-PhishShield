@@ -62,8 +62,6 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @HttpCode(204)
   async remove(@Param('id') id: string) {
-    const user = await this.usersService.findById(id);
-    await this.authService.deleteUser(user.auth0Id);
-    await this.usersService.remove(id);
+    await this.usersService.deactivate(id);
   }
 }

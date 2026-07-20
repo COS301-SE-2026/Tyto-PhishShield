@@ -129,6 +129,8 @@ services:
     depends_on:
       accounts_db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
 
@@ -145,19 +147,34 @@ services:
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
       - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
+      - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - LOCAL_CORS=http://127.0.0.1
+      - SERVER_DOMAIN=${DOMAIN}
+      - OUTLOOK_ADDIN_CORS=
+      - LOG_DIR=/var/log/api-gateway
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+    volumes:
+      - api_gateway_logs:/var/log/api-gateway
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   # report db sets up the report service's postgres database
   report_db:
@@ -198,6 +215,12 @@ services:
       - PORT=${REPORT_SERVICE_PORT}
       - TCP_PORT=${REPORT_TCP_PORT}
       - DB_HOST=${REPORT_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}  
+      - DB_PASSWORD=${DB_PASSWORD} 
+      - DB_NAME=${REPORT_DB_NAME}  
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN} 
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
@@ -207,6 +230,8 @@ services:
 
     depends_on:
       report_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -225,7 +250,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${XP_DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ${XP_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${XP_DB_NAME}"]
       interval: 1m30s
       timeout: 30s
       retries: 5
@@ -247,11 +272,15 @@ services:
       # Must be unique
     container_name: ${XP_APP_CONTAINER}
     environment:
-      - PORT=${XP_SERVICE_PORT}
-      - TCP_PORT=${XP_TCP_PORT}
-      - DB_HOST=${XP_DB_CONTAINER}
-      - XP_DB_PORT=${INTERNAL_DB_PORT}
+      - XP_SERVICE_PORT=${XP_SERVICE_PORT}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - XP_DB_CONTAINER=${XP_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - XP_DB_NAME=${XP_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
 
     ports:
       # Left side must be unique
@@ -259,6 +288,120 @@ services:
 
     depends_on:
       xp_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+# education db sets up the education service's postgres database
+  education_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${EDUCATION_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${EDUCATION_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${EDUCATION_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - education_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  education_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/education-service/Dockerfile
+
+      # Must be unique
+    container_name: ${EDUCATION_APP_CONTAINER}
+    environment:
+      - PORT=${EDUCATION_SERVICE_PORT}
+      - TCP_PORT=${EDUCATION_TCP_PORT}
+      - DB_HOST=${EDUCATION_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${EDUCATION_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      # Left side must be unique
+      - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
+
+    depends_on:
+      education_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  analytics_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${ANALYTICS_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${ANALYTICS_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ANALYTICS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - analytics_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  analytics_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/analytics-service/Dockerfile
+
+      # Must be unique
+    container_name: ${ANALYTICS_APP_CONTAINER}
+    environment:
+      - PORT=${ANALYTICS_SERVICE_PORT}
+      - TCP_PORT=${ANALYTICS_TCP_PORT}
+      - DB_HOST=${ANALYTICS_DB_CONTAINER}
+      - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      # Left side must be unique
+      - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
+
+    depends_on:
+      analytics_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -273,8 +416,8 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
-    ports:
-      - '5173:5173'
+    # ports:
+    #   - '5173:5173'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
@@ -306,18 +449,23 @@ services:
       - '443:443'
     volumes:
       - ./local-caddy-conf:/etc/caddy/
+      - caddy_logs:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
 
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
+  api_gateway_logs:
   caddy_data:
   caddy_config:
+  caddy_logs:
   mailing_pgdata:
   accounts_pgdata:
   report_pgdata:
   xp_pgdata:
+  education_pgdata:
+  analytics_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local

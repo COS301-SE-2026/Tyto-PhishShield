@@ -22,7 +22,6 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
@@ -71,13 +70,10 @@ export class AuthController {
     return this.authService.updateProfile(req.user.auth0Id, dto);
   }
 
-  @Post('change-password')
-  @UseGuards(JwtAuthGuard)
-  changePassword(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: ChangePasswordDto,
-  ) {
-    return this.authService.changePassword(req.user.auth0Id, dto);
+  @Post('forgot-password')
+  @HttpCode(200)
+  forgotPassword(@Body('email') email: string) {
+    return this.authService.forgotPassword(email);
   }
 
   @Delete('account')

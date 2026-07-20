@@ -2,88 +2,148 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
-  HttpCode,
-  UseGuards,
+  Param,
   Req,
+  UseGuards,
+  HttpCode,
 } from '@nestjs/common';
-import { CreateReportDto } from './dto/create-report.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ReportService } from './report.service';
-import type { GatewayUser } from '../auth/strategies/jwt.strategy';
-import { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { Request } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import { Public } from '../auth/public.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
 }
 
-@ApiTags('Report')
+function authHeader(req: Request): Record<string, string> {
+  const token = req.headers['authorization'];
+  return token ? { Authorization: token } : {};
+}
+
+@ApiTags('Reports')
 @Controller('report')
 export class ReportController {
+  private readonly reportServiceUrl: string;
+
   constructor(
-    private readonly reportService: ReportService,
     private readonly proxy: ProxyService,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    this.reportServiceUrl = this.config.get<string>(
+      'REPORT_SERVICE_URL',
+      'http://localhost:3004',
+    );
+  }
+
+  @Public()
+  @Post('auth/microsoft')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Exchange Microsoft SSO token for user identity' })
+  exchangeMicrosoft(@Body('token') token: string) {
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/auth/microsoft`,
+      method: 'POST',
+      data: { token },
+    });
+  }
 
   @Post()
-  @ApiOperation({ summary: 'reports an email' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Submit a phishing report from the Outlook Add-in' })
   @ApiBody({
     schema: {
       type: 'object',
-      required: [
-        'subject',
-        'from',
-        'senderName',
-        'itemId',
-        'internetMessageId',
-        'dateTimeCreated',
-        'dateReported',
-        'body',
-        'source',
-      ],
       properties: {
-        subject: { type: 'string', example: 'Welcome to Tyto-PhishShield' },
-        from: { type: 'string', example: 'fiveguys@gmail.com' },
-        senderName: { type: 'string', example: 'Five Guys' },
-        itemId: { type: 'string', example: '1234' },
-        internetMessageId: { type: 'string', example: 'ab75f23ce2' },
-        dateTimeCreated: { type: 'string', example: '2026-05-18' },
-        dateReported: { type: 'string', example: '2026-05-18' },
-        body: {
+        outlookMessageId: { type: 'string', example: 'MSG-001' },
+        emailSubject: {
           type: 'string',
-          example: 'Hello, would you like to have some cookies?',
+          example: 'Urgent: Update your password',
         },
-        source: { type: 'string', example: 'outlook-addin' },
+        emailSender: { type: 'string', example: 'phisher@example.com' },
+        emailBody: { type: 'string', example: 'Click here to update...' },
+        emailReceivedAt: { type: 'string', example: '2025-06-18T10:00:00Z' },
+        notes: { type: 'string', example: 'Looks suspicious' },
       },
     },
   })
-  @ApiBearerAuth()
-  @HttpCode(201)
-  createReport(@Body() body: CreateReportDto) {
-    return this.reportService.save(body);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get()
-  @ApiBearerAuth()
-  getAllReports() {
-    return this.reportService.findAll();
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('xp')
-  @ApiBearerAuth()
-  async getUserXp(@Req() req: AuthenticatedRequest) {
-    const userData: { email: string } = await this.proxy.forward({
-      url: `http://localhost:3001/api/accounts/auth/me`,
-      method: 'GET',
-      headers: {
-        Authorization: req.headers.authorization ?? '',
-      },
+  create(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/report`,
+      method: 'POST',
+      data: body,
+      headers: authHeader(req),
     });
-    //console.log('User data retrieved from accounts service:', userData);
-    return this.reportService.getUserXp(userData.email);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all reports (admin/analyst)' })
+  findAll(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/report`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user reports' })
+  getMyReports(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/report/mine`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a specific report' })
+  findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/report/${id}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update report status (admin/analyst)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['status'],
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['pending', 'reviewed', 'confirmed_phishing', 'false_positive'],
+        },
+      },
+    },
+  })
+  updateStatus(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/report/${id}/status`,
+      method: 'PATCH',
+      data: body,
+      headers: authHeader(req),
+    });
   }
 }

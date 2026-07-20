@@ -33,6 +33,7 @@ import { EmailService } from '../email/email.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailDifficulty, Emails } from '../entities/emails.entity';
 import { In, Repository } from 'typeorm';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class BatchEmailService {
@@ -387,7 +388,7 @@ export class BatchEmailService {
   private randomDateBetween(from: Date, to: Date): Date {
     const fromTime = from.getTime();
     const toTime = to.getTime();
-    const randomTime = fromTime + Math.random() * (toTime - fromTime);
+    const randomTime = crypto.randomInt(fromTime, toTime + 1);
     return new Date(randomTime);
   }
 
