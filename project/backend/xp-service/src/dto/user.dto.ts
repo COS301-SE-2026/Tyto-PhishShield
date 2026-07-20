@@ -2,18 +2,18 @@ import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class User {
   @IsString()
-  id!: string;
+  id: string;
 
   @IsString()
-  auth0Id!: string;
+  auth0Id: string;
 
   @IsString()
-  name!: string;
+  name: string;
 
   @IsEmail()
-  email!: string;
+  email: string;
 
   @IsString()
   @IsOptional()
-  department!: string;
+  department: string;
 }
