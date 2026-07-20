@@ -186,6 +186,41 @@ export function Login({ onNavigate }: LoginProps) {
         boxShadow: 'var(--shadow-sm)',
         padding: '32px 34px',
       }}>
+        {otpStep ? (
+        <>
+          <h1 style={{ fontSize: 23, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Verify your email
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            As this is your first time signing in, we sent a 6-digit code to <strong>{email}</strong>. Enter it below to continue.
+          </p>
+          <div style={{ marginBottom: 16 }}>
+            <Input
+              label="Verification code"
+              placeholder="123456"
+              value={otpCode}
+              onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
+              error={otpError}
+              required
+              style={{ letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
+            />
+          </div>
+          <Button fullWidth loading={otpLoading} onClick={() => { void handleOtpVerify(); }}
+            style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8, marginBottom: 14 }}>
+            Verify and Continue
+          </Button>
+          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Didn't receive it?{' '}
+            <button
+              onClick={() => { void handleResendOtp(); }}
+              style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}
+            >
+              Resend code
+            </button>
+          </p>
+        </>
+      ) : (
+        <>
       <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
         Welcome back
       </h1>
@@ -265,6 +300,8 @@ export function Login({ onNavigate }: LoginProps) {
         New accounts are provisioned by your organisation administrator.<br />
         Contact <a href="mailto:admin@tyto.co.za" style={{ color: 'var(--color-primary)' }}>admin@tyto.co.za</a> for access.
       </p>
+      </>
+      )}
     </div>
   );
 
