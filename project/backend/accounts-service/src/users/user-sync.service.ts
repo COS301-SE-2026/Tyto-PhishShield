@@ -15,7 +15,7 @@ export class UserSyncService implements OnModuleInit {
 
   async onModuleInit() {
     const nodeEnv = this.configService.get<string>('NODE_ENV');
-    if (nodeEnv !== 'development') {
+    if (nodeEnv !== 'development' && nodeEnv !== 'dev' && nodeEnv !== 'local') {
       return;
     }
 
