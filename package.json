@@ -81,6 +81,7 @@
 		"dc:down:dev-server": "docker compose -f project/docker-compose/dev-compose.yml --env-file ./project/docker-compose/.env.dev down",
 		"demo1:backend": "pnpm dc:up",
 		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website",
+		"db:seed": "pnpm dc:up && node ./project/scripts/seed.js",
 		"server:update:dev": "node ./project/scripts/send-dev-compose.js"
 	},
 	"devDependencies": {
