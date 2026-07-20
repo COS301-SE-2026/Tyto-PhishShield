@@ -107,13 +107,42 @@ export function Login({ onNavigate }: LoginProps) {
     setLoading(true); setErrors({});
     try {
       await login(email, password);
-      addToast({ type: 'success', title: 'Welcome back!' });
-      onNavigate('/dashboard');
+      if (OTP_LOGIN_ENABLED) {
+        setOtpStep(true);
+      } else {
+        addToast({ type: 'success', title: 'Welcome back!' });
+        onNavigate('/dashboard');
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid email or password.';
       setErrors({ general: msg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Moved from register.tsx; see OTP_LOGIN_ENABLED above for more info
+  const handleOtpVerify = async () => {
+    if (otpCode.length !== 6) { setOtpError('Please enter the full 6-digit code.'); return; }
+    setOtpLoading(true);
+    setOtpError('');
+    try {
+      await authApi.verifyOtp(email, otpCode);
+      addToast({ type: 'success', title: 'Welcome back!' });
+      onNavigate('/dashboard');
+    } catch (err: unknown) {
+      setOtpError(err instanceof Error ? err.message : 'Invalid or expired code.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await authApi.resendOtp(email);
+      addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}.` });
+    } catch {
+      addToast({ type: 'error', title: 'Could not resend', message: 'Please try again in a moment.' });
     }
   };
 
