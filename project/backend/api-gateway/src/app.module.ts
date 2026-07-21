@@ -17,6 +17,9 @@ import { ReportModule } from './report/report.module';
 import { EducationModule } from './education/education.module';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { XpModule } from './xp/xp.module';
+import { WebsocketModule } from './websocket/websocket.module';
+import { EducationModule} from './education/education.module'
 //import { OtpModule } from './otp/otp.module';
 
 @Module({
@@ -25,6 +28,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AccountsModule,
     MailingModule,
     ReportModule,
+    XpModule,
     EducationModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
@@ -77,6 +81,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
         },
       },
     ]),
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [

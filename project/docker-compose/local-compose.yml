@@ -172,6 +172,9 @@ services:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     volumes:
       - api_gateway_logs:/var/log/api-gateway
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   # report db sets up the report service's postgres database
   report_db:
@@ -247,7 +250,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${XP_DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ${XP_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${XP_DB_NAME}"]
       interval: 1m30s
       timeout: 30s
       retries: 5
@@ -269,11 +272,15 @@ services:
       # Must be unique
     container_name: ${XP_APP_CONTAINER}
     environment:
-      - PORT=${XP_SERVICE_PORT}
-      - TCP_PORT=${XP_TCP_PORT}
-      - DB_HOST=${XP_DB_CONTAINER}
-      - XP_DB_PORT=${INTERNAL_DB_PORT}
+      - XP_SERVICE_PORT=${XP_SERVICE_PORT}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - XP_DB_CONTAINER=${XP_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - XP_DB_NAME=${XP_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
 
     ports:
       # Left side must be unique

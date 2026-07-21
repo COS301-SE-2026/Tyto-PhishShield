@@ -1,26 +1,27 @@
 import { Module } from '@nestjs/common';
+import { XpService } from './xp.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
-import { AccountsController } from './accounts.controller';
-import { AccountsService } from './accounts.service';
 import { UserEntity } from '../entities/user.entity';
+import { XpEntity } from '../entities/xp.entity';
+import { XpController } from './xp.controller';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([UserEntity, XpEntity]),
     RabbitMQModule.forRoot({
       uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
       exchanges: [
         {
-          name: 'accounts-event-exchange',
+          name: 'xp-event-exchange',
           type: 'topic',
         },
       ],
       enableControllerDiscovery: true,
     }),
   ],
-  controllers: [AccountsController],
-  providers: [AccountsService],
+  providers: [XpService],
+  controllers: [XpController],
   exports: [TypeOrmModule],
 })
-export class AccountsModule {}
+export class XpModule {}
