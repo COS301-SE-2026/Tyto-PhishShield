@@ -2,7 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  Inject,
+  Logger,
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,20 +13,21 @@ import { Assignment, AssignmentStatus } from './entities/assignment.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import * as crypto from 'crypto';
+import {AmqpConnection} from '@golevelup/nestjs-rabbitmq';
 
 const QUESTIONS_PER_ASSIGNMENT = 3;
-const PASS_THRESHOLD = 0.7;
-const XP_AWARDED = 15;
+const PASS_THRESHOLD = 0.65;
+const XP_AWARDED = 10;
 
 @Injectable()
 export class EducationService {
+  private readonly logger = new Logger(EducationService.name);
   constructor(
     @InjectRepository(Question)
     private readonly questionRepo: Repository<Question>,
     @InjectRepository(Assignment)
     private readonly assignmentRepo: Repository<Assignment>,
-    @Inject('EDUCATION_EVENTS')
-    private readonly eventsClient: ClientProxy,
+    private readonly amqpConnection: AmqpConnection,
   ) {}
 
   async createQuestion(dto: CreateQuestionDto): Promise<Question> {
@@ -148,11 +149,16 @@ export class EducationService {
     await this.assignmentRepo.save(assignment);
 
     if (passed) {
-      this.eventsClient.emit('education.completed', {
-        auth0Id,
-        xpAwarded: assignment.xpAwarded,
-        assignmentId: assignment.id,
-      });
+      try {
+        await this.amqpConnection.publish('xp-event-exchange', 'xp.give', {
+          auth0Id,
+          amount: XP_AWARDED,
+          reason: 'Passed education assignment',
+        });
+        this.logger.log(`Published xp.give for user ${auth0Id}`);
+      } catch (err) {
+        this.logger.error(`Failed to publish xp.give for ${auth0Id}`, err);
+      }
     }
 
     const feedback = passed
