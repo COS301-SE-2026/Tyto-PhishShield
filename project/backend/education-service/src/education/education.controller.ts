@@ -27,7 +27,7 @@ export class EducationController {
   @Post('questions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add a question to the bank(admin' })
+  @ApiOperation({ summary: 'Add a question to the bank(admin)' })
   createQuestion(@Body() dto: CreateQuestionDto) {
     return this.educationService.createQuestion(dto);
   }
