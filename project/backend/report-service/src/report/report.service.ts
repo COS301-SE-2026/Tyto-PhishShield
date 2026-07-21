@@ -85,11 +85,13 @@ export class ReportService {
 
     const saved = await this.repo.save(report);
 
-    const matchedReportable = await this.reportableRepo.findOne({
-      where: { messageId: dto.outlookMessageId ?? '' },
-    });
+    //const matchedReportable = await this.reportableRepo.findOne({
+    //  where: { messageId: dto.outlookMessageId ?? '' },
+   // });
 
-    if (matchedReportable) {
+   const isPhishingSimulation = dto.emailSender?.toLowerCase().endsWith('@capstone-five-guys.dns.net.za');
+
+    if (isPhishingSimulation) {
       saved.status = ReportStatus.CONFIRMED_PHISHING;
       await this.repo.save(saved);
 
