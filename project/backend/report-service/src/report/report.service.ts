@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Report, ReportStatus } from './entities/report.entity';
@@ -21,9 +26,21 @@ export class ReportService {
   ) {}
 
   async create(user: ReporterUser, dto: CreateReportDto): Promise<Report> {
+    //this first part is to prevent duplicate reports of the same email
+    const existing = await this.repo.findOne({
+      where: {
+        auth0Id: user.auth0Id,
+        outlookMessageId: dto.outlookMessageId,
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('You have already reported this email.');
+    }
+
     const report = this.repo.create({
       auth0Id: user.auth0Id,
-      reporterEmail: user.email || 'unknown',
+      reporterEmail: user.email,
       outlookMessageId: dto.outlookMessageId,
       emailSubject: dto.emailSubject,
       emailSender: dto.emailSender,
