@@ -81,6 +81,7 @@
 		"dc:down:dev-server": "docker compose -f project/docker-compose/dev-compose.yml --env-file ./project/docker-compose/.env.dev down",
 		"demo1:backend": "pnpm dc:up",
 		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website",
+		"db:seed": "pnpm dc:up && node ./project/scripts/seed.js",
 		"server:update:dev": "node ./project/scripts/send-dev-compose.js"
 	},
 	"devDependencies": {
@@ -88,6 +89,7 @@
 		"@nestjs/microservices": "^11.1.24",
 		"@nestjs/schematics": "^11.1.0",
 		"@types/amqplib": "^0.10.8",
+		"@types/node": "^26.1.1",
 		"@types/passport-jwt": "^4.0.1",
 		"amqp-connection-manager": "^5.0.0",
 		"amqplib": "^2.0.1",
