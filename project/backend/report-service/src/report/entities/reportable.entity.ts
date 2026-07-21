@@ -12,6 +12,9 @@ export class Reportable {
     @Column()
     recipient!: string;
 
+    @Column({ nullable: true })
+    sentAt?: Date;
+
     @Column({ nullable: true})
     messageId?: string;
 
