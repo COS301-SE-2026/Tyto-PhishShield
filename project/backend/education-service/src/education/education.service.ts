@@ -12,6 +12,7 @@ import { Question } from './entities/question.entity';
 import { Assignment, AssignmentStatus } from './entities/assignment.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
+import * as crypto from 'crypto';
 
 const QUESTIONS_PER_ASSIGNMENT = 3;
 const PASS_THRESHOLD = 0.7;
@@ -172,7 +173,7 @@ export class EducationService {
   }
 
   private randomSubset<T>(arr: T[], size: number): T[] {
-    const shuffled = [...arr].sort(() => 0.5 - Math.random());
+    const shuffled = [...arr].sort(() => crypto.randomInt(-1, 2));
     return shuffled.slice(0, Math.min(size, arr.length));
   }
 }

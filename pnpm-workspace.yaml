@@ -1,4 +1,4 @@
-﻿packages:
+packages:
   - 'project/**'
 allowBuilds:
   '@nestjs/core': true

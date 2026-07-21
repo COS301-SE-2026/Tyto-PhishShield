@@ -15,6 +15,7 @@ import { Request } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import { Public } from '../auth/public.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -40,34 +41,38 @@ export class ReportController {
     );
   }
 
+  @Public()
   @Post('auth/microsoft')
   @HttpCode(200)
   @ApiOperation({ summary: 'Exchange Microsoft SSO token for user identity' })
   exchangeMicrosoft(@Body('token') token: string) {
-  return this.proxy.forward({
-    url: `${this.reportServiceUrl}/api/auth/microsoft`,
-    method: 'POST',
-    data: { token },
-  });
-}
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/auth/microsoft`,
+      method: 'POST',
+      data: { token },
+    });
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit a phishing report from the Outlook Add-in' })
   @ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      outlookMessageId: { type: 'string', example: 'MSG-001' },
-      emailSubject: { type: 'string', example: 'Urgent: Update your password' },
-      emailSender: { type: 'string', example: 'phisher@example.com' },
-      emailBody: { type: 'string', example: 'Click here to update...' },
-      emailReceivedAt: { type: 'string', example: '2025-06-18T10:00:00Z' },
-      notes: { type: 'string', example: 'Looks suspicious' },
+    schema: {
+      type: 'object',
+      properties: {
+        outlookMessageId: { type: 'string', example: 'MSG-001' },
+        emailSubject: {
+          type: 'string',
+          example: 'Urgent: Update your password',
+        },
+        emailSender: { type: 'string', example: 'phisher@example.com' },
+        emailBody: { type: 'string', example: 'Click here to update...' },
+        emailReceivedAt: { type: 'string', example: '2025-06-18T10:00:00Z' },
+        notes: { type: 'string', example: 'Looks suspicious' },
+      },
     },
-  },
-})
+  })
   create(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
     return this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report`,
@@ -118,14 +123,17 @@ export class ReportController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update report status (admin/analyst)' })
   @ApiBody({
-  schema: {
-    type: 'object',
-    required: ['status'],
-    properties: {
-      status: { type: 'string', enum: ['pending', 'reviewed', 'confirmed_phishing', 'false_positive'] },
+    schema: {
+      type: 'object',
+      required: ['status'],
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['pending', 'reviewed', 'confirmed_phishing', 'false_positive'],
+        },
+      },
     },
-  },
-})
+  })
   updateStatus(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,

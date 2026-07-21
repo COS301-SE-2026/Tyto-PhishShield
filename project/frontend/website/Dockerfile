@@ -12,13 +12,13 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/frontend/website/package.json ./project/frontend/website/package.json
 COPY project/frontend/website/ ./project/frontend/website/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 WORKDIR /app/project/frontend/website
 
 RUN pnpm run build
 
-RUN pnpm add -g serve
+RUN pnpm add -g serve --ignore-scripts
 
 EXPOSE 5173
 

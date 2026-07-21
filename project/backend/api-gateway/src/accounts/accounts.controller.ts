@@ -22,6 +22,7 @@ import { Request } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import { Public } from '../auth/public.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -47,6 +48,7 @@ export class AccountsController {
     );
   }
 
+  @Public()
   @Post('auth/register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({
@@ -68,6 +70,7 @@ export class AccountsController {
     });
   }
 
+  @Public()
   @Post('auth/verify-otp')
   @HttpCode(200)
   @ApiOperation({ summary: 'Verify OTP for email verification' })
@@ -89,6 +92,7 @@ export class AccountsController {
     });
   }
 
+  @Public()
   @Post('auth/resend-otp')
   @HttpCode(200)
   @ApiOperation({ summary: 'Resend OTP for email verification' })
@@ -109,6 +113,7 @@ export class AccountsController {
     });
   }
 
+  @Public()
   @Post('auth/login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Login and receive a JWT' })

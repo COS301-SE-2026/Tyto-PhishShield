@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { execSync } = require('child_process');
+const { execSync } = require('node:child_process');
 
 const server = ` ${process.env.SERVER_USER}@${process.env.SERVER_IP}:./`;
 

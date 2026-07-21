@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import * as crypto from 'crypto';
 
 interface OtpEntry {
   code: string;
@@ -10,10 +11,10 @@ export class OtpService {
   private readonly store = new Map<string, OtpEntry>();
 
   generate(email: string): string {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
     this.store.set(email.toLowerCase(), {
       code,
-      expiry: Date.now() + 10 * 60 * 1000, 
+      expiry: Date.now() + 10 * 60 * 1000,
     });
     return code;
   }

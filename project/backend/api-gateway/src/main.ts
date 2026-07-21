@@ -9,9 +9,17 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { rateLimit } from 'express-rate-limit';
+import { logger } from './logger/logger.service';
+import { requestIdMiddleware } from './middleware';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  if (process.env.ENVIRONMENT != 'local') {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -20,28 +28,56 @@ async function bootstrap() {
     }),
   );
 
+  const allowedOrigins = new Set(
+    [
+      'https://' + process.env.SERVER_DOMAIN,
+      process.env.LOCAL_CORS,
+      process.env.OUTLOOK_ADDIN_CORS,
+    ].filter((value): value is string => Boolean(value)),
+  );
+
   app.enableCors({
-    origin: '*',
+    origin: (
+      origin: string | undefined,
+      callback: (error: any, allow?: boolean) => void,
+    ) => {
+      if (origin && allowedOrigins.has(origin)) return callback(null, true);
+      else return callback(null, false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   app.setGlobalPrefix('api');
 
-  const config = new DocumentBuilder()
-    .setTitle('PhishShield API Gateway')
-    .setDescription('Single entry point for all PhishShield backend services')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  app.use(requestIdMiddleware);
+  app.use(
+    '/api',
+    rateLimit({
+      windowMs: 60 * 1000,
+      max: 120,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: 'Too many requests. ' },
+    }),
+  );
 
-  const document = SwaggerModule.createDocument(app, config);
+  if (process.env.ENVIRONMENT == 'local') {
+    const config = new DocumentBuilder()
+      .setTitle('PhishShield API Gateway')
+      .setDescription('Single entry point for all PhishShield backend services')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  SwaggerModule.setup('api-docs', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+
+    SwaggerModule.setup('api-docs', app, document);
+  }
 
   await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
 
-  console.log(
+  logger.info(
     `API Gateway running on port ${process.env.API_GATEWAY_PORT ?? 3001}`,
   );
 }
