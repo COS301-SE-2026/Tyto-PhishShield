@@ -21,3 +21,14 @@ const command3 = `scp -P ${process.env.SSH_PORT} ./project/docker-compose/dev-ca
 execSync(
     command3,  { stdio: 'inherit' }
 );
+
+// const AddinCommands = [
+//     `scp -P ${process.env.SSH_PORT} -r ./project/frontend/phishshield-outlook-addin/ ${server}Addin`,
+
+// ]
+
+// AddinCommands.forEach(command => {
+//     execSync(
+//         command, { stdio: 'inherit' }
+//     );
+// });
