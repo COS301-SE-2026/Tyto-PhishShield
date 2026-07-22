@@ -79,7 +79,7 @@ function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
 }
 
 export function Login({ onNavigate }: LoginProps) {
-  const { login } = useAuth();
+  const { login, twoFactorAuth } = useAuth();
   const { addToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -127,7 +127,7 @@ export function Login({ onNavigate }: LoginProps) {
     setOtpLoading(true);
     setOtpError('');
     try {
-      await authApi.verifyOtp(email, otpCode);
+      await twoFactorAuth(email, otpCode);
       addToast({ type: 'success', title: 'Welcome back!' });
       onNavigate('/dashboard');
     } catch (err: unknown) {

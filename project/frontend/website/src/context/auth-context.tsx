@@ -6,7 +6,9 @@ interface AuthContextValue {
   user: AuthenticatedUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  twoFactoredAuth: boolean;
   login: (email: string, password: string) => Promise<void>;
+  twoFactorAuth: (email: string, otp: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
   canAccess: (minRole: UserRole) => boolean;
@@ -25,9 +27,10 @@ const isTokenExpired = () => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [twoFactoredAuth, setTwoFactoredAuth] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const refreshUser = useCallback(async () => {
-  const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token');
     if (!token || isTokenExpired()) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('token_expiry');
@@ -71,10 +74,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { access_token, expires_in } = await response.json() as Token;
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
+    setUser(null);
+  };
+
+  const twoFactorAuth = async (email: string, otp: string) => {
+    const response: Response = await fetch(`${BASE_URL}/auth/otp/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      }, 
+      body: JSON.stringify({email, otp}),
+    });
+
+    if (!response.ok) throw new Error('Invalid OTP or email');
+
+    setTwoFactoredAuth(true);
     const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${access_token}`,
+        'Authorization': `Bearer  ${localStorage.getItem('access_token')}`,
         'Content-Type': 'application/json',
       },
     });
@@ -104,8 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, isLoading, isAuthenticated: !!user,
-      login, logout, hasRole, canAccess, refreshUser,
+      user, isLoading, twoFactoredAuth, isAuthenticated: !!user,
+      login, twoFactorAuth, logout, hasRole, canAccess, refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

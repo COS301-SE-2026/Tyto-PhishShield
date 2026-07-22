@@ -171,6 +171,8 @@ export class AuthService {
         }),
       );
 
+      this.otpService.generateAndSend(dto.email);
+
       return {
         access_token: data.access_token,
         expires_in: data.expires_in,
