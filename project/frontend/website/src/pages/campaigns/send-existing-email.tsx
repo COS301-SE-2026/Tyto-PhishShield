@@ -284,10 +284,13 @@ export function SendEmail({
             ]}
             securityScore={72}
         >
-            <div className="grid items-start gap-6 lg:grid-cols-2">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)]">
                 <div className="flex flex-col gap-6">
                     <Card className="p-6">
-                        <div className="flex flex-col gap-4">
+                        <div className="mb-5">
+                            <h2 className="text-base font-semibold text-[var(--text-primary)]">
+                                Email Template
+                            </h2>
                             <Select
                                 label='Available email templates'
                                 value={selectedReference}
@@ -295,25 +298,33 @@ export function SendEmail({
                                 options={templateOptions}
                                 disabled={templateLoading}
                             />
-
-                            <Button
-                                variant="ghost"
-                                loading={templatesLoading}
-                                disabled={templatesLoading}
-                                onClick={() => void fetchEmailTemplates()}
-                            >
-                                Refresh Templates
-                            </Button>
+                            
+                            <div>
+                                <Button
+                                    variant="ghost"
+                                    loading={templatesLoading}
+                                    disabled={templatesLoading}
+                                    onClick={() => void fetchEmailTemplates()}
+                                >
+                                    Refresh Templates
+                                </Button>
+                            </div>
                         </div>
                                 
-                        <div className="my-6 border-t border-[var(--border)]"/>
+                        <div className="my-6 flex items-center gap-3">
+                            <div className="h-px flex-1 bg-[var(--border)]" />
+                                <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                                    Or
+                                </span>
+                            <div className="h-px flex-1 bg-[var(--border)]" />
+                        </div>
 
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                             <div className="flex-1">
                                 <Input
                                     label='Find by reference number'
                                     placeholder=""
-                                    value={recipientsInput}
+                                    value={referenceInput}
                                     error={errors.referenceNumber}
                                     onChange={(event) => {
                                         setReferenceInput(
@@ -330,7 +341,7 @@ export function SendEmail({
                             <Button
                                 variant="ghost"
                                 loading={templateLoading}
-                                disabled={templateLoading || !recipientsInput.trim()}
+                                disabled={templateLoading || !referenceInput.trim()}
                                 onClick={() => void handleReferenceLookup()}
                             >
                                 Find Template
@@ -339,12 +350,14 @@ export function SendEmail({
                     </Card>
 
                     <Card className="p-6">
-                        <label
-                            htmlFor="recipients"
-                            className="mb-2 block text-sm font-semibold text-[var(--text-primary)]"
-                        >
+                        <div className="mb-4">
+                            <h2 className="text-base font-semibold text-[var(--text-primary)]">
                             Recipients
-                        </label>
+                            </h2>
+                            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                                Separate multiple addresses with commas or semicolons.
+                            </p>
+                        </div>
 
                         <textarea
                             id="recipients"
@@ -364,13 +377,9 @@ export function SendEmail({
                             }`}
                         />
 
-                        {errors.recipients ? (
+                        {errors.recipients && (
                             <p className="mt-2 text-xs text-[var(--color-danger)]">
                                 {errors.recipients}
-                            </p>
-                        ) : (
-                            <p className="mt-2 text-xs text-[var(--text-muted)]">
-                                Separate addresses with commas or semicolons.
                             </p>
                         )}
 
@@ -394,9 +403,104 @@ export function SendEmail({
                         )}
         
                     </Card>
+
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <Button
+                            variant='ghost'
+                            onClick={() => onNavigate('/campaigns')}
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            loading={sending}
+                            disabled={sending||templateLoading||!selectedEmail|| parsedRecipients.length === 0 || invalidRecipients.length > 0}
+                            onClick={() => void handleSend()}
+                        >
+                            Send Email
+                        </Button>
+                    </div>
                 </div>
+
+                <Card className="overflow-hidden xl:sticky xl:top-6">
+                    <div className="border-b border-[var(--border)] px-6 py-5">
+                        <h2>
+                            Email Preview
+                        </h2>
+
+                        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                            Review the selected template
+                        </p>
+                    </div>
+                    
+                    <div className="p-6">
+                    {templateLoading ? (
+                        <div className="flex min-h-72 items-center justify-center">
+                            <p>
+                                Loading template...
+                            </p>
+                        </div>
+                    ) : selectedEmail ? (
+                        <div className="flex flex-col gap-5">
+                            <div>
+                                <p className="text-xs text-[var(--text-muted)]">
+                                    Reference
+                                </p>
+
+                                <code className="text-sm font-bold text-[var(--color-primary)]">
+                                    {selectedEmail.referenceNumber}
+                                </code>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-[var(--text-muted)]">
+                                    Sender
+                                </p>
+
+                                <p className="text-sm text-[var(--text-primary)]">
+                                    {formatSender(selectedEmail)}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="mb-1 text-xs text-[var(--text-muted)]">
+                                    Difficulty
+                                </p>
+
+                                <Badge
+                                    variant={getDifficultyVariant(
+                                        selectedEmail.difficulty,
+                                    )}
+                                >
+                                    {selectedEmail.difficulty}
+                                </Badge>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-[var(--text-muted)]">
+                                    Subject
+                                </p>
+
+                                <p className="text-sm font-semibold text-[var(--text-primary)]">
+                                    {selectedEmail.subject}
+                                </p>
+                            </div>
+
+                            <div className="border-t border-[var(--border)] pt-4">
+                                <div className="max-h-[416px] overflow-auto whitespace-pre-wrap break-words text-sm leading-6 text-[var(--text-secondary)]">
+                                    {selectedEmail.content}
+                                </div>
+                            </div>
+                        </div>
+                    ):(
+                        <p className="py-12 text-center text-sm text-[var(--text-muted)]">
+                            Select or find an email template.
+                        </p>
+                    )}
+                    </div>
+                </Card>
             </div>
         </AppLayout>
-    )
+    );
 }
 
