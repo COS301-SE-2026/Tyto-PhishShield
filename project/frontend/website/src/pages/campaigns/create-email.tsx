@@ -35,7 +35,7 @@ const DIFFICULTY_OPTIONS = [
     },
 ];
 
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej. Please have mercy Keith
+const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
 
 const initialForm: EmailForm = {
     sender: '',
@@ -169,7 +169,7 @@ export function CreateEmail({
 
     const labelStyle: CSSProperties = {
         display: 'block',
-        marginBottom: 5,
+        marginBottom: 8,
         fontSize: 12,
         fontWeight: 600,
         color: 'var(--text-primary)',
@@ -206,7 +206,7 @@ export function CreateEmail({
                 <div style={{ marginBottom: 20 }}>
                 <h2
                     style={{
-                    marginBottom: 5,
+                    marginBottom: 8,
                     fontSize: 15,
                     fontWeight: 700,
                     color: 'var(--text-primary)',
@@ -224,8 +224,8 @@ export function CreateEmail({
                     lineHeight: 1.5,
                     }}
                 >
-                    The email will be saved in the mailing database and
-                    assigned a unique PHISH reference number.
+                    This email will be added to the mailing database and
+                    assigned a unique PHISH reference number. 
                 </p>
                 </div>
 
@@ -245,7 +245,7 @@ export function CreateEmail({
                     }}
                 >
                     <Input
-                    label="Sender email"
+                    label='Sender email'
                     type="email"
                     placeholder="eg. test@capstone-five-guys.dns.net.za"
                     value={form.sender}
@@ -313,17 +313,6 @@ export function CreateEmail({
                     {errors.content && (
                     <p style={errorStyle}>{errors.content}</p>
                     )}
-
-                    <p
-                    style={{
-                        marginTop: 5,
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontFamily: 'Inter, system-ui, sans-serif',
-                    }}
-                    >
-                    The mailing service sends this content as HTML.
-                    </p>
                 </div>
 
                 <Select
@@ -397,7 +386,7 @@ export function CreateEmail({
 
                 <h2
                 style={{
-                    marginBottom: 5,
+                    marginBottom: 8,
                     fontSize: 17,
                     fontWeight: 700,
                     color: 'var(--text-primary)',
@@ -409,7 +398,7 @@ export function CreateEmail({
 
                 <p
                 style={{
-                    marginBottom: 20,
+                    marginBottom: 24,
                     fontSize: 12,
                     color: 'var(--text-secondary)',
                     fontFamily: 'Inter, system-ui, sans-serif',
@@ -531,12 +520,12 @@ export function CreateEmail({
 
                 <div
                 style={{
-                    marginTop: 18,
+                    marginTop: 16,
                 }}
                 >
                 <p
                     style={{
-                    marginBottom: 7,
+                    marginBottom: 8,
                     fontSize: 11,
                     color: 'var(--text-muted)',
                     fontFamily: 'Inter, system-ui, sans-serif',
