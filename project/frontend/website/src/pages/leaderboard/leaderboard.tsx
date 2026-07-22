@@ -5,6 +5,7 @@ import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../context/toast-context";
 import { fetchLeaderboardUsers, fetchLeaderboardXp, getInitials, groupUsersByDepartment, resolveDepartment, type RealUser, 
     type XpNetEntry, } from "./leaderboard.service";
+import {connectXpSocket } from "../../services/xp-socket";
 
 interface LeaderboardProps {
   onNavigate: (path: string) => void;
@@ -72,6 +73,32 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
         return () => { cancelled = true; };
     }, []);
 
+    // Live updates for the current user's own XP only (see xp-socket.ts)
+    useEffect(() => {
+        if (!user) return;
+        let cancelled = false;
+        let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
+        connectXpSocket().then(s => {
+                if (cancelled) { s.disconnect(); return; }
+                socket = s;
+                s.on('xp-given', (amount: number) => {
+                    setXpEntries(prev => {
+                        const list = prev ?? [];
+                        const idx = list.findIndex(entry => entry.auth0Id === user.auth0Id);
+                        if (idx === -1) return [...list, { auth0Id: user.auth0Id, totalXp: amount }];
+                        const updated = [...list];
+                        updated[idx] = { ...updated[idx], totalXp: updated[idx].totalXp + amount };
+                        return updated;
+                    });
+                });
+            })
+            .catch(() => {  });
+        return () => {
+            cancelled = true;
+            socket?.disconnect();
+        };
+    }, [user]);
+    
     // xp-service only returns users with at least one XP entry (I think its because of the inner join)
     const xpByAuth0Id = useMemo(() => {
         const map = new Map<string, number>();
