@@ -12,21 +12,13 @@ import { BatchEmailService } from './batch-email.service';
 import { EmailModule } from '../email/email.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Emails } from '../entities/emails.entity';
-import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { mailingRabbitMQModule } from '../rabbitmq.config';
 
 @Module({
   imports: [
     EmailModule,
     TypeOrmModule.forFeature([Emails]),
-    RabbitMQModule.forRoot({
-      uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
-      exchanges: [
-        {
-          name: 'mailing-event-exchange',
-          type: 'topic',
-        },
-      ],
-    }),
+    mailingRabbitMQModule,
   ],
   controllers: [BatchEmailController],
   providers: [BatchEmailService],
