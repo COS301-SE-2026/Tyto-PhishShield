@@ -44,7 +44,7 @@ export class ReportController {
 
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
-    routingKey: 'email.send',
+    routingKey: 'mailing.send',
     queue: 'report-service-email-queue',
   })
   async handleSingleSend(payload: SingleEmailPayload): Promise<void> {
@@ -53,7 +53,7 @@ export class ReportController {
 
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
-    routingKey: 'email.send',
+    routingKey: 'mailing.schedule',
     queue: 'report-service-email-queue',
   })
   async handleSingleSchedule(payload: SingleEmailPayload): Promise<void> {
@@ -62,7 +62,7 @@ export class ReportController {
 
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
-    routingKey: 'email.send',
+    routingKey: 'mailing.batch_send',
     queue: 'report-service-batch-email-queue',
   })
   async handleBatchSend(@Payload() payload: BatchEmailPayload): Promise<void> {
@@ -73,7 +73,7 @@ export class ReportController {
 
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
-    routingKey: 'email.send',
+    routingKey: 'mailing.batch_schedule',
     queue: 'report-service-batch-email-queue',
   })
   async handleBatchSchedule(@Payload() payload: BatchEmailPayload): Promise<void> {
