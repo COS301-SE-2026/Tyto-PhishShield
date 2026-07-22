@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, type CSSProperties } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select, Badge } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
@@ -129,6 +129,7 @@ export function SendEmail({
 
     const handleTemplateSelection = (referenceNumber: string) => {
         setSelectedReference(referenceNumber);
+        setReferenceInput(referenceNumber);
 
         setErrors((previous) => ({
             ...previous,
@@ -223,7 +224,7 @@ export function SendEmail({
         const nextErrors: FormErrors = {};
 
         if (!selectedEmail) {
-            nextErrors.referenceNumber = 'Select or find a email template.';
+            nextErrors.referenceNumber = 'Select or find an email template.';
         }
 
         if (parsedRecipients.length === 0) {
@@ -252,7 +253,7 @@ export function SendEmail({
             addToast({
                 type: 'success',
                 title: 'Email sent',
-                message: `${selectedEmail.referenceNumber} was sent to ${parsedRecipients.length} recipient ${parsedRecipients.length === 1 ? '' : 's'}.`,
+                message: `${selectedEmail.referenceNumber} was sent to ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? '' : 's'}.`,
             });
         } catch (error) {
             console.error(error);
@@ -268,11 +269,51 @@ export function SendEmail({
         }
     };
 
+    const sectionHeadingStyle: CSSProperties = {
+        marginBottom: 8,
+        fontSize: 15,
+        fontWeight: 700,
+        color: 'var(--text-primary)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+    };
+
+    const sectionTextStyle: CSSProperties = {
+        fontSize: 12,
+        color: 'var(--text-secondary)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        lineHeight: 1.5,
+    };
+
+    const detailLabelStyle: CSSProperties = {
+        marginBottom: 4,
+        fontSize: 10,
+        fontWeight: 500,
+        color: 'var(--text-muted)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+    };
+
+    const sectionValueStyle: CSSProperties = {
+        fontSize: 13,
+        fontWeight: 500,
+        color: 'var(--text-primary)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        lineHeight: 1.5,
+        wordBreak: 'break-word',
+    };
+
+    const errorStyle: CSSProperties = {
+        marginTop: 8,
+        fontSize: 11,
+        color: 'var(--color-danger)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+    };
+
     return (
         <AppLayout
             activePath={activePath}
             onNavigate={onNavigate}
             title='Send Email with Reference Number'
+            subtitle="Send a saved email to one or more recipients"
             breadcrumbs={[
                 {
                     label: 'Campaigns',
@@ -284,24 +325,51 @@ export function SendEmail({
             ]}
             securityScore={72}
         >
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)]">
-                <div className="flex flex-col gap-6">
-                    <Card className="p-6">
-                        <div className="mb-5">
-                            <h2 className="text-base font-semibold text-[var(--text-primary)]">
+            <div 
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+                    alignItems: 'start',
+                    gap: 24,
+                    width: '100%',
+                    maxWidth: 1180,
+                }}>
+                <div 
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 16,
+                        minWidth: 0,
+                    }}>
+                    <Card style={{ padding: '24px 28px' }}>
+                        <div style={{ marginBottom: 16}}>
+                            <h2 style={sectionHeadingStyle}>
                                 Email Template
                             </h2>
+
+                            <p style={sectionTextStyle}>
+                                Select a template or find one using its reference number.
+                            </p>
+                        </div>
+                        
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 12,
+                        }}>
                             <Select
                                 label='Available email templates'
                                 value={selectedReference}
                                 onChange={(event) => handleTemplateSelection(event.target.value)}
                                 options={templateOptions}
-                                disabled={templateLoading}
+                                disabled={templateLoading || templatesLoading}
                             />
                             
                             <div>
                                 <Button
                                     variant="ghost"
+                                    size="sm"
                                     loading={templatesLoading}
                                     disabled={templatesLoading}
                                     onClick={() => void fetchEmailTemplates()}
@@ -311,16 +379,51 @@ export function SendEmail({
                             </div>
                         </div>
                                 
-                        <div className="my-6 flex items-center gap-3">
-                            <div className="h-px flex-1 bg-[var(--border)]" />
-                                <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+                        <div 
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                margin: '24px 0'
+                            }}
+                        >
+                            <div 
+                                style={{
+                                    flex: 1,
+                                    height: 1,
+                                    background: 'var(--border)',
+                                }}
+                            />
+                                <span
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 600,
+                                        color: 'var(--text-muted)',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.08em',
+                                    }}
+                                >
                                     Or
                                 </span>
-                            <div className="h-px flex-1 bg-[var(--border)]" />
+
+                            <div 
+                                style={{
+                                    flex: 1,
+                                    height: 1,
+                                    background: 'var(--border)',
+                                }}
+                            />
                         </div>
 
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                            <div className="flex-1">
+                        <div 
+                            style={{
+                                display: 'grid',
+                                gap: 12,
+                                gridTemplateColumns: 'minmax(220px, 1fr) auto',
+                                alignItems: 'end',
+                            }}
+                        >
+                            
                                 <Input
                                     label='Find by reference number'
                                     placeholder=""
@@ -336,25 +439,30 @@ export function SendEmail({
                                         }));
                                     }}
                                 />
-                            </div>
+                            
 
                             <Button
                                 variant="ghost"
                                 loading={templateLoading}
                                 disabled={templateLoading || !referenceInput.trim()}
                                 onClick={() => void handleReferenceLookup()}
+                                style={{
+                                    minWidth: 112,
+                                    paddingLeft: 16,
+                                    paddingRight: 16,
+                                }}
                             >
                                 Find Template
                             </Button>
                         </div>
                     </Card>
 
-                    <Card className="p-6">
-                        <div className="mb-4">
-                            <h2 className="text-base font-semibold text-[var(--text-primary)]">
+                    <Card style={{ padding: '24px 28px'}}>
+                        <div style={{ marginBottom: 16}}>
+                            <h2 style={sectionHeadingStyle}>
                             Recipients
                             </h2>
-                            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                            <p style={sectionTextStyle}>
                                 Separate multiple addresses with commas or semicolons.
                             </p>
                         </div>
@@ -372,19 +480,44 @@ export function SendEmail({
                                     recipients: undefined,
                                 }));
                             }}
-                            className={`w-full resize-y rounded-lg border bg-[var(--bg-input)] px-3 py-2 text-sm leading-6 text-[var(--text-primary)] outline-none ${
-                                errors.recipients ? 'border-[var(--color-danger)]' : 'border-[var(--border)]'
-                            }`}
+                            style={{
+                                display: 'block',
+                                width: '100%',
+                                minHeight: 150,
+                                padding: '10px 12px',
+                                border: `1.5px solid ${
+                                errors.recipients
+                                    ? 'var(--color-danger)'
+                                    : 'var(--border)'
+                                }`,
+                                borderRadius: 8,
+                                outline: 'none',
+                                resize: 'vertical',
+                                background: 'var(--bg-input)',
+                                color: 'var(--text-primary)',
+                                fontSize: 13,
+                                lineHeight: 1.6,
+                                fontFamily:
+                                'Inter, system-ui, sans-serif',
+                            }}
                         />
 
                         {errors.recipients && (
-                            <p className="mt-2 text-xs text-[var(--color-danger)]">
+                            <p style={errorStyle}>
                                 {errors.recipients}
                             </p>
                         )}
 
                         {parsedRecipients.length > 0 && (
-                            <div className="mt-4 flex items-center gap-2">
+                            <div 
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                    gap: 8,
+                                    marginTop: 16,
+                                }}
+                            >
                                 <Badge
                                     variant={
                                         invalidRecipients.length > 0 ? 'danger': 'success'
@@ -395,7 +528,12 @@ export function SendEmail({
                                 </Badge>
 
                             {invalidRecipients.length > 0 && (
-                                <span className="text-xs text-[var(--color-danger)]">
+                                <span 
+                                    style={{
+                                        fontSize: 11,
+                                        color: 'var(--color-danger)',
+                                    }}
+                                >
                                     {invalidRecipients.length} invalid
                                 </span>
                             )}
@@ -404,10 +542,23 @@ export function SendEmail({
         
                     </Card>
 
-                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div 
+                        style={{
+                            display: 'flex',
+                            gap: 12,
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            justifyContent: 'space-between',
+                        }}
+                    >
                         <Button
                             variant='ghost'
                             onClick={() => onNavigate('/campaigns')}
+                            style={{
+                                minWidth: 72,
+                                paddingLeft: 16,
+                                paddingRight: 16,
+                            }}
                         >
                             Cancel
                         </Button>
@@ -416,86 +567,179 @@ export function SendEmail({
                             loading={sending}
                             disabled={sending||templateLoading||!selectedEmail|| parsedRecipients.length === 0 || invalidRecipients.length > 0}
                             onClick={() => void handleSend()}
+                            style={{
+                                minWidth: 112,
+                                paddingLeft: 16,
+                                paddingRight: 16,
+                            }}
                         >
                             Send Email
                         </Button>
                     </div>
                 </div>
 
-                <Card className="overflow-hidden xl:sticky xl:top-6">
-                    <div className="border-b border-[var(--border)] px-6 py-5">
-                        <h2>
+                <Card 
+                    style={{
+                        minWidth: 0,
+                        overflow: 'hidden',
+            
+                    }}
+                >
+                    <div 
+                    style={{
+                        padding: '20px 24px',
+                        borderBottom: '1px solid var(--border)',
+                    }}>
+                        <h2 style={sectionHeadingStyle}>
                             Email Preview
                         </h2>
 
-                        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                        <p style={sectionTextStyle}>
                             Review the selected template
                         </p>
                     </div>
                     
-                    <div className="p-6">
+                    <div style={{ padding: 24 }}>
                     {templateLoading ? (
-                        <div className="flex min-h-72 items-center justify-center">
-                            <p>
+                        <div 
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minHeight: 300,
+                            }}
+                        >
+                            <p style={sectionTextStyle}>
                                 Loading template...
                             </p>
                         </div>
                     ) : selectedEmail ? (
-                        <div className="flex flex-col gap-5">
-                            <div>
-                                <p className="text-xs text-[var(--text-muted)]">
-                                    Reference
+                        <div 
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 16,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    flexWrap: 'wrap',
+                                    justifyContent: 'space-between',
+                                    gap: 12,
+                                }}
+                            >
+                                <div>
+                                <p style={detailLabelStyle}>
+                                    Reference Number
                                 </p>
 
-                                <code className="text-sm font-bold text-[var(--color-primary)]">
+                                <code 
+                                    style={{
+                                        fontSize: 14,
+                                        fontWeight: 700,
+                                        color: 'var(--color-primary)',
+                                    }}
+                                >
                                     {selectedEmail.referenceNumber}
                                 </code>
+                                </div>
                             </div>
-
+                            
                             <div>
-                                <p className="text-xs text-[var(--text-muted)]">
-                                    Sender
-                                </p>
-
-                                <p className="text-sm text-[var(--text-primary)]">
-                                    {formatSender(selectedEmail)}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="mb-1 text-xs text-[var(--text-muted)]">
-                                    Difficulty
-                                </p>
-
                                 <Badge
                                     variant={getDifficultyVariant(
                                         selectedEmail.difficulty,
                                     )}
                                 >
-                                    {selectedEmail.difficulty}
+                                    {selectedEmail.difficulty.charAt(0).toUpperCase() + selectedEmail.difficulty.slice(1)}
                                 </Badge>
+                             </div>
+
+
+
+                            <div>
+                                <p style={detailLabelStyle}>
+                                    Sender
+                                </p>
+
+                                <p style={sectionValueStyle}>
+                                    {formatSender(selectedEmail)}
+                                </p>
                             </div>
 
                             <div>
-                                <p className="text-xs text-[var(--text-muted)]">
+                                <p style={detailLabelStyle}>
                                     Subject
                                 </p>
 
-                                <p className="text-sm font-semibold text-[var(--text-primary)]">
+                                <p style={sectionValueStyle}>
                                     {selectedEmail.subject}
                                 </p>
                             </div>
 
-                            <div className="border-t border-[var(--border)] pt-4">
-                                <div className="max-h-[416px] overflow-auto whitespace-pre-wrap break-words text-sm leading-6 text-[var(--text-secondary)]">
+                            <div 
+                                style={{
+                                    paddingTop: 16,
+                                    borderTop: '1px solid var(--border)',
+                                }}
+                            >
+                                <p
+                                    style={{
+                                        ...detailLabelStyle,
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    Email body
+                                </p>
+                                <div 
+                                    style={{
+                                        minHeight: 220,
+                                        maxHeight: 430,
+                                        overflow: 'auto',
+                                        padding: '14px 16px',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 8,
+                                        background: 'var(--bg-hover)',
+                                        color: 'var(--text-secondary)',
+                                        fontSize: 12,
+                                        lineHeight: 1.65,
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-word',
+                                        fontFamily:'Inter, system-ui, sans-serif',
+                                    }}
+                                >
                                     {selectedEmail.content}
                                 </div>
                             </div>
                         </div>
                     ):(
-                        <p className="py-12 text-center text-sm text-[var(--text-muted)]">
-                            Select or find an email template.
-                        </p>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minHeight: 300,
+                                padding: 24,
+                                border: '1px dashed var(--border)',
+                                borderRadius: 8,
+                                textAlign: 'center',
+                            }}
+                        >
+                            <p 
+                                style={{
+                                    marginBottom: 8,
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: 'var(--text-primary)',
+                                }}
+                            >
+                                No template selected
+                            </p>
+
+                            
+                        </div>
                     )}
                     </div>
                 </Card>
