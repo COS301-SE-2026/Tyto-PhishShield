@@ -32,6 +32,11 @@ export class EducationController {
     routingKey: 'education.assign',
     queue: 'education-service-assign-queue',
   })
+  async handleEducationAssignment(payload: { auth0Id: string }) {
+    this.logger.log(`Received education.assign for user ${payload.auth0Id}`);
+    await this.educationService.createAssignment(payload.auth0Id);
+  }
+  
   @Post('questions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
