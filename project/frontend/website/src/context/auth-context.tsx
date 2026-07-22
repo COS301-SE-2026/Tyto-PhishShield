@@ -8,7 +8,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   twoFactoredAuth: boolean;
   login: (email: string, password: string) => Promise<void>;
-  twoFactorAuth: (email: string, otp: string) => Promise<void>;
+  twoFactorAuth: (email: string, code: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
   canAccess: (minRole: UserRole) => boolean;
@@ -77,14 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const twoFactorAuth = async (email: string, otp: string) => {
-    const response: Response = await fetch(`${BASE_URL}/auth/otp/verify`, {
+  const twoFactorAuth = async (email: string, code: string) => {
+    const response: Response = await fetch(`${BASE_URL}/accounts/auth/verify-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
       }, 
-      body: JSON.stringify({email, otp}),
+      body: JSON.stringify({email, code}),
     });
 
     if (!response.ok) throw new Error('Invalid OTP or email');

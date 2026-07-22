@@ -147,7 +147,6 @@ export class AuthService {
           Authorization: `Bearer ${mgmtToken}`
         }
       }));
-      console.log(data);
       if (data && !data.email_verfied) {
         throw new UnauthorizedException(
           'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
