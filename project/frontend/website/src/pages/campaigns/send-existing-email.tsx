@@ -479,7 +479,7 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
             <div style={{ marginBottom: 16 }}>
               <h2 style={sectionHeadingStyle}>Recipients</h2>
               <p style={sectionTextStyle}>
-                Separate multiple addresses with commas or semicolons.
+                Separate addresses with commas or semicolons.
               </p>
             </div>
 

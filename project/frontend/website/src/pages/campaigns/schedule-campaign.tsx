@@ -413,7 +413,8 @@ export function ScheduleCampaign({
               )}
 
               <p style={supportingTextStyle}>
-                Duplicate addresses are removed automatically
+                Duplicate addresses are removed automatically. <br/>
+                Separate addresses with commas or semicolons.
               </p>
             </div>
 
