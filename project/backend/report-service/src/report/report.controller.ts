@@ -35,12 +35,10 @@ interface BatchEmailPayload {
   entries: SingleEmailPayload[];
 }
 
-
 @ApiTags('Reports')
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
-
 
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
@@ -76,12 +74,13 @@ export class ReportController {
     routingKey: 'mailing.batch_schedule',
     queue: 'report-service-batch-email-queue',
   })
-  async handleBatchSchedule(@Payload() payload: BatchEmailPayload): Promise<void> {
+  async handleBatchSchedule(
+    @Payload() payload: BatchEmailPayload,
+  ): Promise<void> {
     for (const entry of payload.entries) {
       await this.reportService.recordSentEmail(entry);
     }
   }
-
 
   @Post()
   @UseGuards(JwtAuthGuard)

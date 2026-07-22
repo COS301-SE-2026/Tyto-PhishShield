@@ -7,13 +7,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
 import { Question } from './entities/question.entity';
 import { Assignment, AssignmentStatus } from './entities/assignment.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import * as crypto from 'crypto';
-import {AmqpConnection} from '@golevelup/nestjs-rabbitmq';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 const QUESTIONS_PER_ASSIGNMENT = 3;
 const PASS_THRESHOLD = 0.65;

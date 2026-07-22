@@ -32,7 +32,6 @@ export class EducationController {
     routingKey: 'education.assign',
     queue: 'education-service-assign-queue',
   })
-
   @Post('questions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

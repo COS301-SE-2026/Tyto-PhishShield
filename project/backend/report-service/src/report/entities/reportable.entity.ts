@@ -1,28 +1,31 @@
 import {
-    Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, } from 'typeorm';
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('reportables')
 export class Reportable {
-    @PrimaryGeneratedColumn('uuid')
-    id!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
-    @Column ({unique: true})
-    referenceNumber!: string;
+  @Column({ unique: true })
+  referenceNumber!: string;
 
-    @Column()
-    recipient!: string;
+  @Column()
+  recipient!: string;
 
-    @Column({ nullable: true })
-    sentAt?: Date;
+  @Column({ nullable: true })
+  sentAt?: Date;
 
-    @Column({ nullable: true})
-    messageId?: string;
+  @Column({ nullable: true })
+  messageId?: string;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+  @CreateDateColumn()
+  createdAt!: Date;
 
-    @UpdateDateColumn()
-    updatedAt!: Date;
-
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }
-

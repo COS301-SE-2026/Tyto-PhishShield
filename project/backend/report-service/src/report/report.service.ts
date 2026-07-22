@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { Report, ReportStatus } from './entities/report.entity';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
-import { ClientProxy } from '@nestjs/microservices';
 import { Reportable } from './entities/reportable.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
@@ -87,9 +86,11 @@ export class ReportService {
 
     //const matchedReportable = await this.reportableRepo.findOne({
     //  where: { messageId: dto.outlookMessageId ?? '' },
-   // });
+    // });
 
-   const isPhishingSimulation = dto.emailSender?.toLowerCase().endsWith('@capstone-five-guys.dns.net.za');
+    const isPhishingSimulation = dto.emailSender
+      ?.toLowerCase()
+      .endsWith('@capstone-five-guys.dns.net.za');
 
     if (isPhishingSimulation) {
       saved.status = ReportStatus.CONFIRMED_PHISHING;
@@ -107,15 +108,21 @@ export class ReportService {
       }
     } else {
       try {
-        await this.amqpConnection.publish('education-event-exchange', 'education.assign', {
-          auth0Id: user.auth0Id,
-          email: user.email,
-          reportId: saved.id,
-        },
+        await this.amqpConnection.publish(
+          'education-event-exchange',
+          'education.assign',
+          {
+            auth0Id: user.auth0Id,
+            email: user.email,
+            reportId: saved.id,
+          },
         );
         this.logger.log(`Published education.assign for user ${user.auth0Id}`);
       } catch (err) {
-        this.logger.error(`Failed to publish education.assign for ${user.auth0Id}`, err);
+        this.logger.error(
+          `Failed to publish education.assign for ${user.auth0Id}`,
+          err,
+        );
       }
     }
     return saved;
