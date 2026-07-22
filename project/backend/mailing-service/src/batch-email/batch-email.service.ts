@@ -214,8 +214,8 @@ export class BatchEmailService {
     const routing = dispatches.every((dispatch) =>
       this.isImmediate(dispatch.scheduledAt),
     )
-      ? 'batch-email.send'
-      : 'batch-email.schedule';
+      ? 'mailing.batch_send'
+      : 'mailing.batch_schedule';
 
     await this.publishBatchDispatchEvent(routing, dispatches);
 
@@ -262,10 +262,22 @@ export class BatchEmailService {
       scheduledAt: dispatch.scheduledAt.toISOString(),
     }));
 
+    this.logger.log(
+      `Publishing "${routingKey}" to "${MAILING_EVENT_EXCHANGE}"`,
+    );
+
     try {
-      await this.amqpConnection.publish(MAILING_EVENT_EXCHANGE, routingKey, {
-        entries,
-      });
+      await this.amqpConnection.publish(
+        MAILING_EVENT_EXCHANGE,
+        routingKey,
+        {
+          entries,
+        },
+        {
+          mandatory: true,
+        },
+      );
+      this.logger.log(`Published "${routingKey}" successfully`);
     } catch (publishError) {
       this.logger.error(`Failed to publish ${routingKey}`, publishError);
     }
@@ -332,7 +344,7 @@ export class BatchEmailService {
     const sameInstant = scheduledFrom.getTime() === scheduledTo.getTime();
 
     if (sameInstant) {
-      return Array<Date>(count).fill(scheduledFrom);
+      return new Array<Date>(count).fill(scheduledFrom);
     }
 
     if (randomisedTimes) {
@@ -342,7 +354,7 @@ export class BatchEmailService {
     }
 
     const sharedTime = this.randomDateBetween(scheduledFrom, scheduledTo);
-    return Array<Date>(count).fill(sharedTime);
+    return new Array<Date>(count).fill(sharedTime);
   }
 
   // We assign each recipient a random email available of the specific difficulty using round-robin

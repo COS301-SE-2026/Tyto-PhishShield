@@ -149,7 +149,7 @@ export class EmailService {
         const date = new Date();
         await this.amqpConnection.publish(
           'mailing-event-exchange',
-          'email.send',
+          'mailing.send',
           {
             recipient: recipient,
             referenceNumber: referenceNumber,
@@ -202,7 +202,7 @@ export class EmailService {
       try {
         await this.amqpConnection.publish(
           'mailing-event-exchange',
-          'email.schedule',
+          'mailing.schedule',
           {
             referenceNumber: emailReferenceNumber,
             recipient: recipient,
