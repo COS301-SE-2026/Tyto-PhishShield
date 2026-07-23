@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { XpWebsocketController } from './xp-websocket.controller';
 import { XpWebsocketGateway } from './xp-websocket.gateway';
+import { WebsocketTicketService } from '../websocket-ticket.service';
 
 describe('XpWebsocketController', () => {
   let controller: XpWebsocketController;
@@ -11,9 +12,16 @@ describe('XpWebsocketController', () => {
       emitXpUpdate: jest.fn(),
     };
 
+    const ticketServiceMock = {
+      issueTicket: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [XpWebsocketController],
-      providers: [{ provide: XpWebsocketGateway, useValue: gatewayMock }],
+      providers: [
+        { provide: XpWebsocketGateway, useValue: gatewayMock },
+        { provide: WebsocketTicketService, useValue: ticketServiceMock }
+      ],
     }).compile();
 
     controller = module.get<XpWebsocketController>(XpWebsocketController);

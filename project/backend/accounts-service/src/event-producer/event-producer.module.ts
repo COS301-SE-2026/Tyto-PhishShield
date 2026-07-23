@@ -16,6 +16,9 @@ import { EventProducerService } from './event-producer.service';
         },
       ],
       uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
+      connectionInitOptions: {
+        wait: false,
+      }
     }),
   ],
   providers: [EventProducerService],
