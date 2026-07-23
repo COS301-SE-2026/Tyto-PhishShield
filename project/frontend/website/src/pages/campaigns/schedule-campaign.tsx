@@ -1,12 +1,12 @@
-import {
-  useState,
-  useMemo,
-  type CSSProperties,
-} from "react";
+import { useState, useMemo, type CSSProperties } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select, Badge } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
-import { sendBatchRandomDifferentEmail, sendBatchRandomSameEmail, type EmailDifficulty } from "../../services/send-batch-email";
+import {
+  sendBatchRandomDifferentEmail,
+  sendBatchRandomSameEmail,
+  type EmailDifficulty,
+} from "../../services/send-batch-email";
 
 const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
 
@@ -15,7 +15,7 @@ interface ScheduleCampaignProps {
   activePath: string;
 }
 
-type EmailDistribution = 'same' | 'different';
+type EmailDistribution = "same" | "different";
 
 interface CampaignForm {
   campaignName: string;
@@ -35,32 +35,32 @@ interface FormErrors {
 }
 
 const DISTRIBUTION_OPTIONS = [
-  { value: 'same', label: 'Same email for all recipients'},
-  { value: 'different', label: 'Recipients will receive different emails'},
+  { value: "same", label: "Same email for all recipients" },
+  { value: "different", label: "Recipients will receive different emails" },
 ];
 
 const DIFFICULTY_OPTIONS = [
-  { value: 'easy', label: 'Easy'},
-  { value: 'medium', label: 'Medium'},
-  { value: 'hard', label: 'Hard'},
+  { value: "easy", label: "Easy" },
+  { value: "medium", label: "Medium" },
+  { value: "hard", label: "Hard" },
 ];
 
 const initialForm: CampaignForm = {
-  campaignName: '',
-  emailDistribution: 'same',
-  difficulty: 'medium',
-  recipientsInput: '',
-  scheduledFrom: '',
-  scheduledTo: '',
+  campaignName: "",
+  emailDistribution: "same",
+  difficulty: "medium",
+  recipientsInput: "",
+  scheduledFrom: "",
+  scheduledTo: "",
   randomisedTimes: true,
-}
+};
 
 function parseRecipients(value: string): string[] {
   const recipients = value
     .split(/[,;]+/) //recipients email addresses can be seperated by a comma or a semicolon
     .map((recipient) => recipient.trim())
     .filter(Boolean);
-  
+
   const uniqueRecipients = new Map<string, string>();
 
   recipients.forEach((recipient) => {
@@ -74,14 +74,14 @@ function parseRecipients(value: string): string[] {
 }
 
 function formatInvalidRecipients(recipients: string[]): string {
-  return `Invalid email address${ recipients.length === 1 ? "" : "es" }: ${recipients.join(", ")}`;
+  return `Invalid email address${recipients.length === 1 ? "" : "es"}: ${recipients.join(", ")}`;
 }
 
 export function ScheduleCampaign({
   onNavigate,
   activePath,
 }: ScheduleCampaignProps) {
-  const {addToast} = useToast();
+  const { addToast } = useToast();
 
   const [form, setForm] = useState<CampaignForm>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -98,42 +98,42 @@ export function ScheduleCampaign({
     [parsedRecipients],
   );
 
-  const setField = <K extends keyof CampaignForm>( 
-    field: K, 
-    value: CampaignForm[K], 
-  ) => { 
-    setForm((previous) => ({ 
-      ...previous, 
-      [field]: value, 
-    })); 
-    
-    if (field === "campaignName") { 
-      setErrors((previous) => ({ 
-        ...previous, 
-        campaignName: undefined 
-      })); 
-    } 
-    
-    if (field === "recipientsInput") { 
-      setErrors((previous) => ({ 
-        ...previous, 
-        recipients: undefined 
-      })); 
-    } 
-    
-    if (field === "scheduledFrom") { 
-      setErrors((previous) => ({ 
-        ...previous, 
-        scheduledFrom: undefined, 
-        scheduledTo: undefined 
-      })); 
-    } 
-    
-    if (field === "scheduledTo") { 
-      setErrors((previous) => ({ 
-        ...previous, 
-        scheduledTo: undefined 
-      })); 
+  const setField = <K extends keyof CampaignForm>(
+    field: K,
+    value: CampaignForm[K],
+  ) => {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    if (field === "campaignName") {
+      setErrors((previous) => ({
+        ...previous,
+        campaignName: undefined,
+      }));
+    }
+
+    if (field === "recipientsInput") {
+      setErrors((previous) => ({
+        ...previous,
+        recipients: undefined,
+      }));
+    }
+
+    if (field === "scheduledFrom") {
+      setErrors((previous) => ({
+        ...previous,
+        scheduledFrom: undefined,
+        scheduledTo: undefined,
+      }));
+    }
+
+    if (field === "scheduledTo") {
+      setErrors((previous) => ({
+        ...previous,
+        scheduledTo: undefined,
+      }));
     }
   };
 
@@ -141,37 +141,44 @@ export function ScheduleCampaign({
     const nextErrors: FormErrors = {};
 
     if (!form.campaignName.trim()) {
-      nextErrors.campaignName = 'Campaign name required.'
+      nextErrors.campaignName = "Campaign name required.";
     }
 
     if (parsedRecipients.length === 0) {
-      nextErrors.recipients = 'Enter at least one recipient email address.'
-    }else if (invalidRecipients.length > 0) {
+      nextErrors.recipients = "Enter at least one recipient email address.";
+    } else if (invalidRecipients.length > 0) {
       nextErrors.recipients = formatInvalidRecipients(invalidRecipients);
     }
 
     if (!form.scheduledFrom) {
-      nextErrors.scheduledFrom = 'Schedule-from date required'
+      nextErrors.scheduledFrom = "Schedule-from date required";
     }
 
     if (!form.scheduledTo) {
-      nextErrors.scheduledTo = 'Schedule-to date required'
+      nextErrors.scheduledTo = "Schedule-to date required";
     }
 
     const scheduledTo = form.scheduledTo ? new Date(form.scheduledTo) : null;
-    const scheduledFrom = form.scheduledFrom ? new Date(form.scheduledFrom) : null;
+    const scheduledFrom = form.scheduledFrom
+      ? new Date(form.scheduledFrom)
+      : null;
 
-    if (scheduledFrom && !Number.isNaN(scheduledFrom.getTime()) && scheduledFrom.getTime() <= Date.now()) {
-      nextErrors.scheduledFrom = 'Schedule-from must be in the future.';
+    if (
+      scheduledFrom &&
+      !Number.isNaN(scheduledFrom.getTime()) &&
+      scheduledFrom.getTime() <= Date.now()
+    ) {
+      nextErrors.scheduledFrom = "Schedule-from must be in the future.";
     }
 
-    if (scheduledFrom && 
-      scheduledTo && 
-      !Number.isNaN(scheduledFrom.getTime()) && 
-      !Number.isNaN(scheduledTo.getTime()) && 
+    if (
+      scheduledFrom &&
+      scheduledTo &&
+      !Number.isNaN(scheduledFrom.getTime()) &&
+      !Number.isNaN(scheduledTo.getTime()) &&
       scheduledTo.getTime() < scheduledFrom.getTime()
     ) {
-      nextErrors.scheduledFrom = 'Schedule-from must be before Schedule-to.';
+      nextErrors.scheduledFrom = "Schedule-from must be before Schedule-to.";
     }
 
     setErrors(nextErrors);
@@ -182,9 +189,9 @@ export function ScheduleCampaign({
   const handleScheduleCampaign = async () => {
     if (!validateForm()) {
       addToast({
-        type: 'error',
-        title: 'Campaign validation failed',
-        message: 'Correct the highlighted field before scheduling the campaign'
+        type: "error",
+        title: "Campaign validation failed",
+        message: "Correct the highlighted field before scheduling the campaign",
       });
 
       return;
@@ -192,15 +199,14 @@ export function ScheduleCampaign({
     setScheduling(true);
 
     try {
-      const scheduledFrom = new Date(
-        form.scheduledFrom,
-      ).toISOString();
+      const scheduledFrom = new Date(form.scheduledFrom).toISOString();
 
-      const scheduledTo = new Date(
-        form.scheduledTo,
-      ).toISOString();
+      const scheduledTo = new Date(form.scheduledTo).toISOString();
 
-      const sendBatch = form.emailDistribution === 'same' ? sendBatchRandomSameEmail : sendBatchRandomDifferentEmail;
+      const sendBatch =
+        form.emailDistribution === "same"
+          ? sendBatchRandomSameEmail
+          : sendBatchRandomDifferentEmail;
 
       const response = await sendBatch(
         parsedRecipients,
@@ -211,9 +217,11 @@ export function ScheduleCampaign({
       );
 
       addToast({
-        type: 'success',
-        title: 'Campaign scheduled',
-        message: response.message || `"${form.campaignName.trim()}" was scheduled for ${ parsedRecipients.length } recipient${ parsedRecipients.length === 1 ? "" : "s" }.`,
+        type: "success",
+        title: "Campaign scheduled",
+        message:
+          response.message ||
+          `"${form.campaignName.trim()}" was scheduled for ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? "" : "s"}.`,
       });
 
       onNavigate("/campaigns");
@@ -221,28 +229,28 @@ export function ScheduleCampaign({
       console.error(error);
 
       addToast({
-        type: 'error',
-        title: 'Campaign scheduling failed',
-        message: 'The campaign could not be scheduled.'
+        type: "error",
+        title: "Campaign scheduling failed",
+        message: "The campaign could not be scheduled.",
       });
-    }finally {
+    } finally {
       setScheduling(false);
     }
   };
 
   const labelStyle: CSSProperties = {
-    display: 'block',
+    display: "block",
     marginBottom: 8,
     fontSize: 12,
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: "var(--text-primary)",
     fontFamily: "Inter, system-ui, sans-serif",
   };
 
   const errorStyle: CSSProperties = {
     marginBottom: 8,
     fontSize: 11,
-    color: 'var(--color-danger)',
+    color: "var(--color-danger)",
     fontFamily: "Inter, system-ui, sans-serif",
     lineHeight: 1.5,
   };
@@ -250,12 +258,12 @@ export function ScheduleCampaign({
   const supportingTextStyle: CSSProperties = {
     marginBottom: 8,
     fontSize: 11,
-    color: 'var(--text-muted)',
+    color: "var(--text-muted)",
     fontFamily: "Inter, system-ui, sans-serif",
     lineHeight: 1.5,
   };
 
-  return(
+  return (
     <AppLayout
       activePath={activePath}
       onNavigate={onNavigate}
@@ -274,18 +282,18 @@ export function ScheduleCampaign({
     >
       <div
         style={{
-          width: '100%',
+          width: "100%",
           maxWidth: 824,
         }}
       >
-        <Card style={{ padding: '24px 28px'}}>
+        <Card style={{ padding: "24px 28px" }}>
           <div style={{ marginBottom: 24 }}>
             <h2
               style={{
-                marginBottom:8,
+                marginBottom: 8,
                 fontSize: 15,
                 fontWeight: 700,
-                color: 'var(--text-primary)',
+                color: "var(--text-primary)",
                 fontFamily: "Inter, system-ui, sans-serif",
               }}
             >
@@ -295,35 +303,36 @@ export function ScheduleCampaign({
 
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: "flex",
+              flexDirection: "column",
               gap: 20,
             }}
           >
             <Input
-              label='Campaign name'
+              label="Campaign name"
               placeholder="Enter campaign name"
               required
               value={form.campaignName}
               error={errors.campaignName}
-              onChange={(event) => 
-                setField('campaignName', event.target.value)
-              }
+              onChange={(event) => setField("campaignName", event.target.value)}
             />
 
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: 16
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
               }}
             >
               <Select
                 label="Email distribution"
                 value={form.emailDistribution}
                 options={DISTRIBUTION_OPTIONS}
-                onChange={(event) => 
-                  setField('emailDistribution', event.target.value as EmailDistribution)
+                onChange={(event) =>
+                  setField(
+                    "emailDistribution",
+                    event.target.value as EmailDistribution,
+                  )
                 }
               />
 
@@ -331,8 +340,8 @@ export function ScheduleCampaign({
                 label="Difficulty"
                 value={form.difficulty}
                 options={DIFFICULTY_OPTIONS}
-                onChange={(event) => 
-                  setField('difficulty', event.target.value as EmailDifficulty)
+                onChange={(event) =>
+                  setField("difficulty", event.target.value as EmailDifficulty)
                 }
               />
             </div>
@@ -340,9 +349,7 @@ export function ScheduleCampaign({
             <div>
               <label htmlFor="campaign-recipients" style={labelStyle}>
                 Recipients{" "}
-                <span style={{ color: 'var(--color-danger)' }}>
-                  *
-                </span>
+                <span style={{ color: "var(--color-danger)" }}>*</span>
               </label>
 
               <textarea
@@ -351,38 +358,36 @@ export function ScheduleCampaign({
                 placeholder="user1@example.com, user2@example.com"
                 value={form.recipientsInput}
                 style={{
-                  display: "block", 
-                  width: "100%", 
-                  minHeight: 170, 
-                  padding: "10px 12px", 
-                  border: `1.5px solid ${ 
-                    errors.recipients 
-                    ? "var(--color-danger)" 
-                    : "var(--border)" 
-                  }`, borderRadius: 8, 
-                  outline: "none", 
-                  resize: "vertical", 
-                  background: "var(--bg-input)", 
-                  color: "var(--text-primary)", 
-                  fontSize: 13, lineHeight: 1.6, 
+                  display: "block",
+                  width: "100%",
+                  minHeight: 170,
+                  padding: "10px 12px",
+                  border: `1.5px solid ${
+                    errors.recipients ? "var(--color-danger)" : "var(--border)"
+                  }`,
+                  borderRadius: 8,
+                  outline: "none",
+                  resize: "vertical",
+                  background: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  lineHeight: 1.6,
                   fontFamily: "Inter, system-ui, sans-serif",
                 }}
-                onChange={(event) => 
+                onChange={(event) =>
                   setField("recipientsInput", event.target.value)
                 }
               />
 
               {errors.recipients && (
-                <p style={errorStyle}>
-                  {errors.recipients}
-                </p>
+                <p style={errorStyle}>{errors.recipients}</p>
               )}
 
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  flexWrap: 'wrap',
+                  flexWrap: "wrap",
                   gap: 8,
                   marginTop: 8,
                 }}
@@ -413,16 +418,16 @@ export function ScheduleCampaign({
               )}
 
               <p style={supportingTextStyle}>
-                Duplicate addresses are removed automatically. <br/>
+                Duplicate addresses are removed automatically. <br />
                 Separate addresses with commas or semicolons.
               </p>
             </div>
 
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: 16
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
               }}
             >
               <Input
@@ -448,16 +453,16 @@ export function ScheduleCampaign({
               />
             </div>
 
-            <label 
+            <label
               htmlFor="randomised-times"
               style={{
-                display: "flex", 
-                alignItems: "flex-start", 
-                gap: 16, 
-                padding: "14px 16px", 
-                border: "1px solid var(--border)", 
-                borderRadius: 8, 
-                background: "var(--bg-hover)", 
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 16,
+                padding: "14px 16px",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                background: "var(--bg-hover)",
                 cursor: "pointer",
               }}
             >
@@ -472,19 +477,19 @@ export function ScheduleCampaign({
                   width: 16,
                   height: 16,
                   marginTop: 1,
-                  accentColor: 'var(--color-primary)',
-                  cursor: 'pointer',
+                  accentColor: "var(--color-primary)",
+                  cursor: "pointer",
                   flexShrink: 0,
                 }}
               />
 
               <span
                 style={{
-                  display: 'block',
+                  display: "block",
                   marginBottom: 4,
                   fontSize: 12,
                   fontWeight: 600,
-                  color: 'var(--text-primary)',
+                  color: "var(--text-primary)",
                   fontFamily: "Inter, system-ui, sans-serif",
                 }}
               >
@@ -493,32 +498,33 @@ export function ScheduleCampaign({
 
               <span
                 style={{
-                  display: 'block',
+                  display: "block",
                   fontSize: 11,
-                  color: 'var(--text-secondary)',
+                  color: "var(--text-secondary)",
                   fontFamily: "Inter, system-ui, sans-serif",
                   lineHeight: 1.5,
                 }}
               >
-                Spread email delivery randomly accross the scheduled campaign period.
+                Spread email delivery randomly accross the scheduled campaign
+                period.
               </span>
             </label>
           </div>
 
           <div
             style={{
-              display: 'flex',
-              alignItems: "center", 
-              justifyContent: "space-between", 
-              flexWrap: "wrap", 
-              gap: 16, 
-              marginTop: 24, 
-              paddingTop: 16, 
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 16,
+              marginTop: 24,
+              paddingTop: 16,
               borderTop: "1px solid var(--border)",
             }}
           >
             <Button
-              variant='ghost'
+              variant="ghost"
               disabled={scheduling}
               onClick={() => onNavigate("/campaigns")}
               style={{
@@ -547,7 +553,6 @@ export function ScheduleCampaign({
           </div>
         </Card>
       </div>
-
     </AppLayout>
   );
 }
