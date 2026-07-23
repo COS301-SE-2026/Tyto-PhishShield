@@ -53,31 +53,37 @@ export class ReportController {
     });
   }
 
-@Post()
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
-@ApiOperation({ summary: 'Submit a phishing report from the Outlook Add-in' })
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      outlookMessageId: { type: 'string', example: 'MSG-001' },
-      emailSubject: { type: 'string', example: 'Urgent password reset' },
-      emailSender: { type: 'string', example: 'phisher@capstone-five-guys.dns.net.za' },
-      emailBody: { type: 'string', example: 'Click here to reset your password…' },
-      emailReceivedAt: { type: 'string', example: '2026-07-22T10:00:00Z' },
-      notes: { type: 'string', example: 'Looks suspicious' },
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Submit a phishing report from the Outlook Add-in' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        outlookMessageId: { type: 'string', example: 'MSG-001' },
+        emailSubject: { type: 'string', example: 'Urgent password reset' },
+        emailSender: {
+          type: 'string',
+          example: 'phisher@capstone-five-guys.dns.net.za',
+        },
+        emailBody: {
+          type: 'string',
+          example: 'Click here to reset your password…',
+        },
+        emailReceivedAt: { type: 'string', example: '2026-07-22T10:00:00Z' },
+        notes: { type: 'string', example: 'Looks suspicious' },
+      },
     },
-  },
-})
-create(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
-  return this.proxy.forward({
-    url: `${this.reportServiceUrl}/api/report`,
-    method: 'POST',
-    data: body,
-    headers: authHeader(req),
-  });
-}
+  })
+  create(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.reportServiceUrl}/api/report`,
+      method: 'POST',
+      data: body,
+      headers: authHeader(req),
+    });
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard)
