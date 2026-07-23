@@ -17,3 +17,4 @@ function seed(container, database, sqlFile) {
 }
 
 seed('education_db', 'education_db', 'project/backend/databases-seeds/education/seed.sql');
+seed('mailing_db', 'mailing_db', 'project/backend/databases-seeds/mailing/seed.sql');

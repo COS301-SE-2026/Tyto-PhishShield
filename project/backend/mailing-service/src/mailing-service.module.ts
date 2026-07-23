@@ -5,7 +5,7 @@ import { Emails } from './entities/emails.entity';
 import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
 import { BatchEmailModule } from './batch-email/batch-email.module';
-import { mailingRabbitMQModule } from './rabbitmq.config';
+import { mailingRabbitMQModule } from './rabbitmq.module';
 
 @Module({
   imports: [
