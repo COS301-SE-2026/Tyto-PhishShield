@@ -12,7 +12,7 @@ import { BatchEmailService } from './batch-email.service';
 import { EmailModule } from '../email/email.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Emails } from '../entities/emails.entity';
-import { mailingRabbitMQModule } from '../rabbitmq.config';
+import { mailingRabbitMQModule } from '../rabbitmq.module';
 
 @Module({
   imports: [

@@ -60,7 +60,8 @@ describe('BatchEmailService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      if (key === 'RESEND_API_KEY') return 'test_api_key';
+      if (key === 'RESEND_API_KEY')
+        return 'test_api_key';
       return null;
     }),
   };

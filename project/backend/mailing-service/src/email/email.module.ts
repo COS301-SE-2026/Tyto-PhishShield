@@ -11,7 +11,7 @@ import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Emails } from '../entities/emails.entity';
-import { mailingRabbitMQModule } from '../rabbitmq.config';
+import { mailingRabbitMQModule } from '../rabbitmq.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Emails]), mailingRabbitMQModule],
