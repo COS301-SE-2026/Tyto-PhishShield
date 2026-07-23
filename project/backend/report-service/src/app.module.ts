@@ -8,6 +8,7 @@ import { Report } from './report/entities/report.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountsModule } from './accounts/accounts.module';
+import { Reportable } from './report/entities/reportable.entity';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { AccountsModule } from './accounts/accounts.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [Report],
+        entities: [Report, Reportable],
         synchronize: true,
       }),
     }),
