@@ -1,14 +1,13 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { XpWebsocketGateway } from './xp-websocket.gateway';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { WebsocketTicketService } from '../websocket-ticket.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { AccountsController } from '../../accounts/accounts.controller';
+import { Request } from 'express';
+import type { GatewayUser } from '../../auth/strategies/jwt.strategy';
 
-export interface AuthenticatedUser {
-  auth0Id: string;
-  email: string;
-  role: string;
+interface AuthenticatedRequest extends Request {
+  user: GatewayUser;
 }
 
 @Controller('xp-websocket')
@@ -16,13 +15,12 @@ export class XpWebsocketController {
   constructor(
     private readonly xpWebsocketGateway: XpWebsocketGateway,
     private readonly websocketTicketService: WebsocketTicketService,
-    private readonly accountsController: AccountsController,
   ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post('ticket')
-  issueTicket(@Req() user: AuthenticatedUser) {
-    const ticket = this.websocketTicketService.issueTicket(user.auth0Id);
+  issueTicket(@Req() req: AuthenticatedRequest) {
+    const ticket = this.websocketTicketService.issueTicket(req.user.auth0Id);
     return { ticket };
   }
 
