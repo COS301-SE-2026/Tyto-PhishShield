@@ -25,6 +25,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto),
     });
+    if (!res.ok) throw new Error('Register user failed');
     return parseResponse<RegisterResponse>(res);
   },
   login: async (dto: LoginDto): Promise<LoginResponse> => {
@@ -33,6 +34,7 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto),
     });
+    if (!res.ok) throw new Error('Invalid email or password');
     return parseResponse<LoginResponse>(res);
   },
 
@@ -41,24 +43,33 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json',
       Authorization: `Bearer ${getToken()}`, },
     });
+    if (!res.ok) throw new Error('Token verification failed');
     return parseResponse<AuthenticatedUser>(res);
   },
 
   verifyOtp: async (email: string, code: string): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/accounts/auth/verify-otp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+       },
       body: JSON.stringify({ email, code }),
     });
+    if (!res.ok) throw new Error('Incorrect email or code');
     return parseResponse<{ message: string }>(res);
   },
 
   resendOtp: async (email: string): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/accounts/auth/resend-otp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+       },
       body: JSON.stringify({ email }),
     });
+    if (!res.ok) throw new Error('Unable to send otp');
     return parseResponse<{ message: string }>(res);
   },
 
