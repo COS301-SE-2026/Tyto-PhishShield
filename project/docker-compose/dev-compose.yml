@@ -329,8 +329,6 @@ services:
       - port=3000
       - API_HOST=${GATEWAY_APP_CONTAINER}
       - ADDIN_BASE_URL=https://capstone-five-guys.dns.net.za/addin/
-    ports:
-      - '3000:80'
 
   caddy:
     image: caddy:2.11.3
