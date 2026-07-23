@@ -1,329 +1,557 @@
-import React, { useState } from 'react';
-import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Button, Input, Select } from '../../components/ui';
-import { useToast } from '../../context/toast-context';
-import { API_BASE, authFetch } from '../../services/api';
+import { useState, useMemo, type CSSProperties } from "react";
+import { AppLayout } from "../../components/layout/app-layout";
+import { Button, Card, Input, Select, Badge } from "../../components/ui";
+import { useToast } from "../../context/toast-context";
+import {
+  sendBatchRandomDifferentEmail,
+  sendBatchRandomSameEmail,
+  type EmailDifficulty,
+} from "../../services/send-batch-email";
+
+const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
 
 interface ScheduleCampaignProps {
   onNavigate: (path: string) => void;
   activePath: string;
 }
 
-type Step = 1 | 2 | 3;
+type EmailDistribution = "same" | "different";
 
-const DIFFICULTY_OPTIONS = [
-  { value: 'easy',   label: 'Easy (Obvious hints)' },
-  { value: 'medium', label: 'Medium (Realistic but detectable)' },
-  { value: 'hard',   label: 'Hard (Realistic impersonation)' },
+interface CampaignForm {
+  campaignName: string;
+  emailDistribution: EmailDistribution;
+  difficulty: EmailDifficulty;
+  recipientsInput: string;
+  scheduledFrom: string;
+  scheduledTo: string;
+  randomisedTimes: boolean;
+}
+
+interface FormErrors {
+  campaignName?: string;
+  recipients?: string;
+  scheduledFrom?: string;
+  scheduledTo?: string;
+}
+
+const DISTRIBUTION_OPTIONS = [
+  { value: "same", label: "Same email for all recipients" },
+  { value: "different", label: "Recipients will receive different emails" },
 ];
 
-function StepIndicator({ current }: { current: Step }) {
-  const steps = [
-    { n: 1 as Step, label: 'Email template' },
-    { n: 2 as Step, label: 'Recipients and schedule' },
-    { n: 3 as Step, label: 'Review and confirm' },
-  ];
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 28 }}>
-      {steps.map((s, i) => { const done = current > s.n;
-        const active = current === s.n;
-        return (
-          <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: i < steps.length - 1 ? 1 : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                background: done ? 'var(--color-success)' : active ? 'var(--color-primary)' : 'var(--bg-hover)',
-                border: `2px solid ${done ? 'var(--color-success)' : active ? 'var(--color-primary)' : 'var(--border)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 11, fontWeight: 700, color: (done || active) ? '#fff' : 'var(--text-muted)',
-                fontFamily: 'Inter, system-ui, sans-serif', }}>
-                {done ? '✓' : s.n}
-              </div>
-              <span style={{ fontSize: 12, fontWeight: active ? 700 : 400,
-                color: active ? 'var(--text-primary)' : done ? 'var(--color-success)' : 'var(--text-muted)',
-                fontFamily: 'Inter, system-ui, sans-serif', whiteSpace: 'nowrap', }}>{s.label}</span>
-            </div>
-            {i < steps.length - 1 && (
-              <div style={{ flex: 1, height: 2, margin: '0 12px',
-                background: done ? 'var(--color-success)' : 'var(--border)', transition: 'background 0.3s', }} />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+const DIFFICULTY_OPTIONS = [
+  { value: "easy", label: "Easy" },
+  { value: "medium", label: "Medium" },
+  { value: "hard", label: "Hard" },
+];
+
+const initialForm: CampaignForm = {
+  campaignName: "",
+  emailDistribution: "same",
+  difficulty: "medium",
+  recipientsInput: "",
+  scheduledFrom: "",
+  scheduledTo: "",
+  randomisedTimes: true,
+};
+
+function parseRecipients(value: string): string[] {
+  const recipients = value
+    .split(/[,;]+/) //recipients email addresses can be seperated by a comma or a semicolon
+    .map((recipient) => recipient.trim())
+    .filter(Boolean);
+
+  const uniqueRecipients = new Map<string, string>();
+
+  recipients.forEach((recipient) => {
+    const normalisedRecipient = recipient.toLowerCase();
+
+    if (!uniqueRecipients.has(normalisedRecipient)) {
+      uniqueRecipients.set(normalisedRecipient, recipient);
+    }
+  });
+  return [...uniqueRecipients.values()];
 }
 
-interface EmailTemplateForm {
-  campaignName: string;
-  sender: string;
-  alias: string;
-  subject: string;
-  content: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+function formatInvalidRecipients(recipients: string[]): string {
+  return `Invalid email address${recipients.length === 1 ? "" : "es"}: ${recipients.join(", ")}`;
 }
 
-interface ScheduleForm {
-  recipientsRaw: string;
-  scheduledAt: string;
-}
-
-export function ScheduleCampaign({ onNavigate, activePath }: ScheduleCampaignProps) {
+export function ScheduleCampaign({
+  onNavigate,
+  activePath,
+}: ScheduleCampaignProps) {
   const { addToast } = useToast();
-  const [step, setStep] = useState<Step>(1);
-  const [loading, setLoading] = useState(false);
-  const [templateForm, setTemplateForm] = useState<EmailTemplateForm>({
-    campaignName: '', sender: '', alias: '', subject: '', content: '', difficulty: 'medium', });
-  const [scheduleForm, setScheduleForm] = useState<ScheduleForm>({
-    recipientsRaw: '', scheduledAt: '', });
-  const [templateErrors, setTemplateErrors] = useState<Partial<EmailTemplateForm>>({});
-  const [scheduleErrors, setScheduleErrors] = useState<Partial<ScheduleForm>>({});
-  const setT = (k: keyof EmailTemplateForm, v: string) => setTemplateForm(p => ({ ...p, [k]: v }));
-  const setS = (k: keyof ScheduleForm, v: string) => setScheduleForm(p => ({ ...p, [k]: v }));
-  const validateStep1 = (): boolean => { const e: Partial<EmailTemplateForm> = {};
-    if (!templateForm.campaignName.trim()) e.campaignName = 'A campaign name is required.';
-    if (!templateForm.sender.trim()) e.sender = 'Sender email is required.';
-    else if (!/\S+@\S+\.\S+/.test(templateForm.sender)) e.sender = 'Enter a valid email address.';
-    if (!templateForm.subject.trim()) e.subject = 'Subject line is required.';
-    if (!templateForm.content.trim()) e.content = 'Email body is required.';
-    setTemplateErrors(e);
-    return Object.keys(e).length === 0;
+
+  const [form, setForm] = useState<CampaignForm>(initialForm);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [scheduling, setScheduling] = useState(false);
+
+  const parsedRecipients = useMemo(
+    () => parseRecipients(form.recipientsInput),
+    [form.recipientsInput],
+  );
+
+  const invalidRecipients = useMemo(
+    () =>
+      parsedRecipients.filter((recipient) => !EMAIL_PATTERN.test(recipient)),
+    [parsedRecipients],
+  );
+
+  const setField = <K extends keyof CampaignForm>(
+    field: K,
+    value: CampaignForm[K],
+  ) => {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    if (field === "campaignName") {
+      setErrors((previous) => ({
+        ...previous,
+        campaignName: undefined,
+      }));
+    }
+
+    if (field === "recipientsInput") {
+      setErrors((previous) => ({
+        ...previous,
+        recipients: undefined,
+      }));
+    }
+
+    if (field === "scheduledFrom") {
+      setErrors((previous) => ({
+        ...previous,
+        scheduledFrom: undefined,
+        scheduledTo: undefined,
+      }));
+    }
+
+    if (field === "scheduledTo") {
+      setErrors((previous) => ({
+        ...previous,
+        scheduledTo: undefined,
+      }));
+    }
   };
-  const validateStep2 = (): boolean => { const e: Partial<ScheduleForm> = {};
-    const recipients = parseRecipients(scheduleForm.recipientsRaw);
-    if (recipients.length === 0) e.recipientsRaw = 'Enter at least one recipient email.';
-    else if (recipients.some(r => !/\S+@\S+\.\S+/.test(r))) e.recipientsRaw = 'One or more email addresses are invalid.';
-    if (!scheduleForm.scheduledAt) e.scheduledAt = 'A schedule date and time is required.';
-    else if (new Date(scheduleForm.scheduledAt) <= new Date()) e.scheduledAt = 'Scheduled time must be in the future.';
-    setScheduleErrors(e);
-    return Object.keys(e).length === 0;
+
+  const validateForm = (): boolean => {
+    const nextErrors: FormErrors = {};
+
+    if (!form.campaignName.trim()) {
+      nextErrors.campaignName = "Campaign name required.";
+    }
+
+    if (parsedRecipients.length === 0) {
+      nextErrors.recipients = "Enter at least one recipient email address.";
+    } else if (invalidRecipients.length > 0) {
+      nextErrors.recipients = formatInvalidRecipients(invalidRecipients);
+    }
+
+    if (!form.scheduledFrom) {
+      nextErrors.scheduledFrom = "Schedule-from date required";
+    }
+
+    if (!form.scheduledTo) {
+      nextErrors.scheduledTo = "Schedule-to date required";
+    }
+
+    const scheduledTo = form.scheduledTo ? new Date(form.scheduledTo) : null;
+    const scheduledFrom = form.scheduledFrom
+      ? new Date(form.scheduledFrom)
+      : null;
+
+    if (
+      scheduledFrom &&
+      !Number.isNaN(scheduledFrom.getTime()) &&
+      scheduledFrom.getTime() <= Date.now()
+    ) {
+      nextErrors.scheduledFrom = "Schedule-from must be in the future.";
+    }
+
+    if (
+      scheduledFrom &&
+      scheduledTo &&
+      !Number.isNaN(scheduledFrom.getTime()) &&
+      !Number.isNaN(scheduledTo.getTime()) &&
+      scheduledTo.getTime() < scheduledFrom.getTime()
+    ) {
+      nextErrors.scheduledFrom = "Schedule-from must be before Schedule-to.";
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
   };
-  const parseRecipients = (raw: string): string[] => raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
-  const handleSchedule = async () => {
-    setLoading(true);
+
+  const handleScheduleCampaign = async () => {
+    if (!validateForm()) {
+      addToast({
+        type: "error",
+        title: "Campaign validation failed",
+        message: "Correct the highlighted field before scheduling the campaign",
+      });
+
+      return;
+    }
+    setScheduling(true);
+
     try {
-      const createRes = await authFetch(`${API_BASE}/emails`, { method: 'POST',
-        body: JSON.stringify({
-          sender: templateForm.sender, alias: templateForm.alias || undefined,
-          subject: templateForm.subject, content: templateForm.content,
-          difficulty: templateForm.difficulty, }),
-      });
-      if (!createRes.ok) {
-        const err = await createRes.json().catch(() => ({})) as { message?: string };
-        throw new Error(err.message ?? `Template creation failed (${createRes.status})`);
-      }
-      const template = await createRes.json() as { referenceNumber: string };
-      const refNum = template.referenceNumber;
-      const recipients = parseRecipients(scheduleForm.recipientsRaw);
-      const scheduledAt = new Date(scheduleForm.scheduledAt).toISOString();
-      const results = await Promise.allSettled(
-        recipients.map(recipient => authFetch(`${API_BASE}/emails/${refNum}/schedule-send-single`, {
-            method: 'POST', body: JSON.stringify({ recipient, scheduledAt }), }))
+      const scheduledFrom = new Date(form.scheduledFrom).toISOString();
+
+      const scheduledTo = new Date(form.scheduledTo).toISOString();
+
+      const sendBatch =
+        form.emailDistribution === "same"
+          ? sendBatchRandomSameEmail
+          : sendBatchRandomDifferentEmail;
+
+      const response = await sendBatch(
+        parsedRecipients,
+        form.difficulty,
+        scheduledFrom,
+        scheduledTo,
+        form.randomisedTimes,
       );
-      const failed = results.filter(r => r.status === 'rejected').length;
-      if (failed > 0) {
-        addToast({ type: 'warning', title: 'Partial success',
-          message: `${recipients.length - failed} of ${recipients.length} recipients scheduled. ${failed} failed.`, });
-      } else {
-        addToast({ type: 'success', title: 'Campaign scheduled!',
-          message: `"${templateForm.campaignName}" scheduled for ${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}.`,
-        });
-      }
-      onNavigate('/campaigns');
-    } catch (err: unknown) {
-      addToast({ type: 'error', title: 'Scheduling failed',
-        message: err instanceof Error ? err.message : 'Some error occurred.',
+
+      addToast({
+        type: "success",
+        title: "Campaign scheduled",
+        message:
+          response.message ||
+          `"${form.campaignName.trim()}" was scheduled for ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? "" : "s"}.`,
       });
-    } finally { setLoading(false); }
+
+      onNavigate("/campaigns");
+    } catch (error) {
+      console.error(error);
+
+      addToast({
+        type: "error",
+        title: "Campaign scheduling failed",
+        message: "The campaign could not be scheduled.",
+      });
+    } finally {
+      setScheduling(false);
+    }
   };
-  const recipients = parseRecipients(scheduleForm.recipientsRaw);
-  const scheduledDate = scheduleForm.scheduledAt
-    ? new Date(scheduleForm.scheduledAt).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-  const labelStyle: React.CSSProperties = {
-    fontSize: 12, fontWeight: 600, color: 'var(--text-primary)',
-    display: 'block', marginBottom: 5, fontFamily: 'Inter, system-ui, sans-serif', };
-  const errorStyle: React.CSSProperties = {
-    fontSize: 11, color: 'var(--color-danger)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif', };
+
+  const labelStyle: CSSProperties = {
+    display: "block",
+    marginBottom: 8,
+    fontSize: 12,
+    fontWeight: 600,
+    color: "var(--text-primary)",
+    fontFamily: "Inter, system-ui, sans-serif",
+  };
+
+  const errorStyle: CSSProperties = {
+    marginBottom: 8,
+    fontSize: 11,
+    color: "var(--color-danger)",
+    fontFamily: "Inter, system-ui, sans-serif",
+    lineHeight: 1.5,
+  };
+
+  const supportingTextStyle: CSSProperties = {
+    marginBottom: 8,
+    fontSize: 11,
+    color: "var(--text-muted)",
+    fontFamily: "Inter, system-ui, sans-serif",
+    lineHeight: 1.5,
+  };
+
   return (
     <AppLayout
-      activePath = {activePath}
-      onNavigate = {onNavigate}
-      title = "Schedule Campaign"
-      breadcrumbs = {[{ label: 'Campaigns', path: '/campaigns' }, { label: 'Schedule Campaign' }]}
-      securityScore = {72}
+      activePath={activePath}
+      onNavigate={onNavigate}
+      title="Scehdule Campaign"
+      subtitle="Schedule generated phishing emails for recipients"
+      breadcrumbs={[
+        {
+          label: "Campaigns",
+          path: "/campaigns",
+        },
+        {
+          label: "Scehdule Campaign",
+        },
+      ]}
+      securityScore={72}
     >
-      <div style={{ maxWidth: 680 }}>
-        <StepIndicator current={step} />
-        {/* Email template */}
-        {step === 1 && (
-          <Card style={{ padding: '24px 28px' }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Phishing email template
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 824,
+        }}
+      >
+        <Card style={{ padding: "24px 28px" }}>
+          <div style={{ marginBottom: 24 }}>
+            <h2
+              style={{
+                marginBottom: 8,
+                fontSize: 15,
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                fontFamily: "Inter, system-ui, sans-serif",
+              }}
+            >
+              Campaign Details
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Input
-                label = "Campaign name"
-                placeholder = "e.g. Awareness Test (fraud)"
-                value = {templateForm.campaignName}
-                onChange = {e => { setT('campaignName', e.target.value); setTemplateErrors(p => ({ ...p, campaignName: undefined })); }}
-                error={templateErrors.campaignName}
-                required
-              />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Input
-                  label = "Sender email"
-                  type = "email"
-                  placeholder = "it-support@business.com"
-                  value = {templateForm.sender}
-                  onChange = {e => { setT('sender', e.target.value); setTemplateErrors(p => ({ ...p, sender: undefined })); }}
-                  error={templateErrors.sender}
-                  required
-                />
-                <Input
-                  label="Display name (optional)"
-                  placeholder="IT Support Team"
-                  value={templateForm.alias}
-                  onChange={e => setT('alias', e.target.value)}
-                />
-              </div>
-              <Input
-                label="Email subject line"
-                placeholder="e.g. Urgent: Your account will be suspended"
-                value={templateForm.subject}
-                onChange={e => { setT('subject', e.target.value); setTemplateErrors(p => ({ ...p, subject: undefined })); }}
-                error={templateErrors.subject}
-                required
-              />
-              <div>
-                <label style={labelStyle}>
-                  Email body <span style={{ color: 'var(--color-danger)' }}>*</span>
-                </label>
-                <textarea
-                  rows={7}
-                  placeholder="Include the phishing email body (message) here."
-                  value={templateForm.content}
-                  onChange={e => { setT('content', e.target.value); setTemplateErrors(p => ({ ...p, content: undefined })); }}
-                  style={{
-                    width: '100%', border: `1.5px solid ${templateErrors.content ? 'var(--color-danger)' : 'var(--border)'}`,
-                    borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-input)',
-                    fontFamily: 'Inter, system-ui, sans-serif', resize: 'vertical', outline: 'none', lineHeight: 1.5,
-                  }}
-                />
-                {templateErrors.content && <p style={errorStyle}>{templateErrors.content}</p>}
-              </div>
-              <Select
-                label="Difficulty level"
-                value={templateForm.difficulty}
-                onChange={e => setT('difficulty', e.target.value)}
-                options={DIFFICULTY_OPTIONS}
-              />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
-              <Button onClick={() => { if (validateStep1()) setStep(2); }}>
-                Continue to Recipients
-              </Button>
-            </div>
-          </Card>
-        )}
+          </div>
 
-        {/* Recipients and schedule */}
-        {step === 2 && (
-          <Card style={{ padding: '24px 28px' }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Recipients and schedule
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={labelStyle}>
-                  Recipient email addresses <span style={{ color: 'var(--color-danger)' }}>*</span>
-                </label>
-                <textarea
-                  rows={6}
-                  placeholder={'Enter one email per line, or comma/semicolon-separated:\nuser1@company.com\nuser2@company.com, user3@company.com'}
-                  value={scheduleForm.recipientsRaw}
-                  onChange={e => { setS('recipientsRaw', e.target.value); setScheduleErrors(p => ({ ...p, recipientsRaw: undefined })); }}
-                  style={{
-                    width: '100%', border: `1.5px solid ${scheduleErrors.recipientsRaw ? 'var(--color-danger)' : 'var(--border)'}`,
-                    borderRadius: 8, padding: '9px 12px', fontSize: 13,
-                    color: 'var(--text-primary)', background: 'var(--bg-input)',
-                    fontFamily: 'Inter, system-ui, sans-serif', resize: 'vertical',
-                    outline: 'none', lineHeight: 1.6,
-                  }}
-                />
-                {scheduleErrors.recipientsRaw && <p style={errorStyle}>{scheduleErrors.recipientsRaw}</p>}
-                {recipients.length > 0 && !scheduleErrors.recipientsRaw && (
-                  <p style={{ fontSize: 11, color: 'var(--color-success)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
-                    {recipients.length} recipient{recipients.length !== 1 ? 's' : ''} parsed
-                  </p>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
+            <Input
+              label="Campaign name"
+              placeholder="Enter campaign name"
+              required
+              value={form.campaignName}
+              error={errors.campaignName}
+              onChange={(event) => setField("campaignName", event.target.value)}
+            />
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              <Select
+                label="Email distribution"
+                value={form.emailDistribution}
+                options={DISTRIBUTION_OPTIONS}
+                onChange={(event) =>
+                  setField(
+                    "emailDistribution",
+                    event.target.value as EmailDistribution,
+                  )
+                }
+              />
+
+              <Select
+                label="Difficulty"
+                value={form.difficulty}
+                options={DIFFICULTY_OPTIONS}
+                onChange={(event) =>
+                  setField("difficulty", event.target.value as EmailDifficulty)
+                }
+              />
+            </div>
+
+            <div>
+              <label htmlFor="campaign-recipients" style={labelStyle}>
+                Recipients{" "}
+                <span style={{ color: "var(--color-danger)" }}>*</span>
+              </label>
+
+              <textarea
+                id="campaign-recipients"
+                rows={5}
+                placeholder="user1@example.com, user2@example.com"
+                value={form.recipientsInput}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  minHeight: 170,
+                  padding: "10px 12px",
+                  border: `1.5px solid ${
+                    errors.recipients ? "var(--color-danger)" : "var(--border)"
+                  }`,
+                  borderRadius: 8,
+                  outline: "none",
+                  resize: "vertical",
+                  background: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  fontFamily: "Inter, system-ui, sans-serif",
+                }}
+                onChange={(event) =>
+                  setField("recipientsInput", event.target.value)
+                }
+              />
+
+              {errors.recipients && (
+                <p style={errorStyle}>{errors.recipients}</p>
+              )}
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginTop: 8,
+                }}
+              >
+                <Badge
+                  variant={invalidRecipients.length > 0 ? "danger" : "success"}
+                >
+                  {parsedRecipients.length}{" "}
+                  {parsedRecipients.length === 1 ? "recipient" : "recipients"}
+                </Badge>
+
+                {invalidRecipients.length > 0 && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: "var(--color-danger)",
+                    }}
+                  >
+                    {invalidRecipients.length} invalid
+                  </span>
                 )}
               </div>
-              <Input
-                label="Scheduled date & time"
-                type="datetime-local"
-                value={scheduleForm.scheduledAt}
-                onChange={e => { setS('scheduledAt', e.target.value); setScheduleErrors(p => ({ ...p, scheduledAt: undefined })); }}
-                error={scheduleErrors.scheduledAt}
-                required
-              />
-              <div style={{
-                background: 'var(--bg-hover)', borderRadius: 8, padding: '12px 14px',
-                fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif',
-              }}>
-                Emails will be dispatched using Resend at the scheduled time. Ensure all recipient addresses belong to your organisation.
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', marginTop: 24 }}>
-              <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
-              <Button onClick={() => { if (validateStep2()) setStep(3); }}>Review Campaign</Button>
-            </div>
-          </Card>
-        )}
 
-        {/* Review and confirm */}
-        {step === 3 && (
-          <Card style={{ padding: '24px 28px' }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Review and confirm
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {[
-                { label: 'Campaign name', value: templateForm.campaignName },
-                { label: 'Sender', value: templateForm.alias ? `${templateForm.alias} <${templateForm.sender}>` : templateForm.sender },
-                { label: 'Subject', value: templateForm.subject },
-                { label: 'Difficulty', value: DIFFICULTY_OPTIONS.find(o => o.value === templateForm.difficulty)?.label ?? templateForm.difficulty },
-                { label: 'Recipients', value: `${recipients.length} address${recipients.length !== 1 ? 'es' : ''}` },
-                { label: 'Scheduled at', value: scheduledDate },
-              ].map(row => (
-                <div key={row.label} style={{ display: 'flex', gap: 16, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)', width: 140, flexShrink: 0, fontFamily: 'Inter, system-ui, sans-serif' }}>{row.label}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500, fontFamily: 'Inter, system-ui, sans-serif' }}>{row.value}</span>
-                </div>
-              ))}
-              <div>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>Preview (first 300 characters)</p>
-                <div style={{
-                  background: 'var(--bg-hover)', borderRadius: 8, padding: '10px 14px',
-                  fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'monospace',
-                  lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                }}>
-                  {templateForm.content.slice(0, 300)}{templateForm.content.length > 300 ? '…' : ''}
-                </div>
-              </div>
-              <div style={{
-                background: 'var(--color-warning-light)', border: '1px solid var(--color-warning-border)',
-                borderRadius: 8, padding: '12px 14px', fontSize: 12,
-                color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif',
-              }}>
-                Emails will be sent to the target recipients at the scheduled time and cannot be undone.
-              </div>
+              {invalidRecipients.length > 0 && (
+                <p style={errorStyle}>
+                  {formatInvalidRecipients(invalidRecipients)}
+                </p>
+              )}
+
+              <p style={supportingTextStyle}>
+                Duplicate addresses are removed automatically. <br />
+                Separate addresses with commas or semicolons.
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between', marginTop: 24 }}>
-              <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
-              <Button loading={loading} onClick={() => { void handleSchedule(); }}>
-                Confirm and Schedule Campaign
-              </Button>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              <Input
+                label="Shedule from"
+                type="datetime-local"
+                required
+                value={form.scheduledFrom}
+                error={errors.scheduledFrom}
+                onChange={(event) =>
+                  setField("scheduledFrom", event.target.value)
+                }
+              />
+
+              <Input
+                label="Shedule to"
+                type="datetime-local"
+                required
+                value={form.scheduledTo}
+                error={errors.scheduledTo}
+                onChange={(event) =>
+                  setField("scheduledTo", event.target.value)
+                }
+              />
             </div>
-          </Card>
-        )}
+
+            <label
+              htmlFor="randomised-times"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 16,
+                padding: "14px 16px",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                background: "var(--bg-hover)",
+                cursor: "pointer",
+              }}
+            >
+              <Input
+                label="randomised-times"
+                type="checkbox"
+                checked={form.randomisedTimes}
+                onChange={(event) =>
+                  setField("randomisedTimes", event.target.checked)
+                }
+                style={{
+                  width: 16,
+                  height: 16,
+                  marginTop: 1,
+                  accentColor: "var(--color-primary)",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              />
+
+              <span
+                style={{
+                  display: "block",
+                  marginBottom: 4,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  fontFamily: "Inter, system-ui, sans-serif",
+                }}
+              >
+                Randomised delivery times
+              </span>
+
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 11,
+                  color: "var(--text-secondary)",
+                  fontFamily: "Inter, system-ui, sans-serif",
+                  lineHeight: 1.5,
+                }}
+              >
+                Spread email delivery randomly accross the scheduled campaign
+                period.
+              </span>
+            </label>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 16,
+              marginTop: 24,
+              paddingTop: 16,
+              borderTop: "1px solid var(--border)",
+            }}
+          >
+            <Button
+              variant="ghost"
+              disabled={scheduling}
+              onClick={() => onNavigate("/campaigns")}
+              style={{
+                minWidth: 72,
+                paddingLeft: 16,
+                paddingRight: 16,
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              loading={scheduling}
+              disabled={scheduling}
+              onClick={() => {
+                void handleScheduleCampaign();
+              }}
+              style={{
+                minWidth: 160,
+                paddingLeft: 16,
+                paddingRight: 16,
+              }}
+            >
+              Schedule Campaign
+            </Button>
+          </div>
+        </Card>
       </div>
     </AppLayout>
   );
