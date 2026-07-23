@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback,
   type ReactNode, } from 'react';
-import type { AuthenticatedUser, UserRole } from '../types';
+import type { AuthenticatedUser, LoginResponse, UserRole } from '../types';
+import { authApi } from '../services/api'
 
 interface AuthContextValue {
   user: AuthenticatedUser | null;
@@ -16,7 +17,6 @@ interface AuthContextValue {
 }
 
 const ROLE_LEVEL: Record<UserRole, number> = { admin: 3, analyst: 2, user: 1 };
-const BASE_URL = '/api';
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const isTokenExpired = () => {
@@ -39,15 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const response: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) throw new Error('Token verification failed');
-      const me: AuthenticatedUser = await response.json() as AuthenticatedUser;
+      // const response: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
+      //   method: 'GET',
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      // });
+      // if (!response.ok) throw new Error('Token verification failed');
+      const me: AuthenticatedUser = await authApi.getMe();
       setUser(me);
     } catch {
       localStorage.removeItem('access_token');
@@ -61,46 +61,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { void refreshUser(); }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    const response: Response = await fetch(`${BASE_URL}/accounts/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!response.ok) { throw new Error('Invalid email or password.'); }
-    interface Token {
-      access_token: string;
-      expires_in: number;
-    };
-    const { access_token, expires_in } = await response.json() as Token;
+    // const response: Response = await fetch(`${BASE_URL}/accounts/auth/login`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ email, password }),
+    // });
+    // if (!response.ok) { throw new Error('Invalid email or password.'); }
+    const loginResponse: LoginResponse = await authApi.login({email, password});
+    // interface Token {
+    //   access_token: string;
+    //   expires_in: number;
+    // };
+    const { access_token, expires_in } = loginResponse;
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
     setUser(null);
   };
 
   const twoFactorAuth = async (email: string, code: string) => {
-    const response: Response = await fetch(`${BASE_URL}/accounts/auth/verify-otp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      }, 
-      body: JSON.stringify({email, code}),
-    });
+    // const response: Response = await fetch(`${BASE_URL}/accounts/auth/verify-otp`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+    //   }, 
+    //   body: JSON.stringify({email, code}),
+    // });
 
-    if (!response.ok) throw new Error('Invalid OTP or email');
-
-    setTwoFactoredAuth(true);
-    const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer  ${localStorage.getItem('access_token')}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    if (meResponse.ok) {
-      const me: AuthenticatedUser = await meResponse.json() as AuthenticatedUser;
-      setUser(me);
+    // if (!response.ok) throw new Error('Invalid OTP or email');
+    let message: string = '';
+    try {
+      message = (await authApi.verifyOtp(email, code)).message;
+    } catch (err: unknown) {
+      throw new Error(message);
     }
+    setTwoFactoredAuth(true);
+    // const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
+    //   method: 'GET',
+    //   headers: {
+    //     'Authorization': `Bearer  ${localStorage.getItem('access_token')}`,
+    //     'Content-Type': 'application/json',
+    //   },
+    // });
+    //if (meResponse.ok) {
+      try {
+        const me: AuthenticatedUser = await authApi.getMe();
+        setUser(me);
+      } catch (err: unknown) {
+        throw err;
+      }
+    //}
   };
 
   const logout = () => {
