@@ -13,7 +13,7 @@ export class OtpService {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     this.store.set(email.toLowerCase(), {
       code,
-      expiry: Date.now() + 10 * 60 * 1000, 
+      expiry: Date.now() + 10 * 60 * 1000,
     });
     return code;
   }

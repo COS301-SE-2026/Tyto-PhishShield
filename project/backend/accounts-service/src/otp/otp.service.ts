@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Res } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Otp } from './otp.entity';
@@ -16,7 +16,7 @@ export class OtpService {
   constructor(
     @InjectRepository(Otp)
     private readonly otpRepo: Repository<Otp>,
-    private readonly config: ConfigService
+    private readonly config: ConfigService,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
   }
@@ -52,10 +52,7 @@ export class OtpService {
       return true;
     } catch (err: unknown) {
       const e = err as AxiosErrorShape;
-      console.error(
-        'Failed to send OTP email:',
-        e.response?.data ?? e.message,
-      );
+      console.error('Failed to send OTP email:', e.response?.data ?? e.message);
       throw new InternalServerErrorException('Failed to send OTP email');
     }
   }

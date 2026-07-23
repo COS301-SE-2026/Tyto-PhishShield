@@ -1,4 +1,11 @@
-import { Controller, Post, Body, HttpCode, BadRequestException, Logger, } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { OtpService } from './otp.service';
@@ -17,14 +24,20 @@ export class OtpController {
 
   @Post('send')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Generate and email a 6-digit OTP to the given address' })
+  @ApiOperation({
+    summary: 'Generate and email a 6-digit OTP to the given address',
+  })
   async sendOtp(@Body() body: { email: string }) {
     if (!body.email) throw new BadRequestException('email is required');
 
     const code = this.otpService.generate(body.email);
     const resendKey = this.config.get<string>('RESEND_API_KEY', '');
-    const fromEmail = this.config.get<string>('RESEND_EMAIL', 'onboarding@resend.dev');
-    const isDev = this.config.get<string>('NODE_ENV', 'development') !== 'production';
+    const fromEmail = this.config.get<string>(
+      'RESEND_EMAIL',
+      'onboarding@resend.dev',
+    );
+    const isDev =
+      this.config.get<string>('NODE_ENV', 'development') !== 'production';
 
     try {
       await this.proxy.forward({
@@ -53,7 +66,9 @@ export class OtpController {
     } catch (err: unknown) {
       if (!isDev) throw err;
       // Resend sandbox only allows sending to the verified account email, so we have to log the code for now so the registration could still be completed
-      this.logger.warn(`Resend blocked send to ${body.email} — dev code: ${code}`);
+      this.logger.warn(
+        `Resend blocked send to ${body.email} — dev code: ${code}`,
+      );
       return { message: 'OTP sent (dev)', devCode: code };
     }
   }
@@ -62,9 +77,11 @@ export class OtpController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Verify an OTP code for the given email' })
   verifyOtp(@Body() body: { email: string; code: string }) {
-    if (!body.email || !body.code) throw new BadRequestException('email and code are required');
+    if (!body.email || !body.code)
+      throw new BadRequestException('email and code are required');
     const valid = this.otpService.verify(body.email, body.code);
-    if (!valid) throw new BadRequestException('Invalid or expired verification code');
+    if (!valid)
+      throw new BadRequestException('Invalid or expired verification code');
     return { message: 'Email verified successfully' };
   }
 }

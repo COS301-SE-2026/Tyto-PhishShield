@@ -89,10 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // });
 
     // if (!response.ok) throw new Error('Invalid OTP or email');
-    let message: string = '';
+    let message = '';
     try {
       message = (await authApi.verifyOtp(email, code)).message;
-    } catch (err: unknown) {
+    } catch {
       throw new Error(message);
     }
     setTwoFactoredAuth(true);
@@ -104,12 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //   },
     // });
     //if (meResponse.ok) {
-      try {
         const me: AuthenticatedUser = await authApi.getMe();
         setUser(me);
-      } catch (err: unknown) {
-        throw err;
-      }
     //}
   };
 

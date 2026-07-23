@@ -142,18 +142,26 @@ export class AuthService {
     const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
     try {
-      const { data } = await firstValueFrom(this.http.get<Auth0UserResponse>(`https://${domain}/api/v2/users-by-email?email=${dto.email}`, {
-        headers: {
-          Authorization: `Bearer ${mgmtToken}`
-        }
-      }));
+      const { data } = await firstValueFrom(
+        this.http.get<Auth0UserResponse>(
+          `https://${domain}/api/v2/users-by-email?email=${dto.email}`,
+          {
+            headers: {
+              Authorization: `Bearer ${mgmtToken}`,
+            },
+          },
+        ),
+      );
       if (data && !data.email_verfied) {
         throw new UnauthorizedException(
           'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
         );
       }
     } catch (err: unknown) {
-      if (!(err instanceof UnauthorizedException)) throw new InternalServerErrorException('Failed to check if account is verified.');
+      if (!(err instanceof UnauthorizedException))
+        throw new InternalServerErrorException(
+          'Failed to check if account is verified.',
+        );
     }
 
     try {
