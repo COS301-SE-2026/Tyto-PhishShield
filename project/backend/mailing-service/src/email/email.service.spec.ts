@@ -28,7 +28,6 @@ import {
 } from '../entities/emails.entity';
 import { EmailsDto } from '../dto/emails.dto';
 
-// Mock Resend client matching the service's `data.data?.id` structural needs
 const mockResendSend = jest.fn().mockResolvedValue({
   data: { id: 'mock-resend-id' },
 });

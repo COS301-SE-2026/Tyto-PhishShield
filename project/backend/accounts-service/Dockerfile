@@ -18,7 +18,7 @@ RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-timeout 120000 -g \
  && pnpm config set network-concurrency 8 -g
 
-RUN pnpm install --frozen-lockfile --prefer-offline
+RUN pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 WORKDIR /app/project/backend/accounts-service
 

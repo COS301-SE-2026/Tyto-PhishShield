@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Otp } from './otp.entity';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { Resend } from 'resend';
 
 interface AxiosErrorShape {
@@ -23,7 +24,7 @@ export class OtpService {
 
   async generateAndSend(email: string): Promise<void> {
     await this.otpRepo.delete({ email });
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
     const otp = this.otpRepo.create({
       email,
       code,
