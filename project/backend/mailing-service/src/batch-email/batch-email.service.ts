@@ -319,7 +319,18 @@ export class BatchEmailService {
   }
 
   private async sendResendBatch(payload: ResendBatchItem[]): Promise<void> {
-    const { error } = await this.resend.batch.send(payload);
+    let error: { message?: string } | null | undefined;
+
+    try {
+      ({ error } = await this.resend.batch.send(payload));
+    } catch (sendError) {
+      this.logger.error('Resend batch API call failed', sendError);
+      const diagnosticMessage =
+        sendError instanceof Error
+          ? sendError.message
+          : 'Resend batch send failed';
+      throw new InternalServerErrorException(diagnosticMessage);
+    }
 
     if (error) {
       this.logger.error('Resend batch API returned an error', error);

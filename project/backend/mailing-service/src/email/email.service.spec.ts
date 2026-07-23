@@ -27,6 +27,7 @@ import {
   EmailDifficulty,
 } from '../entities/emails.entity';
 import { EmailsDto } from '../dto/emails.dto';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 const mockResendSend = jest.fn().mockResolvedValue({
   data: { id: 'mock-resend-id' },
@@ -63,6 +64,10 @@ describe('EmailService', () => {
     }),
   };
 
+  const mockAmqpConnection = {
+    publish: jest.fn().mockResolvedValue(undefined),
+  }
+
   // Mock email data
   const mockEmail = {
     email_id: 'uuid-1234',
@@ -86,6 +91,10 @@ describe('EmailService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: AmqpConnection,
+          useValue: mockAmqpConnection,
+        }
       ],
     }).compile();
 
