@@ -3,10 +3,97 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button, Input } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
 import { sendEmail, scheduleEmail } from '../../services/send-email';
+import { sendBatchWithReference, sendBatchRandomSameEmail, type EmailDifficulty, sendBatchRandomDifferentEmail} from '../../services/send-batch-email';
 
 interface SendEmailTestProps {
   onNavigate: (path: string) => void;
   activePath: string;
+}
+
+interface RandomBatchCardProps {
+  batchRecipients: string;
+  difficulty: EmailDifficulty;
+  scheduledFrom: string;
+  scheduledTo: string;
+  randomisedTimes: boolean;
+  loading: boolean;
+  buttonText: string;
+  disabled: boolean;
+  onBatchRecipientsChange: (value: string) => void;
+  onDifficultyChange: (value: EmailDifficulty) => void;
+  onScheduledFromChange: (value: string) => void;
+  onScheduledToChange: (value: string) => void;
+  onRandomisedTimesChange: (value: boolean) => void;
+  onSubmit: () => void;
+}
+
+function RandomBatchCard({
+  batchRecipients,
+  difficulty,
+  scheduledFrom,
+  scheduledTo,
+  randomisedTimes,
+  loading,
+  buttonText,
+  disabled,
+  onBatchRecipientsChange,
+  onDifficultyChange,
+  onScheduledFromChange,
+  onScheduledToChange,
+  onRandomisedTimesChange,
+  onSubmit,
+}: RandomBatchCardProps) {
+  return(
+    <Card style={{ padding: 24, maxWidth: 520 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Input
+            label="Batch recipients"
+            value={batchRecipients}
+            onChange={(event) => onBatchRecipientsChange(event.target.value)}
+            placeholder="delivered@resend.dev"
+          />
+
+          <Input
+            label="Difficulty"
+            value={difficulty}
+            onChange={(event) => onDifficultyChange(event.target.value as EmailDifficulty)}
+            placeholder="easy, medium or hard"
+          />
+
+          <Input
+            label="Scheduled from"
+            type='datetime-local'
+            value={scheduledFrom}
+            onChange={(event) => onScheduledFromChange(event.target.value)}
+          />
+
+          <Input
+            label="Scheduled to"
+            type='datetime-local'
+            value={scheduledTo}
+            onChange={(event) => onScheduledToChange(event.target.value)}
+          />
+
+          <label >
+            <input 
+              type="checkbox"
+              checked={randomisedTimes}
+              onChange={(event) => onRandomisedTimesChange(event.target.checked)} />
+              {' '}Randomised times
+          </label>
+
+          <Button
+            loading={loading}
+            disabled={disabled}
+            onClick={() => {
+              onSubmit();
+            }}
+          >
+            {buttonText}
+          </Button>
+        </div>
+      </Card>
+  );
 }
 
 export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
@@ -16,6 +103,20 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
   const [loading, setLoading] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [scheduleAt, setScheduleAt] = useState('');
+  const [batchRecipients, setBatchRecipients] = useState('delivered@resend.dev');
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [randomBatchLoading, setRandomBatchLoading] = useState(false);
+  const [difficulty, setDifficulty] = useState<EmailDifficulty>('medium');
+  const [scheduledFrom, setScheduledFrom] = useState('');
+  const [scheduledTo, setScheduledTo] = useState('');
+  const [randomisedTimes, setRandomisedTimes] = useState(true);
+  const [differentBatchLoading, setDifferentBatchLoading] = useState(false);
+
+  const parseBatchRecipients = () =>
+    batchRecipients
+      .split(',')
+      .map((email) => email.trim())
+      .filter(Boolean);
 
   const handleSend = async () => {
     try {
@@ -66,6 +167,92 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
       setScheduleLoading(false);
     }
   };
+
+  const handleBatchWithReference = async () => {
+    try {
+      setBatchLoading(true);
+
+      const result = await sendBatchWithReference(referenceNumber.trim(), parseBatchRecipients(),);
+
+      addToast({
+          type: 'success',
+          title: 'Batch sent',
+          message: result.message ?? 'Batch email sent successfully.',
+      });
+    }catch (error) {
+      console.error(error);
+
+      addToast({
+          type: 'error',
+          title: 'Batch Failed',
+          message: 'Could not send batch email. check recipient, reference num, auth and logs',
+      });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchRandomSameEmail = async () => {
+    try {
+      setRandomBatchLoading(true);
+
+      const result = await sendBatchRandomSameEmail(
+        parseBatchRecipients(),
+        difficulty,
+        new Date(scheduledFrom).toISOString(),
+        new Date(scheduledTo).toISOString(),
+        randomisedTimes,
+      );
+
+      addToast({
+          type: 'success',
+          title: 'Random batch scheduled',
+          message: result.message ?? 'Random times same email batch scheduled successfully.',
+      });
+    }catch (error) {
+      console.error(error);
+
+      addToast({
+          type: 'error',
+          title: 'Random batch Failed',
+          message: 'Could not send random times same email batch. check recipient, difficulty, dates, auth and logs',
+      });
+    } finally {
+      setRandomBatchLoading(false);
+    }
+  };
+
+  const handleBatchRandomDifferentEmail = async () => {
+    try {
+      setDifferentBatchLoading(true);
+
+      const result = await sendBatchRandomDifferentEmail(
+        parseBatchRecipients(),
+        difficulty,
+        new Date(scheduledFrom).toISOString(),
+        new Date(scheduledTo).toISOString(),
+        randomisedTimes,
+      );
+
+      addToast({
+          type: 'success',
+          title: 'Different email random batch scheduled',
+          message: result.message ?? 'Random times different email batch scheduled successfully.',
+      });
+    }catch (error) {
+      console.error(error);
+
+      addToast({
+          type: 'error',
+          title: 'Different email random batch Failed',
+          message: 'Could not send random times different email batch. check recipient, difficulty, dates, auth and logs',
+      });
+    } finally {
+      setDifferentBatchLoading(false);
+    }
+  };
+
+  const randomBatchDisabled = parseBatchRecipients().length === 0 ||!scheduledFrom || !scheduledTo;
 
   return (
     <AppLayout
@@ -137,6 +324,72 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
           </Button>
         </div>
       </Card>
+
+      <Card style={{ padding: 24, maxWidth: 520 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Input
+            label="Reference number"
+            value={referenceNumber}
+            onChange={(e) => setReferenceNumber(e.target.value)}
+            placeholder="PHISH-1FA3FB56"
+          />
+
+          <Input
+            label="Batch recipients"
+            value={batchRecipients}
+            onChange={(e) => setBatchRecipients(e.target.value)}
+            placeholder="delivered@resend.dev, Another@example.com"
+          />
+
+          <Button
+            loading={batchLoading}
+            disabled={!referenceNumber.trim() || parseBatchRecipients().length === 0}
+            onClick={() => {
+              void handleBatchWithReference();
+            }}
+          >
+            Send Batch with Reference
+          </Button>
+        </div>
+      </Card>
+
+      <RandomBatchCard
+        batchRecipients={batchRecipients}
+        difficulty={difficulty}
+        scheduledFrom={scheduledFrom}
+        scheduledTo={scheduledTo}
+        randomisedTimes={randomisedTimes}
+        loading={randomBatchLoading}
+        buttonText="Send Batch Random Times Same Email"
+        disabled={randomBatchDisabled}
+        onBatchRecipientsChange={setBatchRecipients}
+        onDifficultyChange={setDifficulty}
+        onScheduledFromChange={setScheduledFrom}
+        onScheduledToChange={setScheduledTo}
+        onRandomisedTimesChange={setRandomisedTimes}
+        onSubmit={() => {
+          void handleBatchRandomSameEmail();
+        }}
+      />
+
+      <RandomBatchCard
+        batchRecipients={batchRecipients}
+        difficulty={difficulty}
+        scheduledFrom={scheduledFrom}
+        scheduledTo={scheduledTo}
+        randomisedTimes={randomisedTimes}
+        loading={differentBatchLoading}
+        buttonText="Send Batch Random Times Different Email"
+        disabled={randomBatchDisabled}
+        onBatchRecipientsChange={setBatchRecipients}
+        onDifficultyChange={setDifficulty}
+        onScheduledFromChange={setScheduledFrom}
+        onScheduledToChange={setScheduledTo}
+        onRandomisedTimesChange={setRandomisedTimes}
+        onSubmit={() => {
+          void handleBatchRandomDifferentEmail();
+        }}
+      />
     </AppLayout>
   );
 }

@@ -13,6 +13,7 @@ import { ScheduleCampaign } from './pages/campaigns/schedule-campaign';
 import { Users } from './pages/users/users';
 import { UserProfile } from './pages/users/user-profile';
 import { Settings } from './pages/settings/settings';
+import Leaderboard from './pages/leaderboard/leaderboard';
 
 function UserProfileById({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +39,7 @@ function App() {
       <Route path="/campaigns/schedule" element={ <ProtectedRoute minRole="analyst"><ScheduleCampaign onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
       <Route path="/users" element={ <ProtectedRoute minRole="analyst"><Users onNavigate={handleNavigate} activePath="/users" /></ProtectedRoute> } />
       <Route path="/users/:id" element={ <ProtectedRoute minRole="analyst"><UserProfileById onNavigate={handleNavigate} /></ProtectedRoute> } />
+      <Route path="/leaderboard" element={ <ProtectedRoute><Leaderboard onNavigate={handleNavigate} activePath="/leaderboard" /></ProtectedRoute> } />
     </Routes>
   );
 }

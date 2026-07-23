@@ -24,6 +24,7 @@ import {
 import { BatchEmailService } from './batch-email.service';
 import { EmailService } from '../email/email.service';
 import { Emails, EmailDifficulty } from '../entities/emails.entity';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 const mockResendBatchSend = jest.fn().mockResolvedValue({ error: null });
 
@@ -60,9 +61,14 @@ describe('BatchEmailService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      if (key === 'RESEND_API_KEY') return 'test_api_key';
+      if (key === 'RESEND_API_KEY')
+        return 'test_api_key';
       return null;
     }),
+  };
+
+  const mockAmqpConnection = {
+    publish: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockEmail = {
@@ -82,6 +88,7 @@ describe('BatchEmailService', () => {
         { provide: ConfigService, useValue: mockConfigService },
         { provide: EmailService, useValue: mockEmailService },
         { provide: getRepositoryToken(Emails), useValue: mockEmailRepository },
+        { provide: AmqpConnection, useValue: mockAmqpConnection },
       ],
     }).compile();
 
@@ -103,12 +110,12 @@ describe('BatchEmailService', () => {
     const recipients = ['a@example.com', 'b@example.com'];
 
     it('should send a batch and return success using alias', async () => {
-      mockEmailService.getEmailByReference.mockResolvedValue(mockEmail);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
       mockResendBatchSend.mockResolvedValue({ error: null });
 
       const result = await service.sendBatchWithReference('PHISH-001', recipients);
 
-      expect(mockEmailService.getEmailByReference).toHaveBeenCalledWith('PHISH-001');
+      expect(mockEmailRepository.find).toHaveBeenCalled();
       expect(mockResendBatchSend).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -124,7 +131,7 @@ describe('BatchEmailService', () => {
 
     it('should send a batch using sender directly when alias is absent', async () => {
       const emailWithoutAlias = { ...mockEmail, alias: undefined };
-      mockEmailService.getEmailByReference.mockResolvedValue(emailWithoutAlias);
+      mockEmailRepository.find.mockResolvedValue([emailWithoutAlias]);
       mockResendBatchSend.mockResolvedValue({ error: null });
 
       await service.sendBatchWithReference('PHISH-001', recipients);
@@ -137,7 +144,7 @@ describe('BatchEmailService', () => {
     });
 
     it('should throw InternalServerErrorException when Resend returns an error object', async () => {
-      mockEmailService.getEmailByReference.mockResolvedValue(mockEmail);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
       mockResendBatchSend.mockResolvedValue({
         error: { message: 'Resend rejected the request' },
       });
@@ -148,7 +155,7 @@ describe('BatchEmailService', () => {
     });
 
     it('should throw InternalServerErrorException when Resend throws', async () => {
-      mockEmailService.getEmailByReference.mockResolvedValue(mockEmail);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
       mockResendBatchSend.mockRejectedValueOnce(new Error('Network failure'));
 
       await expect(
@@ -172,15 +179,12 @@ describe('BatchEmailService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should call scheduleSendEmail per recipient when randomisedTimes=true and dates differ', async () => {
-      mockQueryBuilder.getOne.mockResolvedValue(mockEmail);
-      mockEmailService.scheduleSendEmail.mockResolvedValue({
-        success: true,
-        message: 'scheduled',
-        deliveryId: 'id-1',
-      });
+    it('sends a single batch with a scheduledAt per recipient when randomisedTimes=true and dates differs', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
+      mockResendBatchSend.mockResolvedValue({ error: null });
 
-      await service.sendBatchRandomSameEmail(
+      const result = await service.sendBatchRandomSameEmail(
         recipients,
         EmailDifficulty.MEDIUM,
         FUTURE_DATE_FROM,
@@ -188,19 +192,18 @@ describe('BatchEmailService', () => {
         true,
       );
 
-      expect(mockEmailService.scheduleSendEmail).toHaveBeenCalledTimes(recipients.length);
-      recipients.forEach((recipient) => {
-        expect(mockEmailService.scheduleSendEmail).toHaveBeenCalledWith(
-          mockEmail.referenceNumber,
-          recipient,
-          expect.any(Date),
-        );
+      expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
+      const [payload] = mockResendBatchSend.mock.calls[0];
+      expect(payload).toHaveLength(recipients.length);
+      payload.forEach((item: any) => {
+        expect(item.scheduledAt).toEqual(expect.any(String));
       });
+      expect(result.success).toBe(true);
     });
 
     it('should send a batch at the exact scheduledFrom when dates are the same instant', async () => {
-      mockQueryBuilder.getOne.mockResolvedValue(mockEmail);
-      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
       mockResendBatchSend.mockResolvedValue({ error: null });
 
       const sameDate = new Date('2026-08-01T10:00:00.000Z');
@@ -218,7 +221,7 @@ describe('BatchEmailService', () => {
     });
 
     it('should throw NotFoundException when no emails exist for the difficulty', async () => {
-      mockQueryBuilder.getOne.mockResolvedValue(null);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await expect(
         service.sendBatchRandomSameEmail(
@@ -247,19 +250,16 @@ describe('BatchEmailService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should call scheduleSendEmail per recipient when randomisedTimes=true and dates differ', async () => {
+    it('sends a single resend batch call with round-robin templates when randomisedTimes=true and dates differ', async () => {
       const mockEmails = [
         { ...mockEmail, referenceNumber: 'PHISH-AAA' },
         { ...mockEmail, referenceNumber: 'PHISH-BBB' },
       ];
       mockQueryBuilder.getMany.mockResolvedValue(mockEmails);
-      mockEmailService.scheduleSendEmail.mockResolvedValue({
-        success: true,
-        message: 'scheduled',
-        deliveryId: 'id-1',
-      });
+      mockEmailRepository.find.mockResolvedValue(mockEmails);
+      mockResendBatchSend.mockResolvedValue({ error: null });
 
-      await service.sendBatchRandomDifferentEmail(
+      const result = await service.sendBatchRandomDifferentEmail(
         recipients,
         EmailDifficulty.MEDIUM,
         FUTURE_DATE_FROM,
@@ -267,7 +267,10 @@ describe('BatchEmailService', () => {
         true,
       );
 
-      expect(mockEmailService.scheduleSendEmail).toHaveBeenCalledTimes(recipients.length);
+      expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
+      const [payload] = mockResendBatchSend.mock.calls[0];
+      expect(payload).toHaveLength(recipients.length);
+      expect(result.success).toBe(true);
     });
 
     it('should send a batch at same time with different templates', async () => {
@@ -294,7 +297,7 @@ describe('BatchEmailService', () => {
 
   describe('getRandomEmailByDifficulty', () => {
     it('should return the referenceNumber of a random email', async () => {
-      mockQueryBuilder.getOne.mockResolvedValue(mockEmail);
+      mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
 
       const result = await service.getRandomEmailByDifficulty(EmailDifficulty.MEDIUM);
 
@@ -302,7 +305,7 @@ describe('BatchEmailService', () => {
     });
 
     it('should throw NotFoundException when no email is found', async () => {
-      mockQueryBuilder.getOne.mockResolvedValue(null);
+      mockQueryBuilder.getMany.mockResolvedValue([]);
 
       await expect(
         service.getRandomEmailByDifficulty(EmailDifficulty.EASY),
@@ -310,7 +313,7 @@ describe('BatchEmailService', () => {
     });
 
     it('should throw InternalServerErrorException on DB failure', async () => {
-      mockQueryBuilder.getOne.mockRejectedValueOnce(new Error('DB down'));
+      mockQueryBuilder.getMany.mockRejectedValueOnce(new Error('DB down'));
 
       await expect(
         service.getRandomEmailByDifficulty(EmailDifficulty.HARD),

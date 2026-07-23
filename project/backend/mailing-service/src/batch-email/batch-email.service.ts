@@ -1,25 +1,3 @@
-/**
- * Service: mailing-service
- *
- * Contains the business logic for batch email operations.
- * Supports sending one email template to many recipients, or distributing
- * randomly selected emails by difficulty — with optional randomised send times.
- *
- * Public functions:
- * - {@link BatchEmailService#sendBatchWithReference} - Dispatches one email template to a list of recipients immediately via Resend batch.
- * - {@link BatchEmailService#sendBatchRandomSameEmail} - Picks one random email by difficulty and sends it to all recipients, with optional scheduling.
- * - {@link BatchEmailService#sendBatchRandomDifferentEmail} - Picks a different random email per recipient by difficulty, with optional scheduling.
- * - {@link BatchEmailService#getRandomEmailByDifficulty} - Returns the reference number of one randomly selected email matching the given difficulty.
- * - {@link BatchEmailService#getRandomEmailByDifficultyArray} - Returns an array of reference numbers for randomly selected emails matching the given difficulty.
- *
- * Private helpers:
- * - {@link BatchEmailService#sendWithIndependentRandomTimes} - Schedules the same email to each recipient at an independent random time in the given window.
- * - {@link BatchEmailService#sendBatchAtSameTime} - Sends the same email to all recipients at a single scheduled time via Resend batch.
- * - {@link BatchEmailService#sendWithIndependentRandomTimesRandomEmails} - Schedules a different random email to each recipient at an independent random time.
- * - {@link BatchEmailService#sendBatchAtSameTimeRandomEmails} - Sends a different random email to each recipient, all at the same scheduled time via Resend batch.
- * - {@link BatchEmailService#randomDateBetween} - Returns a random Date between two given dates.
- */
-
 import {
   BadRequestException,
   Injectable,
@@ -29,11 +7,32 @@ import {
 } from '@nestjs/common';
 import { Resend } from 'resend';
 import { ConfigService } from '@nestjs/config';
-import { EmailService } from '../email/email.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailDifficulty, Emails } from '../entities/emails.entity';
 import { In, Repository } from 'typeorm';
 import * as crypto from 'crypto';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+
+const MAILING_EVENT_EXCHANGE = 'mailing-event-exchange';
+
+interface BatchSendResult {
+  success: boolean;
+  message: string;
+}
+
+interface RecipientDispatch {
+  recipient: string;
+  referenceNumber: string;
+  scheduledAt: Date;
+}
+
+interface ResendBatchItem {
+  from: string;
+  to: string[];
+  subject: string;
+  html: string;
+  scheduledAt?: string;
+}
 
 @Injectable()
 export class BatchEmailService {
@@ -42,61 +41,27 @@ export class BatchEmailService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly emailService: EmailService,
     @InjectRepository(Emails)
     private readonly emailRepository: Repository<Emails>,
+    private readonly amqpConnection: AmqpConnection,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
   }
 
   async sendBatchWithReference(
-    emailReferenceNumber: string,
+    referenceNumber: string,
     recipients: string[],
-  ): Promise<{ success: boolean; message: string }> {
-    const email =
-      await this.emailService.getEmailByReference(emailReferenceNumber);
+  ): Promise<BatchSendResult> {
+    const now = new Date();
 
-    const fromString = email.alias
-      ? `${email.alias} <${email.sender}>`
-      : email.sender;
-
-    const payload = recipients.map((recipient) => ({
-      from: fromString,
-      to: [recipient],
-      subject: email.subject,
-      html: email.content,
+    const dispatches: RecipientDispatch[] = recipients.map((recipient) => ({
+      recipient,
+      referenceNumber: referenceNumber,
+      scheduledAt: now,
     }));
 
-    try {
-      const { error } = await this.resend.batch.send(payload);
-
-      if (error) {
-        this.logger.error(`Resend batch API returned an error`, error);
-        throw new InternalServerErrorException(
-          error.message ?? 'Resend batch send failed',
-        );
-      }
-
-      this.logger.log(
-        `Batch of ${recipients.length} emails dispatched for reference: ${emailReferenceNumber}`,
-      );
-
-      return {
-        success: true,
-        message: `Email with reference ${emailReferenceNumber} was sent to ${recipients.length} recipient(s).`,
-      };
-    } catch (error: unknown) {
-      if (error instanceof InternalServerErrorException) throw error;
-
-      this.logger.error(
-        `Failed to dispatch batch for reference ${emailReferenceNumber}`,
-        error,
-      );
-      const diagnosticMessage =
-        error instanceof Error ? error.message : 'Failed to send batch email';
-      throw new InternalServerErrorException(diagnosticMessage);
-    }
+    return this.dispatchBatch(dispatches, `reference ${referenceNumber}`);
   }
 
   async sendBatchRandomSameEmail(
@@ -105,132 +70,31 @@ export class BatchEmailService {
     scheduledFrom: Date,
     scheduledTo: Date,
     randomisedTimes: boolean,
-  ): Promise<{ success: boolean; message: string }> {
-    if (scheduledTo.getTime() < scheduledFrom.getTime()) {
-      throw new BadRequestException(
-        'scheduledTo must not be earlier than scheduledFrom',
-      );
-    }
+  ): Promise<BatchSendResult> {
+    // Makes sure scheduledFrom <= scheduledTo
+    this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
     const referenceNumber = await this.getRandomEmailByDifficulty(difficulty);
 
-    const sameInstant = scheduledFrom.getTime() === scheduledTo.getTime();
-    const useIndependentRandomTimes = randomisedTimes && !sameInstant;
+    const scheduledAts = this.resolveScheduledTimes(
+      recipients.length,
+      scheduledFrom,
+      scheduledTo,
+      randomisedTimes,
+    );
 
-    if (useIndependentRandomTimes) {
-      return this.sendWithIndependentRandomTimes(
+    const dispatches: RecipientDispatch[] = recipients.map(
+      (recipient, index) => ({
+        recipient,
         referenceNumber,
-        recipients,
-        scheduledFrom,
-        scheduledTo,
-      );
-    }
+        scheduledAt: scheduledAts[index],
+      }),
+    );
 
-    const scheduledAt = sameInstant
-      ? scheduledFrom
-      : this.randomDateBetween(scheduledFrom, scheduledTo);
-
-    return this.sendBatchAtSameTime(referenceNumber, recipients, scheduledAt);
-  }
-
-  private async sendWithIndependentRandomTimes(
-    emailReferenceNumber: string,
-    recipients: string[],
-    scheduledFrom: Date,
-    scheduledTo: Date,
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      await Promise.all(
-        recipients.map((recipient) =>
-          this.emailService.scheduleSendEmail(
-            emailReferenceNumber,
-            recipient,
-            this.randomDateBetween(scheduledFrom, scheduledTo),
-          ),
-        ),
-      );
-
-      this.logger.log(
-        `Scheduled ${recipients.length} emails with independent random times for reference: ${emailReferenceNumber}`,
-      );
-
-      return {
-        success: true,
-        message: `${recipients.length} email(s) scheduled at independent random times between ${scheduledFrom.toISOString()} and ${scheduledTo.toISOString()}.`,
-      };
-    } catch (error: unknown) {
-      if (error instanceof InternalServerErrorException) throw error;
-
-      this.logger.error(
-        `Failed to schedule randomised times for batch with email template reference: ${emailReferenceNumber}`,
-        error,
-      );
-      const diagnosticMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to schedule batch emails';
-      throw new InternalServerErrorException(diagnosticMessage);
-    }
-  }
-
-  private async sendBatchAtSameTime(
-    referenceNumber: string,
-    recipients: string[],
-    scheduledAt: Date,
-  ): Promise<{ success: boolean; message: string }> {
-    const email = await this.emailRepository.findOne({
-      where: { referenceNumber },
-    });
-
-    if (!email) {
-      throw new NotFoundException(
-        `Email with reference ${referenceNumber} not found`,
-      );
-    }
-
-    const fromString = email.alias
-      ? `${email.alias} <${email.sender}>`
-      : email.sender;
-
-    const nearNow = scheduledAt.getTime() - Date.now() <= 300000;
-
-    const payload = recipients.map((recipient) => ({
-      from: fromString,
-      to: [recipient],
-      subject: email.subject,
-      html: email.content,
-      ...(nearNow ? {} : { scheduledAt: scheduledAt.toISOString() }),
-    }));
-
-    try {
-      const { error } = await this.resend.batch.send(payload);
-
-      if (error) {
-        this.logger.error(`Resend batch API returned an error`, error);
-        throw new InternalServerErrorException(
-          error.message ?? 'Resend batch send failed',
-        );
-      }
-
-      this.logger.log(
-        `Batch of ${recipients.length} emails scheduled for ${scheduledAt.toISOString()} with email template reference: ${email.referenceNumber})`,
-      );
-
-      return {
-        success: true,
-        message: `${recipients.length} email(s) scheduled for ${scheduledAt.toISOString()}.`,
-      };
-    } catch (error: unknown) {
-      if (error instanceof InternalServerErrorException) throw error;
-
-      this.logger.error(
-        `Failed to dispatch batch for reference ${email.referenceNumber}`,
-        error,
-      );
-      const diagnosticMessage =
-        error instanceof Error ? error.message : 'Failed to send batch email';
-      throw new InternalServerErrorException(diagnosticMessage);
-    }
+    return this.dispatchBatch(
+      dispatches,
+      `difficulty ${difficulty} (same template)`,
+    );
   }
 
   async sendBatchRandomDifferentEmail(
@@ -239,198 +103,62 @@ export class BatchEmailService {
     scheduledFrom: Date,
     scheduledTo: Date,
     randomisedTimes: boolean,
-  ): Promise<{ success: boolean; message: string }> {
-    if (scheduledTo.getTime() < scheduledFrom.getTime()) {
-      throw new BadRequestException(
-        'scheduledTo must not be earlier than scheduledFrom',
-      );
-    }
+  ): Promise<BatchSendResult> {
+    // Makes sure scheduledFrom <= scheduledTo
+    this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
-    const sameInstant = scheduledFrom.getTime() === scheduledTo.getTime();
-    const useIndependentRandomTimes = randomisedTimes && !sameInstant;
-
-    if (useIndependentRandomTimes) {
-      return this.sendWithIndependentRandomTimesRandomEmails(
-        recipients,
-        difficulty,
-        scheduledFrom,
-        scheduledTo,
-      );
-    }
-
-    const scheduledAt = sameInstant
-      ? scheduledFrom
-      : this.randomDateBetween(scheduledFrom, scheduledTo);
-
-    return this.sendBatchAtSameTimeRandomEmails(
-      recipients,
-      difficulty,
-      scheduledAt,
-    );
-  }
-
-  private async sendWithIndependentRandomTimesRandomEmails(
-    recipients: string[],
-    difficulty: EmailDifficulty,
-    scheduledFrom: Date,
-    scheduledTo: Date,
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      const referenceNumberArray = await this.getRandomEmailByDifficultyArray(
-        difficulty,
-        recipients.length,
-      );
-      await Promise.all(
-        recipients.map((recipient, index) =>
-          this.emailService.scheduleSendEmail(
-            referenceNumberArray[index % referenceNumberArray.length],
-            recipient,
-            this.randomDateBetween(scheduledFrom, scheduledTo),
-          ),
-        ),
-      );
-
-      this.logger.log(
-        `Scheduled ${recipients.length} emails with independent random times to ${referenceNumberArray.length} different emails`,
-      );
-
-      return {
-        success: true,
-        message: `${recipients.length} email(s) scheduled at independent random times between ${scheduledFrom.toISOString()} and ${scheduledTo.toISOString()}.`,
-      };
-    } catch (error: unknown) {
-      if (error instanceof InternalServerErrorException) throw error;
-
-      this.logger.error(`Failed to schedule randomised batch`, error);
-      const diagnosticMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to schedule batch emails';
-      throw new InternalServerErrorException(diagnosticMessage);
-    }
-  }
-
-  private async sendBatchAtSameTimeRandomEmails(
-    recipients: string[],
-    difficulty: EmailDifficulty,
-    scheduledAt: Date,
-  ): Promise<{ success: boolean; message: string }> {
-    const referenceNumberArray = await this.getRandomEmailByDifficultyArray(
+    const referenceNumberPool = await this.getRandomEmailByDifficultyArray(
       difficulty,
       recipients.length,
     );
 
-    const emails = await this.emailRepository.find({
-      where: { referenceNumber: In(referenceNumberArray) },
-    });
-
-    const emailsByReference = new Map(
-      emails.map((email) => [email.referenceNumber, email]),
+    const referenceNumbers = this.buildRoundRobinReferenceNumbers(
+      referenceNumberPool,
+      recipients.length,
     );
 
-    const nearNow = scheduledAt.getTime() - Date.now() <= 300000;
+    const scheduledAts = this.resolveScheduledTimes(
+      recipients.length,
+      scheduledFrom,
+      scheduledTo,
+      randomisedTimes,
+    );
 
-    const payload = recipients.map((recipient, index) => {
-      const referenceNumber =
-        referenceNumberArray[index % referenceNumberArray.length];
-      const email = emailsByReference.get(referenceNumber);
+    const dispatches: RecipientDispatch[] = recipients.map(
+      (recipient, index) => ({
+        recipient,
+        referenceNumber: referenceNumbers[index],
+        scheduledAt: scheduledAts[index],
+      }),
+    );
 
-      if (!email) {
-        throw new NotFoundException(
-          `Email with reference ${referenceNumber} not found`,
-        );
-      }
-
-      const fromString = email.alias
-        ? `${email.alias} <${email.sender}>`
-        : email.sender;
-
-      return {
-        from: fromString,
-        to: [recipient],
-        subject: email.subject,
-        html: email.content,
-        ...(nearNow ? {} : { scheduledAt: scheduledAt.toISOString() }),
-      };
-    });
-
-    try {
-      const { error } = await this.resend.batch.send(payload);
-
-      if (error) {
-        this.logger.error(`Resend batch API returned an error`, error);
-        throw new InternalServerErrorException(
-          error.message ?? 'Resend batch send failed',
-        );
-      }
-
-      this.logger.log(
-        `Batch of ${recipients.length} emails drawn from ${emails.length} different ${difficulty} email(s) scheduled for ${scheduledAt.toISOString()}`,
-      );
-
-      return {
-        success: true,
-        message: `${recipients.length} email(s) scheduled for ${scheduledAt.toISOString()}.`,
-      };
-    } catch (error: unknown) {
-      if (error instanceof InternalServerErrorException) throw error;
-
-      this.logger.error(
-        `Failed to dispatch different email templates to batch of difficulty: ${difficulty}`,
-        error,
-      );
-      const diagnosticMessage =
-        error instanceof Error ? error.message : 'Failed to send batch email';
-      throw new InternalServerErrorException(diagnosticMessage);
-    }
-  }
-
-  private randomDateBetween(from: Date, to: Date): Date {
-    const fromTime = from.getTime();
-    const toTime = to.getTime();
-    const randomTime = crypto.randomInt(fromTime, toTime + 1);
-    return new Date(randomTime);
+    return this.dispatchBatch(
+      dispatches,
+      `difficulty ${difficulty} (different templates)`,
+    );
   }
 
   async getRandomEmailByDifficulty(
     difficulty: EmailDifficulty,
   ): Promise<string> {
-    let email: Emails | null;
-
-    try {
-      email = await this.emailRepository
-        .createQueryBuilder('email')
-        .where('email.difficulty = :difficulty', { difficulty })
-        .orderBy('RANDOM()')
-        .getOne();
-    } catch (error) {
-      this.logger.error(
-        `Database execution failure when fetching by difficulty: ${difficulty}`,
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Failed to fetch email due to a system error',
-      );
-    }
-
-    if (!email) {
-      this.logger.warn(
-        `Lookup missed: no emails found with difficulty: ${difficulty}.`,
-      );
-      throw new NotFoundException(
-        `No emails found with difficulty: ${difficulty}`,
-      );
-    }
-    return email.referenceNumber;
+    const [referenceNumber] = await this.getRandomEmailByDifficultyArray(
+      difficulty,
+      1,
+    );
+    return referenceNumber;
   }
 
   async getRandomEmailByDifficultyArray(
     difficulty: EmailDifficulty,
     size: number,
   ): Promise<string[]> {
-    let emails: Emails[] | null;
+    let emails: Emails[];
 
     try {
+      // Query Builder:
+      // Get all email entries with the specific difficulty
+      // Orders it as Random
+      // Returns only the size needed
       emails = await this.emailRepository
         .createQueryBuilder('email')
         .where('email.difficulty = :difficulty', { difficulty })
@@ -439,22 +167,226 @@ export class BatchEmailService {
         .getMany();
     } catch (error) {
       this.logger.error(
-        `Database execution failure when fetching by difficulty: ${difficulty}`,
+        `Database execution failure when fetching email(s) of difficulty: ${difficulty}`,
         error,
       );
       throw new InternalServerErrorException(
-        'Failed to fetch email due to a system error',
+        'Failed to fetch email with specific difficulty due to a system error',
       );
     }
 
-    if (!emails) {
+    if (emails.length === 0) {
       this.logger.warn(
-        `Lookup missed: no emails found with difficulty: ${difficulty}.`,
+        `Lookup missed: no email(s) found with difficulty: ${difficulty}.`,
       );
       throw new NotFoundException(
-        `No emails found with difficulty: ${difficulty}`,
+        `No email(s) found with difficulty: ${difficulty}`,
       );
     }
+
     return emails.map((email) => email.referenceNumber);
+  }
+
+  private async dispatchBatch(
+    dispatches: RecipientDispatch[],
+    details: string,
+  ): Promise<BatchSendResult> {
+    const referenceNumbers = [
+      ...new Set(dispatches.map((dispatch) => dispatch.referenceNumber)),
+    ];
+
+    const emailsByReference =
+      await this.fetchEmailsByReferenceNumbers(referenceNumbers);
+
+    const payload = dispatches.map((dispatch) =>
+      this.buildResendItem(
+        dispatch,
+        emailsByReference.get(dispatch.referenceNumber),
+      ),
+    );
+
+    await this.sendResendBatch(payload);
+
+    this.logger.log(
+      `Dispatched batch of ${dispatches.length} email(s) for ${details}`,
+    );
+
+    const routing = dispatches.every((dispatch) =>
+      this.isImmediate(dispatch.scheduledAt),
+    )
+      ? 'mailing.batch_send'
+      : 'mailing.batch_schedule';
+
+    await this.publishBatchDispatchEvent(routing, dispatches);
+
+    return {
+      success: true,
+      message: `${dispatches.length} email(s) dispatched for ${details}.`,
+    };
+  }
+
+  private async fetchEmailsByReferenceNumbers(
+    referenceNumbers: string[],
+  ): Promise<Map<string, Emails>> {
+    // Find all the email templates relative to their reference numbers
+    const emails = await this.emailRepository.find({
+      where: { referenceNumber: In(referenceNumbers) },
+    });
+
+    const referenceWithEmail = new Map(
+      emails.map((email) => [email.referenceNumber, email]),
+    );
+
+    // Looking for any missing emails
+    // Be advised that this code was autofilled but seems to work
+    const missing = referenceNumbers.filter(
+      (referenceNumber) => !referenceWithEmail.has(referenceNumber),
+    );
+    if (missing.length > 0) {
+      throw new NotFoundException(
+        `Email(s) not found for reference(s): ${missing.join(', ')}`,
+      );
+    }
+
+    return referenceWithEmail;
+  }
+
+  // Event publishing for batch
+  private async publishBatchDispatchEvent(
+    routingKey: string,
+    dispatches: RecipientDispatch[],
+  ): Promise<void> {
+    const entries = dispatches.map((dispatch) => ({
+      recipient: dispatch.recipient,
+      referenceNumber: dispatch.referenceNumber,
+      scheduledAt: dispatch.scheduledAt.toISOString(),
+    }));
+
+    this.logger.log(
+      `Publishing "${routingKey}" to "${MAILING_EVENT_EXCHANGE}"`,
+    );
+
+    try {
+      await this.amqpConnection.publish(
+        MAILING_EVENT_EXCHANGE,
+        routingKey,
+        {
+          entries,
+        },
+        {
+          mandatory: true,
+        },
+      );
+      this.logger.log(`Published "${routingKey}" successfully`);
+    } catch (publishError) {
+      this.logger.error(`Failed to publish ${routingKey}`, publishError);
+    }
+  }
+
+  private formatFromAddress(email: Emails): string {
+    return email.alias ? `${email.alias} <${email.sender}>` : email.sender;
+  }
+
+  private isImmediate(scheduledAt: Date): boolean {
+    return scheduledAt.getTime() - Date.now() <= 5 * 60 * 1000;
+  }
+
+  private validateScheduleWindow(scheduledFrom: Date, scheduledTo: Date): void {
+    if (scheduledTo.getTime() < scheduledFrom.getTime()) {
+      throw new BadRequestException(
+        'scheduledTo must not be earlier than scheduledFrom',
+      );
+    }
+  }
+
+  private buildResendItem(
+    dispatch: RecipientDispatch,
+    email: Emails,
+  ): ResendBatchItem {
+    const item: ResendBatchItem = {
+      from: this.formatFromAddress(email),
+      to: [dispatch.recipient],
+      subject: email.subject,
+      html: email.content,
+    };
+
+    // Add scheduledAt field if the scheduledAt time is inside the 5-min time.
+    if (!this.isImmediate(dispatch.scheduledAt)) {
+      item.scheduledAt = dispatch.scheduledAt.toISOString();
+    }
+
+    return item;
+  }
+
+  private async sendResendBatch(payload: ResendBatchItem[]): Promise<void> {
+    let error: { message?: string } | null | undefined;
+
+    try {
+      ({ error } = await this.resend.batch.send(payload));
+    } catch (sendError) {
+      this.logger.error('Resend batch API call failed', sendError);
+      const diagnosticMessage =
+        sendError instanceof Error
+          ? sendError.message
+          : 'Resend batch send failed';
+      throw new InternalServerErrorException(diagnosticMessage);
+    }
+
+    if (error) {
+      this.logger.error('Resend batch API returned an error', error);
+      throw new InternalServerErrorException(
+        error.message ?? 'Resend batch send failed',
+      );
+    }
+  }
+
+  /* We try to keep the structure: recipient, referenceNumber, scheduledAt for all emails sent even if the scheduledAt is now
+   * We have 3 cases:
+   * 1) All emails are sent at the same predefined time
+   * 2) Emails are sent at random times
+   * 3) All emails are sent at the same random time
+   */
+  private resolveScheduledTimes(
+    count: number,
+    scheduledFrom: Date,
+    scheduledTo: Date,
+    randomisedTimes: boolean,
+  ): Date[] {
+    const sameInstant = scheduledFrom.getTime() === scheduledTo.getTime();
+
+    if (sameInstant) {
+      return new Array<Date>(count).fill(scheduledFrom);
+    }
+
+    if (randomisedTimes) {
+      return Array.from({ length: count }, () =>
+        this.randomDateBetween(scheduledFrom, scheduledTo),
+      );
+    }
+
+    const sharedTime = this.randomDateBetween(scheduledFrom, scheduledTo);
+    return new Array<Date>(count).fill(sharedTime);
+  }
+
+  // We assign each recipient a random email available of the specific difficulty using round-robin
+  private buildRoundRobinReferenceNumbers(
+    pool: string[],
+    count: number,
+  ): string[] {
+    const referenceNumbers: string[] = [];
+
+    for (let index = 0; index < count; index++) {
+      const poolIndex = index % pool.length;
+      referenceNumbers.push(pool[poolIndex]);
+    }
+
+    return referenceNumbers;
+  }
+
+  private randomDateBetween(from: Date, to: Date): Date {
+    const fromTime = from.getTime();
+    const toTime = to.getTime();
+    const randomTime = crypto.randomInt(fromTime, toTime + 1);
+    return new Date(randomTime);
   }
 }

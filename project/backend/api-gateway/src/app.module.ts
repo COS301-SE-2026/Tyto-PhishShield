@@ -19,7 +19,6 @@ import { APP_GUARD, Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
-import { EducationModule} from './education/education.module'
 //import { OtpModule } from './otp/otp.module';
 
 @Module({

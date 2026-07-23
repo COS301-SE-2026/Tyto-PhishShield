@@ -14,7 +14,7 @@ import { AccountsService } from './accounts.service';
         },
       ],
       enableControllerDiscovery: true,
-    })
+    }),
   ],
   controllers: [AccountsController],
   providers: [AccountsService],

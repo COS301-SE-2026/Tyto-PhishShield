@@ -1,6 +1,6 @@
 import { OwlLogo } from '../../../../website/src/components/ui/owl-logo';
 
-const navItems = ['Brand', 'Colours', 'Typography', 'Spacing', 'Components', 'Ratio', 'Dashboard'];
+const navItems = ['Brand', 'Colours', 'Typography', 'Spacing', 'Components', 'Dashboard'];
 
 function Sidebar() {
     return (
