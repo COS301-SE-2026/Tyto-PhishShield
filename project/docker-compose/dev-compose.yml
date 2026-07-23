@@ -320,6 +320,17 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+  
+  outlook-addin:
+    image: fiveguys301/addin:latest
+    restart: on-failure
+    container_name: addin
+    environment:
+      - port=3000
+      - API_HOST=${GATEWAY_APP_CONTAINER}
+      - ADDIN_BASE_URL=https://capstone-five-guys.dns.net.za/addin/
+    ports:
+      - '3000:80'
 
   caddy:
     image: caddy:2.11.3
