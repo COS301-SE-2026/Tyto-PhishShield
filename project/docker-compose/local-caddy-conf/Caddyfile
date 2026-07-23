@@ -1,14 +1,9 @@
 {
-    auto_https off
+    local_certs
 }
 
-:80 {
+localhost {
 
-    handle /addin/* {
-        uri strip_prefix /addin
-        reverse_proxy outlook-addin:3000
-    }
-    
     log {
         output file /var/log/caddy/access.log {
             roll_size 10MiB
@@ -35,6 +30,11 @@
         reverse_proxy api-gateway:3001 {
             header_up X-Request-ID {http.request.header.X-Request-ID}
         }
+    }
+
+    handle /addin/* {
+        uri strip_prefix /addin
+        reverse_proxy outlook-addin:80
     }
 
     handle {
