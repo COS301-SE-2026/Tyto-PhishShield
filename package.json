@@ -74,7 +74,7 @@
 		"dc:build:mailing": "docker compose -f project/docker-compose/local-compose.yml --env-file ./project/docker-compose/.env.local build mailing_app",
 		"dc:build:education": "docker compose -f project/docker-compose/local-compose.yml --env-file ./project/docker-compose/.env.local build education_app",
 		"dc:build:analytics": "docker compose -f project/docker-compose/local-compose.yml --env-file ./project/docker-compose/.env.local build analytics_app",
-		"dc:build:website": "docker compose -f project/docker-compose/local-compose.yml --env-file ./project/docker-compose/.env.local build website_app",
+		"dc:build:website": "docker compose -f project/docker-compose/local-compose.yml --env-file ./project/docker-compose/.env.local build website",
 		"dc:ps": "docker compose ps",
 		"dc:logs": "docker compose logs -f",
 		"dc:up:dev-server": "docker compose -f project/docker-compose/dev-compose.yml --env-file ./project/docker-compose/.env.dev up -d --build",

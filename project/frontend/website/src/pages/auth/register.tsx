@@ -1,9 +1,8 @@
 import { useState} from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
-import { Input, PasswordInput, Select, Button /**, OtpInput**/ } from '../../components/ui';
+import { Input, PasswordInput, Select, Button } from '../../components/ui';
 import { authApi } from '../../services/api';
 import { useToast } from '../../context/toast-context';
-//import { ErrorResponse, RegisterResponse } from '../../types/index';
 
 interface RegisterProps {
   onNavigate: (path: string) => void;
@@ -58,7 +57,7 @@ function StepSidebar({ step }: { step: Step }) {
   const steps = [
     { n: 1, label: 'Account details', desc: 'Name, email, password' },
     { n: 2, label: 'Organisation', desc: 'Department and role' },
-    { n: 3, label: 'Confirm OTP', desc: 'Verify your email address' },
+    { n: 3, label: 'Check your email', desc: 'Verify your email address' },
   ];
 
   return (
@@ -120,8 +119,6 @@ export function Register({ onNavigate }: RegisterProps) {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpError, setOtpError] = useState('');
 
   const validateStep1 = () => {
     const e: Record<string, string> = {};
@@ -150,7 +147,7 @@ export function Register({ onNavigate }: RegisterProps) {
         email, password, name: `${firstName} ${lastName}`.trim(),
         department: DEPARTMENTS.find(d => d.value === department)?.label,
       });
-      addToast({ type: 'info', title: 'Verification code sent', message: `Check ${email} for your 6-digit code.` });
+      addToast({ type: 'info', title: 'Confirmation email sent', message: `Check ${email} to verify your account.` });
       setStep(3);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed. Please try again.';
@@ -160,48 +157,7 @@ export function Register({ onNavigate }: RegisterProps) {
     }
   };
 
-  const handleOtpVerify = async () => {
-    if (otpCode.length !== 6) { setOtpError('Please enter the full 6-digit code.'); return; }
-    setLoading(true);
-    setOtpError('');
-    try {
-      await authApi.verifyOtp(email, otpCode);
-      addToast({ type: 'success', title: 'Email verified!', message: 'Your account is ready. Please log in.' });
-      onNavigate('/login');
-    } catch (err: unknown) {
-      setOtpError(err instanceof Error ? err.message : 'Invalid or expired code.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      await authApi.resendOtp(email);
-      addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}.` });
-    } catch {
-      addToast({ type: 'error', title: 'Could not resend', message: 'Please try again in a moment.' });
-    }
-  };
-
-  /* const handleOtpSubmit = async () => {
-    if (otp.length < 5) { setOtpError('Please enter the full 5-digit code.'); return; }
-    setLoading(true); setOtpError('');
-    try {
-      await authApi.verifyOtp(registeredUserId, otp);
-      addToast({ type: 'success', title: 'Email verified!', message: 'Your account is ready. Please log in.' });
-      onNavigate('/login');
-    } catch {
-      setOtpError('Incorrect code. Please check your email and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOtp = () => {
-    setOtp(''); setOtpError('');
-    addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}` });
-  };  */
+  // OTP verification now happens at first login — see handleOtpVerify/handleResendOtp in pages/auth/login.tsx
 
     const rightPanel = (
     <div style={{ 
@@ -351,35 +307,15 @@ export function Register({ onNavigate }: RegisterProps) {
             STEP 3 OF 3
           </div>
           <h1 style={{ fontSize: 23, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Verify your email
+            Check your email
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            We sent a 6-digit code to <strong>{email}</strong>. Enter it below to complete registration.
+            A confirmation email has been sent to <strong>{email}</strong>. Click the link in that email to verify and activate your account.
           </p>
-          <div style={{ marginBottom: 16 }}>
-            <Input
-              label="Verification code"
-              placeholder="123456"
-              value={otpCode}
-              onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
-              error={otpError}
-              required
-              style={{ letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
-            />
-          </div>
-          <Button fullWidth loading={loading} onClick={() => { void handleOtpVerify(); }}
-            style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8, marginBottom: 14 }}>
-            Verify and Complete Registration
+          <Button fullWidth size="lg" onClick={() => onNavigate('/login')}
+            style={{ width: '100%', padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8 }}>
+            Go to login
           </Button>
-          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Didn't receive it?{' '}
-            <button
-              onClick={() => { void handleResendOtp(); }}
-              style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}
-            >
-              Resend code
-            </button>
-          </p>
         </>
       )}
     </div>

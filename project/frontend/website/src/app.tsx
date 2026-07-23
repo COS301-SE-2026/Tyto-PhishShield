@@ -10,6 +10,8 @@ import { Reports } from './pages/analytics/reports';
 import { Training } from './pages/training/training';
 import { Campaigns } from './pages/campaigns/campaigns';
 import { ScheduleCampaign } from './pages/campaigns/schedule-campaign';
+import { CreateEmail } from './pages/campaigns/create-email';
+import { SendEmail } from './pages/campaigns/send-existing-email';
 import { Users } from './pages/users/users';
 import { UserProfile } from './pages/users/user-profile';
 import { Settings } from './pages/settings/settings';
@@ -32,11 +34,13 @@ function App() {
       <Route path="/training" element={ <ProtectedRoute><Training onNavigate={handleNavigate} activePath="/training" /></ProtectedRoute> } />
       <Route path="/users/profile" element={ <ProtectedRoute><UserProfile onNavigate={handleNavigate} activePath="/users/profile" /></ProtectedRoute> } />
       <Route path="/settings" element={ <ProtectedRoute><Settings onNavigate={handleNavigate} activePath="/settings" /></ProtectedRoute> } />
-      <Route path="/send-email-test" element={ <ProtectedRoute><SendEmailTest onNavigate={handleNavigate} activePath="/send-email-test" /></ProtectedRoute> } />
+      <Route path="/send-email-test" element={ <ProtectedRoute minRole="admin"><SendEmailTest onNavigate={handleNavigate} activePath="/send-email-test" /></ProtectedRoute> } />
       <Route path="/analytics" element={ <ProtectedRoute minRole="analyst"><Analytics onNavigate={handleNavigate} activePath="/analytics" /></ProtectedRoute> } />
       <Route path="/analytics/reports" element={ <ProtectedRoute minRole="analyst"><Reports onNavigate={handleNavigate} activePath="/analytics/reports" /></ProtectedRoute> } />
       <Route path="/campaigns" element={ <ProtectedRoute minRole="analyst"><Campaigns onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
-      <Route path="/campaigns/schedule" element={ <ProtectedRoute minRole="analyst"><ScheduleCampaign onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
+      <Route path="/campaigns/schedule" element={ <ProtectedRoute minRole="admin"><ScheduleCampaign onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
+      <Route path="/campaigns/create-email" element={ <ProtectedRoute minRole="admin"><CreateEmail onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
+      <Route path="/campaigns/send-email" element={ <ProtectedRoute minRole="admin"><SendEmail onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
       <Route path="/users" element={ <ProtectedRoute minRole="analyst"><Users onNavigate={handleNavigate} activePath="/users" /></ProtectedRoute> } />
       <Route path="/users/:id" element={ <ProtectedRoute minRole="analyst"><UserProfileById onNavigate={handleNavigate} /></ProtectedRoute> } />
       <Route path="/leaderboard" element={ <ProtectedRoute><Leaderboard onNavigate={handleNavigate} activePath="/leaderboard" /></ProtectedRoute> } />
