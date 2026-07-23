@@ -3,7 +3,7 @@ import { IsString, IsOptional, IsDateString } from 'class-validator';
 export class CreateReportDto {
   @IsString()
   @IsOptional()
-  outlookMessageId!: string;
+  outlookMessageId?: string;
 
   @IsString()
   @IsOptional()

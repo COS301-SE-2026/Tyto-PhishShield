@@ -7,11 +7,13 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { HealthServices } from './dto/health-check.dto';
+import { Public } from './auth/public.decorator';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @Public()
   @Get('health')
   @ApiOperation({
     summary:

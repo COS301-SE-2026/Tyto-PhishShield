@@ -2,8 +2,7 @@
  * Service: mailing-service
  *
  * End-to-end integration tests for single email operations.
- * Boots the full NestJS application and runs requests against
- * a live database and Resend API connection.
+ * Boots the full NestJS application and runs requests against a live database and Resend API connection.
  *
  * Tests:
  * - POST /emails - Creates a new email record and captures the reference number.

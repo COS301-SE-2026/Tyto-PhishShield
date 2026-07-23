@@ -33,6 +33,7 @@ interface Auth0UserResponse {
   user_id: string;
   email: string;
   name: string;
+  email_verfied: boolean;
 }
 
 interface Auth0LoginResponse {
@@ -120,7 +121,7 @@ export class AuthService {
       role: UserRole.USER,
     });
 
-    await this.otpService.generateAndSend(dto.email);
+    //await this.otpService.generateAndSend(dto.email);
 
     return {
       message:
@@ -137,13 +138,31 @@ export class AuthService {
         'Account is deactivated. Please contact support.',
       );
     }
-    if (user && !user.isVerified) {
-      throw new UnauthorizedException(
-        'Email not verified. Please verify your email before logging in.',
-      );
-    }
 
     const domain = this.config.get<string>('AUTH0_DOMAIN');
+    const mgmtToken = await this.getManagementToken();
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<Auth0UserResponse>(
+          `https://${domain}/api/v2/users-by-email?email=${dto.email}`,
+          {
+            headers: {
+              Authorization: `Bearer ${mgmtToken}`,
+            },
+          },
+        ),
+      );
+      if (data && !data.email_verfied) {
+        throw new UnauthorizedException(
+          'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
+        );
+      }
+    } catch (err: unknown) {
+      if (!(err instanceof UnauthorizedException))
+        throw new InternalServerErrorException(
+          'Failed to check if account is verified.',
+        );
+    }
 
     try {
       const { data } = await firstValueFrom(
@@ -158,6 +177,8 @@ export class AuthService {
           connection: 'Username-Password-Authentication',
         }),
       );
+
+      this.otpService.generateAndSend(dto.email);
 
       return {
         access_token: data.access_token,

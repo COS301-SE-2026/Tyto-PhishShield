@@ -12,7 +12,11 @@ import { AuthModule } from '../auth/auth.module';
 import { EventProducerModule } from '../event-producer/event-producer.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), forwardRef(() => AuthModule), EventProducerModule],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    forwardRef(() => AuthModule),
+    EventProducerModule,
+  ],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService], // exported so AuthModule can use it

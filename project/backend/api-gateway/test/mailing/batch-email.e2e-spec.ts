@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MailingModule } from '../../src/mailing/mailing.module';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 
-const TEST_SENDER = 'onboarding@resend.dev';
+const TEST_SENDER = 'test@capstone-five-guys.dns.net.za';
 const TEST_RECIPIENTS = [
   'delivered@resend.dev',
   'delivered@resend.dev',

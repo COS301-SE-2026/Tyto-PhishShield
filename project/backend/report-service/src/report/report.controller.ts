@@ -14,7 +14,8 @@ import { ReportService } from './report.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -24,10 +25,62 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
+interface SingleEmailPayload {
+  recipient: string;
+  referenceNumber: string;
+  scheduledAt: string;
+}
+
+interface BatchEmailPayload {
+  entries: SingleEmailPayload[];
+}
+
 @ApiTags('Reports')
 @Controller('report')
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
+
+  @RabbitSubscribe({
+    exchange: 'mailing-event-exchange',
+    routingKey: 'mailing.send',
+    queue: 'report-service-email-queue',
+  })
+  async handleSingleSend(payload: SingleEmailPayload): Promise<void> {
+    await this.reportService.recordSentEmail(payload);
+  }
+
+  @RabbitSubscribe({
+    exchange: 'mailing-event-exchange',
+    routingKey: 'mailing.schedule',
+    queue: 'report-service-email-queue',
+  })
+  async handleSingleSchedule(payload: SingleEmailPayload): Promise<void> {
+    await this.reportService.recordSentEmail(payload);
+  }
+
+  @RabbitSubscribe({
+    exchange: 'mailing-event-exchange',
+    routingKey: 'mailing.batch_send',
+    queue: 'report-service-batch-email-queue',
+  })
+  async handleBatchSend(@Payload() payload: BatchEmailPayload): Promise<void> {
+    for (const entry of payload.entries) {
+      await this.reportService.recordSentEmail(entry);
+    }
+  }
+
+  @RabbitSubscribe({
+    exchange: 'mailing-event-exchange',
+    routingKey: 'mailing.batch_schedule',
+    queue: 'report-service-batch-email-queue',
+  })
+  async handleBatchSchedule(
+    @Payload() payload: BatchEmailPayload,
+  ): Promise<void> {
+    for (const entry of payload.entries) {
+      await this.reportService.recordSentEmail(entry);
+    }
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)
