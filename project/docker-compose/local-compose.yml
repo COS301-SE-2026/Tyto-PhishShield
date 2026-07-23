@@ -405,6 +405,20 @@ services:
     ports:
       - '5173:5173'
 
+  # builds the outlook-addin using its dockerfile
+  outlook-addin:
+    build: 
+      context: ../../
+      dockerfile: project/frontend/phishshield-outlook-addin/Dockerfile
+    restart: on-failure
+    container_name: addin
+    environment:
+      - port=3000
+      - API_HOST=${GATEWAY_APP_CONTAINER}
+      - ADDIN_BASE_URL=https://127.0.0.1/addin/
+    ports:
+      - '3000:80'
+
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
     image: dpage/pgadmin4:9.15

@@ -1,4 +1,10 @@
 :80 {
+
+    handle /addin/* {
+        uri strip_prefix /addin
+        reverse_proxy outlook-addin:3000
+    }
+
     handle /api/* {
         reverse_proxy api-gateway:3001
     }
