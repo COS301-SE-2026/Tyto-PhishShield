@@ -16,6 +16,7 @@ import { Users } from './pages/users/users';
 import { UserProfile } from './pages/users/user-profile';
 import { Settings } from './pages/settings/settings';
 import Leaderboard from './pages/leaderboard/leaderboard';
+import { Help } from './pages/help/help';
 
 function UserProfileById({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,7 @@ function App() {
       <Route path="/users" element={ <ProtectedRoute minRole="analyst"><Users onNavigate={handleNavigate} activePath="/users" /></ProtectedRoute> } />
       <Route path="/users/:id" element={ <ProtectedRoute minRole="analyst"><UserProfileById onNavigate={handleNavigate} /></ProtectedRoute> } />
       <Route path="/leaderboard" element={ <ProtectedRoute><Leaderboard onNavigate={handleNavigate} activePath="/leaderboard" /></ProtectedRoute> } />
+      <Route path="/help" element={ <ProtectedRoute><Help onNavigate={handleNavigate} activePath="/help" /></ProtectedRoute>} />
     </Routes>
   );
 }
