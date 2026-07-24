@@ -50,6 +50,19 @@
             "ConnectionParameters": {
                 "passfile": "/var/lib/pgadmin/.pgpass"
             }
+        },
+
+        "xp-db": {
+            "Name": "XP Database",
+            "Group": "Servers",
+            "Host": "xp_db",
+            "Port": 5432,
+            "MaintenanceDB": "xp_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
         }
     }
 }
