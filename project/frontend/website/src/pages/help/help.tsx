@@ -149,3 +149,87 @@ function TutorialCard({ tutorial }: Readonly<{ tutorial: Tutorial }>) {
     </Card>
   );
 }
+
+function FaqAccordionItem({ faq }: Readonly<{ faq: Faq }>) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: '1px solid var(--border)' }}>
+      <button onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif',
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{faq.question}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5" strokeLinecap="round"
+          style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 4px 16px', fontFamily: 'Inter, system-ui, sans-serif' }}>
+          {faq.answer}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
+  const quickLinks: QuickLink[] = [
+    {
+      label: 'Dashboard',
+      description: 'Your overview, XP, and recent activity',
+      onClick: () => onNavigate('/dashboard'),
+      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+    },
+    {
+      label: 'Training',
+      description: 'Work through your assigned training modules',
+      onClick: () => onNavigate('/training'),
+      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+    },
+    {
+      label: 'Leaderboard',
+      description: 'See your rank and how departments compare',
+      onClick: () => onNavigate('/leaderboard'),
+      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+    },
+    {
+      label: 'Contact Support',
+      description: 'Email the Tyto support team for anything else not covered here',
+      onClick: () => { window.location.href = 'mailto:support@tyto.co.za'; },
+      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 6 12 13 2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>,
+    },
+  ];
+
+  return (
+    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Help Centre" subtitle="Guides, tutorials, and answers to common questions" securityScore={72}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 860 }}>
+        <section>
+          <SectionHeading>Quick Links</SectionHeading>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+            {quickLinks.map(link => <QuickLinkCard key={link.label} link={link} />)}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeading>Tutorials</SectionHeading>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
+            {TUTORIALS.map(tutorial => <TutorialCard key={tutorial.title} tutorial={tutorial} />)}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeading>Frequently Asked Questions</SectionHeading>
+          <Card style={{ padding: '4px 20px' }}>
+            {FAQs.map(faq => <FaqAccordionItem key={faq.question} faq={faq} />)}
+          </Card>
+        </section>
+      </div>
+    </AppLayout>
+  );
+}
