@@ -106,7 +106,7 @@ function QuickLinkCard({ link }: Readonly<{ link: QuickLink }>) {
     <button
       onClick={link.onClick}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 'var(--radius-lg)', 
+        display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', flex: '1 1 220px', padding: '14px 16px', borderRadius: 'var(--radius-lg)', 
         border: '1px solid var(--border)', background: 'var(--bg-card)', cursor: 'pointer', transition: 'background 0.12s',
       }}
       onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
@@ -130,23 +130,42 @@ function QuickLinkCard({ link }: Readonly<{ link: QuickLink }>) {
   );
 }
 
-function TutorialCard({ tutorial }: Readonly<{ tutorial: Tutorial }>) {
+function TutorialAccordionItem({ tutorial }: Readonly<{ tutorial: Tutorial }>) {
   return (
-    <Card style={{ padding: '18px 20px' }}>
-      <h3 style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
-        {tutorial.title}
-      </h3>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>
-        {tutorial.intro}
-      </p>
-      <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {tutorial.steps.map(step => (
-          <li key={step} style={{ fontSize: 12.5, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.5 }}>
-            {step}
-          </li>
-        ))}
-      </ol>
-    </Card>
+    <div style={{ borderBottom: '1px solid var(--border)' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          width: '100%', padding: '14px 4px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif',
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{tutorial.title}</span>
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5" strokeLinecap="round"
+          style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ margin: '0 4px 16px' }}>
+          <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            {tutorial.intro}
+          </p>
+          <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {tutorial.steps.map(step => (
+              <li key={step} style={{ fontSize: 12.5, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.5 }}>
+                {step}
+              </li>
+            ))}
+          </ol>
+          {/* Leaving space here for screenshots to drop in; need <img> tags inside this div */}
+        </div>
+      )}
+    </div>
   );
 }
 
