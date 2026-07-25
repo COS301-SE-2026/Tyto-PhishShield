@@ -91,4 +91,61 @@ const FAQs: Faq[] = [
     question: 'Who do I contact if I think a real (non-simulated) phishing email reach me?',
     answer: 'Report it the same way you would a simulation (via the Outlook add-in) and separately flag it to your IT/security team directly, since real threats need a faster response than the simulation pipeline provides.',
   },
-]
+];
+
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      {children}
+    </h2>
+  );
+}
+
+function QuickLinkCard({ link }: Readonly<{ link: QuickLink }>) {
+  return (
+    <button
+      onClick={link.onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 'var(--radius-lg)', 
+        border: '1px solid var(--border)', background: 'var(--bg-card)', cursor: 'pointer', transition: 'background 0.12s',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-card)')}
+    >
+      <div style={{
+        width: 36, height: 36, borderRadius: 8, background: 'var(--color-primary-light)',
+        color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        {link.icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+          {link.label}
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 1, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          {link.description}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function TutorialCard({ tutorial }: Readonly<{ tutorial: Tutorial }>) {
+  return (
+    <Card style={{ padding: '18px 20px' }}>
+      <h3 style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        {tutorial.title}
+      </h3>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>
+        {tutorial.intro}
+      </p>
+      <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {tutorial.steps.map(step => (
+          <li key={step} style={{ fontSize: 12.5, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.5 }}>
+            {step}
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
