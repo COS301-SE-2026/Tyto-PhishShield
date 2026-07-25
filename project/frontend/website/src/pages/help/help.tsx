@@ -131,6 +131,7 @@ function QuickLinkCard({ link }: Readonly<{ link: QuickLink }>) {
 }
 
 function TutorialAccordionItem({ tutorial }: Readonly<{ tutorial: Tutorial }>) {
+  const [open, setOpen] = useState(false);
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
       <button
@@ -227,19 +228,19 @@ export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Help Centre" subtitle="Guides, tutorials, and answers to common questions" securityScore={72}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 860 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
         <section>
           <SectionHeading>Quick Links</SectionHeading>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             {quickLinks.map(link => <QuickLinkCard key={link.label} link={link} />)}
           </div>
         </section>
 
         <section>
           <SectionHeading>Tutorials</SectionHeading>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
-            {TUTORIALS.map(tutorial => <TutorialCard key={tutorial.title} tutorial={tutorial} />)}
-          </div>
+          <Card style={{ padding: '4px 20px', gap: 14 }}>
+            {TUTORIALS.map(tutorial => <TutorialAccordionItem key={tutorial.title} tutorial={tutorial} />)}
+          </Card>
         </section>
 
         <section>
