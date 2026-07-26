@@ -225,8 +225,14 @@ export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
       icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 6 12 13 2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>,
     },
     {
+      label: 'User Guide',
+      description: 'A continuously updated manual of using the website and its features',
+      onClick: () => { window.open('https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Guide', '_blank', 'noopener,noreferrer'); },
+      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+    },
+    {
       label: 'Wiki and other documentation',
-      description: 'Setup guides, service references, and the user guide',
+      description: 'Setup guides and (technical) service references',
       onClick: () => { window.open('https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki', '_blank', 'noopener,noreferrer'); },
       icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
     },
