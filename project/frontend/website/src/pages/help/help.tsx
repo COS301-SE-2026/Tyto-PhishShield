@@ -93,7 +93,7 @@ const FAQs: Faq[] = [
   },
 ];
 
-function SectionHeading({ children }: { children: ReactNode }) {
+function SectionHeading({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
       {children}
@@ -103,7 +103,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 
 function QuickLinkCard({ link }: Readonly<{ link: QuickLink }>) {
   return (
-    <button
+    <button type="button"
       onClick={link.onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', flex: '1 1 220px', padding: '14px 16px', borderRadius: 'var(--radius-lg)', 
@@ -134,7 +134,7 @@ function TutorialAccordionItem({ tutorial }: Readonly<{ tutorial: Tutorial }>) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
-      <button
+      <button type="button"
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
         style={{
@@ -174,7 +174,8 @@ function FaqAccordionItem({ faq }: Readonly<{ faq: Faq }>) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ borderBottom: '1px solid var(--border)' }}>
-      <button onClick={() => setOpen(v => !v)}
+      <button type="button"
+        onClick={() => setOpen(v => !v)}
         aria-expanded={open}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,

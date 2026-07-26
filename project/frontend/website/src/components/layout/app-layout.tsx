@@ -120,7 +120,8 @@ export function AppLayout({
               }}/>
             </button>
 
-            <button onClick={() => onNavigate('/help')}
+            <button type="button"
+              onClick={() => onNavigate('/help')}
               aria-label="Help Centre"
               title="Help Centre"
               style={{
