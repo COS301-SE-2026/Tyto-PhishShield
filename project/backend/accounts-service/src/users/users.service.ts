@@ -8,12 +8,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import { EventProducerService } from '../event-producer/event-producer.service';
+import { Department } from './entities/user.entity';
 
 interface CreateUserInput {
   auth0Id: string;
   email: string;
   name?: string;
   role?: UserRole;
+  department?: Department;
   isVerified?: boolean;
 }
 
@@ -32,7 +34,7 @@ export class UsersService {
       auth0Id: user.auth0Id,
       name: user.name,
       email: user.email,
-      department: '',
+      department: input.department ??  '',
     });
     return this.repo.save(user);
   }
