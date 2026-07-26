@@ -124,12 +124,13 @@ export function AppLayout({
               aria-label="Help Centre"
               title="Help Centre"
               style={{
-                background: 'var(--bg-hover)', border: '1.5px solid var (--border)',
-                width: 36, height: 36, borderRadius: 8, cursor: 'pointer', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', 
+                background: 'var(--bg-hover)', border: '1.5px solid var(--border)',
+                width: 36, height: 36, borderRadius: 8, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-secondary)', position: 'relative',
               }}
             >
-              <span style={{ fontSize: 17, fontWeight: 700, lineHeight: 1, fontFamily: 'Inter, system-ui, sans-serif' }}>?</span>
+              <span style={{ fontSize: 17, fontWeight: 500, lineHeight: 1, fontFamily: 'Inter, system-ui, sans-serif' }}>?</span>
             </button> 
 
             <button
