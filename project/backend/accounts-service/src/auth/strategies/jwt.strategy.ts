@@ -9,6 +9,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { passportJwtSecret } from 'jwks-rsa';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
+import { UserRole } from '../../users/entities/user.entity';
 
 interface JwtPayload {
   sub: string;
@@ -19,6 +20,8 @@ export interface AuthenticatedUser {
   auth0Id: string;
   email: string;
   role: string;
+  name?: string;
+  department?: string;
 }
 
 @Injectable()
@@ -47,7 +50,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       auth0Id: payload.sub,
       email: payload.email,
-      role: user ? user.role : 'USER',
+      role: user?.role ?? UserRole.USER,
+      name: user?.name,
+      department: user?.department,
     };
   }
 }
