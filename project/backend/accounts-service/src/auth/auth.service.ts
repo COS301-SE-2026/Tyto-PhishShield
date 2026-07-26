@@ -131,7 +131,7 @@ export class AuthService {
 
   async login(
     dto: ExtendedLoginDto,
-  ): Promise<{ access_token: string; expires_in: number; deviceToken: string }> {
+  ): Promise<{ access_token: string; expires_in: number; deviceToken: string; requiresOTP: boolean }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (user && !user.isActive) {
       throw new UnauthorizedException(
@@ -179,12 +179,15 @@ export class AuthService {
       );
 
       let deviceToken: string = '';
+      let requiresOTP: boolean = false;
       if (dto.sendOTP) {
         if (!dto.deviceToken) {
           deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+          requiresOTP = true;
         } else {
           if (!await this.otpService.verifyDevice(dto.email, dto.deviceToken)) {
             deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+            requiresOTP = true;
           } else {
             deviceToken = dto.deviceToken;
           }
@@ -195,6 +198,7 @@ export class AuthService {
         access_token: data.access_token,
         expires_in: data.expires_in,
         deviceToken,
+        requiresOTP
       };
     } catch (err: unknown) {
       const axiosErr = err as AxiosErrorShape;
@@ -221,8 +225,8 @@ export class AuthService {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user)
       throw new NotFoundException('No account associated with this email');
-    if (user.isVerified)
-      throw new BadRequestException('Email is already verified');
+    // if (user.isVerified)
+    //   throw new BadRequestException('Email is already verified');
 
     await this.otpService.otpGenAndSend(dto.email);
     return { message: 'A new OTP code has been sent to your email.' };

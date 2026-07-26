@@ -15,6 +15,7 @@ import {
   HttpCode,
   Param,
   NotFoundException,
+  Res,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -45,7 +46,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  async login(@Req() req: Request, @Body() dto: LoginDto, res: Response) {
+  async login(@Req() req: Request, @Body() dto: LoginDto, @Res({passthrough: true}) res: Response) {
     const extendedDto: ExtendedLoginDto = {
       email: dto.email,
       password: dto.password,
@@ -53,7 +54,7 @@ export class AuthController {
       ip: req.ip,
       deviceToken: req.cookies?.deviceToken,
     }
-    const {access_token, expires_in, deviceToken } = await this.authService.login(extendedDto);
+    const {access_token, expires_in, deviceToken, requiresOTP} = await this.authService.login(extendedDto);
     res.cookie(
       'device_token',
       deviceToken,
@@ -64,7 +65,7 @@ export class AuthController {
           maxAge: 60 * 24 * 60 * 60 * 1000,
       },
     );
-    return { access_token, expires_in };
+    return { access_token, expires_in, requiresOTP };
   }
 
   @Post('logout')
