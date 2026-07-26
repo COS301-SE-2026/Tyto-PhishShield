@@ -7,7 +7,7 @@ export interface Question{
     id: string;
     questionText: string;
     options: string[];
-    correctOptionsIndex: number;
+    correctOptionIndex: number;
     createdAt: string;
 }
 
@@ -32,7 +32,7 @@ export interface Assignment {
 }
 
 export interface PendingAssignment extends Assignment{
-    question: AssignmentQuestion[];
+    questions: AssignmentQuestion[];
 }
 
 export interface CreateQuestionRequest {
@@ -116,7 +116,7 @@ export function getMyEducationHistory(): Promise<Assignment[]> {
 }
 
 //Submit the user's selected indexes for questions for a pending assignment
-export function submitAnswer(request: SubmitAnswersRequest): Promise<SubmitAnswerResponse> {
+export function submitAnswers(request: SubmitAnswersRequest): Promise<SubmitAnswerResponse> {
     return educationRequestHelper<SubmitAnswerResponse>('/answers', {
         method: 'POST',
         body:JSON.stringify(request),
