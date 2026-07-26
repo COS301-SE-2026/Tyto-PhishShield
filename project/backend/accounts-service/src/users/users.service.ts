@@ -67,11 +67,12 @@ export class UsersService {
 
   async updateProfile(
     auth0Id: string,
-    data: { name?: string; email?: string },
+    data: { name?: string; email?: string, department?: Department },
   ): Promise<User> {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
+    if (data.department !== undefined) user.department = data.department as Department;
     return this.repo.save(user);
   }
 
