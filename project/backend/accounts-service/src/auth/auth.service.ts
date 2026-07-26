@@ -15,12 +15,12 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
-import { ExtendedLoginDto, LoginDto } from './dto/login.dto';
+import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 
 interface Auth0TokenResponse {
@@ -130,8 +130,8 @@ export class AuthService {
   }
 
   async login(
-    dto: ExtendedLoginDto,
-  ): Promise<{ access_token: string; expires_in: number; deviceToken: string; requiresOTP: boolean }> {
+    dto: LoginDto,
+  ): Promise<{ access_token: string; expires_in: number; requiresOTP: boolean }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (user && !user.isActive) {
       throw new UnauthorizedException(
@@ -182,14 +182,12 @@ export class AuthService {
       let requiresOTP: boolean = false;
       if (dto.sendOTP) {
         if (!dto.deviceToken) {
-          deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+          await this.otpService.generateAndSend(dto.email);
           requiresOTP = true;
         } else {
           if (!await this.otpService.verifyDevice(dto.email, dto.deviceToken)) {
-            deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+            await this.otpService.generateAndSend(dto.email);
             requiresOTP = true;
-          } else {
-            deviceToken = dto.deviceToken;
           }
         }
       }
@@ -197,7 +195,6 @@ export class AuthService {
       return {
         access_token: data.access_token,
         expires_in: data.expires_in,
-        deviceToken,
         requiresOTP
       };
     } catch (err: unknown) {
@@ -210,15 +207,15 @@ export class AuthService {
     }
   }
 
-  async verifyOtp(dto: VerifyOtpDto): Promise<{ message: string }> {
-    const valid = await this.otpService.verify(dto.email, dto.code);
+  async verifyOtp(dto: ExtendedVerifyOtpDto): Promise<{ message: string, deviceToken: string }> {
+    const { valid, deviceToken }= await this.otpService.verify(dto.email, dto.code, dto.userAgent ?? '', dto.ip ?? '');
     if (!valid) throw new BadRequestException('Invalid or expired OTP code');
 
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) throw new NotFoundException('User not found');
 
     await this.usersService.markVerified(user.auth0Id);
-    return { message: 'Email verified successfully. You can now log in.' };
+    return { message: 'Email verified successfully. You can now log in.', deviceToken };
   }
 
   async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
@@ -228,7 +225,7 @@ export class AuthService {
     // if (user.isVerified)
     //   throw new BadRequestException('Email is already verified');
 
-    await this.otpService.otpGenAndSend(dto.email);
+    await this.otpService.generateAndSend(dto.email);
     return { message: 'A new OTP code has been sent to your email.' };
   }
 

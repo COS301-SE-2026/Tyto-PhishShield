@@ -15,16 +15,6 @@ export class LoginDto {
   @IsBoolean()
   @IsOptional()
   sendOTP?: boolean;
-}
-
-export class ExtendedLoginDto extends LoginDto {
-  @IsString()
-  @IsOptional()
-  userAgent?: string;
-
-  @IsString()
-  @IsOptional()
-  ip?: string;
 
   @IsString()
   @IsOptional()
