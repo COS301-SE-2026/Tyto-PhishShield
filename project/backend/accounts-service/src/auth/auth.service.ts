@@ -15,7 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { ExtendedLoginDto, LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
@@ -130,8 +130,8 @@ export class AuthService {
   }
 
   async login(
-    dto: LoginDto,
-  ): Promise<{ access_token: string; expires_in: number }> {
+    dto: ExtendedLoginDto,
+  ): Promise<{ access_token: string; expires_in: number; deviceToken: string }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (user && !user.isActive) {
       throw new UnauthorizedException(
@@ -178,11 +178,23 @@ export class AuthService {
         }),
       );
 
-      this.otpService.generateAndSend(dto.email);
+      let deviceToken: string = '';
+      if (dto.sendOTP) {
+        if (!dto.deviceToken) {
+          deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+        } else {
+          if (!await this.otpService.verifyDevice(dto.email, dto.deviceToken)) {
+            deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+          } else {
+            deviceToken = dto.deviceToken;
+          }
+        }
+      }
 
       return {
         access_token: data.access_token,
         expires_in: data.expires_in,
+        deviceToken,
       };
     } catch (err: unknown) {
       const axiosErr = err as AxiosErrorShape;
@@ -212,7 +224,7 @@ export class AuthService {
     if (user.isVerified)
       throw new BadRequestException('Email is already verified');
 
-    await this.otpService.generateAndSend(dto.email);
+    await this.otpService.otpGenAndSend(dto.email);
     return { message: 'A new OTP code has been sent to your email.' };
   }
 
