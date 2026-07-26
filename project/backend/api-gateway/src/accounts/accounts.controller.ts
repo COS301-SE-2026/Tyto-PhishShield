@@ -61,9 +61,16 @@ export class AccountsController {
         name: { type: 'string', example: 'Test User' },
         department: {
           type: 'string',
-          enum: ['IT & Security', 'Finance', 'Human Resources', 'Legal & Compliance', 'Operations', 'Executive',],
+          enum: [
+            'IT & Security',
+            'Finance',
+            'Human Resources',
+            'Legal & Compliance',
+            'Operations',
+            'Executive',
+          ],
           example: 'IT & Security',
-        }
+        },
       },
     },
   })

@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEnum } from 'class-validator';
-import  { Department } from '../../users/entities/user.entity';
+import { Department } from '../../users/entities/user.entity';
 
 export class UpdateProfileDto {
   @IsString()
@@ -8,5 +8,5 @@ export class UpdateProfileDto {
 
   @IsEnum(Department)
   @IsOptional()
-  department?: Department;  
+  department?: Department;
 }

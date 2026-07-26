@@ -34,7 +34,7 @@ export class UsersService {
       auth0Id: user.auth0Id,
       name: user.name,
       email: user.email,
-      department: input.department ??  '',
+      department: input.department ?? '',
     });
     return this.repo.save(user);
   }
@@ -67,12 +67,12 @@ export class UsersService {
 
   async updateProfile(
     auth0Id: string,
-    data: { name?: string; email?: string, department?: Department },
+    data: { name?: string; email?: string; department?: Department },
   ): Promise<User> {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
-    if (data.department !== undefined) user.department = data.department as Department;
+    if (data.department !== undefined) user.department = data.department;
     return this.repo.save(user);
   }
 
