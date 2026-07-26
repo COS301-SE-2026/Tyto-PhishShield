@@ -33,7 +33,7 @@ interface Auth0UserResponse {
   user_id: string;
   email: string;
   name: string;
-  email_verfied: boolean;
+  email_verified: boolean;
 }
 
 interface Auth0LoginResponse {
@@ -153,7 +153,7 @@ export class AuthService {
           },
         ),
       );
-      if (data && !data.email_verfied) {
+      if (data && !data.email_verified) {
         throw new UnauthorizedException(
           'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
         );
