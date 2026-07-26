@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Emails } from './entities/emails.entity';
-import { EmailService } from './email/email.service';
 import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
 import { BatchEmailModule } from './batch-email/batch-email.module';
+import { mailingRabbitMQModule } from './rabbitmq.module';
 
 @Module({
   imports: [
@@ -29,10 +29,10 @@ import { BatchEmailModule } from './batch-email/batch-email.module';
       }),
     }),
     TypeOrmModule.forFeature([Emails]),
+    mailingRabbitMQModule,
     EmailModule,
     BatchEmailModule,
   ],
   controllers: [MailingServiceController],
-  providers: [EmailService],
 })
 export class MailingServiceModule {}

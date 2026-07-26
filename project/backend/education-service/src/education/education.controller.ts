@@ -6,6 +6,7 @@ import {
   UseGuards,
   Req,
   HttpCode,
+  Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -14,6 +15,7 @@ import { EducationService } from './education.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 interface AuthenticatedRequest extends Request {
   user: { auth0Id: string; email: string; role: string };
@@ -22,8 +24,19 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Education')
 @Controller('education')
 export class EducationController {
+  private readonly logger = new Logger(EducationController.name);
   constructor(private readonly educationService: EducationService) {}
 
+  @RabbitSubscribe({
+    exchange: 'education-event-exchange',
+    routingKey: 'education.assign',
+    queue: 'education-service-assign-queue',
+  })
+  async handleEducationAssignment(payload: { auth0Id: string }) {
+    this.logger.log(`Received education.assign for user ${payload.auth0Id}`);
+    await this.educationService.createAssignment(payload.auth0Id);
+  }
+  
   @Post('questions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

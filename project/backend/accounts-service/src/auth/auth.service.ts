@@ -15,7 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { ExtendedLoginDto, LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
@@ -33,6 +33,7 @@ interface Auth0UserResponse {
   user_id: string;
   email: string;
   name: string;
+  email_verfied: boolean;
 }
 
 interface Auth0LoginResponse {
@@ -120,7 +121,7 @@ export class AuthService {
       role: UserRole.USER,
     });
 
-    await this.otpService.generateAndSend(dto.email);
+    //await this.otpService.generateAndSend(dto.email);
 
     return {
       message:
@@ -129,21 +130,39 @@ export class AuthService {
   }
 
   async login(
-    dto: LoginDto,
-  ): Promise<{ access_token: string; expires_in: number }> {
+    dto: ExtendedLoginDto,
+  ): Promise<{ access_token: string; expires_in: number; deviceToken: string }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (user && !user.isActive) {
       throw new UnauthorizedException(
         'Account is deactivated. Please contact support.',
       );
     }
-    if (user && !user.isVerified) {
-      throw new UnauthorizedException(
-        'Email not verified. Please verify your email before logging in.',
-      );
-    }
 
     const domain = this.config.get<string>('AUTH0_DOMAIN');
+    const mgmtToken = await this.getManagementToken();
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<Auth0UserResponse>(
+          `https://${domain}/api/v2/users-by-email?email=${dto.email}`,
+          {
+            headers: {
+              Authorization: `Bearer ${mgmtToken}`,
+            },
+          },
+        ),
+      );
+      if (data && !data.email_verfied) {
+        throw new UnauthorizedException(
+          'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
+        );
+      }
+    } catch (err: unknown) {
+      if (!(err instanceof UnauthorizedException))
+        throw new InternalServerErrorException(
+          'Failed to check if account is verified.',
+        );
+    }
 
     try {
       const { data } = await firstValueFrom(
@@ -159,9 +178,23 @@ export class AuthService {
         }),
       );
 
+      let deviceToken: string = '';
+      if (dto.sendOTP) {
+        if (!dto.deviceToken) {
+          deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+        } else {
+          if (!await this.otpService.verifyDevice(dto.email, dto.deviceToken)) {
+            deviceToken = await this.otpService.generateAndSend(dto.email, dto.userAgent ?? '', dto.ip ?? '');
+          } else {
+            deviceToken = dto.deviceToken;
+          }
+        }
+      }
+
       return {
         access_token: data.access_token,
         expires_in: data.expires_in,
+        deviceToken,
       };
     } catch (err: unknown) {
       const axiosErr = err as AxiosErrorShape;
@@ -191,7 +224,7 @@ export class AuthService {
     if (user.isVerified)
       throw new BadRequestException('Email is already verified');
 
-    await this.otpService.generateAndSend(dto.email);
+    await this.otpService.otpGenAndSend(dto.email);
     return { message: 'A new OTP code has been sent to your email.' };
   }
 

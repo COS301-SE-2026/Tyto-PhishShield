@@ -134,7 +134,7 @@ describe('EmailController', () => {
   });
 
   describe('sendEmail', () => {
-    it('should trigger the email send sequence', async () => {
+    it('should send a single email to recipient', async () => {
       const serviceResponse = {
         success: true,
         message: 'Email sent successfully',

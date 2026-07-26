@@ -33,7 +33,6 @@ export class MailingPostReturnDto {
   @Type(() => Date)
   date: Date = new Date();
 
-  // Not sure what this does
   constructor(partial: Partial<MailingPostReturnDto>) {
     Object.assign(this, partial);
   }

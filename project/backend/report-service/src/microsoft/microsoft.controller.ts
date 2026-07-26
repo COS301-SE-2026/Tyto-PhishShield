@@ -1,4 +1,10 @@
-import { Controller, Post, Body, HttpCode, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { MicrosoftService } from './microsoft.service';
 import type { MicrosoftUserInfo } from './microsoft.service';
 

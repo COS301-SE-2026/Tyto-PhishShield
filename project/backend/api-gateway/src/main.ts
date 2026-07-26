@@ -30,7 +30,7 @@ async function bootstrap() {
 
   const allowedOrigins = new Set(
     [
-      'https://' + process.env.SERVER_DOMAIN,
+      process.env.SERVER_DOMAIN ? `https://${process.env.SERVER_DOMAIN}` : undefined,
       process.env.LOCAL_CORS,
       process.env.OUTLOOK_ADDIN_CORS,
     ].filter((value): value is string => Boolean(value)),

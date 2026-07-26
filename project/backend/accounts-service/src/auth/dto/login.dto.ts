@@ -3,7 +3,7 @@
  *
  * - Validates that a login payload contains an email and password.
  */
-import { IsEmail, IsString } from 'class-validator';
+import { IsBoolean, IsEmail, IsString } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -11,4 +11,18 @@ export class LoginDto {
 
   @IsString()
   password!: string;
+
+  @IsBoolean()
+  sendOTP?: boolean;
+}
+
+export class ExtendedLoginDto extends LoginDto {
+  @IsString()
+  userAgent?: string;
+
+  @IsString()
+  ip?: string;
+
+  @IsString()
+  deviceToken?: string;
 }

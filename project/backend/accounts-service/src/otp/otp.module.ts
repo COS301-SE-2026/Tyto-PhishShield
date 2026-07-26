@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { HttpModule } from '@nestjs/axios';
-import { Otp } from './otp.entity';
+import { VerifiedDevice } from './otp.entity';
 import { OtpService } from './otp.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Otp]), HttpModule],
+  imports: [TypeOrmModule.forFeature([VerifiedDevice])],
   providers: [OtpService],
   exports: [OtpService],
 })
