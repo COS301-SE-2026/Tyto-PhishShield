@@ -172,6 +172,9 @@ services:
       - OUTLOOK_ADDIN_CORS=
       - LOG_DIR=/var/log/api-gateway
       - ENVIRONMENT=local
+      - LOCAL_CORS=${LOCAL_CORS}
+      - OUTLOOK_ADDIN_CORS=${OUTLOOK_ADDIN_CORS}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     volumes:
