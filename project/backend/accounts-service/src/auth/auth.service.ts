@@ -124,7 +124,7 @@ export class AuthService {
       role: UserRole.USER,
     });
 
-    //await this.otpService.generateAndSend(dto.email);
+    await this.otpService.generateAndSend(dto.email);
 
     return {
       message:

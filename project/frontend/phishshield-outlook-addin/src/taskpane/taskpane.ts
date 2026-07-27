@@ -5,7 +5,7 @@
 
 /* global document, Office, fetch, localStorage, console, HTMLElement, HTMLInputElement, HTMLButtonElement, HTMLFormElement, Response, Event */
 
-const API_BASE = "http://localhost:3001/api";
+const API_BASE = `http://${process.env.API_HOST}/api`;
 
 const LOGIN_URL = `${API_BASE}/accounts/auth/login`;
 const ME_URL = `${API_BASE}/accounts/auth/me`;
