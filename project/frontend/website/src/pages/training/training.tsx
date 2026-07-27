@@ -602,9 +602,12 @@ export function Training({
                         </div>
 
                         <p style={smallTextStyle}>
-                          Created{' '}
-                          {formatDate(item.createdAt)}
-                          {item.completedAt ? `Completed ${formatDate(item.completedAt,)}` : ''}
+                          Created {formatDate(item.createdAt)}
+                          {item.completedAt && (
+                            <span style={{marginLeft: 24}}>
+                              Completed {formatDate(item.completedAt,)}
+                            </span>
+                          )} 
                         </p>
                       </div>
 
