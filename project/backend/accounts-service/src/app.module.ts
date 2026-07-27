@@ -12,7 +12,7 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { Otp } from './otp/otp.entity';
+import { VerifiedDevice } from './otp/otp.entity';
 import { EventProducerModule } from './event-producer/event-producer.module';
 
 @Module({
@@ -28,7 +28,7 @@ import { EventProducerModule } from './event-producer/event-producer.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User, Otp],
+        entities: [User, VerifiedDevice],
         synchronize: true, //this will auto create tables based on entities, but this is for development only.
       }),
     }),

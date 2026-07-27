@@ -27,6 +27,7 @@ export interface AuthenticatedUser {
 export interface LoginDto {
   email: string;
   password: string;
+  sendOTP?: boolean;
 }
 
 export interface RegisterDto {
@@ -39,6 +40,7 @@ export interface RegisterDto {
 export interface LoginResponse {
   access_token: string;
   expires_in: number;
+  requiresOTP?: boolean;
 }
 
 export interface RegisterResponse {
