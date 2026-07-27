@@ -311,7 +311,8 @@ export function Training({
 
   const resultSummaryStyle: CSSProperties = {
     minWidth: 90,
-    textAlign: 'right',
+    textAlign: 'center',
+    alignSelf: 'center',
   };
 
   const resultScoreStyle: CSSProperties = {
@@ -553,16 +554,16 @@ export function Training({
                       {result.passed ? 'Passed' : 'Failed'}
                     </Badge>
                   </div>
+                </div>
 
-                  <div style={resultSummaryStyle}>
-                    <p style={resultScoreStyle}>
-                      {result.correctCount}/{result.total}
-                    </p>
+                <div style={resultSummaryStyle}>
+                  <p style={resultScoreStyle}>
+                    {result.correctCount}/{result.total}
+                  </p>
 
-                    <p style={smallTextStyle}>
-                      {result.xpAwarded} XP earned
-                    </p>
-                  </div>
+                  <p style={smallTextStyle}>
+                    {result.xpAwarded} XP earned
+                  </p>
                 </div>
               </div>
             </Card>
