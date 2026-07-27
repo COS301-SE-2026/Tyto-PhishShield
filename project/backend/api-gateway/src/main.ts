@@ -79,6 +79,8 @@ async function bootstrap() {
 
   await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
 
+  app.set('trust proxy', 1);
+
   logger.info(
     `API Gateway running on port ${process.env.API_GATEWAY_PORT ?? 3001}`,
   );
