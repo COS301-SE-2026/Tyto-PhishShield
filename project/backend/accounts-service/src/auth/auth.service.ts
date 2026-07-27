@@ -35,7 +35,7 @@ interface Auth0UserResponse {
   user_id: string;
   email: string;
   name: string;
-  email_verfied: boolean;
+  email_verified: boolean;
 }
 
 interface Auth0LoginResponse {
@@ -139,17 +139,21 @@ export class AuthService {
     let userAuth0Id = '';
     try {
       const data = await this.getAuth0UserByEmail(dto.email);
-      if (data && !data.email_verfied) {
+      if (data && !data.email_verified) {
         throw new UnauthorizedException(
           'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
         );
       }
       userAuth0Id = data.user_id;
     } catch (err: unknown) {
-      if (!(err instanceof UnauthorizedException))
+      if (!(err instanceof UnauthorizedException)) {
+        console.log(err);
         throw new InternalServerErrorException(
           'Failed to check if account is verified.',
         );
+      } else {
+        throw err;
+      }
     }
 
     const user = await this.usersService.findByAuth0Id(userAuth0Id);
@@ -295,8 +299,7 @@ export class AuthService {
           },
         },
       ),
-    )[0];
-    console.log(data);
-    return data;
+    );
+    return data[0];
   }
 }
