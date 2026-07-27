@@ -27,17 +27,23 @@ export class UsersService {
     @Inject() private readonly event: EventProducerService,
   ) {}
 
-  create(input: CreateUserInput): Promise<User> {
+  async create(input: CreateUserInput): Promise<User> {
     const user = this.repo.create(input);
+    const savedUser = await this.repo.save(user);   // save first
+
+    // Fire-and-forget event with error logging
     this.event.publishUserCreatedEvent({
-      id: user.id,
-      auth0Id: user.auth0Id,
-      name: user.name,
-      email: user.email,
-      department: input.department ?? '',
-    });
-    return this.repo.save(user);
-  }
+        id: savedUser.id,
+        auth0Id: savedUser.auth0Id,
+        name: savedUser.name,
+        email: savedUser.email,
+        department: input.department ?? '',
+    }).catch((err) =>
+        console.error('Failed to publish user.created event', err)
+    );
+
+    return savedUser;
+  } 
 
   findByAuth0Id(auth0Id: string): Promise<User | null> {
     return this.repo.findOne({ where: { auth0Id } });
