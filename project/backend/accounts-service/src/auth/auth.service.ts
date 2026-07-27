@@ -35,7 +35,6 @@ interface Auth0UserResponse {
   user_id: string;
   email: string;
   name: string;
-  email_verfied: boolean;
 }
 
 interface Auth0LoginResponse {
@@ -124,7 +123,7 @@ export class AuthService {
       role: UserRole.USER,
     });
 
-    //await this.otpService.generateAndSend(dto.email);
+    await this.otpService.generateAndSend(dto.email);
 
     return {
       message:
