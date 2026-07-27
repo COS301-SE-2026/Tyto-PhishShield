@@ -16,21 +16,27 @@ Verifies that:
 - Reports from the Outlook-addin are received and processed correctly.
 - XP is assigned to the user after an email is correctly reported.
 - Authentication / authorization flows (register, login, etc.) work correctly and securely.
+- Educational quizes are correctly assigned to users, after an incorrect action was performed by that user.
+- Analytics are provided to the admin and analyst users.
+
+*Note: In-depth overview of testing is provided in: [Test Cases](docs/SRS/Test_Cases.md)
 
 <h2>Testing Types</h2>
 
-- <b>Unit Testing (Jest):</b> tests individual functions in isolation, with dependencies mocked.
-- <b>Integartion Testing (Jest + Supertest):</b> tests how components work together such as an API gateway endpoint calling to a service, or a service correctly altering its database.
+- <b>Unit Testing (Jest + Vitest):</b> Tests individual functions in isolation, with dependencies mocked.
+- <b>Integartion Testing (Jest + Supertest):</b> Tests how components work together such as an API gateway endpoint calling to a service, or a service correctly altering its database.
+- <b>End-To-End Testing (Playwright):</b> Test full user-facing flows.
 
 <h2>Tools and environments</h2>
 
 - <b>Jest:</b> Unit and integration testing across backend services.
 - <b>Supertest:</b> HTTP endpoint testing for integartion testing.
+- <b>Playwright:</b> Simulates actual user interactions by automizing real browsers for end-to-end testing.
 - <b>GitHub Actions:</b> CI pipeline, running unit testing automatically on PRs to dev or main.
 
 <h2>Defective Management Process</h2>
 
-1. <b>Detection:</b> errors / defect are found via failed manual testing or automated testing (CI).
+1. <b>Detection:</b> Errors / defect are found via failed manual testing or automated testing (CI).
 2. <b>Logging:</b> The error / defect is recorded using a logger with a description.
 3. <b>Assignment:</b> The error / defect is assigned to whoever owns that part of the codebase.
 4. <b>Fix:</b> The error / defect is fixed and the tests are updated accordingly.
@@ -43,7 +49,7 @@ Verifies that:
 
 <h2>Roles and Responsibilities</h2>
 
-- <b>Writing Tests:</b> tests are written by whoever wrote the part of the codebase being tested.
-- <b>Reviewing:</b> tests are reviewed by whoever has a stake in that part of the codebase or architecture layer (front-end / back-end).
-- <b>Running CI:</b> tests are automatically ran (CI) when a PR is made to either the dev- or main-branch. These tests are ran by any team member with the overview of the collective team.
-- <b>Fixing Errors / Defects:</b> any errors / defects are fixed by the whoever created that part of the codebase.
+- <b>Writing Tests:</b> Tests are written by whoever wrote the part of the codebase being tested.
+- <b>Reviewing:</b> Tests are reviewed by whoever has a stake in that part of the codebase or architecture layer (front-end / back-end).
+- <b>Running CI:</b> Tests are automatically ran (CI) when a PR is made to either the dev- or main-branch. These tests are ran by any team member with the overview of the collective team.
+- <b>Fixing Errors / Defects:</b> Any errors / defects are fixed by the whoever created that part of the codebase.
