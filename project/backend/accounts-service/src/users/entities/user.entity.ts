@@ -18,7 +18,7 @@ export enum UserRole {
 }
 
 export enum Department {
-  IT_Security = 'IT Security',
+  IT_SECURITY = 'IT & Security',
   FINANCE = 'Finance',
   HR = 'Human Resources',
   LEGAL_COMPLIANCE = 'Legal & Compliance',
