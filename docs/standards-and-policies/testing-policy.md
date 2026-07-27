@@ -16,7 +16,7 @@ Verifies that:
 - Reports from the Outlook-addin are received and processed correctly.
 - XP is assigned to the user after an email is correctly reported.
 - Authentication / authorization flows (register, login, etc.) work correctly and securely.
-- Educational quizes are correctly assigned to users, after an incorrect action was performed by that user.
+- Educational quizzes are correctly assigned to users, after an incorrect action was performed by that user.
 - Analytics are provided to the admin and analyst users.
 
 *Note: In-depth overview of testing is provided in: [Test Cases](../SRS/Test_Cases.md)
@@ -24,14 +24,15 @@ Verifies that:
 <h2>Testing Types</h2>
 
 - <b>Unit Testing (Jest + Vitest):</b> Tests individual functions in isolation, with dependencies mocked.
-- <b>Integartion Testing (Jest + Supertest):</b> Tests how components work together such as an API gateway endpoint calling to a service, or a service correctly altering its database.
-- <b>End-To-End Testing (Playwright):</b> Test full user-facing flows.
+- <b>Integration Testing (Jest + Supertest):</b> Tests how components work together such as an API gateway endpoint calling to a service, or a service correctly altering its database.
+- <b>End-To-End Testing (Playwright):</b> Tests full user-facing flows.
 
 <h2>Tools and environments</h2>
 
 - <b>Jest:</b> Unit and integration testing across backend services.
-- <b>Supertest:</b> HTTP endpoint testing for integartion testing.
-- <b>Playwright:</b> Simulates actual user interactions by automizing real browsers for end-to-end testing.
+- <b>Vitest:</b> Unit testing for frontend components.
+- <b>Supertest:</b> HTTP endpoint testing for integration testing.
+- <b>Playwright:</b> Simulates actual user interactions by automating real browsers for end-to-end testing.
 - <b>GitHub Actions:</b> CI pipeline, running unit testing automatically on PRs to dev or main.
 
 <h2>Defective Management Process</h2>
