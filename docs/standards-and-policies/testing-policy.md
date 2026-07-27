@@ -19,7 +19,7 @@ Verifies that:
 - Educational quizes are correctly assigned to users, after an incorrect action was performed by that user.
 - Analytics are provided to the admin and analyst users.
 
-*Note: In-depth overview of testing is provided in: [Test Cases](docs/SRS/Test_Cases.md)
+*Note: In-depth overview of testing is provided in: [Test Cases](../SRS/Test_Cases.md)
 
 <h2>Testing Types</h2>
 
