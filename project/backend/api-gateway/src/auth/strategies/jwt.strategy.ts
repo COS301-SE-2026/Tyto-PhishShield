@@ -14,6 +14,7 @@ export interface GatewayUser {
   email: string;
   role: string;
   name?: string;
+  department?: string;
 }
 
 interface JwtPayload {

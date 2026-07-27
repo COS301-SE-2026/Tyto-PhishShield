@@ -54,7 +54,7 @@ export class XpService {
 
       const saved = await this.xpRepository.save(entry);
       this.logger.log(
-        `Awarded ${dto.amount} XP to user ${dto.auth0Id}, reason: ${dto.reason})`,
+        `Awarded ${dto.amount} XP to user ${dto.auth0Id}, reason: ${dto.reason}`,
       );
 
       try {

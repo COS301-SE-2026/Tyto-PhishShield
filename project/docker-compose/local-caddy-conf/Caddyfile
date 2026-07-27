@@ -25,6 +25,10 @@
         respond "Forbidden origin" 403
     }
 
+    handle /socket.io/* {
+        reverse_proxy api-gateway:3001
+    }
+
     handle /api/* {
         reverse_proxy api-gateway:3001 {
             header_up X-Request-ID {http.request.header.X-Request-ID}
