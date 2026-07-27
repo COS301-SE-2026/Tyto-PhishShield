@@ -10,6 +10,8 @@ import {
   InternalServerErrorException,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -58,6 +60,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly http: HttpService,
     private readonly usersService: UsersService,
+    @Inject(forwardRef(() => OtpService))
     private readonly otpService: OtpService,
   ) {}
 
@@ -132,36 +135,28 @@ export class AuthService {
   async login(
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number; requiresOTP: boolean }> {
-    const user = await this.usersService.findByEmail(dto.email);
-    if (user && !user.isActive) {
-      throw new UnauthorizedException(
-        'Account is deactivated. Please contact support.',
-      );
-    }
-
     const domain = this.config.get<string>('AUTH0_DOMAIN');
-    const mgmtToken = await this.getManagementToken();
+    let userAuth0Id = '';
     try {
-      const { data } = await firstValueFrom(
-        this.http.get<Auth0UserResponse>(
-          `https://${domain}/api/v2/users-by-email?email=${dto.email}`,
-          {
-            headers: {
-              Authorization: `Bearer ${mgmtToken}`,
-            },
-          },
-        ),
-      );
+      const data = await this.getAuth0UserByEmail(dto.email);
       if (data && !data.email_verfied) {
         throw new UnauthorizedException(
           'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
         );
       }
+      userAuth0Id = data.user_id;
     } catch (err: unknown) {
       if (!(err instanceof UnauthorizedException))
         throw new InternalServerErrorException(
           'Failed to check if account is verified.',
         );
+    }
+
+    const user = await this.usersService.findByAuth0Id(userAuth0Id);
+    if (user && !user.isActive) {
+      throw new UnauthorizedException(
+        'Account is deactivated. Please contact support.',
+      );
     }
 
     try {
@@ -178,9 +173,9 @@ export class AuthService {
         }),
       );
 
-      let deviceToken: string = '';
       let requiresOTP: boolean = false;
       if (dto.sendOTP) {
+        console.log(dto.deviceToken);
         if (!dto.deviceToken) {
           await this.otpService.generateAndSend(dto.email);
           requiresOTP = true;
@@ -286,5 +281,22 @@ export class AuthService {
         'Failed to delete user, please try again',
       );
     }
+  }
+
+  async getAuth0UserByEmail(email: string): Promise<Auth0UserResponse> {
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get<Auth0UserResponse[]>(
+        `https://${domain}/api/v2/users-by-email?email=${email}`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+          },
+        },
+      ),
+    )[0];
+    console.log(data);
+    return data;
   }
 }

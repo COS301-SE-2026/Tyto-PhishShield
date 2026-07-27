@@ -1,11 +1,11 @@
-import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VerifiedDevice } from './otp.entity';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'node:crypto';
 import { Resend } from 'resend';
-import { UsersService } from '../users/users.service';
+import { AuthService } from '../auth/auth.service';
 
 interface AxiosErrorShape {
   response?: { status: number; data?: unknown };
@@ -27,7 +27,8 @@ export class OtpService {
     @InjectRepository(VerifiedDevice)
     private readonly deviceRepo: Repository<VerifiedDevice>,
     private readonly config: ConfigService,
-    private readonly usersService: UsersService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
     this.OTPs = [];
@@ -77,18 +78,18 @@ export class OtpService {
 
     const deviceToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.hash('sha256', deviceToken);
-    const user = await this.usersService.findByEmail(email);
-
+    const user = await this.authService.getAuth0UserByEmail(email);
+    console.log(user);
     if (!user) {
       throw new UnauthorizedException('User not registered');
     }
 
     const verifiedDevice = this.deviceRepo.create({
-      userId: user.auth0Id,
+      userId: user.user_id,
       tokenHash: hashedToken,
       userAgent: userAgent,
       ipCreated: ipCreated,
-      lastUsedAt: Date.now(),
+      lastUsedAt: new Date(),
       expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
     });
     await this.deviceRepo.save(verifiedDevice);
@@ -97,18 +98,18 @@ export class OtpService {
   }
 
   async verifyDevice(email: string, deviceToken: string): Promise<boolean> {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.authService.getAuth0UserByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException('User not registered');
     }
 
     const hashedToken = crypto.hash('sha256', deviceToken);
-
+    console.log(hashedToken);
     let trustedDevice = await this.deviceRepo.findOne({
       where: {
         tokenHash: hashedToken,
-        userId: user.auth0Id,
+        userId: user.user_id,
       }
     });
 
@@ -116,7 +117,7 @@ export class OtpService {
 
     trustedDevice.lastUsedAt = new Date();
 
-    if (new Date > trustedDevice.expiresAt) return false;
+    if (new Date() > trustedDevice.expiresAt) return false;
 
     await this.deviceRepo.update(trustedDevice.id, trustedDevice);
 

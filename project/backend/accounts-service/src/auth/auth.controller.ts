@@ -117,6 +117,7 @@ export class AuthController {
         maxAge: 60 * 24 * 60 * 60 * 1000,
       },
     );
+    return message;
   }
 
   @Post('resend-otp')
