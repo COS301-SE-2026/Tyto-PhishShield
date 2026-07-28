@@ -10,7 +10,7 @@ import { User, UserRole } from './entities/user.entity';
 import { EventProducerService } from '../event-producer/event-producer.service';
 import { Department } from './entities/user.entity';
 
-interface CreateUserInput {
+export interface CreateUserInput {
   auth0Id: string;
   email: string;
   name?: string;

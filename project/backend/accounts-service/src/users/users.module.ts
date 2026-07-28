@@ -10,6 +10,7 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { AuthModule } from '../auth/auth.module';
 import { EventProducerModule } from '../event-producer/event-producer.module';
+import { UserSyncService } from './user-sync.service';
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import { EventProducerModule } from '../event-producer/event-producer.module';
   ],
   providers: [UsersService],
   controllers: [UsersController],
-  exports: [UsersService], // exported so AuthModule can use it
+  exports: [UsersService, UserSyncService], // exported so AuthModule can use it
 })
 export class UsersModule {}

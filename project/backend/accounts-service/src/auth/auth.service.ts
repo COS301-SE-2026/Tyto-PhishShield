@@ -19,11 +19,12 @@ import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UsersService } from '../users/users.service';
+import { UsersService, CreateUserInput } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
 import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { UserSyncService } from '../users/user-sync.service';
 
 interface Auth0TokenResponse {
   access_token: string;
@@ -44,7 +45,7 @@ interface Auth0LoginResponse {
 }
 
 interface Auth0Roles {
-  role: string;
+  role: UserRole;
   roleID: string;
 }
 
@@ -60,16 +61,17 @@ interface AxiosErrorShape {
 export class AuthService {
   private cachedMgmtToken: string | null = null;
   private mgmtTokenExpiry: number = 0;
-  private readonly DOMAIN;
+  private readonly DOMAIN: string;
 
   constructor(
     private readonly config: ConfigService,
     private readonly http: HttpService,
     private readonly usersService: UsersService,
+    private readonly userSyncService: UserSyncService,
     @Inject(forwardRef(() => OtpService))
     private readonly otpService: OtpService,
   ) {
-    this.DOMAIN = this.config.get<string>('AUTH0_DOMAIN');
+    this.DOMAIN = this.config.getOrThrow<string>('AUTH0_DOMAIN');
   }
 
   private async getManagementToken(): Promise<string> {
@@ -150,6 +152,16 @@ export class AuthService {
         );
       }
       userAuth0Id = data.user_id;
+      if (data && await this.userSyncService.needSyncing(userAuth0Id)) {
+        const createDbUser: CreateUserInput = {
+          auth0Id: userAuth0Id,
+          email: data.email,
+          name: data.name,
+          role: (await this.getAuth0UserRoles(userAuth0Id))[0]?.role ?? UserRole.USER,
+          isVerified: false
+        };
+        this.userSyncService.syncAuth0User(createDbUser);
+      }
     } catch (err: unknown) {
       if (!(err instanceof UnauthorizedException)) {
         console.log(err);
@@ -307,7 +319,7 @@ export class AuthService {
     const mgmtToken = await this.getManagementToken();
     const { data } = await firstValueFrom(
       this.http.get(
-        `https://${DOMAIN}/api/v2/roles`,
+        `https://${this.DOMAIN}/api/v2/roles`,
         {
           headers: {
             Authorization: `Bearer ${mgmtToken}`,
@@ -323,7 +335,7 @@ export class AuthService {
     const mgmtToken = await this.getManagementToken();
     const { data } = await firstValueFrom(
       this.http.get(
-        `https://${DOMAIN}/api/v2/users/${auth0Id}/roles`,
+        `https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`,
         {
           headers: {
             Authorization: `Bearer ${mgmtToken}`,
