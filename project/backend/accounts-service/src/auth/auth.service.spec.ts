@@ -22,6 +22,7 @@ import { UserRole } from '../users/entities/user.entity';
 import type { User } from '../users/entities/user.entity';
 import type { AxiosResponse } from 'axios';
 import { OtpService } from '../otp/otp.service';
+import { UserSyncService } from '../users/user-sync.service';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,
@@ -48,6 +49,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let httpService: jest.Mocked<HttpService>;
   let usersService: jest.Mocked<UsersService>;
+  let userSyncService: jest.Mocked<UserSyncService>;
   let otpService: jest.Mocked<OtpService>;
 
   let consoleErrorSpy: jest.SpyInstance;
@@ -77,6 +79,12 @@ describe('AuthService', () => {
                 AUTH0_M2M_CLIENT_SECRET: 'm2m-client-secret',
               })[key] ?? '',
             ),
+            getOrThrow: jest.fn((key: string) => {
+              switch(key) {
+                case 'AUTH0_DOMAIN': return 'test.us.auth0.com';
+                default: throw new Error('key does not match');
+              }
+            }),
           },
         },
         { provide: HttpService, useValue: { post: jest.fn(), get: jest.fn() } },
@@ -94,6 +102,10 @@ describe('AuthService', () => {
           provide: OtpService,
           useValue: { generateAndSend: jest.fn(), verify: jest.fn(), verifyDevice: jest.fn() },
         },
+        {
+          provide: UserSyncService,
+          useValue: { onModuleInit: jest.fn(), syncAuth0User: jest.fn(), needSyncing: jest.fn() },
+        }
       ],
     }).compile();
 
