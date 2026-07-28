@@ -122,7 +122,7 @@ export class AuthService {
       role: UserRole.USER,
     });
 
-    //await this.otpService.generateAndSend(dto.email);
+    await this.otpService.generateAndSend(dto.email);
 
     return {
       message:
@@ -139,19 +139,9 @@ export class AuthService {
         'Account is deactivated. Please contact support.',
       );
     }
-
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-    const mgmtToken = await this.getManagementToken();
-    try {
-      const { data } = await firstValueFrom(
-        this.http.get<Auth0UserResponse>(
-          `https://${domain}/api/v2/users-by-email?email=${dto.email}`,
-          {
-            headers: {
-              Authorization: `Bearer ${mgmtToken}`,
-            },
-          },
-        ),
+    if (user && !user.isVerified) {
+      throw new UnauthorizedException(
+        'Email not verified. Please verify your email before logging in.',
       );
       if (data && !data.email_verified) {
         throw new UnauthorizedException(
@@ -164,6 +154,8 @@ export class AuthService {
           'Failed to check if account is verified.',
         );
     }
+
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
 
     try {
       const { data } = await firstValueFrom(

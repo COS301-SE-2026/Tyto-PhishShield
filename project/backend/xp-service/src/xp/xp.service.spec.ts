@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { XpService } from './xp.service';
 import { XpEntity, XpReason } from '../entities/xp.entity';
 import { UserEntity } from '../entities/user.entity';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 const mockUser: Partial<UserEntity> = {
   id: '1',
@@ -43,6 +44,10 @@ const mockUserRepository = {
 describe('XpService', () => {
   let service: XpService;
 
+  const mockAmqpConnection = {
+    publish: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -51,6 +56,10 @@ describe('XpService', () => {
         {
           provide: getRepositoryToken(UserEntity),
           useValue: mockUserRepository,
+        },
+        {
+          provide: AmqpConnection,
+          useValue: mockAmqpConnection,
         },
       ],
     }).compile();

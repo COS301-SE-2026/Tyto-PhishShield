@@ -5,6 +5,7 @@ import { WebsocketTicketService } from '../websocket-ticket.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 import type { GatewayUser } from '../../auth/strategies/jwt.strategy';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '../../auth/public.decorator';
 
 interface AuthenticatedRequest extends Request {
@@ -19,6 +20,7 @@ export class XpWebsocketController {
   ) {}
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post('ticket')
   issueTicket(@Req() req: AuthenticatedRequest) {
     const ticket = this.websocketTicketService.issueTicket(req.user.auth0Id);
