@@ -1,7 +1,22 @@
 /**
- * UsersService — business logic for user management.
+ * Service: UsersService
  *
- * - Handles CRUD operations against the user repository and performs user-related checks.
+ * Manages user entities – creation, lookups, profile updates,
+ * role changes, verification, and soft deletion.
+ * Publishes a {@link EventUser} event after a new user is created.
+ *
+ * Methods:
+ * - {@link UsersService#create} – persists a new user and fires a user.created event
+ * - {@link UsersService#findByAuth0Id} – looks up a user by their Auth0 ID
+ * - {@link UsersService#findByEmail} – looks up a user by email
+ * - {@link UsersService#findAll} – returns every user in the system
+ * - {@link UsersService#findById} – finds a user by internal UUID (throws 404 if missing)
+ * - {@link UsersService#updateRole} – changes a user's role
+ * - {@link UsersService#updateProfile} – updates name, email, and/or department
+ * - {@link UsersService#remove} – hard‑deletes a user by ID
+ * - {@link UsersService#removeByAuth0Id} – hard‑deletes a user by Auth0 ID
+ * - {@link UsersService#markVerified} – sets isVerified = true
+ * - {@link UsersService#deactivate} – sets isActive = false (soft delete)
  */
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
