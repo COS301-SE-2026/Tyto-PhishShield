@@ -185,7 +185,7 @@ describe('AuthController', () => {
         it('calls authService.verifyOtp with extended dto and sets cookie', async () => {
           const mockRes = mockResponse();
           const req = {
-            headers: { 'user-agent': 'test-agent' },
+            header: (name: string) => (name === 'user-agent' ? 'test-agent' : ''),
             ip: '127.0.0.1',
           } as unknown as Request;
           authService.verifyOtp.mockResolvedValue({
