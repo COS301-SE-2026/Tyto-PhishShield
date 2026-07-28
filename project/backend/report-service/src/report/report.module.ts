@@ -21,6 +21,9 @@ import { ReportController } from './report.controller';
           { name: 'education-event-exchange', type: 'topic' },
         ],
         enableControllerDiscovery: true,
+        connectionInitOptions: {
+          wait: false,
+        }
       }),
     }),
   ],
