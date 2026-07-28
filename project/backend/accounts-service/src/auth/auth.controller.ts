@@ -1,7 +1,21 @@
 /**
- * AuthController — exposes authentication endpoints for registration and login.
+ * Controller: AuthController
+ * Base path: /api/auth
  *
- * - Provides `register`, `login`, and an authenticated `me` endpoint for user info.
+ * Handles authentication and user‑management endpoints.
+ * Delegates business logic to {@link AuthService} and {@link UsersService}.
+ *
+ * Endpoints:
+ * - {@link AuthController#register} – creates a new user account
+ * - {@link AuthController#login} – authenticates a user and returns a JWT
+ * - {@link AuthController#logout} – confirms token discard
+ * - {@link AuthController#getProfile} – returns the authenticated user's profile
+ * - {@link AuthController#updateProfile} – updates the user's name or department
+ * - {@link AuthController#forgotPassword} – triggers a password‑reset email
+ * - {@link AuthController#deleteOwnAccount} – removes the account from Auth0 and DB
+ * - {@link AuthController#getUserByAuth0Id} – looks up a user by Auth0 ID
+ * - {@link AuthController#verifyOtp} – validates an OTP and sets a secure cookie
+ * - {@link AuthController#resendOtp} – sends a new OTP code
  */
 import {
   Controller,
@@ -47,7 +61,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   login(@Req() req: Request, @Body() dto: LoginDto) {
-    dto.deviceToken = (req.cookies?.device_token as string) ?? '';
+    dto.deviceToken = (req.cookies as Record<string, string>)?.device_token;
     return this.authService.login(dto);
   }
 
@@ -110,7 +124,7 @@ export class AuthController {
     const extendedDto: ExtendedVerifyOtpDto = {
       email: dto.email,
       code: dto.code,
-      userAgent: req.headers['user-agent'],
+      userAgent: req.header('user-agent') ?? '',
       ip: req.ip,
     };
     const { message, deviceToken } =

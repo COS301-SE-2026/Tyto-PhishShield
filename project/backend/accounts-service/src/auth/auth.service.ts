@@ -1,7 +1,21 @@
 /**
- * AuthService — handles authentication-related operations and Auth0 integration.
+ * Service: AuthService
  *
- * - Requests management tokens, registers users in Auth0, and validates credentials.
+ * Handles all authentication operations – registration, login,
+ * OTP verification, password reset, profile updates, and account deletion.
+ * Integrates with Auth0 for identity management and uses
+ * {@link UsersService} and {@link OtpService} for local persistence and OTP flows.
+ *
+ * Methods:
+ * - {@link AuthService#register} – creates a new user in Auth0 and the local DB
+ * - {@link AuthService#login} – validates credentials and returns a JWT (optionally triggers OTP)
+ * - {@link AuthService#verifyOtp} – verifies a one‑time password and marks the user as verified
+ * - {@link AuthService#resendOtp} – sends a new OTP code
+ * - {@link AuthService#logout} – returns a confirmation message (client must discard the token)
+ * - {@link AuthService#updateProfile} – updates the user’s name or department
+ * - {@link AuthService#forgotPassword} – sends a password‑reset email via Auth0
+ * - {@link AuthService#deleteUser} – removes the user from Auth0
+ * - {@link AuthService#getAuth0UserByEmail} – fetches user metadata from Auth0 by email
  */
 import {
   Injectable,
@@ -146,7 +160,7 @@ export class AuthService {
     expires_in: number;
     requiresOTP: boolean;
   }> {
-    let userAuth0Id: string;
+    let auth0User: Auth0UserResponse;
     try {
       const data = await this.getAuth0UserByEmail(dto.email);
       if (data && !data.email_verified) {
@@ -167,6 +181,7 @@ export class AuthService {
         };
         void this.userSyncService.syncAuth0User(createDbUser);
       }
+      auth0User = data;
     } catch (err: unknown) {
       if (!(err instanceof UnauthorizedException)) {
         console.log(err);
@@ -178,7 +193,7 @@ export class AuthService {
       }
     }
 
-    const user = await this.usersService.findByAuth0Id(userAuth0Id);
+    const user = await this.usersService.findByAuth0Id(auth0User.user_id);
     if (user && !user.isActive) {
       throw new UnauthorizedException(
         'Account is deactivated. Please contact support.',

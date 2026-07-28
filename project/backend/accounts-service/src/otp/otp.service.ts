@@ -1,3 +1,16 @@
+/**
+ * Service: OtpService
+ *
+ * Manages one‑time password generation, email delivery, verification,
+ * and trusted device storage. Uses the Resend API for email and
+ * stores verified devices in the local database via TypeORM.
+ *
+ * Public methods:
+ * - {@link OtpService#generateAndSend} – creates an OTP and emails it to the user
+ * - {@link OtpService#verify} – checks the OTP, removes it, creates a verified device token
+ * - {@link OtpService#verifyDevice} – checks if the device token is still valid
+ */
+
 import {
   forwardRef,
   Inject,
