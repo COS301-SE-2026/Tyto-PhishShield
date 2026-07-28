@@ -117,7 +117,8 @@ export class AuthController {
         maxAge: 60 * 24 * 60 * 60 * 1000,
       },
     );
-    return message;
+    console.log(res.getHeaders());
+    return { message };
   }
 
   @Post('resend-otp')

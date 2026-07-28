@@ -19,7 +19,7 @@ localhost {
         header Origin *
         not header Origin https://capstone-five-guys.dns.net.za
         not header Origin http://127.0.0.1
-        not header Origin http://localhost
+        not header Origin https://localhost
     }
 
     handle @badApiOrigin {

@@ -105,7 +105,6 @@ export class OtpService {
     }
 
     const hashedToken = crypto.hash('sha256', deviceToken);
-    console.log(hashedToken);
     let trustedDevice = await this.deviceRepo.findOne({
       where: {
         tokenHash: hashedToken,
