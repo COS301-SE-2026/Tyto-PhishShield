@@ -168,20 +168,19 @@ export class AuthService {
           'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
         );
       }
-      userAuth0Id = data.user_id;
-      if (data && (await this.userSyncService.needSyncing(userAuth0Id))) {
+      auth0User = data;
+      if (data && (await this.userSyncService.needSyncing(auth0User.user_id))) {
         const createDbUser: CreateUserInput = {
-          auth0Id: userAuth0Id,
+          auth0Id: auth0User.user_id,
           email: data.email,
           name: data.name,
           role:
-            (await this.getAuth0UserRoles(userAuth0Id))[0]?.name ??
+            (await this.getAuth0UserRoles(auth0User.user_id))[0]?.name ??
             UserRole.USER,
           isVerified: false,
         };
         void this.userSyncService.syncAuth0User(createDbUser);
       }
-      auth0User = data;
     } catch (err: unknown) {
       if (!(err instanceof UnauthorizedException)) {
         console.log(err);
