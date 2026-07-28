@@ -8,12 +8,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import { EventProducerService } from '../event-producer/event-producer.service';
+import { Department } from './entities/user.entity';
 
 interface CreateUserInput {
   auth0Id: string;
   email: string;
   name?: string;
   role?: UserRole;
+  department?: Department;
   isVerified?: boolean;
 }
 
@@ -25,17 +27,23 @@ export class UsersService {
     @Inject() private readonly event: EventProducerService,
   ) {}
 
-  create(input: CreateUserInput): Promise<User> {
+  async create(input: CreateUserInput): Promise<User> {
     const user = this.repo.create(input);
+    const savedUser = await this.repo.save(user);   // save first
+
+    // Fire-and-forget event with error logging
     this.event.publishUserCreatedEvent({
-      id: user.id,
-      auth0Id: user.auth0Id,
-      name: user.name,
-      email: user.email,
-      department: '',
-    });
-    return this.repo.save(user);
-  }
+        id: savedUser.id,
+        auth0Id: savedUser.auth0Id,
+        name: savedUser.name,
+        email: savedUser.email,
+        department: input.department ?? '',
+    }).catch((err) =>
+        console.error('Failed to publish user.created event', err)
+    );
+
+    return savedUser;
+  } 
 
   findByAuth0Id(auth0Id: string): Promise<User | null> {
     return this.repo.findOne({ where: { auth0Id } });
@@ -65,11 +73,12 @@ export class UsersService {
 
   async updateProfile(
     auth0Id: string,
-    data: { name?: string; email?: string },
+    data: { name?: string; email?: string; department?: Department },
   ): Promise<User> {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
+    if (data.department !== undefined) user.department = data.department;
     return this.repo.save(user);
   }
 

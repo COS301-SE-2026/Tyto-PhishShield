@@ -33,6 +33,7 @@ export const authApi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto),
+      credentials: 'include',
     });
     if (!res.ok) throw new Error('Invalid email or password');
     return parseResponse<LoginResponse>(res);

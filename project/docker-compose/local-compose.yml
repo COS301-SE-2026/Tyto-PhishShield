@@ -127,6 +127,8 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=local
+      - RESEND_API_KEY=${RESEND_API_KEY}
     ports:
       - '${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}'
     depends_on:
@@ -172,6 +174,9 @@ services:
       - OUTLOOK_ADDIN_CORS=
       - LOG_DIR=/var/log/api-gateway
       - ENVIRONMENT=local
+      - LOCAL_CORS=${LOCAL_CORS}
+      - OUTLOOK_ADDIN_CORS=${OUTLOOK_ADDIN_CORS}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     volumes:
@@ -420,8 +425,8 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
-    # ports:
-    #   - '5173:5173'
+    ports:
+    - '5173:5173'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
