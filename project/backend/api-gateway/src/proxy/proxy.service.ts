@@ -100,15 +100,12 @@ export class ProxyService {
     this.proxy.on('proxyReq', this.handleProxy.bind(this));
 
     this.proxy.on('proxyRes', (proxyRes, req) => {
-      logger.info(String(proxyRes.statusCode) + ',' +  req.url)
+      logger.info(String(proxyRes.statusCode) + ',' + req.url);
     });
   }
 
   private handleProxy(proxyReq: ClientRequest, req: Request) {
-    proxyReq.setHeader(
-      'X-Request-ID',
-      req.headers['x-request-id'] ?? '',
-    );
+    proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] ?? '');
     if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
       const body = JSON.stringify(req.body);
       proxyReq.setHeader('Content-Type', 'application/json');
@@ -120,7 +117,7 @@ export class ProxyService {
   }
 
   beterForward(req: Request, res: Response, url: string) {
-    this.proxy.web(req, res, {target: url});
+    this.proxy.web(req, res, { target: url });
   }
 
   async forward<T>(options: ForwardOptions): Promise<T> {
