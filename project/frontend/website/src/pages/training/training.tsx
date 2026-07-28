@@ -3,6 +3,8 @@ import { AppLayout } from "../../components/layout/app-layout";
 import { Badge, Card, Button } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
 import { getMyAssignment, submitAnswers, getMyEducationHistory, type Assignment, type PendingAssignment, type SubmitAnswerResponse, type AssignmentStatus } from "../../services/education";
+import { useAuth } from "../../context/auth-context";
+import { AdminTraining } from "./admin-training";
 
 interface TrainingProps {
   onNavigate: (path: string) => void;
@@ -34,8 +36,8 @@ function getStatusBadge(status: AssignmentStatus) {
   return <Badge variant="neutral">Not Started</Badge>
 }
 
-export function Training({
-  onNavigate, 
+export function UserTraining({
+  onNavigate,
   activePath,
 }: TrainingProps) {
   const { addToast } = useToast();
@@ -517,6 +519,9 @@ export function Training({
                   onClick={() => {
                     void handleSubmitAnswers();
                   }}
+                  style={{
+                    padding: '8px 16px',
+                  }}
                 >
                   Submit Answers
                 </Button>
@@ -628,4 +633,24 @@ export function Training({
       )}
     </AppLayout>
   );
+};
+
+export function Training({
+  onNavigate, 
+  activePath,
+}: TrainingProps) {
+  const { canAccess} = useAuth();
+  const isAdmin = canAccess('admin');
+
+  return isAdmin ? (
+    <AdminTraining
+      onNavigate={onNavigate}
+      activePath={activePath}
+    />
+  ): (
+    <UserTraining
+      onNavigate={onNavigate}
+      activePath={activePath}
+    />
+  )
 }

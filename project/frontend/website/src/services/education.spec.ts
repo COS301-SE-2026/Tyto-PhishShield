@@ -15,12 +15,12 @@ import { describe, beforeEach, expect, vi, it } from "vitest";
 
 const EDUCATION_BASE = `${API_BASE}/education`;
 
-type MockResponseOptions = {
+interface MockResponseOptions {
     ok?: boolean;
     status?: number;
     data?:unknown;
     jsonError?: Error;
-};
+}
 
 function createMockResponse({ok = true, status = 200, data = null, jsonError}: MockResponseOptions = {}): Response {
   return {
