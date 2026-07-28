@@ -45,8 +45,9 @@ interface Auth0LoginResponse {
 }
 
 interface Auth0Roles {
-  role: UserRole;
-  roleID: string;
+  id: string;
+  name: UserRole;
+  description: string;
 }
 
 interface AxiosErrorShape {
@@ -157,7 +158,7 @@ export class AuthService {
           auth0Id: userAuth0Id,
           email: data.email,
           name: data.name,
-          role: (await this.getAuth0UserRoles(userAuth0Id))[0]?.role ?? UserRole.USER,
+          role: (await this.getAuth0UserRoles(userAuth0Id))[0]?.name ?? UserRole.USER,
           isVerified: false
         };
         this.userSyncService.syncAuth0User(createDbUser);
@@ -343,7 +344,12 @@ export class AuthService {
         }
       )
     );
-    console.log(data);
+    for(let i = 0; i < data.length; i++) {
+      const roll = data[i];
+      if (roll.name !== UserRole.ADMIN && roll.name !== UserRole.ANALYST && roll.name !== UserRole.USER) {
+        data[i].name = UserRole.USER;
+      }
+    }
     return data as Auth0Roles[];
   }
 
@@ -353,7 +359,7 @@ export class AuthService {
     const userRoles = await this.getAuth0UserRoles(auth0Id);
     const rollIDsToRemove: string[] = [];
     for (const roll of userRoles) {
-      rollIDsToRemove.push(roll.roleID);
+      rollIDsToRemove.push(roll.id);
     }
     //remove current roles:
     this.http.delete(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`,
@@ -372,8 +378,8 @@ export class AuthService {
     const rollIDsToAdd: string[] = [];
     for (let i = 0; i < roles.length; i++) {
       for(const roll of allRoles){
-        if (roll.role === roles[i]) {
-          rollIDsToAdd.push(roll.roleID);
+        if (roll.name === roles[i]) {
+          rollIDsToAdd.push(roll.id);
         }
       }
     }

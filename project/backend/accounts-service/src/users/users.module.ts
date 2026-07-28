@@ -18,7 +18,7 @@ import { UserSyncService } from './user-sync.service';
     forwardRef(() => AuthModule),
     EventProducerModule,
   ],
-  providers: [UsersService],
+  providers: [UsersService, UserSyncService],
   controllers: [UsersController],
   exports: [UsersService, UserSyncService], // exported so AuthModule can use it
 })
