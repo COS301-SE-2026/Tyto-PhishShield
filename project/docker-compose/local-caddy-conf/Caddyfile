@@ -2,7 +2,7 @@
     local_certs
 }
 
-localhost {
+localhost, phishshield.local {
 
     log {
         output file /var/log/caddy/access.log {
@@ -18,7 +18,8 @@ localhost {
         path /api/*
         header Origin *
         not header Origin https://capstone-five-guys.dns.net.za
-        not header Origin http://127.0.0.1
+        not header Origin https://phishshield.local
+        not header Origin https://127.0.0.1
         not header Origin https://localhost
     }
 
