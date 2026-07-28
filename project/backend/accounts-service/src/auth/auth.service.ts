@@ -164,8 +164,6 @@ export class AuthService {
       );
     }
 
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-
     try {
       const { data } = await firstValueFrom(
         this.http.post<Auth0LoginResponse>(`https://${domain}/oauth/token`, {
