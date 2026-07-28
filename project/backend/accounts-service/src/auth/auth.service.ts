@@ -43,6 +43,11 @@ interface Auth0LoginResponse {
   expires_in: number;
 }
 
+interface Auth0Roles {
+  role: string;
+  roleID: string;
+}
+
 interface AxiosErrorShape {
   response?: {
     status: number;
@@ -55,6 +60,7 @@ interface AxiosErrorShape {
 export class AuthService {
   private cachedMgmtToken: string | null = null;
   private mgmtTokenExpiry: number = 0;
+  private readonly DOMAIN;
 
   constructor(
     private readonly config: ConfigService,
@@ -62,21 +68,21 @@ export class AuthService {
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => OtpService))
     private readonly otpService: OtpService,
-  ) {}
+  ) {
+    this.DOMAIN = this.config.get<string>('AUTH0_DOMAIN');
+  }
 
   private async getManagementToken(): Promise<string> {
     if (this.cachedMgmtToken && Date.now() < this.mgmtTokenExpiry - 60_000) {
       return this.cachedMgmtToken;
     }
 
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-
     const { data } = await firstValueFrom(
-      this.http.post<Auth0TokenResponse>(`https://${domain}/oauth/token`, {
+      this.http.post<Auth0TokenResponse>(`https://${this.DOMAIN}/oauth/token`, {
         grant_type: 'client_credentials',
         client_id: this.config.get<string>('AUTH0_M2M_CLIENT_ID'),
         client_secret: this.config.get<string>('AUTH0_M2M_CLIENT_SECRET'),
-        audience: `https://${domain}/api/v2/`,
+        audience: `https://${this.DOMAIN}/api/v2/`,
       }),
     );
 
@@ -87,14 +93,13 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<{ message: string }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
     let auth0User: Auth0UserResponse;
     try {
       const { data } = await firstValueFrom(
         this.http.post<Auth0UserResponse>(
-          `https://${domain}/api/v2/users`,
+          `https://${this.DOMAIN}/api/v2/users`,
           {
             email: dto.email,
             password: dto.password,
@@ -136,7 +141,6 @@ export class AuthService {
   async login(
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number; requiresOTP: boolean }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     let userAuth0Id = '';
     try {
       const data = await this.getAuth0UserByEmail(dto.email);
@@ -166,7 +170,7 @@ export class AuthService {
 
     try {
       const { data } = await firstValueFrom(
-        this.http.post<Auth0LoginResponse>(`https://${domain}/oauth/token`, {
+        this.http.post<Auth0LoginResponse>(`https://${this.DOMAIN}/oauth/token`, {
           grant_type: 'password',
           username: dto.email,
           password: dto.password,
@@ -243,11 +247,9 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-
     try {
       await firstValueFrom(
-        this.http.post(`https://${domain}/dbconnections/change_password`, {
+        this.http.post(`https://${this.DOMAIN}/dbconnections/change_password`, {
           client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
           email,
           connection: 'Username-Password-Authentication',
@@ -266,13 +268,12 @@ export class AuthService {
   }
 
   async deleteUser(auth0Id: string): Promise<void> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
     try {
       await firstValueFrom(
         this.http.delete(
-          `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
           { headers: { Authorization: `Bearer ${mgmtToken}` } },
         ),
       );
@@ -288,11 +289,10 @@ export class AuthService {
   }
 
   async getAuth0UserByEmail(email: string): Promise<Auth0UserResponse> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
     const { data } = await firstValueFrom(
       this.http.get<Auth0UserResponse[]>(
-        `https://${domain}/api/v2/users-by-email?email=${email}`,
+        `https://${this.DOMAIN}/api/v2/users-by-email?email=${email}`,
         {
           headers: {
             Authorization: `Bearer ${mgmtToken}`,
@@ -301,5 +301,81 @@ export class AuthService {
       ),
     );
     return data[0];
+  }
+
+  async getAuth0Roles(): Promise<Auth0Roles[]> {
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get(
+        `https://${DOMAIN}/api/v2/roles`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+          }
+        }
+      )
+    );
+    console.log(data);
+    return data as Auth0Roles[];
+  }
+
+  async getAuth0UserRoles(auth0Id: string): Promise<Auth0Roles[]> {
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get(
+        `https://${DOMAIN}/api/v2/users/${auth0Id}/roles`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+          }
+        }
+      )
+    );
+    console.log(data);
+    return data as Auth0Roles[];
+  }
+
+  async updateAuth0UserRole(auth0Id: string, roles: string[]) {
+    const mgmtToken = await this.getManagementToken();
+    //Get current roles:
+    const userRoles = await this.getAuth0UserRoles(auth0Id);
+    const rollIDsToRemove: string[] = [];
+    for (const roll of userRoles) {
+      rollIDsToRemove.push(roll.roleID);
+    }
+    //remove current roles:
+    this.http.delete(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`,
+      {
+        headers: {
+          Authorization: `Bearer ${mgmtToken}`,
+          "Content-Type": 'application/json',
+        },
+        data: {
+          'roles': rollIDsToRemove,
+        }
+      },
+    );
+    //Find roleID that match roles of what we want to add:
+    const allRoles = await this.getAuth0Roles();
+    const rollIDsToAdd: string[] = [];
+    for (let i = 0; i < roles.length; i++) {
+      for(const roll of allRoles){
+        if (roll.role === roles[i]) {
+          rollIDsToAdd.push(roll.roleID);
+        }
+      }
+    }
+    //Add roles to auth0
+    this.http.post(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`,
+      {
+        headers: {
+          Authorization: `Bearer ${mgmtToken}`,
+          "Content-Type": 'application/json',
+        },
+        data: {
+          'roles': rollIDsToAdd,
+        }
+      },
+    );
   }
 }
