@@ -37,7 +37,7 @@ describe('XpWebsocketController', () => {
   });
 
   describe('handleXpGiven', () => {
-    it('forwards the auth0Id and amount from the rabbit message to the gateway', () => {
+    it('should forward the auth0Id and amount to the gateway', () => {
       const message = { auth0Id: 'auth0|123456789', amount: 50 };
 
       controller.handleXpGiven(message);
@@ -49,7 +49,7 @@ describe('XpWebsocketController', () => {
       );
     });
 
-    it('does not transform or reorder the payload fields', () => {
+    it('should not alter the payload fields', () => {
       const message = { auth0Id: 'auth0|other-user', amount: 0 };
 
       controller.handleXpGiven(message);
