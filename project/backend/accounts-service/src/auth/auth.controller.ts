@@ -47,7 +47,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   login(@Req() req: Request, @Body() dto: LoginDto) {
-    dto.deviceToken = req.cookies?.device_token;
+    dto.deviceToken = (req.cookies?.device_token as string) ?? '';
     return this.authService.login(dto);
   }
 
@@ -102,21 +102,25 @@ export class AuthController {
 
   @Post('verify-otp')
   @HttpCode(200)
-  async verifyOtp(@Req() req: Request, @Body() dto: VerifyOtpDto, @Res({passthrough: true}) res: Response) {
+  async verifyOtp(
+    @Req() req: Request,
+    @Body() dto: VerifyOtpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const extendedDto: ExtendedVerifyOtpDto = {
       email: dto.email,
       code: dto.code,
-      userAgent: req.headers["user-agent"],
+      userAgent: req.headers['user-agent'],
       ip: req.ip,
-    }
-    const {message, deviceToken} = await this.authService.verifyOtp(extendedDto);
-    res.cookie( "device_token", deviceToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        maxAge: 60 * 24 * 60 * 60 * 1000,
-      },
-    );
+    };
+    const { message, deviceToken } =
+      await this.authService.verifyOtp(extendedDto);
+    res.cookie('device_token', deviceToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 24 * 60 * 60 * 1000,
+    });
     return { message };
   }
 
