@@ -112,6 +112,7 @@ services:
       - RESEND_EMAIL=${RESEND_EMAIL}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=dev
     # ports:
     #   - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:

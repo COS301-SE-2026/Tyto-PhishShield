@@ -19,7 +19,7 @@ type AuthenticatedSocket = Socket<any, any, any, SocketData>;
   cors: {
     origin: '*',
   },
-  namespace: '/xp-websocket',
+  namespace: '/api/xp-websocket',
 })
 export class XpWebsocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

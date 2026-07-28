@@ -5,7 +5,7 @@
 import { io, type Socket } from 'socket.io-client';
 import { API_BASE, getToken } from './api';
 
-const GATEWAY_ORIGIN = String(import.meta.env.VITE_API_GATEWAY_URL ?? '');
+// const GATEWAY_ORIGIN = String(import.meta.env.VITE_API_GATEWAY_URL ?? '');
 
 async function getSocketTicket(): Promise<string> {
   const res = await fetch(`${API_BASE}/xp-websocket/ticket`, {
@@ -19,5 +19,5 @@ async function getSocketTicket(): Promise<string> {
 
 export async function connectXpSocket(): Promise<Socket> {
   const ticket = await getSocketTicket();
-  return io(`${GATEWAY_ORIGIN}/xp-websocket`, { auth: { ticket } });
+  return io(`${API_BASE}/xp-websocket`, { auth: { ticket } });
 }

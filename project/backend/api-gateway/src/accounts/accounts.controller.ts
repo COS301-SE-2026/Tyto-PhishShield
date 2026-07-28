@@ -62,6 +62,18 @@ export class AccountsController {
         email: { type: 'string', example: 'test@example.com' },
         password: { type: 'string', example: 'Password123!' },
         name: { type: 'string', example: 'Test User' },
+        department: {
+          type: 'string',
+          enum: [
+            'IT & Security',
+            'Finance',
+            'Human Resources',
+            'Legal & Compliance',
+            'Operations',
+            'Executive',
+          ],
+          example: 'IT & Security',
+        },
       },
     },
   })

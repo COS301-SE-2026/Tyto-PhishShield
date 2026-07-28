@@ -121,6 +121,7 @@ export class AuthService {
       auth0Id: auth0User.user_id,
       email: dto.email,
       name: dto.name,
+      department: dto.department,
       role: UserRole.USER,
     });
 
@@ -162,6 +163,8 @@ export class AuthService {
         'Account is deactivated. Please contact support.',
       );
     }
+
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
 
     try {
       const { data } = await firstValueFrom(

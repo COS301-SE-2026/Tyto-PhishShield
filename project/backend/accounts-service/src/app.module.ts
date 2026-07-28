@@ -14,6 +14,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { VerifiedDevice } from './otp/otp.entity';
 import { EventProducerModule } from './event-producer/event-producer.module';
+import { UserSyncService } from './users/user-sync.service';
 
 @Module({
   imports: [
@@ -37,6 +38,6 @@ import { EventProducerModule } from './event-producer/event-producer.module';
     EventProducerModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, UserSyncService],
 })
 export class AppModule {}
