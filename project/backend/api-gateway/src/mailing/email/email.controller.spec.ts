@@ -18,7 +18,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { EmailController } from './email.controller';
 import { ProxyService } from '../../proxy/proxy.service';
-import { EmailsDto } from '../dto/emails.dto';
+import { EmailDifficulty, EmailsDto } from '../dto/emails.dto';
 
 const MAILING_SERVICE_URL = 'http://localhost:3003';
 
@@ -56,15 +56,17 @@ describe('EmailController', () => {
 
   describe('createEmail', () => {
     const body: EmailsDto = {
-      sender: 'onboarding@resend.dev',
+      sender: 'test@example.com',
       alias: 'Tester',
       subject: 'Test Subject',
       content: '<p>Test</p>',
-      difficulty: 'medium' as any,
+      difficulty: EmailDifficulty.MEDIUM,
     };
 
-    it('should call proxy.forward with the correct URL, method and body', () => {
-      mockProxyService.forward.mockReturnValue({ referenceNumber: 'PHISH-001' });
+    it('should forwards a POST request to /emails', () => {
+      mockProxyService.forward.mockReturnValue({
+        referenceNumber: 'PHISH-001',
+      });
 
       controller.createEmail(body);
 
@@ -75,7 +77,7 @@ describe('EmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
+    it('should correctly return what proxy.forward returns for POST request to /emails', () => {
       const proxyResponse = { referenceNumber: 'PHISH-001' };
       mockProxyService.forward.mockReturnValue(proxyResponse);
 
@@ -86,7 +88,7 @@ describe('EmailController', () => {
   });
 
   describe('getAllEmails', () => {
-    it('should call proxy.forward with the correct URL and GET method', () => {
+    it('should forward a GET request to /emails', () => {
       mockProxyService.forward.mockReturnValue([]);
 
       controller.getAllEmails();
@@ -97,7 +99,7 @@ describe('EmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
+    it("should correctly return what proxy.forward returns for GET request to /emails", () => {
       const proxyResponse = [{ referenceNumber: 'PHISH-001' }];
       mockProxyService.forward.mockReturnValue(proxyResponse);
 
@@ -110,7 +112,7 @@ describe('EmailController', () => {
   describe('getEmailByReference', () => {
     const referenceNumber = 'PHISH-001';
 
-    it('should call proxy.forward with the correct URL including the reference number', () => {
+    it('should forward a GET request to /emails/:referenceNumber', () => {
       mockProxyService.forward.mockReturnValue({ referenceNumber });
 
       controller.getEmailByReference(referenceNumber);
@@ -121,7 +123,7 @@ describe('EmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
+    it('should correctly return what proxy.forward returns for GET request to /emails/:referenceNumber', () => {
       const proxyResponse = { referenceNumber, subject: 'Test' };
       mockProxyService.forward.mockReturnValue(proxyResponse);
 
@@ -135,8 +137,11 @@ describe('EmailController', () => {
     const referenceNumber = 'PHISH-001';
     const body: Partial<EmailsDto> = { subject: 'Updated Subject' };
 
-    it('should call proxy.forward with the correct URL, PATCH method and body', () => {
-      mockProxyService.forward.mockReturnValue({ referenceNumber, subject: 'Updated Subject' });
+    it('should forward a PATCH request to /emails/:referenceNumber', () => {
+      mockProxyService.forward.mockReturnValue({
+        referenceNumber,
+        subject: 'Updated Subject',
+      });
 
       controller.updateEmail(referenceNumber, body);
 
@@ -147,7 +152,7 @@ describe('EmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
+    it('should correctly return what proxy.forward returns for PATCH request to /emails/:referenceNumber', () => {
       const proxyResponse = { referenceNumber, subject: 'Updated Subject' };
       mockProxyService.forward.mockReturnValue(proxyResponse);
 
@@ -161,8 +166,11 @@ describe('EmailController', () => {
     const referenceNumber = 'PHISH-001';
     const recipient = 'delivered@resend.dev';
 
-    it('should call proxy.forward with the correct URL, method and recipient', () => {
-      mockProxyService.forward.mockReturnValue({ success: true, message: 'sent instantly.' });
+    it('should forward a PATCH request to /emails/:referenceNumber/send-single', () => {
+      mockProxyService.forward.mockReturnValue({
+        success: true,
+        message: 'sent instantly.',
+      });
 
       controller.sendEmail(referenceNumber, recipient);
 
@@ -173,8 +181,12 @@ describe('EmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
-      const proxyResponse = { success: true, message: 'sent instantly.', deliveryId: 'abc-123' };
+    it('should correctly return what proxy.forward returns for PATCH request to /emails/:referenceNumber/send-single', () => {
+      const proxyResponse = {
+        success: true,
+        message: 'sent instantly.',
+        deliveryId: 'abc-123',
+      };
       mockProxyService.forward.mockReturnValue(proxyResponse);
 
       const result = controller.sendEmail(referenceNumber, recipient);
@@ -188,8 +200,11 @@ describe('EmailController', () => {
     const recipient = 'delivered@resend.dev';
     const scheduledAt = '2026-06-25T10:00:00.000Z';
 
-    it('should call proxy.forward with the correct URL, method, recipient and scheduledAt', () => {
-      mockProxyService.forward.mockReturnValue({ success: true, message: 'successfully scheduled' });
+    it('should forward a PATCH request to /emails/:referenceNumber/schedule-send-single', () => {
+      mockProxyService.forward.mockReturnValue({
+        success: true,
+        message: 'successfully scheduled',
+      });
 
       controller.scheduleSendEmail(referenceNumber, recipient, scheduledAt);
 
@@ -200,11 +215,19 @@ describe('EmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
-      const proxyResponse = { success: true, message: 'successfully scheduled', deliveryId: 'xyz-456' };
+    it('should correctly return what proxy.forward returns for PATCH request to /emails/:referenceNumber/schedule-send-single', () => {
+      const proxyResponse = {
+        success: true,
+        message: 'successfully scheduled',
+        deliveryId: 'xyz-456',
+      };
       mockProxyService.forward.mockReturnValue(proxyResponse);
 
-      const result = controller.scheduleSendEmail(referenceNumber, recipient, scheduledAt);
+      const result = controller.scheduleSendEmail(
+        referenceNumber,
+        recipient,
+        scheduledAt,
+      );
 
       expect(result).toBe(proxyResponse);
     });
