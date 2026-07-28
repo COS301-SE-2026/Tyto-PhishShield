@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { XpService } from './xp.service';
 import { XpEntity, XpReason } from '../entities/xp.entity';
@@ -109,6 +112,33 @@ describe('XpService', () => {
       await expect(service.giveXp(dto)).rejects.toThrow(NotFoundException);
       expect(mockXpRepository.create).not.toHaveBeenCalled();
     });
+
+    it('should throw InternalServerErrorException when saving fails', async () => {
+      mockUserRepository.findOneBy.mockResolvedValue(mockUser);
+      mockXpRepository.create.mockResolvedValue(mockXpEntry);
+      mockXpRepository.save.mockRejectedValue(new Error('db unavailable'));
+      await expect(service.giveXp(dto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+
+      expect(mockAmqpConnection.publish).not.toHaveBeenCalled();
+    });
+
+    it('should save entry when publishing xp.given event fails', async () => {
+      mockUserRepository.findOneBy.mockResolvedValue(mockUser);
+      mockXpRepository.create.mockReturnValue(mockXpEntry);
+      mockXpRepository.save.mockResolvedValue(mockXpEntry);
+      mockAmqpConnection.publish.mockRejectedValue(new Error('broker down'));
+
+      const result = await service.giveXp(dto);
+
+      expect(result).toBe(mockXpEntry);
+      expect(mockAmqpConnection.publish).toHaveBeenCalledWith(
+        'xp-event-exchange',
+        'xp.given',
+        { auth0Id: mockUser.auth0Id, amount: dto.amount },
+      );
+    });
   });
 
   describe('getAllXp', () => {
@@ -153,7 +183,7 @@ describe('XpService', () => {
   });
 
   describe('getNetXpByUser', () => {
-    it('should return the numeric totalXp for an existing user', async () => {
+    it('should return totalXp for an existing user', async () => {
       mockUserRepository.findOneBy.mockResolvedValue(mockUser);
       mockQueryBuilder.getRawOne.mockResolvedValue({ totalXp: '250' });
 
@@ -178,6 +208,15 @@ describe('XpService', () => {
         NotFoundException,
       );
     });
+
+    it('should throw InternalServerErrorException when query fails', async () => {
+      mockUserRepository.findOneBy.mockResolvedValue(mockUser);
+      mockQueryBuilder.getRawOne.mockRejectedValue(new Error('db unavailable'));
+
+      await expect(service.getNetXpByUser('auth0|123')).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
   });
 
   describe('getNetXpAllUsers', () => {
@@ -196,12 +235,22 @@ describe('XpService', () => {
       ]);
     });
 
-    it('should return an empty array when no users have xp', async () => {
+    it('should return empty array when no users have xp', async () => {
       mockQueryBuilder.getRawMany.mockResolvedValue([]);
 
       const result = await service.getNetXpAllUsers();
 
       expect(result).toEqual([]);
+    });
+
+    it('should throw InternalServerErrorException when the query fails', async () => {
+      mockQueryBuilder.getRawMany.mockRejectedValue(
+        new Error('db unavailable'),
+      );
+
+      await expect(service.getNetXpAllUsers()).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });

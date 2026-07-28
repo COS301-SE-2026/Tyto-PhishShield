@@ -63,7 +63,7 @@ describe('BatchEmailController', () => {
       recipients: ['a@example.com', 'b@example.com'],
     };
 
-    it('should call service with referenceNumber and recipients', async () => {
+    it('should delegate to sendBatchWithReference', async () => {
       mockBatchEmailService.sendBatchWithReference.mockResolvedValue({
         success: true,
         message: 'Batch sent.',
@@ -101,10 +101,10 @@ describe('BatchEmailController', () => {
       randomisedTimes: false,
     };
 
-    it('should call service.sendBatchRandomSameEmail with all DTO fields', async () => {
+    it('should delegate to sendBatchRandomSameEmail', async () => {
       mockBatchEmailService.sendBatchRandomSameEmail.mockResolvedValue({
         success: true,
-        message: '2 email(s) scheduled.',
+        message: 'test message',
       });
 
       await controller.sendBatchRandom(body);
@@ -121,14 +121,14 @@ describe('BatchEmailController', () => {
     it('should return a BatchPostReturnDto with success and message', async () => {
       mockBatchEmailService.sendBatchRandomSameEmail.mockResolvedValue({
         success: true,
-        message: '2 email(s) scheduled.',
+        message: 'test message',
       });
 
       const result = await controller.sendBatchRandom(body);
 
       expect(result).toEqual({
         success: true,
-        message: '2 email(s) scheduled.',
+        message: 'test message',
       });
     });
   });
@@ -145,7 +145,7 @@ describe('BatchEmailController', () => {
     it('should call service.sendBatchRandomDifferentEmail with all DTO fields', async () => {
       mockBatchEmailService.sendBatchRandomDifferentEmail.mockResolvedValue({
         success: true,
-        message: '2 email(s) scheduled.',
+        message: 'test message',
       });
 
       await controller.sendBatchRandomDifferentEmail(body);
@@ -162,14 +162,14 @@ describe('BatchEmailController', () => {
     it('should return a BatchPostReturnDto with success and message', async () => {
       mockBatchEmailService.sendBatchRandomDifferentEmail.mockResolvedValue({
         success: true,
-        message: '2 email(s) scheduled.',
+        message: 'test message',
       });
 
       const result = await controller.sendBatchRandomDifferentEmail(body);
 
       expect(result).toEqual({
         success: true,
-        message: '2 email(s) scheduled.',
+        message: 'test message',
       });
     });
   });

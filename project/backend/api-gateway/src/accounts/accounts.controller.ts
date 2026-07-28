@@ -14,15 +14,17 @@ import {
   Req,
   UseGuards,
   HttpCode,
+  Res,
 } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { Request } from 'express';
+import type { Request, Response } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
+import { RouteResolver } from '../proxy/proxy.routes';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -40,6 +42,7 @@ export class AccountsController {
 
   constructor(
     private readonly proxy: ProxyService,
+    private readonly routes: RouteResolver,
     private readonly config: ConfigService,
   ) {
     this.accountsServiceUrl = this.config.get<string>(
@@ -96,12 +99,10 @@ export class AccountsController {
       },
     },
   })
-  verifyOtp(@Body() body: unknown) {
-    return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/verify-otp`,
-      method: 'POST',
-      data: body,
-    });
+  verifyOtp(@Req() req: Request, @Res() res: Response) {
+    const route = this.routes.resolve(req.originalUrl);
+    req.url = req.url.replace(route.apiRoute, '');
+    return this.proxy.beterForward(req, res, route.targetService);
   }
 
   @Public()
@@ -117,12 +118,10 @@ export class AccountsController {
       },
     },
   })
-  resendOtp(@Body() body: unknown) {
-    return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/resend-otp`,
-      method: 'POST',
-      data: body,
-    });
+  resendOtp(@Req() req: Request, @Res() res: Response) {
+    const route = this.routes.resolve(req.originalUrl);
+    req.url = req.url.replace(route.apiRoute, '');
+    return this.proxy.beterForward(req, res, route.targetService);
   }
 
   @Public()
@@ -139,12 +138,10 @@ export class AccountsController {
       },
     },
   })
-  login(@Body() body: unknown) {
-    return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/login`,
-      method: 'POST',
-      data: body,
-    });
+  login(@Req() req: Request, @Res() res: Response) {
+    const route = this.routes.resolve(req.originalUrl);
+    req.url = req.url.replace(route.apiRoute, '');
+    return this.proxy.beterForward(req, res, route.targetService);
   }
 
   @Post('auth/logout')

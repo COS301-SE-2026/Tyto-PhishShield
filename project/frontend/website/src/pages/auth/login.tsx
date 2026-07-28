@@ -106,8 +106,8 @@ export function Login({ onNavigate }: LoginProps) {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true); setErrors({});
     try {
-      await login(email, password);
-      if (OTP_LOGIN_ENABLED) {
+      const OTP: boolean = await login(email, password);
+      if (OTP && OTP_LOGIN_ENABLED) {
         setOtpStep(true);
       } else {
         addToast({ type: 'success', title: 'Welcome back!' });
