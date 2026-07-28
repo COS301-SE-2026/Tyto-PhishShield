@@ -136,7 +136,6 @@ export class AuthService {
   async login(
     dto: LoginDto,
   ): Promise<{ access_token: string; expires_in: number; requiresOTP: boolean }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     let userAuth0Id = '';
     try {
       const data = await this.getAuth0UserByEmail(dto.email);
