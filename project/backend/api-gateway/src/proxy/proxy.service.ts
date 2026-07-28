@@ -120,7 +120,6 @@ export class ProxyService {
   }
 
   beterForward(req: Request, res: Response, url: string) {
-    logger.info('Forwarding request', {req, res, url});
     this.proxy.web(req, res, {target: url});
   }
 

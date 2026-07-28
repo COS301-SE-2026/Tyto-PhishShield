@@ -47,7 +47,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   login(@Req() req: Request, @Body() dto: LoginDto) {
-    dto.deviceToken = req.cookies?.deviceToken;
+    dto.deviceToken = req.cookies?.device_token;
     return this.authService.login(dto);
   }
 
@@ -117,7 +117,6 @@ export class AuthController {
         maxAge: 60 * 24 * 60 * 60 * 1000,
       },
     );
-    console.log(res.getHeaders());
     return { message };
   }
 

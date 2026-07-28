@@ -179,7 +179,6 @@ export class AuthService {
 
       let requiresOTP: boolean = false;
       if (dto.sendOTP) {
-        console.log(dto.deviceToken);
         if (!dto.deviceToken) {
           await this.otpService.generateAndSend(dto.email);
           requiresOTP = true;

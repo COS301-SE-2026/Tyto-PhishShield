@@ -79,7 +79,6 @@ export class OtpService {
     const deviceToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.hash('sha256', deviceToken);
     const user = await this.authService.getAuth0UserByEmail(email);
-    console.log(user);
     if (!user) {
       throw new UnauthorizedException('User not registered');
     }
