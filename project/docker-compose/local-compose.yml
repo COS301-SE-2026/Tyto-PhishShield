@@ -129,6 +129,9 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=local
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     ports:
       - '${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}'
     depends_on:
@@ -169,14 +172,12 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-      - LOCAL_CORS=http://127.0.0.1
-      - SERVER_DOMAIN=${DOMAIN}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - LOG_DIR=/var/log/api-gateway
       - ENVIRONMENT=local
       - LOCAL_CORS=${LOCAL_CORS}
       - OUTLOOK_ADDIN_CORS=${OUTLOOK_ADDIN_CORS}
-      - SERVER_DOMAIN=${SERVER_DOMAIN}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     volumes:
@@ -427,6 +428,20 @@ services:
       - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
     ports:
     - '5173:5173'
+
+  # builds the outlook-addin using its dockerfile
+  outlook-addin:
+    build: 
+      context: ../../
+      dockerfile: project/frontend/phishshield-outlook-addin/Dockerfile
+    restart: on-failure
+    container_name: addin
+    environment:
+      - port=3000
+      - API_HOST=${GATEWAY_APP_CONTAINER}
+      - ADDIN_BASE_URL=https://127.0.0.1/addin/
+    ports:
+      - '3000:80'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:

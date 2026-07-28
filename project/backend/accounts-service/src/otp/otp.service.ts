@@ -1,11 +1,11 @@
-import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VerifiedDevice } from './otp.entity';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'node:crypto';
 import { Resend } from 'resend';
-import { UsersService } from '../users/users.service';
+import { AuthService } from '../auth/auth.service';
 
 interface AxiosErrorShape {
   response?: { status: number; data?: unknown };
@@ -27,37 +27,14 @@ export class OtpService {
     @InjectRepository(VerifiedDevice)
     private readonly deviceRepo: Repository<VerifiedDevice>,
     private readonly config: ConfigService,
-    private readonly usersService: UsersService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
     this.OTPs = [];
   }
 
-  async generateAndSend(email: string, userAgent: string, ipCreated: string): Promise<string> {
-    const user = await this.usersService.findByEmail(email);
-
-    if (!user) {
-      throw new UnauthorizedException('User not registered');
-    }
-    await this.otpGenAndSend(email);
-
-    const deviceToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.hash('sha256', deviceToken);
-
-    const verifiedDevice = this.deviceRepo.create({
-      userId: user.auth0Id,
-      tokenHash: hashedToken,
-      userAgent: userAgent,
-      ipCreated: ipCreated,
-      lastUsedAt: Date.now(),
-      expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-    });
-    await this.deviceRepo.save(verifiedDevice);
-
-    return deviceToken;
-  }
-
-  async otpGenAndSend(email: string): Promise<void> {
+  async generateAndSend(email: string): Promise<void> {
     const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
     this.OTPs.push({
       email,
@@ -90,31 +67,47 @@ export class OtpService {
     }
   }
 
-  async verify(email: string, code: string): Promise<boolean> {
+  async verify(email: string, code: string,  userAgent: string, ipCreated: string): Promise<{valid: boolean, deviceToken: string}> {
     const otp = this.OTPs.find(otp => otp.email === email);
 
-    if (!otp) return false;
-    if (new Date() > otp.expiresAt || otp.code !== code) return false;
+    if (!otp) return {valid: false, deviceToken: ''};
+    if (new Date() > otp.expiresAt || otp.code !== code) return  {valid: false, deviceToken: ''};
 
     const updatedOTPs = this.OTPs.filter(otp => otp.email !== email);
     this.OTPs = updatedOTPs;
 
-    return true;
+    const deviceToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.hash('sha256', deviceToken);
+    const user = await this.authService.getAuth0UserByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('User not registered');
+    }
+
+    const verifiedDevice = this.deviceRepo.create({
+      userId: user.user_id,
+      tokenHash: hashedToken,
+      userAgent: userAgent,
+      ipCreated: ipCreated,
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+    });
+    await this.deviceRepo.save(verifiedDevice);
+
+    return  {valid: true, deviceToken};
   }
 
   async verifyDevice(email: string, deviceToken: string): Promise<boolean> {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.authService.getAuth0UserByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException('User not registered');
     }
 
     const hashedToken = crypto.hash('sha256', deviceToken);
-
     let trustedDevice = await this.deviceRepo.findOne({
       where: {
         tokenHash: hashedToken,
-        userId: user.auth0Id,
+        userId: user.user_id,
       }
     });
 
@@ -122,7 +115,7 @@ export class OtpService {
 
     trustedDevice.lastUsedAt = new Date();
 
-    if (new Date > trustedDevice.expiresAt) return false;
+    if (new Date() > trustedDevice.expiresAt) return false;
 
     await this.deviceRepo.update(trustedDevice.id, trustedDevice);
 

@@ -8,13 +8,18 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   twoFactoredAuth: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   twoFactorAuth: (email: string, code: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
   canAccess: (minRole: UserRole) => boolean;
   refreshUser: () => Promise<void>;
-}
+};
+
+interface Token {
+  access_token: string;
+  tokenExpiry: number;
+};
 
 const ROLE_LEVEL: Record<UserRole, number> = { admin: 3, analyst: 2, user: 1 };
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -27,6 +32,7 @@ const isTokenExpired = () => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [token, setToken] = useState<Token | null>(null);
   const [twoFactoredAuth, setTwoFactoredAuth] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const refreshUser = useCallback(async () => {
@@ -60,7 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { void refreshUser(); }, [refreshUser]);
 
-  const login = async (email: string, password: string) => {
+  //Returns boolean value indicating whether OTP will be needed
+  const login = async (email: string, password: string): Promise<boolean> => {
     // const response: Response = await fetch(`${BASE_URL}/accounts/auth/login`, {
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },
@@ -68,14 +75,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // });
     // if (!response.ok) { throw new Error('Invalid email or password.'); }
     const loginResponse: LoginResponse = await authApi.login({email, password});
-    // interface Token {
-    //   access_token: string;
-    //   expires_in: number;
-    // };
-    const { access_token, expires_in } = loginResponse;
-    localStorage.setItem('access_token', access_token);
-    localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
-    setUser(null);
+    if (!loginResponse.requiresOTP) {
+      setTwoFactoredAuth(true);
+      const { access_token, expires_in } = loginResponse;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
+      const me: AuthenticatedUser = await authApi.getMe();
+      setUser(me);
+    } else {
+      setToken({
+        access_token: loginResponse.access_token,
+        tokenExpiry: Date.now() + loginResponse.expires_in * 1000,
+      });
+      setUser(null);
+    }
+    return loginResponse.requiresOTP ?? false;
   };
 
   const twoFactorAuth = async (email: string, code: string) => {
@@ -96,6 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(message);
     }
     setTwoFactoredAuth(true);
+    localStorage.setItem('access_token', token?.access_token ?? '');
+    localStorage.setItem('token_expiry', String(token?.tokenExpiry));
     // const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
     //   method: 'GET',
     //   headers: {
