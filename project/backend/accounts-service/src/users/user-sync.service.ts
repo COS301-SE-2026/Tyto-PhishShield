@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from './users.service';
+import { UsersService, CreateUserInput } from './users.service';
 import { EventProducerService } from '../event-producer/event-producer.service';
 
 @Injectable()
@@ -33,5 +33,23 @@ export class UserSyncService implements OnModuleInit {
     }
 
     this.logger.log(`Synced ${users.length} users.`);
+  }
+
+  async syncAuth0User(user: CreateUserInput) {
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    if (nodeEnv !== 'development' && nodeEnv !== 'dev' && nodeEnv !== 'local') {
+      return;
+    }
+
+    this.logger.log('Development mode - syncing auth0 user...');
+
+    const savedUser = await this.usersService.create(user);
+
+    this.logger.log(`Synced user ${savedUser.auth0Id}.`);
+  }
+
+  async needSyncing(userId: string): Promise<boolean> {
+    const user = await this.usersService.findByAuth0Id(userId);
+    return user ? false : true;
   }
 }

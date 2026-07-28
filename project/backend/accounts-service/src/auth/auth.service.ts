@@ -33,11 +33,12 @@ import { firstValueFrom } from 'rxjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UsersService } from '../users/users.service';
+import { UsersService, CreateUserInput } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
 import { ExtendedVerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { UserSyncService } from '../users/user-sync.service';
 
 interface Auth0TokenResponse {
   access_token: string;
@@ -57,6 +58,12 @@ interface Auth0LoginResponse {
   expires_in: number;
 }
 
+interface Auth0Roles {
+  id: string;
+  name: UserRole;
+  description: string;
+}
+
 interface AxiosErrorShape {
   response?: {
     status: number;
@@ -69,28 +76,30 @@ interface AxiosErrorShape {
 export class AuthService {
   private cachedMgmtToken: string | null = null;
   private mgmtTokenExpiry: number = 0;
+  private readonly DOMAIN: string;
 
   constructor(
     private readonly config: ConfigService,
     private readonly http: HttpService,
     private readonly usersService: UsersService,
+    private readonly userSyncService: UserSyncService,
     @Inject(forwardRef(() => OtpService))
     private readonly otpService: OtpService,
-  ) {}
+  ) {
+    this.DOMAIN = this.config.getOrThrow<string>('AUTH0_DOMAIN');
+  }
 
   private async getManagementToken(): Promise<string> {
     if (this.cachedMgmtToken && Date.now() < this.mgmtTokenExpiry - 60_000) {
       return this.cachedMgmtToken;
     }
 
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-
     const { data } = await firstValueFrom(
-      this.http.post<Auth0TokenResponse>(`https://${domain}/oauth/token`, {
+      this.http.post<Auth0TokenResponse>(`https://${this.DOMAIN}/oauth/token`, {
         grant_type: 'client_credentials',
         client_id: this.config.get<string>('AUTH0_M2M_CLIENT_ID'),
         client_secret: this.config.get<string>('AUTH0_M2M_CLIENT_SECRET'),
-        audience: `https://${domain}/api/v2/`,
+        audience: `https://${this.DOMAIN}/api/v2/`,
       }),
     );
 
@@ -101,14 +110,13 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<{ message: string }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
     let auth0User: Auth0UserResponse;
     try {
       const { data } = await firstValueFrom(
         this.http.post<Auth0UserResponse>(
-          `https://${domain}/api/v2/users`,
+          `https://${this.DOMAIN}/api/v2/users`,
           {
             email: dto.email,
             password: dto.password,
@@ -160,6 +168,19 @@ export class AuthService {
           'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
         );
       }
+      userAuth0Id = data.user_id;
+      if (data && (await this.userSyncService.needSyncing(userAuth0Id))) {
+        const createDbUser: CreateUserInput = {
+          auth0Id: userAuth0Id,
+          email: data.email,
+          name: data.name,
+          role:
+            (await this.getAuth0UserRoles(userAuth0Id))[0]?.name ??
+            UserRole.USER,
+          isVerified: false,
+        };
+        void this.userSyncService.syncAuth0User(createDbUser);
+      }
       auth0User = data;
     } catch (err: unknown) {
       if (!(err instanceof UnauthorizedException)) {
@@ -179,20 +200,21 @@ export class AuthService {
       );
     }
 
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-
     try {
       const { data } = await firstValueFrom(
-        this.http.post<Auth0LoginResponse>(`https://${domain}/oauth/token`, {
-          grant_type: 'password',
-          username: dto.email,
-          password: dto.password,
-          audience: this.config.get<string>('AUTH0_AUDIENCE'),
-          scope: 'openid profile email',
-          client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
-          client_secret: this.config.get<string>('AUTH0_CLIENT_SECRET'),
-          connection: 'Username-Password-Authentication',
-        }),
+        this.http.post<Auth0LoginResponse>(
+          `https://${this.DOMAIN}/oauth/token`,
+          {
+            grant_type: 'password',
+            username: dto.email,
+            password: dto.password,
+            audience: this.config.get<string>('AUTH0_AUDIENCE'),
+            scope: 'openid profile email',
+            client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
+            client_secret: this.config.get<string>('AUTH0_CLIENT_SECRET'),
+            connection: 'Username-Password-Authentication',
+          },
+        ),
       );
 
       let requiresOTP: boolean = false;
@@ -272,11 +294,9 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
-
     try {
       await firstValueFrom(
-        this.http.post(`https://${domain}/dbconnections/change_password`, {
+        this.http.post(`https://${this.DOMAIN}/dbconnections/change_password`, {
           client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
           email,
           connection: 'Username-Password-Authentication',
@@ -295,13 +315,12 @@ export class AuthService {
   }
 
   async deleteUser(auth0Id: string): Promise<void> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
 
     try {
       await firstValueFrom(
         this.http.delete(
-          `https://${domain}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
           { headers: { Authorization: `Bearer ${mgmtToken}` } },
         ),
       );
@@ -317,11 +336,10 @@ export class AuthService {
   }
 
   async getAuth0UserByEmail(email: string): Promise<Auth0UserResponse> {
-    const domain = this.config.get<string>('AUTH0_DOMAIN');
     const mgmtToken = await this.getManagementToken();
     const { data } = await firstValueFrom(
       this.http.get<Auth0UserResponse[]>(
-        `https://${domain}/api/v2/users-by-email?email=${email}`,
+        `https://${this.DOMAIN}/api/v2/users-by-email?email=${email}`,
         {
           headers: {
             Authorization: `Bearer ${mgmtToken}`,
@@ -330,5 +348,83 @@ export class AuthService {
       ),
     );
     return data[0];
+  }
+
+  async getAuth0Roles(): Promise<Auth0Roles[]> {
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get<Auth0Roles[]>(`https://${this.DOMAIN}/api/v2/roles`, {
+        headers: {
+          Authorization: `Bearer ${mgmtToken}`,
+        },
+      }),
+    );
+    console.log(data);
+    return data;
+  }
+
+  async getAuth0UserRoles(auth0Id: string): Promise<Auth0Roles[]> {
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get<Auth0Roles[]>(
+        `https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+          },
+        },
+      ),
+    );
+    for (let i = 0; i < data.length; i++) {
+      const roll = data[i];
+      if (
+        roll.name !== UserRole.ADMIN &&
+        roll.name !== UserRole.ANALYST &&
+        roll.name !== UserRole.USER
+      ) {
+        data[i].name = UserRole.USER;
+      }
+    }
+    return data;
+  }
+
+  async updateAuth0UserRole(auth0Id: string, roles: UserRole[]) {
+    const mgmtToken = await this.getManagementToken();
+    //Get current roles:
+    const userRoles = await this.getAuth0UserRoles(auth0Id);
+    const rollIDsToRemove: string[] = [];
+    for (const roll of userRoles) {
+      rollIDsToRemove.push(roll.id);
+    }
+    //remove current roles:
+    this.http.delete(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`, {
+      headers: {
+        Authorization: `Bearer ${mgmtToken}`,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        roles: rollIDsToRemove,
+      },
+    });
+    //Find roleID that match roles of what we want to add:
+    const allRoles = await this.getAuth0Roles();
+    const rollIDsToAdd: string[] = [];
+    for (let i = 0; i < roles.length; i++) {
+      for (const roll of allRoles) {
+        if (roll.name === roles[i]) {
+          rollIDsToAdd.push(roll.id);
+        }
+      }
+    }
+    //Add roles to auth0
+    this.http.post(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`, {
+      headers: {
+        Authorization: `Bearer ${mgmtToken}`,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        roles: rollIDsToAdd,
+      },
+    });
   }
 }
