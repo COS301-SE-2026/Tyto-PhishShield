@@ -112,6 +112,8 @@ For the api-gateway we plan to use a blue-green deployment strategy to switch th
 flowchart TD
     A([On push: main, dev, Backend / pull: main, dev]) --> B(Job: Install dependencies)
     B -->C{Successfull Install?}
+	C --> |Yes| K[(Cache node_modules)]
+	K --> |use artifacts| D
     C -->|Yes| D[For each backend Service:]
     C -->|No| E([Report failour])
     D --> F(Job: build)
@@ -148,6 +150,8 @@ flowchart TD
     A([On push: main, dev, Frontend / pull: main, dev]) --> B(Job: Install dependencies)
     B -->C{Successfull Install?}
     C -->|Yes| D[For each frontend Service:]
+	C --> |Yes| K[(Cache node_modules)]
+	K --> |use artifacts| D
     C -->|No| E([Report failour])
     D --> F(Job: build)
     D --> G(Job: lint)
