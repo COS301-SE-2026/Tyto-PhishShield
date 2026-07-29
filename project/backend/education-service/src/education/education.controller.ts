@@ -60,7 +60,7 @@ export class EducationController {
   findAllAssignments() {
     return this.educationService.findAllAssignments();
   }
-
+// keep in mind what to do with the assignment fo admin pages.
   @Post('assignments')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -90,10 +90,10 @@ export class EducationController {
   }
 
   @Post('answers')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)//make sure the array length match what we have in the number of quuestions.
   @ApiBearerAuth()
   @HttpCode(200)
-  @ApiOperation({ summary: 'Submit answers for a pending assignment' })
+  @ApiOperation({ summary: 'Submit answers for a pening assignment' })
   submitAnswers(
     @Req() req: AuthenticatedRequest,
     @Body() dto: SubmitAnswersDto,
