@@ -66,3 +66,29 @@ describe('EducationService', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
+
+    describe('createQuestion', () => {
+      const dto: CreateQuestionDto = {
+        questionText: 'What is 2+2?',
+        options: ['3', '4', '5'],
+        correctOptionIndex: 1,
+      };
+  
+      it('creates and saves a question when correctOptionIndex is valid', async () => {
+        const savedQuestion = { id: 'q1', ...dto, createdAt: new Date() };
+        questionRepo.create.mockReturnValue(savedQuestion as any);
+        questionRepo.save.mockResolvedValue(savedQuestion as any);
+  
+        const result = await service.createQuestion(dto);
+        expect(result).toEqual(savedQuestion);
+        expect(questionRepo.create).toHaveBeenCalledWith(dto);
+        expect(questionRepo.save).toHaveBeenCalledWith(savedQuestion);
+      });
+  
+      it('throws BadRequestException when correctOptionIndex is out of bounds', async () => {
+        const invalidDto = { ...dto, correctOptionIndex: 5 };
+        await expect(service.createQuestion(invalidDto)).rejects.toThrow(
+          BadRequestException,
+        );
+      });
+    });
