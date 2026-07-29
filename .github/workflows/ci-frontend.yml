@@ -21,14 +21,14 @@ jobs:
           with:
             version: 11.1.1
         - name: Use Node.js ${{ matrix.node-version }}
-          uses: actions/setup-node@v6
+          uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
           with:
             node-version: ${{ matrix.node-version }}
             cache: "pnpm"
         - name: Install dependencies
           run: pnpm install --frozen-lockfile --ignore-scripts
         - name: Upload node_modules
-          uses: actions/upload-artifact@v7
+          uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
           with:
             name: node-modules
             path: node_modules
@@ -47,11 +47,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: lint
@@ -71,11 +71,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: tests
@@ -95,11 +95,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: build
@@ -119,11 +119,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: lint
@@ -143,11 +143,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: tests
@@ -167,11 +167,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: build
@@ -191,11 +191,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: lint
@@ -215,11 +215,11 @@ jobs:
             with:
               version: 11.1.1
           - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@v6
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
             with:
               node-version: ${{ matrix.node-version }}
           - name: Download node_modules
-            uses: actions/download-artifact@v7
+            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
             with:
               name: node-modules
           - name: build
