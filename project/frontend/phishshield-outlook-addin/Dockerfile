@@ -36,6 +36,8 @@ RUN chown -R nginx:nginx \
     /var/log/nginx \
     /etc/nginx/conf.d
 
+USER nginx
+
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
