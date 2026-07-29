@@ -1,6 +1,7 @@
 /* global jest, describe, beforeEach, afterEach, test, expect, global, require, Office, localStorage, document, HTMLButtonElement, process */
 
-//TODO: change localhost links once everything has been deployed and also add some more tests for the other function
+process.env.API_BASE = "http://localhost:3001/api";
+process.env.ADDIN_BASE_URL = "https://localhost:3000/";
 
 const officeMock = {
   onReady: jest.fn(),
