@@ -13,10 +13,10 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 10
 
   # mailing db sets up the mailing service's postgres database
   mailing_db:
@@ -123,6 +123,14 @@ services:
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - TCP_PORT=${ACCOUNTS_TCP_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=local
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
     ports:
       - '${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}'
@@ -164,14 +172,19 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-      - LOCAL_CORS=http://127.0.0.1
-      - SERVER_DOMAIN=${DOMAIN}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - LOG_DIR=/var/log/api-gateway
+      - ENVIRONMENT=local
+      - LOCAL_CORS=${LOCAL_CORS}
+      - OUTLOOK_ADDIN_CORS=${OUTLOOK_ADDIN_CORS}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     volumes:
       - api_gateway_logs:/var/log/api-gateway
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   # report db sets up the report service's postgres database
   report_db:
@@ -247,7 +260,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${XP_DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ${XP_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${XP_DB_NAME}"]
       interval: 1m30s
       timeout: 30s
       retries: 5
@@ -269,11 +282,15 @@ services:
       # Must be unique
     container_name: ${XP_APP_CONTAINER}
     environment:
-      - PORT=${XP_SERVICE_PORT}
-      - TCP_PORT=${XP_TCP_PORT}
-      - DB_HOST=${XP_DB_CONTAINER}
-      - XP_DB_PORT=${INTERNAL_DB_PORT}
+      - XP_SERVICE_PORT=${XP_SERVICE_PORT}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - XP_DB_CONTAINER=${XP_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - XP_DB_NAME=${XP_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
 
     ports:
       # Left side must be unique
@@ -409,8 +426,21 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
-    # ports:
-    #   - '5173:5173'
+    ports:
+    - '5173:5173'
+
+  # builds the outlook-addin using its dockerfile
+  outlook-addin:
+    build: 
+      context: ../../
+      dockerfile: project/frontend/phishshield-outlook-addin/Dockerfile
+      args:
+        API_BASE: "https://localhost/api"
+        ADDIN_BASE_URL: "https://localhost/addin/"
+    restart: on-failure
+    container_name: addin
+    ports:
+      - '3000:80'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:

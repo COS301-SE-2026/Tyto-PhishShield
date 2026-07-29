@@ -28,7 +28,6 @@ export class MicrosoftService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.jwksClient = jwksRsa({
       cache: true,
       rateLimit: true,
@@ -45,11 +44,16 @@ export class MicrosoftService {
         return callback(err);
       }
 
-      if (!key || !(key as unknown as { getPublicKey?: () => string })?.getPublicKey) {
+      if (
+        !key ||
+        !(key as unknown as { getPublicKey?: () => string })?.getPublicKey
+      ) {
         return callback(new Error('Failed to retrieve signing key'));
       }
 
-      const signingKey = (key as unknown as { getPublicKey: () => string }).getPublicKey();
+      const signingKey = (
+        key as unknown as { getPublicKey: () => string }
+      ).getPublicKey();
 
       callback(null, signingKey);
     });

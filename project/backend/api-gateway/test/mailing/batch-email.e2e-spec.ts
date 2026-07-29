@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MailingModule } from '../../src/mailing/mailing.module';
 import { JwtAuthGuard } from '../../src/auth/guards/jwt-auth.guard';
 
-const TEST_SENDER = 'onboarding@resend.dev';
+const TEST_SENDER = 'test@capstone-five-guys.dns.net.za';
 const TEST_RECIPIENTS = [
   'delivered@resend.dev',
   'delivered@resend.dev',
@@ -68,7 +68,7 @@ describe('Mailing Gateway - Batch Email (e2e)', () => {
       expect(response.body.message).toContain('PHISH-INVALID99');
     });
 
-    it('/batch-emails/send-batch-random-same-email (POST) - should send the same random template to all recipients at a shared near-future time', async () => {
+    it('/batch-emails/send-batch-random-same-email (POST) - should send the same random template to all recipients at a shared future time', async () => {
       const scheduledAt = new Date();
       const scheduledAtIso = scheduledAt.toISOString();
 
@@ -128,7 +128,7 @@ describe('Mailing Gateway - Batch Email (e2e)', () => {
         .expect(400);
     });
 
-    it('/batch-emails/send-batch-random-different-email (POST) - should schedule a different random template per recipient at a shared near-future time', async () => {
+    it('/batch-emails/send-batch-random-different-email (POST) - should schedule a different random template per recipient at a shared future time', async () => {
       const scheduledAt = new Date();
       const scheduledAtIso = scheduledAt.toISOString();
 

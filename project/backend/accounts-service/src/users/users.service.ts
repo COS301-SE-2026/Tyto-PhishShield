@@ -1,19 +1,36 @@
 /**
- * UsersService — business logic for user management.
+ * Service: UsersService
  *
- * - Handles CRUD operations against the user repository and performs user-related checks.
+ * Manages user entities – creation, lookups, profile updates,
+ * role changes, verification, and soft deletion.
+ * Publishes a {@link EventUser} event after a new user is created.
+ *
+ * Methods:
+ * - {@link UsersService#create} – persists a new user and fires a user.created event
+ * - {@link UsersService#findByAuth0Id} – looks up a user by their Auth0 ID
+ * - {@link UsersService#findByEmail} – looks up a user by email
+ * - {@link UsersService#findAll} – returns every user in the system
+ * - {@link UsersService#findById} – finds a user by internal UUID (throws 404 if missing)
+ * - {@link UsersService#updateRole} – changes a user's role
+ * - {@link UsersService#updateProfile} – updates name, email, and/or department
+ * - {@link UsersService#remove} – hard‑deletes a user by ID
+ * - {@link UsersService#removeByAuth0Id} – hard‑deletes a user by Auth0 ID
+ * - {@link UsersService#markVerified} – sets isVerified = true
+ * - {@link UsersService#deactivate} – sets isActive = false (soft delete)
  */
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import { EventProducerService } from '../event-producer/event-producer.service';
+import { Department } from './entities/user.entity';
 
-interface CreateUserInput {
+export interface CreateUserInput {
   auth0Id: string;
   email: string;
   name?: string;
   role?: UserRole;
+  department?: Department;
   isVerified?: boolean;
 }
 
@@ -25,16 +42,24 @@ export class UsersService {
     @Inject() private readonly event: EventProducerService,
   ) {}
 
-  create(input: CreateUserInput): Promise<User> {
+  async create(input: CreateUserInput): Promise<User> {
     const user = this.repo.create(input);
-    this.event.publishUserCreatedEvent({
-      id: user.id,
-      auth0Id: user.auth0Id,
-      name: user.name,
-      email: user.email,
-      department: '',
-    });
-    return this.repo.save(user);
+    const savedUser = await this.repo.save(user); // save first
+
+    // Fire-and-forget event with error logging
+    this.event
+      .publishUserCreatedEvent({
+        id: savedUser.id,
+        auth0Id: savedUser.auth0Id,
+        name: savedUser.name,
+        email: savedUser.email,
+        department: input.department ?? '',
+      })
+      .catch((err) =>
+        console.error('Failed to publish user.created event', err),
+      );
+
+    return savedUser;
   }
 
   findByAuth0Id(auth0Id: string): Promise<User | null> {
@@ -65,11 +90,12 @@ export class UsersService {
 
   async updateProfile(
     auth0Id: string,
-    data: { name?: string; email?: string },
+    data: { name?: string; email?: string; department?: Department },
   ): Promise<User> {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
+    if (data.department !== undefined) user.department = data.department;
     return this.repo.save(user);
   }
 

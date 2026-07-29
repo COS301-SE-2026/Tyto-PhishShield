@@ -27,6 +27,7 @@ import { Emails } from '../entities/emails.entity';
 import { Resend } from 'resend';
 import { EmailsDto } from '../dto/emails.dto';
 import * as crypto from 'crypto';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 @Injectable()
 export class EmailService {
@@ -37,6 +38,7 @@ export class EmailService {
     private configService: ConfigService,
     @InjectRepository(Emails)
     private readonly emailRepository: Repository<Emails>,
+    private readonly amqpConnection: AmqpConnection,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
@@ -143,6 +145,20 @@ export class EmailService {
 
       this.logger.log(`Email successfully dispatched from ${email.sender}`);
 
+      try {
+        const date = new Date();
+        await this.amqpConnection.publish(
+          'mailing-event-exchange',
+          'mailing.send',
+          {
+            recipient: recipient,
+            referenceNumber: referenceNumber,
+            scheduledAt: date.toISOString(),
+          },
+        );
+      } catch (publishError) {
+        this.logger.error(`Failed to publish email.send`, publishError);
+      }
       return {
         success: true,
         message: `Email with referencing number: ${referenceNumber}, sent instantly.`,
@@ -182,6 +198,20 @@ export class EmailService {
       this.logger.log(
         `Email successfully scheduled for dispatch at ${scheduledAt.toISOString()}`,
       );
+
+      try {
+        await this.amqpConnection.publish(
+          'mailing-event-exchange',
+          'mailing.schedule',
+          {
+            referenceNumber: emailReferenceNumber,
+            recipient: recipient,
+            scheduledAt: scheduledAt.toISOString(),
+          },
+        );
+      } catch (publishError) {
+        this.logger.error(`Failed to publish email.schedule`, publishError);
+      }
 
       return {
         success: true,
