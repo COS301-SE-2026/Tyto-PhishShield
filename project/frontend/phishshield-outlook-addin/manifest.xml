@@ -17,15 +17,15 @@
 
   <Description DefaultValue="Report suspicious emails to Tyto PhishShield."/>
 
-  <IconUrl DefaultValue="https://capstone-five-guys.dns.net.za/addin/assets/icon-64.png"/>
+  <IconUrl DefaultValue="https://localhost/addin/assets/icon-64.png"/>
 
-  <HighResolutionIconUrl DefaultValue="https://capstone-five-guys.dns.net.za/addin/assets/icon-128.png"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost/addin/assets/icon-128.png"/>
 
   <SupportUrl DefaultValue="https://www.tyto-phishshield.com/help"/>
 
   <!-- Added localhost to AppDomain for now. We can remove it and update the other link once the website is deployed -->
   <AppDomains>
-    <AppDomain>https://capstone-five-guys.dns.net.za/addin</AppDomain>
+    <AppDomain>https://localhost/addin</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -41,7 +41,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://capstone-five-guys.dns.net.za/addin/taskpane.html"/>
+        <SourceLocation DefaultValue="https://localhost/addin/taskpane.html"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -115,14 +115,14 @@
     <Resources>
 
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://capstone-five-guys.dns.net.za/addin/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://capstone-five-guys.dns.net.za/addin/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://capstone-five-guys.dns.net.za/addin/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://localhost/addin/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://localhost/addin/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://localhost/addin/assets/icon-80.png"/>
       </bt:Images>
 
       <bt:Urls>
-        <bt:Url id="Commands.Url" DefaultValue="https://capstone-five-guys.dns.net.za/addin/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://capstone-five-guys.dns.net.za/addin/taskpane.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://localhost/addin/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost/addin/taskpane.html"/>
       </bt:Urls>
 
       <bt:ShortStrings>

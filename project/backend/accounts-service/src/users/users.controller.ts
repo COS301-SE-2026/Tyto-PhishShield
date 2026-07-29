@@ -1,3 +1,17 @@
+/**
+ * Controller: UsersController
+ * Base path: /api/users
+ *
+ * Exposes user management endpoints protected by JWT authentication.
+ * Role‑based access is enforced with {@link RolesGuard} and {@link Roles} decorators.
+ *
+ * Endpoints:
+ * - {@link UsersController#findAll} – (admin, analyst) returns every user
+ * - {@link UsersController#findOne} – returns a user by ID; regular users can only see themselves
+ * - {@link UsersController#updateRole} – (admin) changes a user's role
+ * - {@link UsersController#remove} – (admin) soft‑deletes a user (sets isActive = false)
+ */
+
 import {
   Controller,
   Get,
