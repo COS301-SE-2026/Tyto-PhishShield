@@ -26,6 +26,8 @@ import { XpService } from './xp.service';
 import { GiveXpDto } from '../dto/give-xp.dto';
 import { XpEntity } from '../entities/xp.entity';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { XpResponseDto } from '../dto/xp-response.dto';
+import { NetXpResponseDto } from '../dto/net-xp-response.dto';
 
 @Controller('xp')
 export class XpController {
@@ -56,24 +58,26 @@ export class XpController {
   }
 
   @Get()
-  async getAllXp(): Promise<XpEntity[]> {
+  async getAllXp(): Promise<XpResponseDto[]> {
     return this.xpService.getAllXp();
   }
 
   @Get('net')
-  async getNetXpAllUsers(): Promise<{ auth0Id: string; totalXp: number }[]> {
+  async getNetXpAllUsers(): Promise<NetXpResponseDto[]> {
     return this.xpService.getNetXpAllUsers();
   }
 
   @Get(':auth0Id')
-  async getXpByUser(@Param('auth0Id') auth0Id: string): Promise<XpEntity[]> {
+  async getXpByUser(
+    @Param('auth0Id') auth0Id: string,
+  ): Promise<XpResponseDto[]> {
     return this.xpService.getXpByUser(auth0Id);
   }
 
   @Get(':auth0Id/net')
   async getNetXpByUser(
     @Param('auth0Id') auth0Id: string,
-  ): Promise<{ auth0Id: string; totalXp: number }> {
+  ): Promise<NetXpResponseDto> {
     return this.xpService.getNetXpByUser(auth0Id);
   }
 }
