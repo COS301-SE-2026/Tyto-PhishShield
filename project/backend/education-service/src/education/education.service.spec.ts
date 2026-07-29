@@ -69,7 +69,7 @@ describe('EducationService', () => {
 
     describe('createQuestion', () => {
       const dto: CreateQuestionDto = {
-        questionText: 'What is 2+2?',
+        questionText: 'What is 2+2?',// a tough question for testing of course.
         options: ['3', '4', '5'],
         correctOptionIndex: 1,
       };
@@ -92,3 +92,16 @@ describe('EducationService', () => {
         );
       });
     });
+
+      describe('findAllQuestions', () => {
+    it('returns all questions ordered by createdAt desc', async () => {
+      const questions = [{ id: 'q1' }, { id: 'q2' }];// will this work, do we have 2 questions here or will it not work?...
+      questionRepo.find.mockResolvedValue(questions as any);//will linter allow me this?
+
+      const result = await service.findAllQuestions();
+      expect(result).toEqual(questions);
+      expect(questionRepo.find).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+      });
+    });
+  });
