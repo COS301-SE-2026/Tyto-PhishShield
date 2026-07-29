@@ -325,6 +325,7 @@ export function Register({ onNavigate }: RegisterProps) {
       leftContent={<StepSidebar step={step} />}
       rightContent={rightPanel}
       onLogoClick={() => onNavigate('/')}
+      onHelpClick={() => onNavigate('/help')}
     />
   );
 }

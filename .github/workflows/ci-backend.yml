@@ -55,7 +55,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:api-gateway
+            run: pnpm run lint:api
           
     API-Gateway-tests:
         name: API Gateway Backend tests
@@ -79,7 +79,7 @@ jobs:
             with:
               name: node-modules
           - name: test
-            run: pnpm run test:api-gateway
+            run: pnpm run test:api
     
     API-Gateway-build:
         name: API Gateway Backend build
@@ -103,7 +103,7 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run build:api-gateway
+            run: pnpm run build:api
 
     Accounts-Service-lint:
         name: Accounts Service Backend lint
@@ -127,7 +127,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:accounts-service
+            run: pnpm run lint:accounts
 
     Accounts-Service-tests:
         name: Accounts Service Backend tests
@@ -151,7 +151,7 @@ jobs:
             with:
               name: node-modules
           - name: test
-            run: pnpm run test:accounts-service
+            run: pnpm run test:accounts
     
     Accounts-Service-build:
         name: Accounts Service Backend build
@@ -175,7 +175,7 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run build:accounts-service
+            run: pnpm run build:accounts
 
     Mailing-Service-lint:
         name: Mailing Service Backend lint
@@ -199,7 +199,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:mailing-service
+            run: pnpm run lint:mailing
 
     Mailing-Service-tests:
         name: Mailing Service Backend tests
@@ -223,7 +223,7 @@ jobs:
             with:
               name: node-modules
           - name: test
-            run: pnpm run test:mailing-service
+            run: pnpm run test:mailing
     
     Mailing-Service-build:
         name: Mailing Service Backend build
@@ -247,7 +247,7 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run  build:mailing-service
+            run: pnpm run  build:mailing
     
     Report-Service-lint:
         name: Report Service Backend lint
@@ -271,7 +271,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:report-service
+            run: pnpm run lint:report
 
     Report-Service-tests:
         name: Report Service Backend tests
@@ -295,7 +295,7 @@ jobs:
             with:
               name: node-modules
           - name: test
-            run: pnpm run test:report-service
+            run: pnpm run test:report
     
     Report-Service-build:
         name: Report Service Backend build
@@ -319,7 +319,7 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run build:report-service
+            run: pnpm run build:report
     
     XP-Service-lint:
         name: XP Service Backend lint
@@ -343,7 +343,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:xp-service
+            run: pnpm run lint:xp
 
     XP-Service-tests:
         name: XP Service Backend tests
@@ -367,7 +367,7 @@ jobs:
             with:
               name: node-modules
           - name: test
-            run: pnpm run test:xp-service
+            run: pnpm run test:xp
     
     XP-Service-build:
         name: XP Service Backend build
@@ -391,7 +391,7 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run build:xp-service
+            run: pnpm run build:xp
 
     Education-Service-lint:
         name: Education Service Backend lint
@@ -415,7 +415,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:education-service
+            run: pnpm run lint:education
 
     Education-Service-tests:
         name: Education Service Backend tests
@@ -439,7 +439,7 @@ jobs:
             with:
               name: node-modules
           - name: test
-            run: pnpm run test:education-service
+            run: pnpm run test:education
     
     Education-Service-build:
         name: Education Service Backend build
@@ -463,7 +463,7 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run build:education-service
+            run: pnpm run build:education
 
     Analytics-Service-lint:
         name: Analytics Service Backend lint
@@ -487,7 +487,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:analytics-service
+            run: pnpm run lint:analytics
 
     Analytics-Service-tests:
         name: Analytics Service Backend tests
@@ -511,7 +511,7 @@ jobs:
             with:
               name: node-modules
           - name: test
-            run: pnpm run test:analytics-service
+            run: pnpm run test:analytics
     
     Analytics-Service-build:
         name: Analytics Service Backend build
@@ -535,4 +535,4 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run build:analytics-service
+            run: pnpm run build:analytics

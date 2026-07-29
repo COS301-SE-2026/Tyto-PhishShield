@@ -45,7 +45,7 @@ function App() {
       <Route path="/users" element={ <ProtectedRoute minRole="analyst"><Users onNavigate={handleNavigate} activePath="/users" /></ProtectedRoute> } />
       <Route path="/users/:id" element={ <ProtectedRoute minRole="analyst"><UserProfileById onNavigate={handleNavigate} /></ProtectedRoute> } />
       <Route path="/leaderboard" element={ <ProtectedRoute><Leaderboard onNavigate={handleNavigate} activePath="/leaderboard" /></ProtectedRoute> } />
-      <Route path="/help" element={ <ProtectedRoute><Help onNavigate={handleNavigate} activePath="/help" /></ProtectedRoute>} />
+      <Route path="/help" element={ <Help onNavigate={handleNavigate} activePath="/help" />} />
     </Routes>
   );
 }
