@@ -1,10 +1,11 @@
 name: frontend CI
 
 on:
-  push:
-    branches: [main, dev, frontend]
-  pull_request:
-    branches: [main, dev]
+  workflow_call:
+  # push:
+  #   branches: [Frontend]
+  # pull_request:
+  #   branches: [main, dev]
 
 jobs:
     install:

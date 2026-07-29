@@ -1,10 +1,11 @@
 name: backend CI
 
 on:
-  push:
-    branches: [main, dev, backend]
-  pull_request:
-    branches: [main, dev]
+  workflow_call:
+  # push:
+  #    branches: [Backend]
+  # pull_request:
+  #   branches: [main, dev]
 
 jobs:
     install:
