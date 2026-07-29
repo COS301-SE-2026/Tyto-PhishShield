@@ -3,6 +3,7 @@ import { XpController } from './xp.controller';
 import { XpService } from './xp.service';
 import { GiveXpDto } from '../dto/give-xp.dto';
 import { XpReason } from '../entities/xp.entity';
+import { Logger, NotFoundException } from '@nestjs/common';
 
 const mockXpService = {
   giveXp: jest.fn(),
@@ -29,8 +30,47 @@ describe('XpController', () => {
     expect(controller).toBeDefined();
   });
 
+  describe('eventGiveXp', () => {
+    const dto: GiveXpDto = {
+      auth0Id: 'auth0|123',
+      amount: 50,
+      reason: XpReason.QUIZ,
+    };
+
+    it('should delegate to xpService.giveXp', async () => {
+      mockXpService.giveXp.mockResolvedValue({ id: 1 });
+      await controller.eventGiveXp(dto);
+
+      expect(mockXpService.giveXp).toHaveBeenCalledWith(dto);
+    });
+
+    it('should now throw error for NotFoundException', async () => {
+      // We mock the Logger for the "warn" log
+      // We temporarily change what Logger.prototype.warn does by using spyOn and mockRestore
+      const mockLogger = jest
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => undefined);
+
+      mockXpService.giveXp.mockRejectedValue(
+        new NotFoundException(`User ${dto.auth0Id} not found`),
+      );
+
+      await expect(controller.eventGiveXp(dto)).resolves.toBeUndefined();
+      expect(mockLogger).toHaveBeenCalled();
+
+      mockLogger.mockRestore();
+    });
+
+    it('should throw error since it is not NotFoundException', async () => {
+      const error = new Error('unexpected failure');
+      mockXpService.giveXp.mockRejectedValue(error);
+
+      await expect(controller.eventGiveXp(dto)).rejects.toThrow(error);
+    });
+  });
+
   describe('giveXp', () => {
-    it('should delegate to xpService.giveXp and return the result', async () => {
+    it('should delegate to xpService.giveXp', async () => {
       const dto: GiveXpDto = {
         auth0Id: 'auth0|123',
         amount: 100,
@@ -47,7 +87,7 @@ describe('XpController', () => {
   });
 
   describe('getAllXp', () => {
-    it('should delegate to xpService.getAllXp and return the result', async () => {
+    it('should delegate to xpService.getAllXp', async () => {
       const entries = [{ id: 1 }, { id: 2 }];
       mockXpService.getAllXp.mockResolvedValue(entries);
 
@@ -59,19 +99,29 @@ describe('XpController', () => {
   });
 
   describe('getNetXpAllUsers', () => {
-    it('should delegate to xpService.getNetXpAllUsers and return the result', async () => {
-      const leaderboard = [{ auth0Id: 'auth0|123', totalXp: 300 }];
-      mockXpService.getNetXpAllUsers.mockResolvedValue(leaderboard);
+    it('should delegate to xpService.getNetXpAllUsers', async () => {
+      const entry = [
+        {
+          totalXp: 300,
+          user: {
+            auth0Id: 'auth0|123',
+            name: 'Alice',
+            email: 'alice@example.com',
+            department: 'Test',
+          },
+        },
+      ];
+      mockXpService.getNetXpAllUsers.mockResolvedValue(entry);
 
       const result = await controller.getNetXpAllUsers();
 
       expect(mockXpService.getNetXpAllUsers).toHaveBeenCalled();
-      expect(result).toBe(leaderboard);
+      expect(result).toBe(entry);
     });
   });
 
   describe('getXpByUser', () => {
-    it('should delegate to xpService.getXpByUser with the auth0Id and return the result', async () => {
+    it('should delegate to xpService.getXpByUser with the auth0Id', async () => {
       const auth0Id = 'auth0|123';
       const entries = [{ id: 1, userId: 1, amount: 100 }];
       mockXpService.getXpByUser.mockResolvedValue(entries);
@@ -84,15 +134,23 @@ describe('XpController', () => {
   });
 
   describe('getNetXpByUser', () => {
-    it('should delegate to xpService.getNetXpByUser with the auth0Id and return the result', async () => {
+    it('should delegate to xpService.getNetXpByUser with the auth0Id', async () => {
       const auth0Id = 'auth0|123';
-      const summary = { auth0Id, totalXp: 300 };
-      mockXpService.getNetXpByUser.mockResolvedValue(summary);
+      const entry = {
+        totalXp: 300,
+        user: {
+          auth0Id,
+          name: 'Alice',
+          email: 'alice@example.com',
+          department: 'Test',
+        },
+      };
+      mockXpService.getNetXpByUser.mockResolvedValue(entry);
 
       const result = await controller.getNetXpByUser(auth0Id);
 
       expect(mockXpService.getNetXpByUser).toHaveBeenCalledWith(auth0Id);
-      expect(result).toBe(summary);
+      expect(result).toBe(entry);
     });
   });
 });

@@ -157,7 +157,7 @@ describe('EmailController', () => {
   });
 
   describe('scheduleSendEmail', () => {
-    it('should parse the date string and trigger the schedule sequence', async () => {
+    it('should schedule a single email to recipient', async () => {
       const serviceResponse = {
         success: true,
         message: 'Email scheduled successfully',

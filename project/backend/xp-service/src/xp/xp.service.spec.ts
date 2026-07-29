@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { XpService } from './xp.service';
 import { XpEntity, XpReason } from '../entities/xp.entity';
@@ -10,12 +13,19 @@ const mockUser: Partial<UserEntity> = {
   id: '1',
   auth0Id: 'auth0|123',
   name: 'Alice',
+  email: 'test@example.com',
+  department: 'Example',
 };
 const mockXpEntry: Partial<XpEntity> = {
   id: '1',
   userId: '1',
   amount: 100,
   reason: XpReason.QUIZ,
+};
+
+const mockXpEntryWithUser: Partial<XpEntity> = {
+  ...mockXpEntry,
+  user: mockUser as UserEntity,
 };
 
 const mockQueryBuilder = {
@@ -109,19 +119,59 @@ describe('XpService', () => {
       await expect(service.giveXp(dto)).rejects.toThrow(NotFoundException);
       expect(mockXpRepository.create).not.toHaveBeenCalled();
     });
+
+    it('should throw InternalServerErrorException when saving fails', async () => {
+      mockUserRepository.findOneBy.mockResolvedValue(mockUser);
+      mockXpRepository.create.mockResolvedValue(mockXpEntry);
+      mockXpRepository.save.mockRejectedValue(new Error('db unavailable'));
+      await expect(service.giveXp(dto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+
+      expect(mockAmqpConnection.publish).not.toHaveBeenCalled();
+    });
+
+    it('should save entry when publishing xp.given event fails', async () => {
+      mockUserRepository.findOneBy.mockResolvedValue(mockUser);
+      mockXpRepository.create.mockReturnValue(mockXpEntry);
+      mockXpRepository.save.mockResolvedValue(mockXpEntry);
+      mockAmqpConnection.publish.mockRejectedValue(new Error('broker down'));
+
+      const result = await service.giveXp(dto);
+
+      expect(result).toBe(mockXpEntry);
+      expect(mockAmqpConnection.publish).toHaveBeenCalledWith(
+        'xp-event-exchange',
+        'xp.given',
+        { auth0Id: mockUser.auth0Id, amount: dto.amount, reason: dto.reason },
+      );
+    });
   });
 
   describe('getAllXp', () => {
     it('should return all xp entries ordered by createdAt DESC', async () => {
-      const entries = [mockXpEntry];
-      mockXpRepository.find.mockResolvedValue(entries);
+      mockXpRepository.find.mockResolvedValue([mockXpEntryWithUser]);
 
       const result = await service.getAllXp();
 
       expect(mockXpRepository.find).toHaveBeenCalledWith({
         order: { createdAt: 'DESC' },
+        relations: ['user'],
       });
-      expect(result).toBe(entries);
+      expect(result).toEqual([
+        {
+          id: mockXpEntry.id,
+          amount: mockXpEntry.amount,
+          reason: mockXpEntry.reason,
+          createdAt: mockXpEntry.createdAt,
+          user: {
+            auth0Id: mockUser.auth0Id,
+            name: mockUser.name,
+            email: mockUser.email,
+            department: mockUser.department,
+          },
+        },
+      ]);
     });
   });
 
@@ -140,7 +190,20 @@ describe('XpService', () => {
         where: { userId: mockUser.id },
         order: { createdAt: 'DESC' },
       });
-      expect(result).toBe(entries);
+      expect(result).toEqual([
+        {
+          id: mockXpEntry.id,
+          amount: mockXpEntry.amount,
+          reason: mockXpEntry.reason,
+          createdAt: mockXpEntry.createdAt,
+          user: {
+            auth0Id: mockUser.auth0Id,
+            name: mockUser.name,
+            email: mockUser.email,
+            department: mockUser.department,
+          },
+        },
+      ]);
     });
 
     it('should throw NotFoundException when the user does not exist', async () => {
@@ -153,13 +216,21 @@ describe('XpService', () => {
   });
 
   describe('getNetXpByUser', () => {
-    it('should return the numeric totalXp for an existing user', async () => {
+    it('should return totalXp for an existing user', async () => {
       mockUserRepository.findOneBy.mockResolvedValue(mockUser);
       mockQueryBuilder.getRawOne.mockResolvedValue({ totalXp: '250' });
 
       const result = await service.getNetXpByUser('auth0|123');
 
-      expect(result).toEqual({ auth0Id: 'auth0|123', totalXp: 250 });
+      expect(result).toEqual({
+        totalXp: 250,
+        user: {
+          auth0Id: mockUser.auth0Id,
+          name: mockUser.name,
+          email: mockUser.email,
+          department: mockUser.department,
+        },
+      });
     });
 
     it('should return 0 when the query returns null (user has no xp)', async () => {
@@ -168,7 +239,15 @@ describe('XpService', () => {
 
       const result = await service.getNetXpByUser('auth0|123');
 
-      expect(result).toEqual({ auth0Id: 'auth0|123', totalXp: 0 });
+      expect(result).toEqual({
+        totalXp: 0,
+        user: {
+          auth0Id: mockUser.auth0Id,
+          name: mockUser.name,
+          email: mockUser.email,
+          department: mockUser.department,
+        },
+      });
     });
 
     it('should throw NotFoundException when the user does not exist', async () => {
@@ -178,30 +257,77 @@ describe('XpService', () => {
         NotFoundException,
       );
     });
+
+    it('should throw InternalServerErrorException when query fails', async () => {
+      mockUserRepository.findOneBy.mockResolvedValue(mockUser);
+      mockQueryBuilder.getRawOne.mockRejectedValue(new Error('db unavailable'));
+
+      await expect(service.getNetXpByUser('auth0|123')).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
   });
 
   describe('getNetXpAllUsers', () => {
     it('should return all users with totalXp cast to a number', async () => {
       const rawRows = [
-        { auth0Id: 'auth0|123', name: 'Alice', totalXp: '300' },
-        { auth0Id: 'auth0|456', name: 'Bob', totalXp: '150' },
+        {
+          auth0Id: 'auth0|123',
+          name: 'Alice',
+          email: 'alice@example.com',
+          department: 'Test',
+          totalXp: '300',
+        },
+        {
+          auth0Id: 'auth0|456',
+          name: 'Bob',
+          email: 'bob@example.com',
+          department: 'Test',
+          totalXp: '150',
+        },
       ];
       mockQueryBuilder.getRawMany.mockResolvedValue(rawRows);
 
       const result = await service.getNetXpAllUsers();
 
       expect(result).toEqual([
-        { auth0Id: 'auth0|123', totalXp: 300 },
-        { auth0Id: 'auth0|456', totalXp: 150 },
+        {
+          totalXp: 300,
+          user: {
+            auth0Id: 'auth0|123',
+            name: 'Alice',
+            email: 'alice@example.com',
+            department: 'Test',
+          },
+        },
+        {
+          totalXp: 150,
+          user: {
+            auth0Id: 'auth0|456',
+            name: 'Bob',
+            email: 'bob@example.com',
+            department: 'Test',
+          },
+        },
       ]);
     });
 
-    it('should return an empty array when no users have xp', async () => {
+    it('should return empty array when no users have xp', async () => {
       mockQueryBuilder.getRawMany.mockResolvedValue([]);
 
       const result = await service.getNetXpAllUsers();
 
       expect(result).toEqual([]);
+    });
+
+    it('should throw InternalServerErrorException when the query fails', async () => {
+      mockQueryBuilder.getRawMany.mockRejectedValue(
+        new Error('db unavailable'),
+      );
+
+      await expect(service.getNetXpAllUsers()).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });

@@ -13,10 +13,10 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 10
 
   # mailing db sets up the mailing service's postgres database
   mailing_db:
@@ -123,6 +123,14 @@ services:
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - TCP_PORT=${ACCOUNTS_TCP_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=local
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
     ports:
       - '${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}'
@@ -164,11 +172,12 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-      - LOCAL_CORS=http://127.0.0.1
-      - SERVER_DOMAIN=${DOMAIN}
+      - SERVER_DOMAIN=${SERVER_DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - LOG_DIR=/var/log/api-gateway
       - ENVIRONMENT=local
+      - LOCAL_CORS=${LOCAL_CORS}
+      - OUTLOOK_ADDIN_CORS=${OUTLOOK_ADDIN_CORS}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     volumes:
@@ -417,8 +426,21 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
-    # ports:
-    #   - '5173:5173'
+    ports:
+    - '5173:5173'
+
+  # builds the outlook-addin using its dockerfile
+  outlook-addin:
+    build: 
+      context: ../../
+      dockerfile: project/frontend/phishshield-outlook-addin/Dockerfile
+      args:
+        API_BASE: "https://localhost/api"
+        ADDIN_BASE_URL: "https://localhost/addin/"
+    restart: on-failure
+    container_name: addin
+    ports:
+      - '3000:80'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:

@@ -1,10 +1,14 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Otp } from './otp.entity';
+import { VerifiedDevice } from './otp.entity';
 import { OtpService } from './otp.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Otp])],
+  imports: [
+    TypeOrmModule.forFeature([VerifiedDevice]),
+    forwardRef(() => AuthModule),
+  ],
   providers: [OtpService],
   exports: [OtpService],
 })

@@ -20,6 +20,9 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
           { name: 'education-event-exchange', type: 'topic' },
         ],
         enableControllerDiscovery: true,
+        connectionInitOptions: {
+          wait: false,
+        },
       }),
     }),
   ],

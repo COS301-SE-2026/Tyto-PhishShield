@@ -3,9 +3,18 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { AccountsService } from './accounts.service';
 import { UserEntity } from '../entities/user.entity';
 import { User } from '../dto/user.dto';
+import { InternalServerErrorException } from '@nestjs/common';
+
+const mockQueryBuilder = {
+  insert: jest.fn().mockReturnThis(),
+  into: jest.fn().mockReturnThis(),
+  values: jest.fn().mockReturnThis(),
+  orUpdate: jest.fn().mockReturnThis(),
+  execute: jest.fn(),
+};
 
 const mockUserRepository = {
-  upsert: jest.fn(),
+  createQueryBuilder: jest.fn(() => mockQueryBuilder),
 };
 
 describe('AccountsService', () => {
@@ -40,24 +49,30 @@ describe('AccountsService', () => {
     };
 
     it('should upsert the user with the correct data', async () => {
-      mockUserRepository.upsert.mockResolvedValue(undefined);
+      mockQueryBuilder.execute.mockResolvedValue(undefined);
 
       await service.createUser(user);
 
-      expect(mockUserRepository.upsert).toHaveBeenCalledWith(
-        {
-          id: user.id,
-          auth0Id: user.auth0Id,
-          name: user.name,
-          email: user.email,
-          department: user.department,
-        },
-        { conflictPaths: ['auth0Id'], skipUpdateIfNoValuesChanged: true },
+      expect(mockUserRepository.createQueryBuilder).toHaveBeenCalled();
+      expect(mockQueryBuilder.insert).toHaveBeenCalled();
+      expect(mockQueryBuilder.into).toHaveBeenCalledWith(UserEntity);
+      expect(mockQueryBuilder.values).toHaveBeenCalledWith({
+        id: user.id,
+        auth0Id: user.auth0Id,
+        name: user.name,
+        email: user.email,
+        department: user.department,
+      });
+      expect(mockQueryBuilder.orUpdate).toHaveBeenCalledWith(
+        ['name', 'email', 'department'],
+        ['auth0Id'],
+        { skipUpdateIfNoValuesChanged: true },
       );
+      expect(mockQueryBuilder.execute).toHaveBeenCalled();
     });
 
     it('should return void on success', async () => {
-      mockUserRepository.upsert.mockResolvedValue(undefined);
+      mockQueryBuilder.execute.mockResolvedValue(undefined);
 
       const result = await service.createUser(user);
 
@@ -65,8 +80,12 @@ describe('AccountsService', () => {
     });
 
     it('should propagate errors thrown by the repository', async () => {
-      mockUserRepository.upsert.mockRejectedValue(
-        new Error('Failed to create or update user auth0|123'),
+      mockQueryBuilder.execute.mockRejectedValue(
+        new Error('Failed to connect to the database'),
+      );
+
+      await expect(service.createUser(user)).rejects.toThrow(
+        InternalServerErrorException,
       );
 
       await expect(service.createUser(user)).rejects.toThrow(
