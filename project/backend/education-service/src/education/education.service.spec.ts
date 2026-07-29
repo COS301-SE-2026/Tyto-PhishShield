@@ -192,3 +192,18 @@ describe('EducationService', () => {
         expect(result).toBeNull();
       });
     });
+
+      describe('getMyHistory', () => {
+    it('returns all assignments for the given user orered by createdAt desc', async () => {
+      const assignments = [{ id: 'a1' }, { id: 'a2' }];
+      assignmentRepo.find.mockResolvedValue(assignments as any);
+
+      const result = await service.getMyHistory('auth0|123');//this one should be easy.
+      expect(result).toEqual(assignments);
+      expect(assignmentRepo.find).toHaveBeenCalledWith({
+        where: { auth0Id: 'auth0|123' },
+        order: { createdAt: 'DESC' },
+      });
+    });
+  });
+});
