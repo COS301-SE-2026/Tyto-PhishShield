@@ -126,7 +126,7 @@ jobs:
             with:
               name: node-modules
           - name: lint
-            run: pnpm run lint:outlook-addin
+            run: pnpm run lint:addin
     
     Outlook-Addin-tests:
         name: Outlook Addin tests
@@ -150,7 +150,7 @@ jobs:
             with:
               name: node-modules
           - name: tests
-            run: pnpm run test:outlook-addin
+            run: pnpm run test:addin
     
     Outlook-Addin-build:
         name: Outlook Addin build
@@ -174,7 +174,7 @@ jobs:
             with:
               name: node-modules
           - name: build
-            run: pnpm run build:outlook-addin
+            run: pnpm run build:addin
       
     design-spec-lint:
         name: design spec lint
