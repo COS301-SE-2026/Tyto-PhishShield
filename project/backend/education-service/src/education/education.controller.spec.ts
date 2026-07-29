@@ -65,5 +65,79 @@ describe('EducationController', () => {
     });
   });
 
+    describe('findAllAssignments', () => {
+    it('delegates to the service', () => {
+      const assignments = [{ id: 'a1' }];
+      service.findAllAssignments.mockReturnValue(assignments as any);
+
+      const result = controller.findAllAssignments();
+      expect(result).toBe(assignments);
+      expect(service.findAllAssignments).toHaveBeenCalled();
+    });
+  });
+
+    describe('createAssignment', () => {
+    it('extracts authId from the request and calls the service', () => {
+      const req = { user: { auth0Id: 'auth0|456', email: '', role: '' } } as any;//keeping these blanks as not needed and as extra test in test iykyk.
+      const assignment = { id: 'a1' };//linter much nicer in spec as well.
+      service.createAssignment.mockReturnValue(assignment as any);
+
+      const result = controller.createAssignment(req);
+      expect(result).toBe(assignment);
+      expect(service.createAssignment).toHaveBeenCalledWith('auth0|456');
+    });
+  });
+
+    describe('getMyAssignment', () => {
+      it('returns the current pending assignment for the user', () => {
+        const req = { user: { auth0Id: 'auth0|789' } } as any;
+        const assignment = { id: 'a1', questionIds: ['q1'] };
+        service.getMyAssignment.mockReturnValue(assignment as any);
+  
+        const result = controller.getMyAssignment(req);
+        expect(result).toBe(assignment);
+        expect(service.getMyAssignment).toHaveBeenCalledWith('auth0|789');
+      });
+    });
+
+      describe('getMyHistory', () => {
+        it('calls the service with the authenticated user id', () => {
+          const req = { user: { auth0Id: 'auth0|000' } } as any;
+          const history = [{ id: 'a1' }, { id: 'a2' }];
+          service.getMyHistory.mockReturnValue(history as any);
+    
+          const result = controller.getMyHistory(req);
+          expect(result).toBe(history);
+          expect(service.getMyHistory).toHaveBeenCalledWith('auth0|000');
+        });
+      });
+
+        describe('submitAnswers', () => {
+          it('forwards the dto and auth0Id to the service', () => {
+            const req = { user: { auth0Id: 'auth0|111' } } as any;
+            const dto: SubmitAnswersDto = {
+              assignmentId: 'a1',
+              answers: [1, 0],
+            };
+            const resultPayload = { passed: true, xpAwarded: 10 };
+            service.submitAnswers.mockReturnValue(resultPayload as any);
+      
+            const result = controller.submitAnswers(req, dto);
+            expect(result).toBe(resultPayload);
+            expect(service.submitAnswers).toHaveBeenCalledWith('auth0|111', dto);
+          });
+        });
+
+
+          describe('getHistoryTcp', () => {
+            it('calls getMyHistory on the service with the given auth0Id', () => {
+              const history = [{ id: 'a1' }];
+              service.getMyHistory.mockReturnValue(history as any);
+        
+              const result = controller.getHistoryTcp('auth0|tcp');
+              expect(result).toBe(history);
+              expect(service.getMyHistory).toHaveBeenCalledWith('auth0|tcp');
+            });
+          });
 });
 
