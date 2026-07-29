@@ -1,244 +1,656 @@
-import React, { useState } from 'react';
-import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge, Button, Modal } from '../../components/ui';
-//import { useAuth } from '../../context/auth-context';
-import { useToast } from '../../context/toast-context';
-import type { TrainingStatus } from '../../types';
+import {useEffect, useState, type CSSProperties} from "react";
+import { AppLayout } from "../../components/layout/app-layout";
+import { Badge, Card, Button } from "../../components/ui";
+import { useToast } from "../../context/toast-context";
+import { getMyAssignment, submitAnswers, getMyEducationHistory, type Assignment, type PendingAssignment, type SubmitAnswerResponse, type AssignmentStatus } from "../../services/education";
+import { useAuth } from "../../context/auth-context";
+import { AdminTraining } from "./admin-training";
 
 interface TrainingProps {
   onNavigate: (path: string) => void;
   activePath: string;
 }
 
-interface Module {
-  id: string;
-  title: string;
-  desc: string;
-  status: TrainingStatus;
-  score: number | null;
-  dueDate: string | null;
-  estimatedMinutes: number;
-  lessons: number;
-  quiz: boolean;
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error? error.message : 'An error occured.'
 }
 
-const MODULES: Module[] = [
-  { id: '1', title: 'Introduction to Social Engineering', desc: 'Understand the psychology behind social engineering and how attackers exploit human trust.', status: 'in_progress', score: null, dueDate: '2025-05-20', estimatedMinutes: 25, lessons: 4, quiz: true },
-  { id: '2', title: 'Spear Phishing Awareness', desc: 'Learn to identify targeted phishing attacks that use personal information to appear legitimate.', status: 'not_started', score: null, dueDate: '2025-05-27', estimatedMinutes: 20, lessons: 3, quiz: true },
-  { id: '3', title: 'Phishing in Microsoft Outlook', desc: 'Hands-on training for identifying and reporting suspicious emails directly within Outlook.', status: 'completed', score: 92, dueDate: null, estimatedMinutes: 15, lessons: 3, quiz: true },
-  { id: '4', title: 'Password Security & MFA', desc: 'Best practices for creating strong passwords and enabling multi-factor authentication.', status: 'completed', score: 85, dueDate: null, estimatedMinutes: 18, lessons: 5, quiz: true },
-];
+type TrainingFilter = 'all' | 'not_started' | 'completed';
+type SelectedAnswers = Record<string, number>;
 
-const STATUS_CONFIG: Record<TrainingStatus, { label: string; badge: React.ReactNode }> = {
-  not_started: { label: 'Not Started', badge: <Badge variant="neutral">Not Started</Badge> },
-  in_progress: { label: 'In Progress', badge: <Badge variant="warning">In Progress</Badge> },
-  completed:   { label: 'Completed',   badge: <Badge variant="success">Completed</Badge> },
-};
+function formatDate(date: string): string{
+  return new Date(date).toLocaleDateString('en-ZA', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
 
-// Simple quiz modal
-function QuizModal({ module: mod, isOpen, onClose, onComplete }: {
-  module: Module; isOpen: boolean; onClose: () => void; onComplete: (score: number) => void;
-}) {
-  const QUESTIONS = [
-    { q: 'Which of the following is a common sign of a phishing email?', options: ['Poor grammar and spelling', 'Sent from a known colleague', 'Contains no links', 'Has a professional signature'], correct: 0 },
-    { q: 'What should you do if you receive a suspicious email?', options: ['Click the link to check if it\'s real', 'Forward it to all colleagues', 'Report it using the PhishShield add-in', 'Delete it without reporting'], correct: 2 },
-    { q: 'Spear phishing differs from regular phishing because it:', options: ['Uses images instead of text', 'Is targeted at specific individuals using personal info', 'Is always sent via SMS', 'Is easier to detect'], correct: 1 },
-  ];
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [submitted, setSubmitted] = useState(false);
+function getStatusBadge(status: AssignmentStatus) {
+  if (status === 'passed') {
+    return <Badge variant='success'>Passed</Badge>
+  }
+  if (status === 'failed') {
+    return <Badge variant='danger'>Failed</Badge>
+  }
+  return <Badge variant="neutral">Not Started</Badge>
+}
 
-  const score = submitted
-    ? Math.round((QUESTIONS.filter((q, i) => answers[i] === q.correct).length / QUESTIONS.length) * 100)
-    : 0;
+export function UserTraining({
+  onNavigate,
+  activePath,
+}: TrainingProps) {
+  const { addToast } = useToast();
+  const [assignment, setAssignment] = useState<PendingAssignment | null>(null);
+  const [history, setHistory] = useState<Assignment[]>([]);
+  const [answers, setAnswers] = useState<SelectedAnswers>({});
+  const [result, setResult] = useState<SubmitAnswerResponse | null>(null);
+  const [filter, setFilter] = useState<TrainingFilter>('all');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (Object.keys(answers).length < QUESTIONS.length) return;
-    setSubmitted(true);
+  const loadEducationData = async (): Promise<void> => {
+    const [PendingAssignment, assignmentHistory] = await Promise.all([getMyAssignment(), getMyEducationHistory()]);
+
+    setAssignment(PendingAssignment);
+    setHistory(
+      assignmentHistory.filter((item) => item.status !== 'pending')
+    );
   };
 
-  const handleFinish = () => { onComplete(score); setAnswers({}); setSubmitted(false); onClose(); };
+  useEffect(() => {
+    const initialisePage = async (): Promise<void> => {
+      try {
+        setLoading(true);
+        await loadEducationData();
+      } catch (error) {
+        addToast({
+          type: 'error',
+          title: 'Could not load training',
+          message: getErrorMessage(error),
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Quiz — ${mod.title}`} maxWidth={560}>
-      {submitted ? (
-        <div style={{ textAlign: 'center', padding: '8px 0' }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: '50%', margin: '0 auto 16px',
-            background: score >= 70 ? 'var(--color-success-light)' : 'var(--color-danger-light)',
-            border: `2px solid ${score >= 70 ? 'var(--color-success)' : 'var(--color-danger)'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, fontWeight: 800, color: score >= 70 ? 'var(--color-success)' : 'var(--color-danger)',
-            fontFamily: 'Inter, system-ui, sans-serif',
-          }}>
-            {score}%
-          </div>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            {score >= 70 ? 'Well done!' : 'Keep practising'}
-          </h3>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            {score >= 70 ? `You scored ${score}% and earned +120 XP.` : `You scored ${score}%. A score of 70% or above is required. You can retry.`}
-          </p>
-          <Button fullWidth onClick={handleFinish}>
-            {score >= 70 ? 'Finish & Claim XP' : 'Try Again'}
-          </Button>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {QUESTIONS.map((q, qi) => (
-            <div key={qi}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
-                {qi + 1}. {q.q}
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {q.options.map((opt, oi) => (
-                  <button key={oi} onClick={() => setAnswers(p => ({ ...p, [qi]: oi }))} style={{
-                    textAlign: 'left', padding: '9px 13px', borderRadius: 8, cursor: 'pointer',
-                    fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif',
-                    border: `1.5px solid ${answers[qi] === oi ? 'var(--color-primary)' : 'var(--border)'}`,
-                    background: answers[qi] === oi ? 'var(--color-primary-light)' : 'var(--bg-hover)',
-                    color: answers[qi] === oi ? 'var(--color-primary)' : 'var(--text-secondary)',
-                    fontWeight: answers[qi] === oi ? 600 : 400, transition: 'all 0.12s',
-                  }}>
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          <Button fullWidth disabled={Object.keys(answers).length < QUESTIONS.length} onClick={handleSubmit}>
-            Submit Answers
-          </Button>
-        </div>
-      )}
-    </Modal>
-  );
-}
+    void initialisePage();
+  }, [addToast]);
 
-export function Training({ onNavigate, activePath }: TrainingProps) {
-  //const { canAccess } = useAuth();
-  const { addToast } = useToast();
-  const [quizModule, setQuizModule] = useState<Module | null>(null);
-  const [modules, setModules] = useState<Module[]>(MODULES);
-  const [filter, setFilter] = useState<TrainingStatus | 'all'>('all');
+  const handleSelectAnswer = (
+    questionId: string,
+    optionIdex: number,
+  ): void => {
+    setAnswers((previous) => ({
+      ...previous,
+      [questionId]: optionIdex,
+    }));
+  };
 
-  const handleComplete = (score: number) => {
-    if (!quizModule) return;
-    if (score >= 70) {
-      setModules(prev => prev.map(m =>
-        m.id === quizModule.id
-          ? { ...m, status: 'completed', score }
-          : m
-      ));
-      addToast({ type: 'success', title: 'Module completed!', message: `+120 XP earned. Score: ${score}%` });
+  const handleSubmitAnswers = async (): Promise<void> => {
+    if (!assignment) {
+      return;
+    }
+
+    const allAnswered = assignment.questions.every((question) => answers[question.id] !== undefined,);
+
+    if (!allAnswered) {
+      addToast({
+        type: 'warning',
+        title: 'Assignment incomplete',
+        message: 'Please answer all questions before submitting.',
+      });
+
+      return;
+    }
+
+    const orderedAnswers = assignment.questions.map(
+      (question) => answers[question.id],
+    );
+
+    try {
+      setSubmitting(true);
+
+      const submissionResult = await submitAnswers({
+        assignmentId: assignment.id,
+        answers: orderedAnswers,
+      });
+
+      setResult(submissionResult);
+      setAnswers({});
+      setAssignment(null);
+
+      const updatedHistory = await getMyEducationHistory();
+
+      setHistory(updatedHistory.filter((item) => item.status !== 'pending'));
+
+      addToast({
+        type: submissionResult.passed ? 'success' : 'warning',
+        title: submissionResult.passed ? 'Assignment passed' : 'Assignment completed',
+        message: submissionResult.feedback,
+      });
+    } catch (error){
+      addToast({
+        type: 'error',
+        title: 'Could not submit answerss',
+        message: getErrorMessage(error),
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const displayed = modules.filter(m => filter === 'all' || m.status === filter);
+  //for the three stats at the top of training page
+  const completedCount = history.length;
+  const passedCount = history.filter((item) => item.status === 'passed').length;
+  const totalXp = history.reduce((total, item) => total + item.xpAwarded, 0 ,);
 
-  const completed = modules.filter(m => m.status === 'completed').length;
-  const avgScore = modules.filter(m => m.score !== null).reduce((sum, m) => sum + (m.score ?? 0), 0) /
-                   Math.max(modules.filter(m => m.score !== null).length, 1);
+  const allQuestionsAnswered =  assignment !== null && assignment.questions.length > 0 && assignment.questions.every((question) => answers[question.id] !== undefined);
 
-  return (
-    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Training"
-      subtitle={`${completed}/${modules.length} modules completed`} securityScore={72}>
+  const answeredCount = assignment
+    ? assignment.questions.filter((question) => answers[question.id] !== undefined,).length
+    : 0;
 
-      {/* Summary strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 20 }}>
-        {[
-          { lbl: 'Completed', val: `${completed}/${modules.length}`, color: 'var(--color-success)' },
-          { lbl: 'Average Score', val: `${Math.round(avgScore)}%`, color: 'var(--color-primary)' },
-          { lbl: 'XP from Training', val: '360', color: 'var(--text-primary)' },
-        ].map(s => (
-          <Card key={s.lbl} style={{ padding: '16px 18px' }}>
-            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>{s.lbl}</p>
-            <p style={{ fontSize: 24, fontWeight: 800, color: s.color, fontFamily: 'Inter, system-ui, sans-serif' }}>{s.val}</p>
-          </Card>
-        ))}
+  const showHistory = filter === 'all' || filter === 'completed';
+  const showPending = filter === 'all' || filter === 'not_started';
+
+  const summaryGridStyle: CSSProperties = {
+    display: 'grid',
+    gap: 16,
+    marginBottom: 16,
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))'
+  };
+
+  const summaryCardStyle: CSSProperties = {
+    padding: '16px',
+  };
+
+  const summaryLabelStyle: CSSProperties = {
+    marginBottom: 8,
+    fontSize: 11,
+    color: 'var(--text-secondary)',
+  };
+
+  const summaryValueStyle: CSSProperties = {
+    fontSize: 24,
+    fontWeight: 800,
+  };
+
+  const tabStyle: CSSProperties = {
+    display: 'flex',
+    width: 'fit-content',
+    gap: 4,
+    padding: 4,
+    marginBottom: 16,
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border)',
+    background: 'var(--bg-card)',
+  };
+
+  const tabButtonStyle: CSSProperties = {
+    padding: '8px 16px',
+    cursor: 'pointer',
+    borderRadius: 'var(--radius-sm)',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: 12,
+    fontWeight: 600,
+  };
+
+  const contentListStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+  };
+
+  const contentCardStyle: CSSProperties = {
+    padding: 24,
+  };
+
+  const cardHeaderStyle: CSSProperties = {
+    display: 'flex',
+    gap: 16,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  };
+
+  const titleRowStyle: CSSProperties = {
+    display: 'flex',
+    gap: 8,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  };
+
+  const sectionHeaderStyle: CSSProperties = {
+    marginBottom: 16,
+  };
+
+  const sectionTitleStyle: CSSProperties = {
+    fontSize: 15,
+    fontWeight: 700,
+  };
+
+  const descriptionStyle: CSSProperties = {
+    marginTop: 8,
+    fontSize: 12,
+    lineHeight: 1.5,
+    color: 'var(--text-secondary)'
+  };
+
+  const progressStyle: CSSProperties = {
+    fontSize: 12,
+    fontWeight: 600,
+    color: 'var(--text-secondary)'
+  };
+
+  const questionListStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    marginTop: 16,
+  };
+
+  const questionStyle: CSSProperties = {
+    padding: 16,
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--bg-hover)',
+  };
+
+  const questionTextStyle: CSSProperties = {
+    marginBottom: 12,
+    fontSize: 13,
+    fontWeight: 700,
+  };
+
+  const optionListStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  };
+
+  const optionButtonStyle: CSSProperties = {
+    width: '100%',
+    padding: 8,
+    border: '1.5px solid',
+    borderRadius: 'var(--radius-md)',
+    textAlign: 'left',
+    fontSize: 12,
+  };
+
+  const optionLetterStyle: CSSProperties = {
+    display: 'inline-flex',
+    width:21,
+    height: 21,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid',
+    borderRadius: 'var(--radius-full)',
+    fontSize: 10,
+    fontWeight: 700,
+  };
+
+  const submitRowStyle: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: 16,
+  };
+
+  const emptyStateStyle: CSSProperties = {
+    padding: '24px 12px',
+    textAlign: 'center',
+  };
+
+  const emptyMessageStyle: CSSProperties = {
+    padding: '24px 12px',
+    textAlign: 'center',
+    fontSize: 12,
+    color: 'var(--text-muted)',
+  };
+
+  const resultSummaryStyle: CSSProperties = {
+    minWidth: 90,
+    textAlign: 'center',
+    alignSelf: 'center',
+  };
+
+  const resultScoreStyle: CSSProperties = {
+    fontSize: 18,
+    fontWeight: 700,
+  };
+
+  const smallTextStyle: CSSProperties = {
+    marginTop: 8,
+    fontSize: 11,
+    color: 'var(--text-muted)',
+  };
+
+  const historyListStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  };
+
+  const historyItemStyle: CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: 16,
+    padding: '12px 16px',
+    alignItems: 'center',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--bg-hover)',
+    flexWrap: 'wrap',
+  };
+
+  const historyTitleStyle: CSSProperties = {
+    fontSize: 13,
+    fontWeight: 700,
+  };
+
+  const historyXpStyle: CSSProperties = {
+    fontSize: 14,
+    fontWeight: 700,
+  };
+
+  return(
+    <AppLayout
+      activePath={activePath}
+      onNavigate={onNavigate}
+      title="Training"
+      subtitle="Complete assignments and earn XP"
+      securityScore={72}
+    >
+      <div style={summaryGridStyle}>
+        <Card style={summaryCardStyle}>
+          <p style={summaryLabelStyle}>
+            Completed
+          </p>
+          <p style={summaryValueStyle}>
+            {completedCount}
+          </p>
+        </Card>
+
+        <Card style={summaryCardStyle}>
+          <p style={summaryLabelStyle}>
+            Passed
+          </p>
+          <p 
+            style={{
+              ...summaryValueStyle,
+              color: 'var(--color-success)',
+            }}
+          >
+            {passedCount}
+          </p>
+        </Card>
+
+        <Card style={summaryCardStyle}>
+          <p style={summaryLabelStyle}>
+            Training XP
+          </p>
+          <p 
+            style={{
+              ...summaryValueStyle,
+              color: 'var(--color-primary)',
+            }}
+          >
+            {totalXp}
+          </p>
+        </Card>
       </div>
 
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: 'var(--bg-card)', borderRadius: 10, padding: 4, border: '1px solid var(--border)', width: 'fit-content' }}>
-        {(['all', 'not_started', 'in_progress', 'completed'] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{
-            padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
-            fontSize: 12, fontWeight: 600, fontFamily: 'Inter, system-ui, sans-serif',
-            background: filter === f ? 'var(--color-primary)' : 'transparent',
-            color: filter === f ? '#fff' : 'var(--text-secondary)',
-            transition: 'all 0.15s', whiteSpace: 'nowrap',
-          }}>
-            {f === 'not_started' ? 'Not Started' : f === 'in_progress' ? 'In Progress' : f.charAt(0).toUpperCase() + f.slice(1)}
+      <div style={tabStyle}>
+        {(
+          [
+            {value: 'all', label: 'All'},
+            {value: 'not_started', label: 'Not Started'},
+            {value: 'completed', label: 'Completed'},
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => setFilter(tab.value)}
+            style={{
+              ...tabButtonStyle,
+              background: filter === tab.value ? 'var(--color-primary)' :'transparent',
+              color: filter === tab.value ? '#ffffff' : 'var(--text-secondary)',
+            }}
+          >
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Module cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {displayed.map(m => (
-          <Card key={m.id} style={{ padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{m.title}</h3>
-                  {STATUS_CONFIG[m.status].badge}
-                  {m.score !== null && (
-                    <span style={{ fontSize: 12, fontWeight: 700, color: m.score >= 70 ? 'var(--color-success)' : 'var(--color-danger)', fontFamily: 'Inter, system-ui, sans-serif' }}>
-                      Score: {m.score}%
-                    </span>
-                  )}
-                </div>
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>{m.desc}</p>
-                <div style={{ display: 'flex', gap: 16, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif', flexWrap: 'wrap' }}>
-                  <span>{m.lessons} lessons</span>
-                  <span>{m.estimatedMinutes} min</span>
-                  {m.quiz && <span>Includes quiz</span>}
-                  {m.dueDate && <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>Due {new Date(m.dueDate).toLocaleDateString('en-ZA')}</span>}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-                {m.status !== 'not_started' && (
-                  <Button size="sm" variant="ghost" style={{ border: '1px solid var(--border)' }}
-                    onClick={() => addToast({ type: 'info', title: 'Course material', message: 'Course viewer coming in Demo 2.' })}>
-                    {m.status === 'completed' ? 'Review' : 'Continue'}
-                  </Button>
-                )}
-                {m.status === 'not_started' && (
-                  <Button size="sm"
-                    onClick={() => {
-                      setModules(prev => prev.map(mod =>
-                        mod.id === m.id ? { ...mod, status: 'in_progress' } : mod
-                      ));
-                      addToast({ type: 'info', title: 'Module started', message: m.title });
-                    }}
-                    style={{
-                      minWidth: 72,
-                      paddingLeft: 16,
-                      paddingRight: 16,
-                    }}
-                    >
-                    Start
-                  </Button>
-                )}
-                {m.quiz && m.status === 'in_progress' && (
-                  <Button size="sm" variant="secondary" onClick={() => setQuizModule(m)}>
-                    Take Quiz
-                  </Button>
-                )}
-                {m.status === 'completed' && m.quiz && (
-                  <Button size="sm" variant="secondary" onClick={() => setQuizModule(m)}>
-                    Retake Quiz
-                  </Button>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {loading ? (
+        <Card style={contentCardStyle}>
+          <p style={emptyMessageStyle}>
+            Loading assignments...
+          </p>
+        </Card>
+      ) : (
+        <div style={contentListStyle}>
+          {showPending && assignment && (
+            <Card style={contentCardStyle}>
+              <div style={cardHeaderStyle}>
+                <div>
+                  <div style={titleRowStyle}>
+                    <h2 style={sectionHeaderStyle}>
+                      Security Awareness Assignment
+                    </h2>
 
-      {quizModule && (
-        <QuizModal module={quizModule} isOpen={!!quizModule}
-          onClose={() => setQuizModule(null)} onComplete={handleComplete} />
+                    <Badge variant="neutral">
+                      Not Started
+                    </Badge>
+                  </div>
+
+                  <p style={descriptionStyle}>
+                    Answer all questions before submitting.
+                  </p>
+                </div>
+
+                <p style={progressStyle}>
+                  {answeredCount}/{assignment.questions.length} answered
+                </p>
+              </div>
+
+              <div style={questionListStyle}>
+                {assignment.questions.map(
+                  (question, questionIndex) => (
+                    <div 
+                      key={question.id}
+                      style={questionStyle}
+                    >
+                      <p style={questionTextStyle}>
+                        {questionIndex + 1}.{' '}
+                        {question.questionText}
+                      </p>
+
+                      <div style={optionListStyle}>
+                        {question.options.map(
+                          (option, optionIndex) => {
+                            const isSelected = answers[question.id] === optionIndex;
+
+                            return(
+                              <button
+                                key={`${question.id}-${optionIndex}`}
+                                type="button"
+                                style={{
+                                  ...optionButtonStyle,
+                                  fontWeight: isSelected? 600 : 400,
+                                  borderColor: isSelected ? 'var(--color-primary)' : 'var(--border)',
+                                  background: isSelected ? 'var(--color-primary-light)' : 'var(--bg-input)',
+                                  color: isSelected ? 'var(--color-primary)' : 'var(--text-secodary)',
+                                }}
+                                onClick={() =>
+                                  handleSelectAnswer(question.id, optionIndex)
+                                }
+                              >
+                                <span
+                                  style={{
+                                    ...optionLetterStyle,
+                                    borderColor: isSelected ? 'var(--color-primary)' : 'var(--border)',
+                                    background: isSelected ? 'var(--color-primary)' : 'transparent',
+                                    color: isSelected ? '#ffffff' : 'var(--text-muted)',
+                                  }}
+                                >
+                                  {String.fromCharCode(65 + optionIndex)} {/*this convers a index number to uppercase letter (A,B,C,D)*/}
+                                </span>
+
+                                {option}
+                              </button>
+                            );
+                          },
+                        )}
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+
+              <div style={submitRowStyle}>
+                <Button
+                  loading={submitting}
+                  disabled={!allQuestionsAnswered || submitting}
+                  onClick={() => {
+                    void handleSubmitAnswers();
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                  }}
+                >
+                  Submit Answers
+                </Button>
+
+              </div>
+            </Card>
+          )}
+
+          {showPending && !assignment && (
+            <Card style={contentCardStyle}>
+              <div style={emptyStateStyle}>
+                <h2 style={sectionTitleStyle}>
+                  No assignments available
+                </h2>
+
+                <p style={descriptionStyle}>
+                  You do not currently have any pending assignments.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {showHistory && result && (
+            <Card style={contentCardStyle}>
+              <div style={cardHeaderStyle}>
+                <div>
+                  <div style={titleRowStyle}>
+                    <h2 style={sectionTitleStyle}>
+                      Assignment Result
+                    </h2>
+
+                    <Badge
+                      variant={result.passed ? 'success': 'danger'}
+                    >
+                      {result.passed ? 'Passed' : 'Failed'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div style={resultSummaryStyle}>
+                  <p style={resultScoreStyle}>
+                    {result.correctCount}/{result.total}
+                  </p>
+
+                  <p style={smallTextStyle}>
+                    {result.xpAwarded} XP earned
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {showHistory && (
+            <Card style={contentCardStyle}>
+              <div style={sectionHeaderStyle}>
+                <h2 style={sectionTitleStyle}>
+                  Completed Assignments
+                </h2>
+
+                <p style={descriptionStyle}>
+                  Your previous assignments.
+                </p>
+              </div>
+
+              {history.length === 0 ? (
+                <p style={emptyMessageStyle}>
+                  You have not completed any assignments yet.
+                </p>
+              ) : (
+                <div style={historyListStyle}>
+                  {history.map((item, index) => (
+                    <div
+                      style={historyItemStyle}
+                      key={item.id}
+                    >
+                      <div>
+                        <div style={titleRowStyle}>
+                          <p style={historyTitleStyle}>
+                            Assignment{' '}
+                            {history.length - index}
+                          </p>
+                          {getStatusBadge(item.status)}
+                        </div>
+
+                        <p style={smallTextStyle}>
+                          Created {formatDate(item.createdAt)}
+                          {item.completedAt && (
+                            <span style={{marginLeft: 24}}>
+                              Completed {formatDate(item.completedAt,)}
+                            </span>
+                          )} 
+                        </p>
+                      </div>
+
+                      <p style={{
+                          ...historyXpStyle,
+                          color: item.xpAwarded > 0 ? 'var(--color-success)' : 'var(--text-secondary)'
+                        }}
+                      >
+                        {item.xpAwarded} XP
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
       )}
     </AppLayout>
   );
+};
+
+export function Training({
+  onNavigate, 
+  activePath,
+}: TrainingProps) {
+  const { canAccess} = useAuth();
+  const isAdmin = canAccess('admin');
+
+  return isAdmin ? (
+    <AdminTraining
+      onNavigate={onNavigate}
+      activePath={activePath}
+    />
+  ): (
+    <UserTraining
+      onNavigate={onNavigate}
+      activePath={activePath}
+    />
+  )
 }
