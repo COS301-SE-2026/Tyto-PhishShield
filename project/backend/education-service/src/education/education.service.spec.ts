@@ -206,4 +206,93 @@ describe('EducationService', () => {
       });
     });
   });
+
+    describe('submitAnswers', () => {
+    const auth0Id = 'auth0|123';
+    const assignment = {
+      id: 'a1',
+      auth0Id,
+      questionIds: ['q1', 'q2'],
+      status: AssignmentStatus.PENDING,//this myst be pending for report eve
+      xpAwarded: 0,
+      completedAt: null,
+    };
+
+    const questions = [
+      {
+        id: 'q1',
+        questionText: 'Q1',
+        options: ['A', 'B'],
+        correctOptionIndex: 1,
+      },
+      {
+        id: 'q2',
+        questionText: 'Q2',
+        options: ['C', 'D'],
+        correctOptionIndex: 0,
+      },
+    ];
+
+    const dto: SubmitAnswersDto = {
+      assignmentId: 'a1',
+      answers: [1, 0], // both correct
+    };
+
+    beforeEach(() => {
+      assignmentRepo.findOne.mockResolvedValue(assignment as any);
+      questionRepo.findByIds.mockResolvedValue(questions as any);
+      assignmentRepo.save.mockImplementation((a) => Promise.resolve(a as any));
+      amqpConnection.publish.mockResolvedValue(undefined);
+    });
+
+    it('marks assignment as PASSED when score meets the threshold', async () => {
+      const result = await service.submitAnswers(auth0Id, dto);
+      expect(result.passed).toBe(true);
+      expect(result.xpAwarded).toBe(10);
+      expect(result.correctCount).toBe(2);
+      expect(assignmentRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: AssignmentStatus.PASSED, xpAwarded: 10 }),
+      );
+      expect(amqpConnection.publish).toHaveBeenCalled();
+    });
+
+    it('marks assignment as FAILED when score is below threshold', async () => {
+      dto.answers = [0, 1]; // both wrong
+      const result = await service.submitAnswers(auth0Id, dto);
+      expect(result.passed).toBe(false);
+      expect(result.xpAwarded).toBe(0);
+      expect(assignmentRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: AssignmentStatus.FAILED, xpAwarded: 0 }),
+      );
+      expect(amqpConnection.publish).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when no pending assignment exists', async () => {
+      assignmentRepo.findOne.mockResolvedValue(null);
+      await expect(service.submitAnswers(auth0Id, dto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws BadRequestException when number of answers does not match questions', async () => {
+      dto.answers = [1]; // only one answer
+      await expect(service.submitAnswers(auth0Id, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('logs an error but does not throw when AMQP publish fails', async () => {
+      const loggerSpy = jest
+        .spyOn(EducationService.prototype as any, 'logger')
+        .mockImplementation({ error: jest.fn(), log: jest.fn() } as any);
+
+      amqpConnection.publish.mockRejectedValue(new Error('broker down'));
+
+      const result = await service.submitAnswers(auth0Id, dto);
+      expect(result.passed).toBe(true);
+      // error logged, no exception thrown
+      expect(amqpConnection.publish).toHaveBeenCalled();
+      loggerSpy.mockRestore();
+    });
+  });
 });
