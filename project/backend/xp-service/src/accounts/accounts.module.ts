@@ -19,7 +19,7 @@ import { UserEntity } from '../entities/user.entity';
       enableControllerDiscovery: true,
       connectionInitOptions: {
         wait: false,
-      }
+      },
     }),
   ],
   controllers: [AccountsController],
