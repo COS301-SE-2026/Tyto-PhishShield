@@ -1,4 +1,4 @@
-/* global jest, describe, beforeEach, afterEach, test, expect, global, require, Office, localStorage, document, HTMLButtonElement */
+/* global jest, describe, beforeEach, afterEach, test, expect, global, require, Office, localStorage, document, HTMLButtonElement, process */
 
 //TODO: change localhost links once everything has been deployed and also add some more tests for the other function
 

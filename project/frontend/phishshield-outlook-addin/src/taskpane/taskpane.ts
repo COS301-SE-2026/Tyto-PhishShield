@@ -3,7 +3,7 @@
  * See LICENSE in the project root for license information.
  */
 
-/* global document, Office, fetch, localStorage, console, HTMLElement, HTMLInputElement, HTMLButtonElement, HTMLFormElement, Response, Event */
+/* global document, Office, fetch, localStorage, console, HTMLElement, HTMLInputElement, HTMLButtonElement, HTMLFormElement, Response, Event, process */
 
 const API_BASE = `${process.env.API_BASE}`;
 
