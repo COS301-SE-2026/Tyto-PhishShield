@@ -1,4 +1,23 @@
-import { forwardRef, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+/**
+ * Service: OtpService
+ *
+ * Manages one‑time password generation, email delivery, verification,
+ * and trusted device storage. Uses the Resend API for email and
+ * stores verified devices in the local database via TypeORM.
+ *
+ * Public methods:
+ * - {@link OtpService#generateAndSend} – creates an OTP and emails it to the user
+ * - {@link OtpService#verify} – checks the OTP, removes it, creates a verified device token
+ * - {@link OtpService#verifyDevice} – checks if the device token is still valid
+ */
+
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VerifiedDevice } from './otp.entity';
@@ -40,7 +59,7 @@ export class OtpService {
       email,
       code,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-    })
+    });
     await this.sendOtpEmail(email, code);
   }
 
@@ -67,13 +86,19 @@ export class OtpService {
     }
   }
 
-  async verify(email: string, code: string,  userAgent: string, ipCreated: string): Promise<{valid: boolean, deviceToken: string}> {
-    const otp = this.OTPs.find(otp => otp.email === email);
+  async verify(
+    email: string,
+    code: string,
+    userAgent: string,
+    ipCreated: string,
+  ): Promise<{ valid: boolean; deviceToken: string }> {
+    const otp = this.OTPs.find((otp) => otp.email === email);
 
-    if (!otp) return {valid: false, deviceToken: ''};
-    if (new Date() > otp.expiresAt || otp.code !== code) return  {valid: false, deviceToken: ''};
+    if (!otp) return { valid: false, deviceToken: '' };
+    if (new Date() > otp.expiresAt || otp.code !== code)
+      return { valid: false, deviceToken: '' };
 
-    const updatedOTPs = this.OTPs.filter(otp => otp.email !== email);
+    const updatedOTPs = this.OTPs.filter((otp) => otp.email !== email);
     this.OTPs = updatedOTPs;
 
     const deviceToken = crypto.randomBytes(32).toString('hex');
@@ -93,7 +118,7 @@ export class OtpService {
     });
     await this.deviceRepo.save(verifiedDevice);
 
-    return  {valid: true, deviceToken};
+    return { valid: true, deviceToken };
   }
 
   async verifyDevice(email: string, deviceToken: string): Promise<boolean> {
@@ -104,11 +129,11 @@ export class OtpService {
     }
 
     const hashedToken = crypto.hash('sha256', deviceToken);
-    let trustedDevice = await this.deviceRepo.findOne({
+    const trustedDevice = await this.deviceRepo.findOne({
       where: {
         tokenHash: hashedToken,
         userId: user.user_id,
-      }
+      },
     });
 
     if (!trustedDevice) return false;
