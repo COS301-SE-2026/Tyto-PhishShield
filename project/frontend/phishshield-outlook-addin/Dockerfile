@@ -17,6 +17,11 @@ RUN pnpm install --frozen-lockfile
 
 WORKDIR /app/project/frontend/phishshield-outlook-addin
 
+ARG API_BASE
+ENV API_BASE=${API_BASE}
+ARG ADDIN_BASE_URL
+ENV ADDIN_BASE_URL=${ADDIN_BASE_URL}
+
 RUN pnpm build
 
 USER appuser

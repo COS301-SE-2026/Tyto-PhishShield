@@ -434,12 +434,11 @@ services:
     build: 
       context: ../../
       dockerfile: project/frontend/phishshield-outlook-addin/Dockerfile
+      args:
+        API_BASE: "https://localhost/api"
+        ADDIN_BASE_URL: "https://localhost/addin/"
     restart: on-failure
     container_name: addin
-    environment:
-      - port=3000
-      - API_HOST=${GATEWAY_APP_CONTAINER}
-      - ADDIN_BASE_URL=https://127.0.0.1/addin/
     ports:
       - '3000:80'
 
