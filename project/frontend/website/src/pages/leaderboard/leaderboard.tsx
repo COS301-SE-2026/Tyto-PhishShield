@@ -62,6 +62,23 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     //Supplementary XP, no role restriction, live updates
     useEffect(() => {
         let cancelled = false;
+        setLoading(true);
+        setLoadError(null);
+        fetchLeaderboardXp()
+            .then(data => { if (!cancelled) setXpEntries(data); })
+            .catch(() => {
+                if (!cancelled) {
+                    setLoadError('other');
+                    addToast({ type: 'error', title: 'Could not load leaderboard', message: 'Please try again shortly.' });
+                }
+            })
+            .finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
+    }, []);
+
+    // Live updates
+    useEffect(() => {
+        let cancelled = false;
         let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
         connectXpSocket().then( s => { if (cancelled) { s.disconnect(); return; } 
             socket = s;
@@ -88,32 +105,6 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
             .catch(() => undefined)
         return () => { 
             cancelled = true; 
-            socket?.disconnect();
-        };
-    }, [user]);
-
-    // Live updates for the current user's own XP only (see xp-socket.ts)
-    useEffect(() => {
-        if (!user) return;
-        let cancelled = false;
-        let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
-        connectXpSocket().then(s => {
-                if (cancelled) { s.disconnect(); return; }
-                socket = s;
-                s.on('xp-given', (amount: number) => {
-                    setXpEntries(prev => {
-                        const list = prev ?? [];
-                        const idx = list.findIndex(entry => entry.auth0Id === user.auth0Id);
-                        if (idx === -1) return [...list, { auth0Id: user.auth0Id, totalXp: amount }];
-                        const updated = [...list];
-                        updated[idx] = { ...updated[idx], totalXp: updated[idx].totalXp + amount };
-                        return updated;
-                    });
-                });
-            })
-            .catch(() => {  });
-        return () => {
-            cancelled = true;
             socket?.disconnect();
         };
     }, [user]);
@@ -345,11 +336,6 @@ function LeaderboardBody({ loading, loadError, isEmpty, emptyMessage, children }
             <div style={{ padding: 48, display: 'flex', justifyContent: 'center' }}>
                 <Spinner size={24} />
             </div>
-        );
-    }
-    if (loadError === 'forbidden') {
-        return (
-            <EmptyState message= "Your account isn't permitted to load the leaderboard yet (endpoint restriction: server-side)" />
         );
     }
     if (loadError === 'other') {
