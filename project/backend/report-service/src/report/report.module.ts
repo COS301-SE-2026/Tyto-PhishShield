@@ -23,7 +23,7 @@ import { ReportController } from './report.controller';
         enableControllerDiscovery: true,
         connectionInitOptions: {
           wait: false,
-        }
+        },
       }),
     }),
   ],

@@ -22,7 +22,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
         enableControllerDiscovery: true,
         connectionInitOptions: {
           wait: false,
-        }
+        },
       }),
     }),
   ],

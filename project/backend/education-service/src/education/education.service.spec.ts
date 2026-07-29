@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /**
  * @file Unit tests for EducationService.
  *
@@ -7,8 +8,8 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Logger } from '@nestjs/common'
+
+import { Logger } from '@nestjs/common';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import {
   BadRequestException,
@@ -68,36 +69,36 @@ describe('EducationService', () => {
     jest.clearAllMocks();
   });
 
-    describe('createQuestion', () => {
-      const dto: CreateQuestionDto = {
-        questionText: 'What is 2+2?',// a tough question for testing of course.
-        options: ['3', '4', '5'],
-        correctOptionIndex: 1,
-      };
-  
-      it('creates and saves a question when correctOptionIndex is valid', async () => {
-        const savedQuestion = { id: 'q1', ...dto, createdAt: new Date() };
-        questionRepo.create.mockReturnValue(savedQuestion as any);
-        questionRepo.save.mockResolvedValue(savedQuestion as any);
-  
-        const result = await service.createQuestion(dto);
-        expect(result).toEqual(savedQuestion);
-        expect(questionRepo.create).toHaveBeenCalledWith(dto);
-        expect(questionRepo.save).toHaveBeenCalledWith(savedQuestion);
-      });
-  
-      it('throws BadRequestException when correctOptionIndex is out of bounds', async () => {
-        const invalidDto = { ...dto, correctOptionIndex: 5 };
-        await expect(service.createQuestion(invalidDto)).rejects.toThrow(
-          BadRequestException,
-        );
-      });
+  describe('createQuestion', () => {
+    const dto: CreateQuestionDto = {
+      questionText: 'What is 2+2?', // a tough question for testing of course.
+      options: ['3', '4', '5'],
+      correctOptionIndex: 1,
+    };
+
+    it('creates and saves a question when correctOptionIndex is valid', async () => {
+      const savedQuestion = { id: 'q1', ...dto, createdAt: new Date() };
+      questionRepo.create.mockReturnValue(savedQuestion as any);
+      questionRepo.save.mockResolvedValue(savedQuestion as any);
+
+      const result = await service.createQuestion(dto);
+      expect(result).toEqual(savedQuestion);
+      expect(questionRepo.create).toHaveBeenCalledWith(dto);
+      expect(questionRepo.save).toHaveBeenCalledWith(savedQuestion);
     });
 
-      describe('findAllQuestions', () => {
+    it('throws BadRequestException when correctOptionIndex is out of bounds', async () => {
+      const invalidDto = { ...dto, correctOptionIndex: 5 };
+      await expect(service.createQuestion(invalidDto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('findAllQuestions', () => {
     it('returns all qestions ordered by createdAt desc', async () => {
-      const questions = [{ id: 'q1' }, { id: 'q2' }];// will this work, do we have 2 questions here or will it not work?...
-      questionRepo.find.mockResolvedValue(questions as any);//will linter allow me this?
+      const questions = [{ id: 'q1' }, { id: 'q2' }]; // will this work, do we have 2 questions here or will it not work?...
+      questionRepo.find.mockResolvedValue(questions as any); //will linter allow me this?
 
       const result = await service.findAllQuestions();
       expect(result).toEqual(questions);
@@ -107,21 +108,25 @@ describe('EducationService', () => {
     });
   });
 
-    describe('createAssignment', () => {
+  describe('createAssignment', () => {
     const auth0Id = 'auth0|123';
     const questions = [
       { id: 'q1' },
       { id: 'q2' },
       { id: 'q3' },
       { id: 'q4' },
-      { id: 'q5' },//lets test here with 5 questins, see what happens.
+      { id: 'q5' }, //lets test here with 5 questins, see what happens.
     ];
 
     it('creates a new assignment when no pending assignment exists', async () => {
       assignmentRepo.findOne.mockResolvedValue(null);
       questionRepo.find.mockResolvedValue(questions as any);
-      assignmentRepo.create.mockImplementation((data) => data as any);
-      assignmentRepo.save.mockImplementation((a) => Promise.resolve(a as any));
+      assignmentRepo.create.mockImplementation((data) => data);
+      assignmentRepo.save.mockResolvedValue({
+  auth0Id,
+  questionIds: ['q1', 'q2', 'q3'],
+  status: AssignmentStatus.PENDING,
+} as Assignment);
 
       const result = await service.createAssignment(auth0Id);
 
@@ -149,57 +154,58 @@ describe('EducationService', () => {
     });
   });
 
-    describe('getMyAssignment', () => {
-      const auth0Id = 'auth0|123';
-  
-      it('returns the assignment with questions', async () => {// also make sure that it gives assignment id.
-        const assignment = {
-          id: 'a1',
-          auth0Id,
-          questionIds: ['q1', 'q2'],
-          status: AssignmentStatus.PENDING,
+  describe('getMyAssignment', () => {
+    const auth0Id = 'auth0|123';
+
+    it('returns the assignment with questions', async () => {
+      // also make sure that it gives assignment id.
+      const assignment = {
+        id: 'a1',
+        auth0Id,
+        questionIds: ['q1', 'q2'],
+        status: AssignmentStatus.PENDING,
+        createdAt: new Date(),
+      };
+      const questions = [
+        {
+          id: 'q1',
+          questionText: 'Q1',
+          options: ['A', 'B'],
+          correctOptionIndex: 0,
           createdAt: new Date(),
-        };
-        const questions = [
-          {
-            id: 'q1',
-            questionText: 'Q1',
-            options: ['A', 'B'],
-            correctOptionIndex: 0,
-            createdAt: new Date(),
-          },
-          {
-            id: 'q2',
-            questionText: 'Q2',
-            options: ['C', 'D'],
-            correctOptionIndex: 1,
-            createdAt: new Date(),
-          },
-        ];
-  
-        assignmentRepo.findOne.mockResolvedValue(assignment as any);
-        questionRepo.findByIds.mockResolvedValue(questions as any);
-  
-        const result = await service.getMyAssignment(auth0Id);
-        expect(result).toBeTruthy();
-        expect(result!.questions).toHaveLength(2);
-        expect(result!.questions[0]).not.toHaveProperty('correctOptionIndex');
-      });
-  
-      it('returns nul when no pending assignment exists', async () => {
-        assignmentRepo.findOne.mockResolvedValue(null);
-  
-        const result = await service.getMyAssignment(auth0Id);
-        expect(result).toBeNull();
-      });
+        },
+        {
+          id: 'q2',
+          questionText: 'Q2',
+          options: ['C', 'D'],
+          correctOptionIndex: 1,
+          createdAt: new Date(),
+        },
+      ];
+
+      assignmentRepo.findOne.mockResolvedValue(assignment as any);
+      questionRepo.findByIds.mockResolvedValue(questions as any);
+
+      const result = await service.getMyAssignment(auth0Id);
+      expect(result).toBeTruthy();
+      expect(result!.questions).toHaveLength(2);
+      expect(result!.questions[0]).not.toHaveProperty('correctOptionIndex');
     });
 
-      describe('getMyHistory', () => {
+    it('returns nul when no pending assignment exists', async () => {
+      assignmentRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.getMyAssignment(auth0Id);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getMyHistory', () => {
     it('returns all assignments for the given user orered by createdAt desc', async () => {
       const assignments = [{ id: 'a1' }, { id: 'a2' }];
       assignmentRepo.find.mockResolvedValue(assignments as any);
 
-      const result = await service.getMyHistory('auth0|123');//this one should be easy.
+      const result = await service.getMyHistory('auth0|123'); //this one should be easy.
       expect(result).toEqual(assignments);
       expect(assignmentRepo.find).toHaveBeenCalledWith({
         where: { auth0Id: 'auth0|123' },
@@ -208,13 +214,13 @@ describe('EducationService', () => {
     });
   });
 
-    describe('submitAnswers', () => {
+  describe('submitAnswers', () => {
     const auth0Id = 'auth0|123';
     const assignment = {
       id: 'a1',
       auth0Id,
       questionIds: ['q1', 'q2'],
-      status: AssignmentStatus.PENDING,//this myst be pending for report eve
+      status: AssignmentStatus.PENDING, //this myst be pending for report eve
       xpAwarded: 0,
       completedAt: null,
     };
@@ -242,7 +248,7 @@ describe('EducationService', () => {
     beforeEach(() => {
       assignmentRepo.findOne.mockResolvedValue(assignment as any);
       questionRepo.findByIds.mockResolvedValue(questions as any);
-      assignmentRepo.save.mockImplementation((a) => Promise.resolve(a as any));
+      assignmentRepo.save.mockImplementation((a) => Promise.resolve(a));
       amqpConnection.publish.mockResolvedValue(undefined);
     });
 
@@ -250,9 +256,12 @@ describe('EducationService', () => {
       const result = await service.submitAnswers(auth0Id, dto);
       expect(result.passed).toBe(true);
       expect(result.xpAwarded).toBe(10);
-      expect(result.correctCount).toBe(2);//this seems like good numbers by the way.
+      expect(result.correctCount).toBe(2); //this seems like good numbers by the way.
       expect(assignmentRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: AssignmentStatus.PASSED, xpAwarded: 10 }),
+        expect.objectContaining({
+          status: AssignmentStatus.PASSED,
+          xpAwarded: 10,
+        }),
       );
       expect(amqpConnection.publish).toHaveBeenCalled();
     });
@@ -263,7 +272,10 @@ describe('EducationService', () => {
       expect(result.passed).toBe(false);
       expect(result.xpAwarded).toBe(0);
       expect(assignmentRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: AssignmentStatus.FAILED, xpAwarded: 0 }),
+        expect.objectContaining({
+          status: AssignmentStatus.FAILED,
+          xpAwarded: 0,
+        }),
       );
       expect(amqpConnection.publish).not.toHaveBeenCalled();
     });
@@ -282,30 +294,30 @@ describe('EducationService', () => {
       );
     });
 
-it('logs an eror but does not throw when AMQP publish fails', async () => {
-  // Use correct-length answers so we get past the length check
-  dto.answers = [1, 0]; // both correct, will cause publish to be called
+    it('logs an eror but does not throw when AMQP publish fails', async () => {
+      // Use correct-length answers so we get past the length check
+      dto.answers = [1, 0]; // both correct, will cause publish to be called
 
-  const errorSpy = jest
-    .spyOn(Logger.prototype, 'error')
-    .mockImplementation(() => {});
-  const logSpy = jest
-    .spyOn(Logger.prototype, 'log')
-    .mockImplementation(() => {});
+      const errorSpy = jest
+        .spyOn(Logger.prototype, 'error')
+        .mockImplementation(() => {});
+      const logSpy = jest
+        .spyOn(Logger.prototype, 'log')
+        .mockImplementation(() => {});
 
-  amqpConnection.publish.mockRejectedValue(new Error('broker down'));
+      amqpConnection.publish.mockRejectedValue(new Error('broker down'));
 
-  const result = await service.submitAnswers(auth0Id, dto);
-  expect(result.passed).toBe(true);
-  expect(amqpConnection.publish).toHaveBeenCalled();
-  expect(errorSpy).toHaveBeenCalled();
+      const result = await service.submitAnswers(auth0Id, dto);
+      expect(result.passed).toBe(true);
+      expect(amqpConnection.publish).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalled();
 
-  errorSpy.mockRestore();
-  logSpy.mockRestore();
-});
+      errorSpy.mockRestore();
+      logSpy.mockRestore();
+    });
   });
 
-    describe('findAllAssignments', () => {
+  describe('findAllAssignments', () => {
     it('returns all assignments ordered by createdAt desc', async () => {
       const assignments = [{ id: 'a1' }, { id: 'a2' }];
       assignmentRepo.find.mockResolvedValue(assignments as any);

@@ -13,7 +13,8 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-
+//can change this at anytime to get more robust stuff this is for now, but I think more questions
+// would also be appropriate sinc e then we can do more with it.
 const QUESTIONS_PER_ASSIGNMENT = 3;
 const PASS_THRESHOLD = 0.65;
 const XP_AWARDED = 10;
@@ -22,11 +23,11 @@ const XP_AWARDED = 10;
 export class EducationService {
   private readonly logger = new Logger(EducationService.name);
   constructor(
-    @InjectRepository(Question)
+    @InjectRepository(Question) // I think this is good strategy.
     private readonly questionRepo: Repository<Question>,
     @InjectRepository(Assignment)
     private readonly assignmentRepo: Repository<Assignment>,
-    
+
     private readonly amqpConnection: AmqpConnection,
   ) {}
   //my idea here is that we will be creating assignments which will consist of about 3-4 questions and then an array of answers to get the right answers. Everything will have its own ID and all that jazz as well.
@@ -49,10 +50,9 @@ export class EducationService {
       where: { auth0Id, status: AssignmentStatus.PENDING },
     });
     if (existing) {
-
       throw new ConflictException('You already have existing assignment');
     }
-  // should this be await?.... yes, yes it should
+    // should this be await?.... yes, yes it should
     const allQuestions = await this.questionRepo.find();
     if (allQuestions.length === 0) {
       throw new BadRequestException(
@@ -60,7 +60,7 @@ export class EducationService {
       );
     }
 
-    const selected = this.randomSubset(allQuestions, QUESTIONS_PER_ASSIGNMENT);// no sonarqube stuff here for some reason, but thats nice.
+    const selected = this.randomSubset(allQuestions, QUESTIONS_PER_ASSIGNMENT); // no sonarqube stuff here for some reason, but thats nice.
 
     const assignment = this.assignmentRepo.create({
       auth0Id,
@@ -70,7 +70,7 @@ export class EducationService {
 
     return this.assignmentRepo.save(assignment);
   }
- //have to think about admin view since they wont have this which will take up most of the normal user stuff.
+  //have to think about admin view since they wont have this which will take up most of the normal user stuff.
   async getMyAssignment(
     auth0Id: string,
   ): Promise<
@@ -94,7 +94,6 @@ export class EducationService {
       createdAt: q.createdAt,
     }));
 
-
     return { ...assignment, questions: sanitised };
   }
 
@@ -102,7 +101,6 @@ export class EducationService {
     return this.assignmentRepo.find({
       where: { auth0Id },
       order: { createdAt: 'DESC' },
-
     });
   }
 
@@ -113,6 +111,7 @@ export class EducationService {
     passed: boolean;
     xpAwarded: number;
     correctCount: number;
+
     total: number;
     feedback: string;
   }> {
@@ -122,11 +121,10 @@ export class EducationService {
         auth0Id,
         status: AssignmentStatus.PENDING,
       },
-
-
     });
 
     if (!assignment) {
+      // ok this didnt work at start dont know why works now.
       throw new NotFoundException('Assignment nof found or already completed');
     }
 
@@ -141,11 +139,10 @@ export class EducationService {
     let correctCount = 0;
     for (let i = 0; i < questions.length; i++) {
       if (dto.answers[i] === questions[i].correctOptionIndex) {
-
         correctCount++;
       }
     }
-  //check with the exchange stuff with Darius and Josua before demo 2.
+    //check with the exchange stuff with Darius and Josua before demo 2.
     const score = correctCount / questions.length;
     const passed = score >= PASS_THRESHOLD;
 
@@ -191,6 +188,5 @@ export class EducationService {
   private randomSubset<T>(arr: T[], size: number): T[] {
     const shuffled = [...arr].sort(() => crypto.randomInt(-1, 2));
     return shuffled.slice(0, Math.min(size, arr.length));
-
   }
 }
