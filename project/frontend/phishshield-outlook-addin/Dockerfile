@@ -13,7 +13,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/frontend/phishshield-outlook-addin/package.json ./project/frontend/phishshield-outlook-addin/package.json
 COPY project/frontend/phishshield-outlook-addin/ ./project/frontend/phishshield-outlook-addin/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 WORKDIR /app/project/frontend/phishshield-outlook-addin
 
@@ -29,6 +29,12 @@ USER appuser
 FROM nginx:alpine
 
 COPY --from=builder /app/project/frontend/phishshield-outlook-addin/dist /usr/share/nginx/html
+
+RUN chown -R nginx:nginx \
+    /usr/share/nginx/html \
+    /var/cache/nginx \
+    /var/log/nginx \
+    /etc/nginx/conf.d
 
 EXPOSE 80
 
