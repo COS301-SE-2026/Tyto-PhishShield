@@ -10,6 +10,8 @@ import {
   InternalServerErrorException,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -20,7 +22,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 
 interface Auth0TokenResponse {
@@ -33,6 +35,7 @@ interface Auth0UserResponse {
   user_id: string;
   email: string;
   name: string;
+  email_verified: boolean;
 }
 
 interface Auth0LoginResponse {
@@ -57,6 +60,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly http: HttpService,
     private readonly usersService: UsersService,
+    @Inject(forwardRef(() => OtpService))
     private readonly otpService: OtpService,
   ) {}
 
@@ -117,6 +121,7 @@ export class AuthService {
       auth0Id: auth0User.user_id,
       email: dto.email,
       name: dto.name,
+      department: dto.department,
       role: UserRole.USER,
     });
 
@@ -130,16 +135,32 @@ export class AuthService {
 
   async login(
     dto: LoginDto,
-  ): Promise<{ access_token: string; expires_in: number }> {
-    const user = await this.usersService.findByEmail(dto.email);
+  ): Promise<{ access_token: string; expires_in: number; requiresOTP: boolean }> {
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
+    let userAuth0Id = '';
+    try {
+      const data = await this.getAuth0UserByEmail(dto.email);
+      if (data && !data.email_verified) {
+        throw new UnauthorizedException(
+          'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
+        );
+      }
+      userAuth0Id = data.user_id;
+    } catch (err: unknown) {
+      if (!(err instanceof UnauthorizedException)) {
+        console.log(err);
+        throw new InternalServerErrorException(
+          'Failed to check if account is verified.',
+        );
+      } else {
+        throw err;
+      }
+    }
+
+    const user = await this.usersService.findByAuth0Id(userAuth0Id);
     if (user && !user.isActive) {
       throw new UnauthorizedException(
         'Account is deactivated. Please contact support.',
-      );
-    }
-    if (user && !user.isVerified) {
-      throw new UnauthorizedException(
-        'Email not verified. Please verify your email before logging in.',
       );
     }
 
@@ -159,9 +180,23 @@ export class AuthService {
         }),
       );
 
+      let requiresOTP: boolean = false;
+      if (dto.sendOTP) {
+        if (!dto.deviceToken) {
+          await this.otpService.generateAndSend(dto.email);
+          requiresOTP = true;
+        } else {
+          if (!await this.otpService.verifyDevice(dto.email, dto.deviceToken)) {
+            await this.otpService.generateAndSend(dto.email);
+            requiresOTP = true;
+          }
+        }
+      }
+
       return {
         access_token: data.access_token,
         expires_in: data.expires_in,
+        requiresOTP
       };
     } catch (err: unknown) {
       const axiosErr = err as AxiosErrorShape;
@@ -173,23 +208,23 @@ export class AuthService {
     }
   }
 
-  async verifyOtp(dto: VerifyOtpDto): Promise<{ message: string }> {
-    const valid = await this.otpService.verify(dto.email, dto.code);
+  async verifyOtp(dto: ExtendedVerifyOtpDto): Promise<{ message: string, deviceToken: string }> {
+    const { valid, deviceToken }= await this.otpService.verify(dto.email, dto.code, dto.userAgent ?? '', dto.ip ?? '');
     if (!valid) throw new BadRequestException('Invalid or expired OTP code');
 
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) throw new NotFoundException('User not found');
 
     await this.usersService.markVerified(user.auth0Id);
-    return { message: 'Email verified successfully. You can now log in.' };
+    return { message: 'Email verified successfully. You can now log in.', deviceToken };
   }
 
   async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user)
       throw new NotFoundException('No account associated with this email');
-    if (user.isVerified)
-      throw new BadRequestException('Email is already verified');
+    // if (user.isVerified)
+    //   throw new BadRequestException('Email is already verified');
 
     await this.otpService.generateAndSend(dto.email);
     return { message: 'A new OTP code has been sent to your email.' };
@@ -252,5 +287,21 @@ export class AuthService {
         'Failed to delete user, please try again',
       );
     }
+  }
+
+  async getAuth0UserByEmail(email: string): Promise<Auth0UserResponse> {
+    const domain = this.config.get<string>('AUTH0_DOMAIN');
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get<Auth0UserResponse[]>(
+        `https://${domain}/api/v2/users-by-email?email=${email}`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+          },
+        },
+      ),
+    );
+    return data[0];
   }
 }

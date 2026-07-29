@@ -58,7 +58,7 @@ describe('BatchEmailController', () => {
       recipients: ['a@example.com', 'b@example.com'],
     };
 
-    it('should call proxy.forward with the correct URL, method and body', () => {
+    it('should forwards a POST request to /batch-emails/:referenceNumber/send-batch-with-reference', () => {
       mockProxyService.forward.mockReturnValue({
         success: true,
         message: 'sent',
@@ -73,7 +73,7 @@ describe('BatchEmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
+    it('should correctly return what proxy.forward returns for POST request to /batch-emails/:referenceNumber/send-batch-with-reference', () => {
       const response = { success: true, message: 'Test' };
       mockProxyService.forward.mockReturnValue(response);
 
@@ -82,7 +82,7 @@ describe('BatchEmailController', () => {
       expect(result).toBe(response);
     });
 
-    it('should include the referenceNumber from the route param in the forwarded URL', () => {
+    it('should include the referenceNumber in the forwarded URL', () => {
       controller.sendBatchWithReference('PHISH-001', body);
 
       const call = mockProxyService.forward.mock.calls[0][0];
@@ -99,7 +99,7 @@ describe('BatchEmailController', () => {
       randomisedTimes: true,
     };
 
-    it('should call proxy.forward with the correct URL, method and body', () => {
+    it('should forwards a POST request to /batch-emails/send-batch-random-same-email', () => {
       mockProxyService.forward.mockReturnValue({
         success: true,
         message: 'scheduled',
@@ -114,7 +114,7 @@ describe('BatchEmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
+    it('should correctly return what proxy.forward returns for POST request to /batch-emails/send-batch-random-same-email', () => {
       const response = { success: true, message: 'Test' };
       mockProxyService.forward.mockReturnValue(response);
 
@@ -140,7 +140,7 @@ describe('BatchEmailController', () => {
       randomisedTimes: false,
     };
 
-    it('should call proxy.forward with the correct URL, method and body', () => {
+    it('should forwards a POST request to /batch-emails/send-batch-random-different-email', () => {
       mockProxyService.forward.mockReturnValue({
         success: true,
         message: 'scheduled',
@@ -155,7 +155,7 @@ describe('BatchEmailController', () => {
       });
     });
 
-    it('should return whatever proxy.forward returns', () => {
+    it('should correctly return what proxy.forward returns for POST request to /batch-emails/send-batch-random-different-email', () => {
       const response = { success: true, message: 'Test' };
       mockProxyService.forward.mockReturnValue(response);
 

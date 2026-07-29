@@ -25,6 +25,11 @@ capstone-five-guys.dns.net.za:443 {
         }
     }
 
+    handle /addin/* {
+        uri strip_prefix /addin
+        reverse_proxy outlook-addin:80
+    }
+
     handle {
         reverse_proxy website:5173
     }

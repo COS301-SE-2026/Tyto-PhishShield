@@ -19,7 +19,7 @@ type AuthenticatedSocket = Socket<any, any, any, SocketData>;
   cors: {
     origin: '*',
   },
-  namespace: '/xp-websocket',
+  namespace: '/api/xp-websocket',
 })
 export class XpWebsocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -61,5 +61,9 @@ export class XpWebsocketGateway
 
   emitXpUpdate(auth0Id: string, amount: number): void {
     this.server.to(auth0Id).emit('xp-given', amount);
+    this.server.emit('xp-given-all', {
+      auth0Id: auth0Id,
+      amount: amount,
+    });
   }
 }

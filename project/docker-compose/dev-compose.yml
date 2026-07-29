@@ -9,10 +9,10 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 10
 
   mailing_db:
     image: postgres:15-alpine
@@ -107,8 +107,12 @@ services:
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=dev
     # ports:
     #   - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:
@@ -320,6 +324,15 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+  
+  outlook-addin:
+    image: fiveguys301/addin:latest
+    restart: on-failure
+    container_name: addin
+    environment:
+      - port=3000
+      - API_HOST=${GATEWAY_APP_CONTAINER}
+      - ADDIN_BASE_URL=https://capstone-five-guys.dns.net.za/addin/
 
   caddy:
     image: caddy:2.11.3

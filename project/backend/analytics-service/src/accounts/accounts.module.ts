@@ -14,6 +14,9 @@ import { AccountsService } from './accounts.service';
         },
       ],
       enableControllerDiscovery: true,
+      connectionInitOptions: {
+        wait: false,
+      }
     })
   ],
   controllers: [AccountsController],

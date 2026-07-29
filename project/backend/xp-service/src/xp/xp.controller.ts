@@ -13,7 +13,15 @@
  * - {@link XpController#getNetXpByUser} - Returns the total (net) XP for a specific user.
  */
 
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Logger,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { XpService } from './xp.service';
 import { GiveXpDto } from '../dto/give-xp.dto';
 import { XpEntity } from '../entities/xp.entity';
@@ -21,6 +29,8 @@ import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 @Controller('xp')
 export class XpController {
+  private readonly logger = new Logger(XpController.name);
+
   constructor(private readonly xpService: XpService) {}
 
   @RabbitSubscribe({
@@ -28,8 +38,16 @@ export class XpController {
     routingKey: 'xp.give',
     queue: 'xp-queue',
   })
-  async eventGiveXp(xpObject: GiveXpDto): Promise<XpEntity> {
-    return this.xpService.giveXp(xpObject);
+  async eventGiveXp(xpObject: GiveXpDto): Promise<void> {
+    try {
+      await this.xpService.giveXp(xpObject);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(`Dropping xp.give event: ${error.message}`);
+        return;
+      }
+      throw error;
+    }
   }
 
   @Post()

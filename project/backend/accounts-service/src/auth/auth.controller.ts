@@ -15,8 +15,9 @@ import {
   HttpCode,
   Param,
   NotFoundException,
+  Res,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
@@ -24,7 +25,7 @@ import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 
 interface AuthenticatedRequest extends Request {
@@ -45,7 +46,8 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  login(@Body() dto: LoginDto) {
+  login(@Req() req: Request, @Body() dto: LoginDto) {
+    dto.deviceToken = req.cookies?.device_token;
     return this.authService.login(dto);
   }
 
@@ -100,8 +102,22 @@ export class AuthController {
 
   @Post('verify-otp')
   @HttpCode(200)
-  verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyOtp(dto);
+  async verifyOtp(@Req() req: Request, @Body() dto: VerifyOtpDto, @Res({passthrough: true}) res: Response) {
+    const extendedDto: ExtendedVerifyOtpDto = {
+      email: dto.email,
+      code: dto.code,
+      userAgent: req.headers["user-agent"],
+      ip: req.ip,
+    }
+    const {message, deviceToken} = await this.authService.verifyOtp(extendedDto);
+    res.cookie( "device_token", deviceToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        maxAge: 60 * 24 * 60 * 60 * 1000,
+      },
+    );
+    return { message };
   }
 
   @Post('resend-otp')

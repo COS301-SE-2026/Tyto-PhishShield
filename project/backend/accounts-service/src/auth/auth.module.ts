@@ -18,7 +18,7 @@ import { OtpModule } from '../otp/otp.module';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     HttpModule,
     forwardRef(() => UsersModule),
-    OtpModule,
+    forwardRef(() => OtpModule),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RolesGuard],

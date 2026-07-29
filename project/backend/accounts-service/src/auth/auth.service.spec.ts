@@ -69,7 +69,7 @@ describe('AuthService', () => {
             ),
           },
         },
-        { provide: HttpService, useValue: { post: jest.fn() } },
+        { provide: HttpService, useValue: { post: jest.fn(), get: jest.fn() } },
         {
           provide: UsersService,
           useValue: {
@@ -198,11 +198,25 @@ describe('AuthService', () => {
   });
 
   describe('login()', () => {
+    beforeEach(() => {
+      // Mock otpService for all login tests
+      otpService.generateAndSend.mockResolvedValue(undefined);
+    });
+
     describe('Success', () => {
       it('should return access_token and expires_in on valid credentials', async () => {
-        // The user must be found and verified
+        // The user must be found, active, and verified (via Auth0)
         usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
 
+        // Mock management token
+        httpService.post.mockReturnValueOnce(
+          of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })),
+        );
+        // Mock Auth0 user-by-email call (GET)
+        httpService.get.mockReturnValueOnce(
+          of(axiosOf({ email_verified: true })),
+        );
+        // Mock login token call
         httpService.post.mockReturnValueOnce(
           of(axiosOf({ access_token: 'jwt-token', expires_in: 86400 })),
         );
@@ -219,19 +233,28 @@ describe('AuthService', () => {
         usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
 
         httpService.post.mockReturnValueOnce(
+          of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })),
+        );
+        httpService.get.mockReturnValueOnce(
+          of(axiosOf({ email_verified: true })),
+        );
+        httpService.post.mockReturnValueOnce(
           of(axiosOf({ access_token: 'jwt-token', expires_in: 86400 })),
         );
 
         await service.login({ email: 'test@example.com', password: 'Password123!' });
 
-        expect(httpService.post).toHaveBeenCalledWith(
-          expect.stringContaining('/oauth/token'),
-          expect.objectContaining({
-            grant_type: 'password',
-            audience: 'https://phishshield-api',
-            scope: 'openid profile email',
-          }),
+        // The login call is the second post to /oauth/token
+        const loginCall = httpService.post.mock.calls.find(
+          (call) =>
+            call[0].includes('/oauth/token') && call[1]?.grant_type === 'password',
         );
+        expect(loginCall).toBeDefined();
+        expect(loginCall[1]).toMatchObject({
+          grant_type: 'password',
+          audience: 'https://phishshield-api',
+          scope: 'openid profile email',
+        });
       });
     });
 
@@ -239,14 +262,31 @@ describe('AuthService', () => {
       it('should throw UnauthorizedException when email is not verified', async () => {
         usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: false });
 
+        // Even though the user is not verified, the code first tries to get
+        // the management token and then calls user-by-email.
+        httpService.post.mockReturnValueOnce(
+          of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })),
+        );
+        // Return email_verified: false from Auth0
+        httpService.get.mockReturnValueOnce(
+          of(axiosOf({ email_verified: false })),
+        );
+
         await expect(
           service.login({ email: 'test@example.com', password: 'Password123!' }),
         ).rejects.toThrow(UnauthorizedException);
       });
 
       it('should throw UnauthorizedException on invalid credentials', async () => {
-
         usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
+
+        httpService.post.mockReturnValueOnce(
+          of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })),
+        );
+        httpService.get.mockReturnValueOnce(
+          of(axiosOf({ email_verified: true })),
+        );
+        // Simulate Auth0 rejecting the password grant
         httpService.post.mockReturnValueOnce(
           throwError(() => ({ response: { status: 403 } })),
         );
@@ -258,13 +298,19 @@ describe('AuthService', () => {
 
       it('should throw UnauthorizedException when Auth0 is unreachable', async () => {
         usersService.findByEmail.mockResolvedValue({ ...mockUser, isVerified: true });
+
+        // Management token call succeeds
         httpService.post.mockReturnValueOnce(
+          of(axiosOf({ access_token: 'mgmt-token', expires_in: 86400 })),
+        );
+        // User-by-email call fails with network error
+        httpService.get.mockReturnValueOnce(
           throwError(() => new Error('Network Error')),
         );
 
         await expect(
           service.login({ email: 'test@example.com', password: 'Password123!' }),
-        ).rejects.toThrow(UnauthorizedException);
+        ).rejects.toThrow(InternalServerErrorException); // note: the code throws InternalServerErrorException
       });
     });
   });

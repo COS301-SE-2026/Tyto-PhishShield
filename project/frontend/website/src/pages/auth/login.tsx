@@ -9,6 +9,10 @@ interface LoginProps {
   onNavigate: (path: string) => void;
 }
 
+// OTP verification moved here from registration: the idea is a user only has to confirm a 1-time code the first time
+// they log in after registering. I left disabled for now because the OTP email itself isn't reliably sending yet.
+const OTP_LOGIN_ENABLED = true;
+
 function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -75,13 +79,18 @@ function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
 }
 
 export function Login({ onNavigate }: LoginProps) {
-  const { login } = useAuth();
+  const { login, twoFactorAuth } = useAuth();
   const { addToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [forgotOpen, setForgotOpen] = useState(false);
+   
+  const [otpStep, setOtpStep] = useState(false); // First-login OTP step; see OTP_LOGIN_ENABLED above
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const validate = () => {
     const e: typeof errors = {};
@@ -97,14 +106,43 @@ export function Login({ onNavigate }: LoginProps) {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true); setErrors({});
     try {
-      await login(email, password);
-      addToast({ type: 'success', title: 'Welcome back!' });
-      onNavigate('/dashboard');
+      const OTP: boolean = await login(email, password);
+      if (OTP && OTP_LOGIN_ENABLED) {
+        setOtpStep(true);
+      } else {
+        addToast({ type: 'success', title: 'Welcome back!' });
+        onNavigate('/dashboard');
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid email or password.';
       setErrors({ general: msg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Moved from register.tsx; see OTP_LOGIN_ENABLED above for more info
+  const handleOtpVerify = async () => {
+    if (otpCode.length !== 6) { setOtpError('Please enter the full 6-digit code.'); return; }
+    setOtpLoading(true);
+    setOtpError('');
+    try {
+      await twoFactorAuth(email, otpCode);
+      addToast({ type: 'success', title: 'Welcome back!' });
+      onNavigate('/dashboard');
+    } catch (err: unknown) {
+      setOtpError(err instanceof Error ? err.message : 'Invalid or expired code.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await authApi.resendOtp(email);
+      addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}.` });
+    } catch {
+      addToast({ type: 'error', title: 'Could not resend', message: 'Please try again in a moment.' });
     }
   };
 
@@ -148,6 +186,41 @@ export function Login({ onNavigate }: LoginProps) {
         boxShadow: 'var(--shadow-sm)',
         padding: '32px 34px',
       }}>
+        {otpStep ? (
+        <>
+          <h1 style={{ fontSize: 23, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Verify your email
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            As this is your first time signing in, we sent a 6-digit code to <strong>{email}</strong>. Enter it below to continue.
+          </p>
+          <div style={{ marginBottom: 16 }}>
+            <Input
+              label="Verification code"
+              placeholder="123456"
+              value={otpCode}
+              onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setOtpError(''); }}
+              error={otpError}
+              required
+              style={{ letterSpacing: 8, fontSize: 22, textAlign: 'center' }}
+            />
+          </div>
+          <Button fullWidth loading={otpLoading} onClick={() => { void handleOtpVerify(); }}
+            style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8, marginBottom: 14 }}>
+            Verify and Continue
+          </Button>
+          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Didn't receive it?{' '}
+            <button
+              onClick={() => { void handleResendOtp(); }}
+              style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}
+            >
+              Resend code
+            </button>
+          </p>
+        </>
+      ) : (
+        <>
       <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
         Welcome back
       </h1>
@@ -227,6 +300,8 @@ export function Login({ onNavigate }: LoginProps) {
         New accounts are provisioned by your organisation administrator.<br />
         Contact <a href="mailto:admin@tyto.co.za" style={{ color: 'var(--color-primary)' }}>admin@tyto.co.za</a> for access.
       </p>
+      </>
+      )}
     </div>
   );
 

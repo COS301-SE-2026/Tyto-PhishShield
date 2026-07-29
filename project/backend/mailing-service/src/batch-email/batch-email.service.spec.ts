@@ -129,7 +129,7 @@ describe('BatchEmailService', () => {
       expect(result.message).toContain(`${recipients.length}`);
     });
 
-    it('should send a batch using sender directly when alias is absent', async () => {
+    it('should send a batch without alias', async () => {
       const emailWithoutAlias = { ...mockEmail, alias: undefined };
       mockEmailRepository.find.mockResolvedValue([emailWithoutAlias]);
       mockResendBatchSend.mockResolvedValue({ error: null });
@@ -143,7 +143,7 @@ describe('BatchEmailService', () => {
       );
     });
 
-    it('should throw InternalServerErrorException when Resend returns an error object', async () => {
+    it('should throw InternalServerErrorException when Resend returns an error', async () => {
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
       mockResendBatchSend.mockResolvedValue({
         error: { message: 'Resend rejected the request' },
@@ -201,7 +201,7 @@ describe('BatchEmailService', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should send a batch at the exact scheduledFrom when dates are the same instant', async () => {
+    it('should send a batch at scheduledFrom when dates are same', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
       mockResendBatchSend.mockResolvedValue({ error: null });
@@ -250,7 +250,7 @@ describe('BatchEmailService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('sends a single resend batch call with round-robin templates when randomisedTimes=true and dates differ', async () => {
+    it('sends a single resend batch call when randomisedTimes=true and dates differ', async () => {
       const mockEmails = [
         { ...mockEmail, referenceNumber: 'PHISH-AAA' },
         { ...mockEmail, referenceNumber: 'PHISH-BBB' },
