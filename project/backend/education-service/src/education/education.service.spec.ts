@@ -147,3 +147,48 @@ describe('EducationService', () => {
       );
     });
   });
+
+    describe('getMyAssignment', () => {
+      const auth0Id = 'auth0|123';
+  
+      it('returns the assignment with questions', async () => {// also make sure that it gives assignment id.
+        const assignment = {
+          id: 'a1',
+          auth0Id,
+          questionIds: ['q1', 'q2'],
+          status: AssignmentStatus.PENDING,
+          createdAt: new Date(),
+        };
+        const questions = [
+          {
+            id: 'q1',
+            questionText: 'Q1',
+            options: ['A', 'B'],
+            correctOptionIndex: 0,
+            createdAt: new Date(),
+          },
+          {
+            id: 'q2',
+            questionText: 'Q2',
+            options: ['C', 'D'],
+            correctOptionIndex: 1,
+            createdAt: new Date(),
+          },
+        ];
+  
+        assignmentRepo.findOne.mockResolvedValue(assignment as any);
+        questionRepo.findByIds.mockResolvedValue(questions as any);
+  
+        const result = await service.getMyAssignment(auth0Id);
+        expect(result).toBeTruthy();
+        expect(result!.questions).toHaveLength(2);
+        expect(result!.questions[0]).not.toHaveProperty('correctOptionIndex');
+      });
+  
+      it('returns nul when no pending assignment exists', async () => {
+        assignmentRepo.findOne.mockResolvedValue(null);
+  
+        const result = await service.getMyAssignment(auth0Id);
+        expect(result).toBeNull();
+      });
+    });
