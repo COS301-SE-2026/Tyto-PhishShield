@@ -4,6 +4,8 @@ import { Card, Badge, Button, Input, Modal } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { API_BASE, authFetch } from '../../services/api';
+import { fetchLeaderboardXp } from '../leaderboard/leaderboard.service';
+import { connectXpSocket } from '../../services/xp-socket';
 
 type UserRole = 'admin' | 'analyst' | 'user';
 
@@ -22,6 +24,7 @@ interface RealUser {
   status: 'active' | 'suspended';
 }
 
+type AccountsUser = Omit<RealUser, 'xp' | 'xpToday' | 'status'>;
 type SortKey = 'name' | 'xp' | 'email';
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
@@ -190,8 +193,20 @@ export function Users({ onNavigate, activePath }: UsersProps) {
     try {
       const res = await authFetch(`${API_BASE}/accounts/users`);
       if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json() as RealUser[];
-      setUsers(data.map(u => ({ ...u, status: 'active' as const })));
+      const data = await res.json() as AccountsUser[];
+      let xpByAuth0Id = new Map<string, number>();
+      try {
+        const xpEntries = await fetchLeaderboardXp();
+        xpByAuth0Id = new Map(xpEntries.map(e => [e.auth0Id, e.totalXp]));
+      } catch {
+        addToast({ type: 'error', title: 'XP totals unavailable', message: 'Showing 0 XP until xp-service responds.' });
+      }
+      setUsers(data.map(u => ({
+        ...u,
+        xp: xpByAuth0Id.get(u.auth0Id) ?? 0,
+        xpToday: 0,
+        status: 'active' as const,
+      })));
     } catch {
       addToast({ type: 'error', title: 'Could not load users', message: 'Check that you have admin access.' });
     } finally {
@@ -199,6 +214,22 @@ export function Users({ onNavigate, activePath }: UsersProps) {
     }
   };
   useEffect(() => { void fetchUsers(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
+    connectXpSocket().then(s => {
+        if (cancelled) { s.disconnect(); return; }
+        socket = s;
+        s.on('xp-given-all', ({ auth0Id, amount }: { auth0Id: string; amount: number }) => {
+          setUsers(prev => prev.map(u => u.auth0Id === auth0Id ? { ...u, xp: u.xp + amount } : u));
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      socket?.disconnect();
+    };
+  }, []);
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
