@@ -94,7 +94,7 @@ describe('EducationService', () => {
     });
 
       describe('findAllQuestions', () => {
-    it('returns all questions ordered by createdAt desc', async () => {
+    it('returns all qestions ordered by createdAt desc', async () => {
       const questions = [{ id: 'q1' }, { id: 'q2' }];// will this work, do we have 2 questions here or will it not work?...
       questionRepo.find.mockResolvedValue(questions as any);//will linter allow me this?
 
@@ -103,5 +103,47 @@ describe('EducationService', () => {
       expect(questionRepo.find).toHaveBeenCalledWith({
         order: { createdAt: 'DESC' },
       });
+    });
+  });
+
+    describe('createAssignment', () => {
+    const auth0Id = 'auth0|123';
+    const questions = [
+      { id: 'q1' },
+      { id: 'q2' },
+      { id: 'q3' },
+      { id: 'q4' },
+      { id: 'q5' },//lets test here with 5 questins, see what happens.
+    ];
+
+    it('creates a new assignment when no pending assignment exists', async () => {
+      assignmentRepo.findOne.mockResolvedValue(null);
+      questionRepo.find.mockResolvedValue(questions as any);
+      assignmentRepo.create.mockImplementation((data) => data as any);
+      assignmentRepo.save.mockImplementation((a) => Promise.resolve(a as any));
+
+      const result = await service.createAssignment(auth0Id);
+
+      expect(result.auth0Id).toBe(auth0Id);
+      expect(result.questionIds).toHaveLength(3);
+      expect(result.status).toBe(AssignmentStatus.PENDING);
+      expect(assignmentRepo.save).toHaveBeenCalled();
+    });
+
+    it('throws ConflictException when a pendng assignment already exists', async () => {
+      assignmentRepo.findOne.mockResolvedValue({ id: 'a1' } as any);
+
+      await expect(service.createAssignment(auth0Id)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('throws BadRequestExceptoon when no questions exist in the database', async () => {
+      assignmentRepo.findOne.mockResolvedValue(null);
+      questionRepo.find.mockResolvedValue([]);
+
+      await expect(service.createAssignment(auth0Id)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
