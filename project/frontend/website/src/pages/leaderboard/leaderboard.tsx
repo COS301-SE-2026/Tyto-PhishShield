@@ -3,7 +3,7 @@ import { AppLayout } from "../../components/layout/app-layout";
 import { Badge, Card, Input, Select, Spinner } from "../../components/ui";
 import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../context/toast-context";
-import { fetchLeaderboardUsers, fetchLeaderboardXp, getInitials, groupUsersByDepartment, resolveDepartment, type RealUser, 
+import { fetchLeaderboardXp, getInitials, groupUsersByDepartment, resolveDepartment,
     type XpNetEntry, } from "./leaderboard.service";
 import {connectXpSocket } from "../../services/xp-socket";
 
@@ -15,7 +15,7 @@ interface LeaderboardProps {
 type LeaderboardTab = 'users' | 'departments';
 type DepartmentRankMode = 'totalXP' | 'averageXP';
 type DepartmentSizeFilter = 'all' | 'large' | 'small';
-type LoadError = 'forbidden' | 'other' | null;
+type LoadError = 'other' | null;
 
 interface UserRow {
     id: string;
@@ -23,6 +23,11 @@ interface UserRow {
     department: string;
     xp: number;
     isSelf: boolean;
+}
+
+interface XpGivenAllPayload {
+    auth0Id: string;
+    amount: number;
 }
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -34,26 +39,19 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     const [departmentRankMode, setDepartmentRankMode] = useState<DepartmentRankMode>('totalXP');
     const [sizeFilter, setSizeFilter] = useState<DepartmentSizeFilter>('all');
     const [search, setSearch] = useState('');
-    const [realUsers, setRealUsers] = useState<RealUser[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<LoadError>(null);
     const [xpEntries, setXpEntries] = useState<XpNetEntry[] | null>(null);
-
-    //Important: Leaderboard nav item should have no minRole as every registered user is supposed to be able
-    //to see it, not just admin/analyst. GET /api/accounts/users is restricted server-side to admin/analyst (RolesGuard)
-    
+  
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
         setLoadError(null);
-        fetchLeaderboardUsers()
-            .then(data => { if (!cancelled) setRealUsers(data); })
-            .catch((err: unknown) => {
-                if (cancelled) return;
-                const message = err instanceof Error ? err.message : '';
-                const forbidden = message.includes('(403)');
-                setLoadError(forbidden ? 'forbidden' : 'other');
-                if (!forbidden) {
+        fetchLeaderboardXp()
+            .then(data => { if (!cancelled) setXpEntries(data); })
+            .catch(() => {
+                if (cancelled) {
+                    setLoadError('other');
                     addToast({ type: 'error', title: 'Could not load leaderboard', message: 'Please try again.' });
                 }
             })
@@ -61,70 +59,67 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
         return () => { cancelled = true; };
     }, []);
 
-    //Supplementary XP, no role restriction
+    //Supplementary XP, no role restriction, live updates
     useEffect(() => {
         let cancelled = false;
-        fetchLeaderboardXp().then(data => { if (!cancelled) setXpEntries(data); })
+        setLoading(true);
+        setLoadError(null);
+        fetchLeaderboardXp()
+            .then(data => { if (!cancelled) setXpEntries(data); })
             .catch(() => {
                 if (!cancelled) {
-                    addToast({ type: 'error', title: 'Could not load XP totals', message: 'Showing 0 XP until this loads.' });
+                    setLoadError('other');
+                    addToast({ type: 'error', title: 'Could not load leaderboard', message: 'Please try again shortly.' });
                 }
-            });
+            })
+            .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, []);
 
-    // Live updates for the current user's own XP only (see xp-socket.ts)
+    // Live updates
     useEffect(() => {
-        if (!user) return;
         let cancelled = false;
         let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
-        connectXpSocket().then(s => {
-                if (cancelled) { s.disconnect(); return; }
-                socket = s;
-                s.on('xp-given', (amount: number) => {
+        connectXpSocket().then( s => { if (cancelled) { s.disconnect(); return; } 
+            socket = s;
+                s.on('xp-given-all', ({ auth0Id, amount }: XpGivenAllPayload) => {
                     setXpEntries(prev => {
                         const list = prev ?? [];
-                        const idx = list.findIndex(entry => entry.auth0Id === user.auth0Id);
-                        if (idx === -1) return [...list, { auth0Id: user.auth0Id, totalXp: amount }];
+                        const idx = list.findIndex(entry => entry.auth0Id === auth0Id);
+                        if (idx === -1) {
+                            if (auth0Id !== user?.auth0Id) return list;
+                            return [...list, {
+                                auth0Id: user.auth0Id,
+                                name: user.name ?? user.email,
+                                email: user.email,
+                                department: null,
+                                totalXp: amount,
+                            }];
+                        }
                         const updated = [...list];
                         updated[idx] = { ...updated[idx], totalXp: updated[idx].totalXp + amount };
                         return updated;
                     });
                 });
             })
-            .catch(() => {  });
-        return () => {
-            cancelled = true;
+            .catch(() => undefined)
+        return () => { 
+            cancelled = true; 
             socket?.disconnect();
         };
     }, [user]);
     
-    // xp-service only returns users with at least one XP entry (I think its because of the inner join)
-    const xpByAuth0Id = useMemo(() => {
-        const map = new Map<string, number>();
-        for (const entry of xpEntries ?? []) {
-            map.set(entry.auth0Id, entry.totalXp);
-        }
-        return map;
-    }, [xpEntries]);
-
-    const enrichedUsers: RealUser[] = useMemo(
-        () => (realUsers ?? []).map(u => ({ ...u, xp: xpByAuth0Id.get(u.auth0Id) ?? 0 })),
-        [realUsers, xpByAuth0Id],
-    );
-
     const userRows: UserRow[] = useMemo(() => {
-        return enrichedUsers
-            .map(u => ({
-                id: u.id,
-                name: u.name?.trim() ? u.name.trim() : u.email,
-                // resolveDepartment() falls back to "Unassigned" until it is tracked server-side
-                department: resolveDepartment(u.department),
-                xp: u.xp,
-                isSelf: !!user && u.email === user.email,
+       return (xpEntries ?? [])
+            .map(entry => ({
+                id: entry.auth0Id,
+                name: entry.name?.trim() ? entry.name.trim() : entry.email,
+                department: resolveDepartment(entry.department),
+                xp: entry.totalXp,
+                isSelf: !!user && entry.auth0Id === user.auth0Id,
             }))
             .sort((a, b) => b.xp - a.xp);
-    }, [enrichedUsers, user]);
+    }, [xpEntries, user]);
 
     const filteredUserRows = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -133,8 +128,8 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     }, [userRows, search]);
 
     const departmentGroups = useMemo(
-        () => groupUsersByDepartment(enrichedUsers),
-        [enrichedUsers],
+        () => groupUsersByDepartment(userRows),
+        [userRows],
     );
 
     const sortedDepartments = useMemo(() => {
@@ -341,11 +336,6 @@ function LeaderboardBody({ loading, loadError, isEmpty, emptyMessage, children }
             <div style={{ padding: 48, display: 'flex', justifyContent: 'center' }}>
                 <Spinner size={24} />
             </div>
-        );
-    }
-    if (loadError === 'forbidden') {
-        return (
-            <EmptyState message= "Your account isn't permitted to load the leaderboard yet (endpoint restriction: server-side)" />
         );
     }
     if (loadError === 'other') {
