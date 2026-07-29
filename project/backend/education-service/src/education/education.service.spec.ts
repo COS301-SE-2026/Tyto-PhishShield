@@ -8,6 +8,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Logger } from '@nestjs/common'
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import {
   BadRequestException,
@@ -249,7 +250,7 @@ describe('EducationService', () => {
       const result = await service.submitAnswers(auth0Id, dto);
       expect(result.passed).toBe(true);
       expect(result.xpAwarded).toBe(10);
-      expect(result.correctCount).toBe(2);
+      expect(result.correctCount).toBe(2);//this seems like good numbers by the way.
       expect(assignmentRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ status: AssignmentStatus.PASSED, xpAwarded: 10 }),
       );
@@ -281,18 +282,39 @@ describe('EducationService', () => {
       );
     });
 
-    it('logs an error but does not throw when AMQP publish fails', async () => {
-      const loggerSpy = jest
-        .spyOn(EducationService.prototype as any, 'logger')
-        .mockImplementation({ error: jest.fn(), log: jest.fn() } as any);
+it('logs an eror but does not throw when AMQP publish fails', async () => {
+  // Use correct-length answers so we get past the length check
+  dto.answers = [1, 0]; // both correct, will cause publish to be called
 
-      amqpConnection.publish.mockRejectedValue(new Error('broker down'));
+  const errorSpy = jest
+    .spyOn(Logger.prototype, 'error')
+    .mockImplementation(() => {});
+  const logSpy = jest
+    .spyOn(Logger.prototype, 'log')
+    .mockImplementation(() => {});
 
-      const result = await service.submitAnswers(auth0Id, dto);
-      expect(result.passed).toBe(true);
-      // error logged, no exception thrown
-      expect(amqpConnection.publish).toHaveBeenCalled();
-      loggerSpy.mockRestore();
+  amqpConnection.publish.mockRejectedValue(new Error('broker down'));
+
+  const result = await service.submitAnswers(auth0Id, dto);
+  expect(result.passed).toBe(true);
+  expect(amqpConnection.publish).toHaveBeenCalled();
+  expect(errorSpy).toHaveBeenCalled();
+
+  errorSpy.mockRestore();
+  logSpy.mockRestore();
+});
+  });
+
+    describe('findAllAssignments', () => {
+    it('returns all assignments ordered by createdAt desc', async () => {
+      const assignments = [{ id: 'a1' }, { id: 'a2' }];
+      assignmentRepo.find.mockResolvedValue(assignments as any);
+
+      const result = await service.findAllAssignments();
+      expect(result).toEqual(assignments);
+      expect(assignmentRepo.find).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+      });
     });
   });
 });
