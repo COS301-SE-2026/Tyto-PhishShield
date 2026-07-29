@@ -17,9 +17,9 @@ Thus in using these two architectural patterns the system essentially uses event
 ### Design Patterns
 Analyising the system on a design level we can point out the usage of a few design patterns:<br>
 Firstly the API gateway acts as a facade, creating an interface through which the rest of the system can be used. This improves maintainablity since we make use of one entry point through which requests enter into the system which is easier to maintain than having multiple entry points.<br>
-Then the event driven system acts as a mediator for the services. The event driven system can have multiple event exchanges through which services can recieve different types of event messages and handle some system logic on the backend. This improves flexibility allowing system logic to be handled independantly by separate services.
+Then the event driven system acts as a mediator for the services. The event driven system can have multiple event exchanges through which services can receive different types of event messages and handle some system logic on the backend. This improves flexibility allowing system logic to be handled independently by separate services.
 
-### Constriants 
+### Constraints 
 
 ### Quality Requirements
  1. Flexibility
@@ -91,13 +91,13 @@ The event system contains multiple event queues in which an event being processe
 ### Deployment Requirements
 Live System: https://capstone-five-guys.dns.net.za/
 
-Currently we have a local development environment that we run on our local computers for testing the integrated system. Then we deploy the system automatically to dockerhub and we use watchtower to pull new images into our staging development environment.
+Currently we have a local development environment that we run on our local computers for testing the integrated system. Then we deploy the system automatically to docker hub and we use watchtower to pull new images into our staging development environment.
 
-In the future we will add a production environment on the server where the most stable versions will be deployed and accessable to everyone. Currently the staging development environment is accessable to all but it will be restricted in the future.
+In the future we will add a production environment on the server where the most stable versions will be deployed and accessible to everyone. Currently the staging development environment is accessible to all but it will be restricted in the future.
 
-Containerization: All services are containerized and are able to run in a docker environment. This allows the local integration testing and production environments to be reproducable through the containers.
+Containerization: All services are containerized and are able to run in a docker environment. This allows the local integration testing and production environments to be reproducible through the containers.
 
-Environment variables are used on the server to set up our current staging development environment, and github secrets are used to deploy our containers to docker hub.
+Environment variables are used on the server to set up our current staging development environment, and GitHub secrets are used to deploy our containers to docker hub.
 
 Roll-back strategy: To deploy to production we plan to use rolling deployment to deploy the microservice containers using image tag pinning. If a microservice goes down the system as a whole is still up and we can easily roll back the microservice to an earlier tagged version.<br>
 For the api-gateway we plan to use a blue-green deployment strategy to switch the api-gateway to the next version through routing to the blue/green container and if the version fails one can switch back to the the other version.
@@ -115,7 +115,7 @@ flowchart TD
 	C --> |Yes| K[(Cache node_modules)]
 	K --> |use artifacts| D
     C -->|Yes| D[For each backend Service:]
-    C -->|No| E([Report failour])
+    C -->|No| E([Report failure])
     D --> F(Job: build)
     D --> G(Job: lint)
     D --> H(Job: test)
@@ -152,7 +152,7 @@ flowchart TD
     C -->|Yes| D[For each frontend Service:]
 	C --> |Yes| K[(Cache node_modules)]
 	K --> |use artifacts| D
-    C -->|No| E([Report failour])
+    C -->|No| E([Report failure])
     D --> F(Job: build)
     D --> G(Job: lint)
     D --> H(Job: test)
@@ -188,7 +188,7 @@ flowchart TD
     C --> D
     B --> D{Success}
     D --> |Yes| E[(Workflow: integration)]
-    D --> |No| H([Report failiour])
+    D --> |No| H([Report failure])
     E --> F{Success?}
     F --> |Yes| G([Report Success])
     F --> |No| H
@@ -213,7 +213,7 @@ flowchart TD
 	G --> H
     H --> I{Success}
 	I --> |Yes| J([Report Success])
-	I --> |No| K([Report failiour])
+	I --> |No| K([Report failure])
 ```
 
 #### CI/CD workflow
@@ -224,7 +224,7 @@ flowchart TD
     C --> D
     B --> D{Success}
     D --> |Yes| E[(Workflow: integration)]
-    D --> |No| H([Report failiour])
+    D --> |No| H([Report failure])
     E --> F{Success}
     F --> |Yes| G[(Workflow: deploy)]
 	G --> I{Success}
