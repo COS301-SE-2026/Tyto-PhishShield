@@ -26,18 +26,12 @@ RUN pnpm build
 
 USER appuser
 
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 
 COPY --from=builder /app/project/frontend/phishshield-outlook-addin/dist /usr/share/nginx/html
 
-RUN chown -R nginx:nginx \
-    /usr/share/nginx/html \
-    /var/cache/nginx \
-    /var/log/nginx \
-    /etc/nginx/conf.d
-
 USER nginx
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

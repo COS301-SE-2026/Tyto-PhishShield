@@ -330,7 +330,7 @@ services:
     restart: on-failure
     container_name: addin
     ports:
-      - '3000:80'
+      - '3000:8080'
 
   caddy:
     image: caddy:2.11.3
