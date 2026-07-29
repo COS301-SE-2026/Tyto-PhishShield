@@ -28,6 +28,7 @@ export class EducationController {
   constructor(private readonly educationService: EducationService) {}
 
   @RabbitSubscribe({
+    // this is crucial to communicate with the other service.
     exchange: 'education-event-exchange',
     routingKey: 'education.assign',
     queue: 'education-service-assign-queue',
@@ -36,8 +37,8 @@ export class EducationController {
     this.logger.log(`Received education.assign for user ${payload.auth0Id}`);
     await this.educationService.createAssignment(payload.auth0Id);
   }
-  
-  @Post('questions')
+
+  @Post('questions') // ok if this works we shoulb de good.
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add a question to the bank(admin)' })
@@ -55,12 +56,12 @@ export class EducationController {
 
   @Get('assignments')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth() // maybe user as well in future?
   @ApiOperation({ summary: 'List all assignments (admin)' })
   findAllAssignments() {
     return this.educationService.findAllAssignments();
   }
-
+  // keep in mind what to do with the assignment fo admin pages.
   @Post('assignments')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -90,10 +91,10 @@ export class EducationController {
   }
 
   @Post('answers')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) //make sure the array length match what we have in the number of quuestions.
   @ApiBearerAuth()
   @HttpCode(200)
-  @ApiOperation({ summary: 'Submit answers for a pending assignment' })
+  @ApiOperation({ summary: 'Submit answers for a pening assignment' })
   submitAnswers(
     @Req() req: AuthenticatedRequest,
     @Body() dto: SubmitAnswersDto,
