@@ -29,16 +29,21 @@ export class AccountsService {
 
   async createUser(user: User): Promise<void> {
     try {
-      await this.userRepository.upsert(
-        {
+      await this.userRepository
+        .createQueryBuilder()
+        .insert()
+        .into(UserEntity)
+        .values({
           id: user.id,
           auth0Id: user.auth0Id,
           name: user.name,
           email: user.email,
           department: user.department,
-        },
-        { conflictPaths: ['auth0Id'], skipUpdateIfNoValuesChanged: true },
-      );
+        })
+        .orUpdate(['name', 'email', 'department'], ['auth0Id'], {
+          skipUpdateIfNoValuesChanged: true,
+        })
+        .execute();
       this.logger.log(`Upserted user ${user.auth0Id}`);
     } catch (error) {
       this.logger.error(`Failed to upsert user ${user.auth0Id}`, error);
