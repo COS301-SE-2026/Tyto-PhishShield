@@ -26,9 +26,10 @@ export class EducationService {
     private readonly questionRepo: Repository<Question>,
     @InjectRepository(Assignment)
     private readonly assignmentRepo: Repository<Assignment>,
+    
     private readonly amqpConnection: AmqpConnection,
   ) {}
-
+  //my idea here is that we will be creating assignments which will consist of about 3-4 questions and then an array of answers to get the right answers. Everything will have its own ID and all that jazz as well.
   async createQuestion(dto: CreateQuestionDto): Promise<Question> {
     if (dto.correctOptionIndex >= dto.options.length) {
       throw new BadRequestException(
@@ -48,9 +49,10 @@ export class EducationService {
       where: { auth0Id, status: AssignmentStatus.PENDING },
     });
     if (existing) {
+
       throw new ConflictException('You already have existing assignment');
     }
-
+  // should this be await?.... yes, yes it should
     const allQuestions = await this.questionRepo.find();
     if (allQuestions.length === 0) {
       throw new BadRequestException(
@@ -58,7 +60,7 @@ export class EducationService {
       );
     }
 
-    const selected = this.randomSubset(allQuestions, QUESTIONS_PER_ASSIGNMENT);
+    const selected = this.randomSubset(allQuestions, QUESTIONS_PER_ASSIGNMENT);// no sonarqube stuff here for some reason, but thats nice.
 
     const assignment = this.assignmentRepo.create({
       auth0Id,
@@ -68,7 +70,7 @@ export class EducationService {
 
     return this.assignmentRepo.save(assignment);
   }
-
+ //have to think about admin view since they wont have this which will take up most of the normal user stuff.
   async getMyAssignment(
     auth0Id: string,
   ): Promise<
@@ -76,6 +78,7 @@ export class EducationService {
   > {
     const assignment = await this.assignmentRepo.findOne({
       where: { auth0Id, status: AssignmentStatus.PENDING },
+
       order: { createdAt: 'DESC' },
     });
 
@@ -87,8 +90,10 @@ export class EducationService {
       id: q.id,
       questionText: q.questionText,
       options: q.options,
+
       createdAt: q.createdAt,
     }));
+
 
     return { ...assignment, questions: sanitised };
   }
@@ -97,6 +102,7 @@ export class EducationService {
     return this.assignmentRepo.find({
       where: { auth0Id },
       order: { createdAt: 'DESC' },
+
     });
   }
 
@@ -116,6 +122,8 @@ export class EducationService {
         auth0Id,
         status: AssignmentStatus.PENDING,
       },
+
+
     });
 
     if (!assignment) {
@@ -133,10 +141,11 @@ export class EducationService {
     let correctCount = 0;
     for (let i = 0; i < questions.length; i++) {
       if (dto.answers[i] === questions[i].correctOptionIndex) {
+
         correctCount++;
       }
     }
-
+  //check with the exchange stuff with Darius and Josua before demo 2.
     const score = correctCount / questions.length;
     const passed = score >= PASS_THRESHOLD;
 
@@ -151,12 +160,13 @@ export class EducationService {
       try {
         await this.amqpConnection.publish('xp-event-exchange', 'xp.give', {
           auth0Id,
+
           amount: XP_AWARDED,
           reason: 'Passed education assignment',
         });
         this.logger.log(`Published xp.give for user ${auth0Id}`);
       } catch (err) {
-        this.logger.error(`Failed to publish xp.give for ${auth0Id}`, err);
+        this.logger.error(`Failed to publis xp.give for ${auth0Id}`, err);
       }
     }
 
@@ -167,6 +177,7 @@ export class EducationService {
     return {
       passed,
       xpAwarded: assignment.xpAwarded,
+
       correctCount,
       total: questions.length,
       feedback,
@@ -180,5 +191,6 @@ export class EducationService {
   private randomSubset<T>(arr: T[], size: number): T[] {
     const shuffled = [...arr].sort(() => crypto.randomInt(-1, 2));
     return shuffled.slice(0, Math.min(size, arr.length));
+
   }
 }
