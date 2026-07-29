@@ -213,3 +213,6 @@ jobs:
                 context: .
                 file: ./project/frontend/phishshield-outlook-addin/Dockerfile
                 tags: ${{ vars.DOCKERHUB_USERNAME }}/addin:latest
+                build-args: |
+                  API_BASE=${{ vars.PRODUCTION_API_BASE }}
+                  ADDIN_BASE_URL=${{ vars.PRODUCTION_ADDIN_BASE_URL }}
