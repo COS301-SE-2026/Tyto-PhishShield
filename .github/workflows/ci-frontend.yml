@@ -36,7 +36,7 @@ jobs:
     Website-lint:
         name: website lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -60,7 +60,7 @@ jobs:
     Website-tests:
         name: website tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -84,7 +84,7 @@ jobs:
     Website-build:
         name: website build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -108,7 +108,7 @@ jobs:
     Outlook-Addin-lint:
         name: Outlook Addin lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -132,7 +132,7 @@ jobs:
     Outlook-Addin-tests:
         name: Outlook Addin tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -156,7 +156,7 @@ jobs:
     Outlook-Addin-build:
         name: Outlook Addin build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -180,7 +180,7 @@ jobs:
     design-spec-lint:
         name: design spec lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -204,7 +204,7 @@ jobs:
     design-spec-build:
         name: design spec build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]

@@ -36,7 +36,7 @@ jobs:
     API-Gateway-lint:
         name: API Gateway Backend lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -60,7 +60,7 @@ jobs:
     API-Gateway-tests:
         name: API Gateway Backend tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -84,7 +84,7 @@ jobs:
     API-Gateway-build:
         name: API Gateway Backend build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -108,7 +108,7 @@ jobs:
     Accounts-Service-lint:
         name: Accounts Service Backend lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -132,7 +132,7 @@ jobs:
     Accounts-Service-tests:
         name: Accounts Service Backend tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -156,7 +156,7 @@ jobs:
     Accounts-Service-build:
         name: Accounts Service Backend build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -180,7 +180,7 @@ jobs:
     Mailing-Service-lint:
         name: Mailing Service Backend lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -204,7 +204,7 @@ jobs:
     Mailing-Service-tests:
         name: Mailing Service Backend tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -228,7 +228,7 @@ jobs:
     Mailing-Service-build:
         name: Mailing Service Backend build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -252,7 +252,7 @@ jobs:
     Report-Service-lint:
         name: Report Service Backend lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -276,7 +276,7 @@ jobs:
     Report-Service-tests:
         name: Report Service Backend tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -300,7 +300,7 @@ jobs:
     Report-Service-build:
         name: Report Service Backend build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -324,7 +324,7 @@ jobs:
     XP-Service-lint:
         name: XP Service Backend lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -348,7 +348,7 @@ jobs:
     XP-Service-tests:
         name: XP Service Backend tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -372,7 +372,7 @@ jobs:
     XP-Service-build:
         name: XP Service Backend build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -396,7 +396,7 @@ jobs:
     Education-Service-lint:
         name: Education Service Backend lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -420,7 +420,7 @@ jobs:
     Education-Service-tests:
         name: Education Service Backend tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -444,7 +444,7 @@ jobs:
     Education-Service-build:
         name: Education Service Backend build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -468,7 +468,7 @@ jobs:
     Analytics-Service-lint:
         name: Analytics Service Backend lint
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -492,7 +492,7 @@ jobs:
     Analytics-Service-tests:
         name: Analytics Service Backend tests
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
@@ -516,7 +516,7 @@ jobs:
     Analytics-Service-build:
         name: Analytics Service Backend build
         needs: install
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         strategy:
           matrix:
             node-version: [24]
