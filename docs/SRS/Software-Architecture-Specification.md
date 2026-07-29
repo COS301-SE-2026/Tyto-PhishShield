@@ -89,5 +89,21 @@ The event system contains multiple event queues in which an event being processe
 ## Deployment
 
 ### Deployment Requirements
+Live System: https://capstone-five-guys.dns.net.za/
+
+Currently we have a local development environment that we run on our local computers for testing the integrated system. Then we deploy the system automatically to dockerhub and we use watchtower to pull new images into our staging development environment.
+
+In the future we will add a production environment on the server where the most stable versions will be deployed and accessable to everyone. Currently the staging development environment is accessable to all but it will be restricted in the future.
+
+Containerization: All services are containerized and are able to run in a docker environment. This allows the local integration testing and production environments to be reproducable through the containers.
+
+Environment variables are used on the server to set up our current staging development environment, and github secrets are used to deploy our containers to docker hub.
+
+Roll-back strategy: To deploy to production we plan to use rolling deployment to deploy the microservice containers using image tag pinning. If a microservice goes down the system as a whole is still up and we can easily roll back the microservice to an earlier tagged version.<br>
+For the api-gateway we plan to use a blue-green deployment strategy to switch the api-gateway to the next version through routing to the blue/green container and if the version fails one can switch back to the the other version.
+
 
 ### Deployment Diagram
+!['Deployment Diagram'](<../images/Deployment Diagram.png>)
+
+### CI/CD Pipeline
