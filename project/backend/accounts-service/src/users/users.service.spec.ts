@@ -45,7 +45,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repo },
-        { provide: EventProducerService, useValue: { publishUserCreatedEvent: jest.fn().mockResolvedValue(undefined) } },
+        { provide: EventProducerService, useValue: { publishUserCreatedEvent: jest.fn().mockResolvedValue(undefined) } },//remember to check with Josua about this one.
       ],
     }).compile();
 
@@ -70,13 +70,13 @@ describe('UsersService', () => {
         expect(result).toEqual(user);
       });
   
-      it('fires the user.created event after save', async () => {
+      it('fires the user.created event after save', async () => {// added this, because the event thing was causing prbolems so now we save first user.
         const user = makeUser();
         repo.create.mockReturnValue(user);
         repo.save.mockResolvedValue(user);
   
         await service.create({ auth0Id: 'auth0|abc123', email: 'x@y.com', department: Department.FINANCE });
-  
+  //look at these amazing mock emails.
         expect(eventProducer.publishUserCreatedEvent).toHaveBeenCalled();
       });
   

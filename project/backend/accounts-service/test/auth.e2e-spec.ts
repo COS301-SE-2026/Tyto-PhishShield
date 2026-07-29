@@ -11,7 +11,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import request from 'supertest';
-import nock from 'nock';
+import nock from 'nock';//lets try use this to mock the jwks endpoint instead of using the real one. This will make the tests more reliable and faster.
 import jwt from 'jsonwebtoken';
 import crypto  from 'crypto';
 import { of, throwError } from 'rxjs';
@@ -44,7 +44,7 @@ const mockUsersService = {
   findAll: jest.fn(),
 }
 
-const mockUserSyncService = {
+const mockUserSyncService = {//problem initially. will hear with Josua.
   syncUserOnLogin: jest.fn().mockResolvedValue(undefined),
 };
 
@@ -77,7 +77,7 @@ describe('Application (integration)', () => {
               AUTH0_DOMAIN: 'test.us.auth0.com',
               AUTH0_CLIENT_ID: 'client-id',
               AUTH0_CLIENT_SECRET: 'client-secret',
-              AUTH0_AUDIENCE: 'https://phishshield-api',
+              AUTH0_AUDIENCE: 'https://phishshield-api',//?? why is this link different from others but works...
               AUTH0_M2M_CLIENT_ID: 'm2m-client-id',
               AUTH0_M2M_CLIENT_SECRET: 'm2m-client-secret',
             }),
@@ -123,14 +123,14 @@ describe('Application (integration)', () => {
           iss: issuer,
           sub: 'auth0|abc123',
           aud: audience,
-          iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + 3600,
+          iat: Math.floor(Date.now() / 1000),// this time is equal to the time the token is created. It is used to determine if the token is expired or not.
+          exp: Math.floor(Date.now() / 1000) + 3600,// this is equal to...
         },
         privateKey,
         { algorithm: 'RS256', keyid: 'test-kid' },
       );
     }
-
+//was a health check here, but removed it as it was causing weird stuff to happen.
     it('returns the user profile when a valid JWT is provided', async () => {
       nock('https://test.us.auth0.com')
         .get('/.well-known/jwks.json')
@@ -143,7 +143,7 @@ describe('Application (integration)', () => {
         .set('Authorization', `Bearer ${createValidToken()}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toMatchObject({
+          expect(res.body).toMatchObject({//weird why doesnt this work with id added as well.
             email: mockUser.email,
             name: mockUser.name,
             role: mockUser.role,

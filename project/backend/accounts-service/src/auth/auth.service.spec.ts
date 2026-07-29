@@ -205,7 +205,7 @@ describe('AuthService', () => {
         const loginCall = httpService.post.mock.calls.find(
           (call: any) => call[0].includes('/oauth/token') && call[1]?.grant_type === 'password',
         );
-        expect(loginCall).toBeDefined();
+        expect(loginCall).toBeDefined();// unsure about this part, recieved some help here, but it works so.... lets go.
         expect(loginCall[1]).toMatchObject({
           grant_type: 'password',
           audience: 'https://phishshield-api',
@@ -246,7 +246,7 @@ describe('AuthService', () => {
   
         await expect(service.login(validDto)).rejects.toThrow(UnauthorizedException);
       });
-  
+  // yes, this should be added, but check and make sure.
       it('requires OTP when sendOTP is set and no device token', async () => {
         httpService.get.mockReturnValueOnce(
           of(axiosOf([{ user_id: 'auth0|abc123', email: 'test@example.com', email_verified: true }])),
@@ -275,7 +275,7 @@ describe('AuthService', () => {
             userAgent: 'UA',
             ip: '1.2.3.4',
           });
-    
+    // cool this looks good.
           expect(result.message).toContain('verified');
           expect(result.deviceToken).toBe('dev-789');
           expect(usersService.markVerified).toHaveBeenCalledWith('auth0|abc123');

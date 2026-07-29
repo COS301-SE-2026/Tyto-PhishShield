@@ -62,6 +62,7 @@ describe('OtpService', () => {
         const email = 'test@example.com';
         // Spy on private sendOtpEmail by checking the result indirectly,
         // but we'll just verify that OTPs array grows
+        // also check with Frikkie he was good with thsi one.
         const initialLength = (service as any).OTPs.length;
         await service.generateAndSend(email);
         expect((service as any).OTPs.length).toBe(initialLength + 1);
@@ -159,7 +160,7 @@ describe('OtpService', () => {
             const result = await service.verifyDevice(email, deviceToken);
             expect(result).toBe(false);
           });
-      
+      // important right here.
           it('throws UnauthorizedException when user does not exist', async () => {
             authService.getAuth0UserByEmail.mockResolvedValue(null as any);
             await expect(service.verifyDevice(email, deviceToken)).rejects.toThrow(

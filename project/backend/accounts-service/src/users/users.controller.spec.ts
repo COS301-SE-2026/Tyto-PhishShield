@@ -123,7 +123,7 @@ describe('UsersController', () => {
           );
         });
       });
-    
+    // make sure this works, important for report service as well bababoom.
 
         describe('updateRole', () => {
           it('calls usersService.updateRole with correct parameters', async () => {
@@ -146,6 +146,6 @@ describe('UsersController', () => {
             it('propagates errors from service', async () => {
               usersService.deactivate.mockRejectedValue(new NotFoundException());
               await expect(controller.remove('bad-id')).rejects.toThrow(NotFoundException);
-            });
+            });//dont know if this is needed, but feels good to add.
           });
         });

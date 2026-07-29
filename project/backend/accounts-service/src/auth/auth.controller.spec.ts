@@ -62,7 +62,7 @@ describe('AuthController', () => {
   });
 
   afterEach(() => jest.clearAllMocks());
-
+// for register remember we are doing verification through auth0 and otp with login. It switch.
   describe('register()', () => {
     it('delegates to authService.register and returns result', async () => {
       authService.register.mockResolvedValue({ message: 'Registration successful. Please verify your email with the OTP sent to you.', });
@@ -93,7 +93,7 @@ describe('AuthController', () => {
         expect.objectContaining({ deviceToken: 'dev123'}),
       );
     });
-
+// this looks good.
     it('returns the login payload', async() => {
       authService.login.mockResolvedValue({ access_token: 'abc', expires_in: 7200});
       const req =  { cookies: {} } as  unknown as Request;
@@ -117,7 +117,7 @@ describe('AuthController', () => {
         email: 'u@test.com',
         role: UserRole.USER,
         name: 'Test User',
-        department: 'Finance',
+        department: 'Finance',// new, remember to add department for userws.
       };
       const result = controller.getProfile({ user } as any);
       expect(result).toEqual(user);
@@ -172,7 +172,7 @@ describe('AuthController', () => {
           name: 'Test',
         });
       });
-  
+  // why did this not work initially?
       it('throws NotFoundException for an unknown user', async () => {
         usersService.findByAuth0Id.mockResolvedValue(null);
         await expect(controller.getUserByAuth0Id('ghost')).rejects.toThrow(
@@ -222,7 +222,7 @@ describe('AuthController', () => {
             expect(result.message).toContain('new OTP code');
           });
         });
-
+//more convenience teest, dont see world where logout fails, but obviously good to add.
           describe('logout', () => {
             it('returns the logout message from service', () => {
               authService.logout.mockReturnValue({
