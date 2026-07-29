@@ -107,3 +107,124 @@ For the api-gateway we plan to use a blue-green deployment strategy to switch th
 !['Deployment Diagram'](<../images/Deployment Diagram.png>)
 
 ### CI/CD Pipeline
+#### Backend workflow
+```mermaid
+flowchart TD
+    A([On push: main, dev, Backend / pull: main, dev]) --> B(Job: Install dependencies)
+    B -->C{Successfull Install?}
+    C -->|Yes| D[For each backend Service:]
+    C -->|No| E([Report failour])
+    D --> F(Job: build)
+    D --> G(Job: lint)
+    D --> H(Job: test)
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+    F --> I{Success?}
+    G --> I
+    H --> I
+    I --> |Yes| J([Report Success])
+    I --> |No| E
+```
+
+#### Frontend workflow
+```mermaid
+flowchart TD
+    A([On push: main, dev, Frontend / pull: main, dev]) --> B(Job: Install dependencies)
+    B -->C{Successfull Install?}
+    C -->|Yes| D[For each frontend Service:]
+    C -->|No| E([Report failour])
+    D --> F(Job: build)
+    D --> G(Job: lint)
+    D --> H(Job: test)
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+	D --> F
+	D --> G
+	D --> H
+    F --> I{Success?}
+    G --> I
+    H --> I
+    I --> |Yes| J([Report Success])
+    I --> |No| E
+```
+
+#### Integration workflow
+
+#### CI workflow
+```mermaid
+flowchart TD
+    A([On push: main, dev / pull: dev]) --> B[(Workflow: backend CI)]
+    A --> C[(Workflow: frontend CI)]
+    C --> D
+    B --> D{Success}
+    D --> |Yes| E[(Workflow: integration)]
+    D --> |No| H([Report failiour])
+    E --> F{Success?}
+    F --> |Yes| G([Report Success])
+    F --> |No| H
+```
+
+#### Deploy workflow
+```mermaid
+flowchart TD
+    A([On workflow_call]) --> B(Job: build-and-push)
+    B --> D(step: checkout repo)
+    D --> E(step: login to dockerhub)
+    E --> F(step: set up docker build)
+	F --> G[For each service]
+	G --> H(step: build and push docker image)
+	G --> H
+	G --> H
+	G --> H
+	G --> H
+	G --> H
+	G --> H
+	G --> H
+	G --> H
+    H --> I{Success}
+	I --> |Yes| J([Report Success])
+	I --> |No| K([Report failiour])
+```
+
+#### CI/CD workflow
+```mermaid
+flowchart TD
+    A([On pull: main]) --> B[(Workflow: backend CI)]
+    A --> C[(Workflow: frontend CI)]
+    C --> D
+    B --> D{Success}
+    D --> |Yes| E[(Workflow: integration)]
+    D --> |No| H([Report failiour])
+    E --> F{Success}
+    F --> |Yes| G[(Workflow: deploy)]
+	G --> I{Success}
+	I --> |Yes| J([Report success])
+	I --> |No| H
+    F --> |No| H
+```
