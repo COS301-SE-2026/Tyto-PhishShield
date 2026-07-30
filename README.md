@@ -165,7 +165,7 @@ All project documentation can be found in our
 | 📖 [Project Documentation](project/README.md) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
-| 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
+| 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
 |🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
 
 <h2 align="center"> 📁 Documentation Archive<h2>
