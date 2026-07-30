@@ -188,6 +188,7 @@ All project documentation can be found in our
 |📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
 | 🎨 [Brand Style Guide](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
 | 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
+| 🎨 [Demo 2 videos](https://drive.google.com/drive/folders/10Y1lEcmk7wfp3HCWWZjnnqrf9gLC6ggJ?usp=sharing) |
 
 </details> 
 <br>
