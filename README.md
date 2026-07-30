@@ -161,10 +161,10 @@ All project documentation can be found in our
 | 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
 | { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
 | 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
-| 📝 [User Manual](docs/setup-instructions/user-manual.md) |
+| 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
 | 📖 [Project Documentation](project/README.md) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
-| 🎨 [Brand Style Guide Preview](docs/design-specifications/design-specifications-document.md) |
+| 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
 | 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
 |🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
 
