@@ -14,11 +14,16 @@ describe('AppController (e2e)', () => {
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService, { provide: AmqpConnection, useValue: mockAmqpConnection },],
+      providers: [
+        AppService,
+        { provide: AmqpConnection, useValue: mockAmqpConnection },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
   });
 

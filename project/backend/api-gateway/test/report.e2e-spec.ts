@@ -21,6 +21,15 @@ describe('ReportController (e2e)', () => {
         ConfigModule.forRoot({
           envFilePath: '.env',
           isGlobal: true,
+          load: [() => ({
+            ACCOUNTS_SERVICE_URL: 'http://accounts-service:3002',
+            MAILING_SERVICE_URL: 'http://mailing-service:3003',
+            REPORT_SERVICE_URL: 'http://report-service:3004',
+            XP_SERVICE_URL: 'http://xp-service:3005',
+            EDUCATION_SERVICE_URL: 'http://education-service:3006',
+            ANALYTICS_SERVICE_URL: 'http://analytics-service:3007',
+            SERVER_DOMAIN: 'phishshield.local',
+          })],
         }),
       ],
     })
