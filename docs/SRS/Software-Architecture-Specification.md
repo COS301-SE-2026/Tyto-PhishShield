@@ -38,6 +38,7 @@ Then the event driven system acts as a mediator for the services. The event driv
 	The system must be horizontally scalable to handle a minimum of 500 concurrent users. This can be measured by checking:<br>
 	- concurrent connection requests
 	- testing increasing connection requests
+
 	Architectural Decision:<br>
 	- Use microservices to suport adaptable  development.
 	- Use a load balancer to balance requests between multiple instances of the api-gateway.
@@ -130,7 +131,7 @@ Making use of react and tailwind CSS with proper UI design from our frontend dev
 #### NestJS
 Using NestJS we can build a proper api-gateway, and microservices which will be able to scale well and perform well, thus meeting the requirements for flexibility and performance.
 
-### PostgreSQL
+#### PostgreSQL
 Using PostegreSQL helps keep data persistent for our services and also performs well satisfying our performance requirements.
 
 #### Jest, Vitest and Supertest
@@ -148,7 +149,7 @@ Docker containerizes the system in separate containers making our system portabl
 ## Deployment
 
 ### Deployment Requirements
-Live System: https://capstone-five-guys.dns.net.za/
+[View the Live System](https://capstone-five-guys.dns.net.za/)
 
 Currently we have a local development environment that we run on our local computers for testing the integrated system. Then we deploy the system automatically to docker hub and we use watchtower to pull new images into our staging development environment.
 
@@ -238,6 +239,22 @@ flowchart TD
 ```
 
 #### Integration workflow
+```mermaid
+flowchart TD
+    A([On push: main, dev / pull: main, dev]) --> D([For each service])
+    D --> F(Job: run integration tests)
+	D --> F
+	D --> F
+	D --> F
+	D --> F
+	D --> F
+	D --> F
+	D --> F
+	D --> F
+    F --> I{Success?}
+    I --> |Yes| J([Report Success])
+    I --> |No| E
+```
 
 #### CI workflow
 ```mermaid
