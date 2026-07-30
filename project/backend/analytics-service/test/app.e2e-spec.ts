@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
