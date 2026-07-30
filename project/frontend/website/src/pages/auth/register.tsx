@@ -1,9 +1,8 @@
 import { useState} from 'react';
 import { AuthLayout } from '../../components/layout/auth-layout';
-import { Input, PasswordInput, Select, Button /**, OtpInput**/ } from '../../components/ui';
-//import { authApi } from '../../services/api';
+import { Input, PasswordInput, Select, Button } from '../../components/ui';
+import { authApi } from '../../services/api';
 import { useToast } from '../../context/toast-context';
-import { ErrorResponse } from '../../types/index';
 
 interface RegisterProps {
   onNavigate: (path: string) => void;
@@ -58,7 +57,7 @@ function StepSidebar({ step }: { step: Step }) {
   const steps = [
     { n: 1, label: 'Account details', desc: 'Name, email, password' },
     { n: 2, label: 'Organisation', desc: 'Department and role' },
-    { n: 3, label: 'Confirm OTP', desc: 'Verify your email address' },
+    { n: 3, label: 'Check your email', desc: 'Verify your email address' },
   ];
 
   return (
@@ -90,7 +89,6 @@ function StepSidebar({ step }: { step: Step }) {
                   }}>
                     {done ? '✓' : s.n}
                   </div>
-
                   {/* Text block */}
                   <div>
                     <div style={{fontSize: 13, fontWeight: 600, color: (done || active) ? '#fff' : 'rgba(255,255,255,0.4)', }}>
@@ -116,25 +114,11 @@ export function Register({ onNavigate }: RegisterProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
-
   const [department, setDepartment] = useState('it_security');
   const [role, setRole] = useState<'User' | 'Analyst' | 'Admin'>('User');
-
-  //const [otp, setOtp] = useState('');
-  //const [otpError, setOtpError] = useState('');
-  //const [registeredUserId, setRegisteredUserId] = useState('');
-
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
-
-  const step1Valid = (() => {
-    if (!firstName.trim() || !lastName.trim()) return false;
-    if (!email || !/\S+@\S+\.\S+/.test(email)) return false;
-    if (password.length < 8) return false;
-    if (!/[A-Z]/.test(password)) return false;
-    if (!/[0-9]/.test(password)) return false;
-    return true;
-  })();
+  const [submitError, setSubmitError] = useState('');
 
   const validateStep1 = () => {
     const e: Record<string, string> = {};
@@ -153,63 +137,38 @@ export function Register({ onNavigate }: RegisterProps) {
     setStep1Errors({});
     setStep(2);
   };
-
   const step2Valid = !!department && !!role;
 
   const handleStep2Continue = async () => {
     setLoading(true);
+    setSubmitError('');
     try {
-      const response = await fetch('http://localhost:3001/api/accounts/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          name: `${firstName} ${lastName}`.trim()
-        }),
+      await authApi.register({
+        email, password, name: `${firstName} ${lastName}`.trim(),
+        department: DEPARTMENTS.find(d => d.value === department)?.label,
       });
-      if (!response.ok) {
-        const errorData: ErrorResponse  = await response.json().catch(() => ({})) as ErrorResponse;
-        throw new Error(errorData.message ?? `Server responded with ${response.status}`);
-      }
-      /*setRegisteredUserId(result.userId);
-      // OTP (server-side)
-      addToast({ type: 'info', title: 'OTP sent', message: `A verification code has been sent to ${email}` });*/
-      if (!response.ok) {
-        const errorData: ErrorResponse = await response.json().catch(() => ({})) as ErrorResponse;
-        throw new Error(errorData.message ?? `Server responded with ${response.status}`);
-      }
-      addToast({ type: 'success', title: 'Registration complete!', message: 'Account successfully created.' });
+      addToast({ type: 'info', title: 'Confirmation email sent', message: `Check ${email} to verify your account.` });
       setStep(3);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed. Please try again.';
-      addToast({ type: 'error', title: 'Registration failed', message: msg });
+      setSubmitError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  /* const handleOtpSubmit = async () => {
-    if (otp.length < 5) { setOtpError('Please enter the full 5-digit code.'); return; }
-    setLoading(true); setOtpError('');
-    try {
-      await authApi.verifyOtp(registeredUserId, otp);
-      addToast({ type: 'success', title: 'Email verified!', message: 'Your account is ready. Please log in.' });
-      onNavigate('/login');
-    } catch {
-      setOtpError('Incorrect code. Please check your email and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOtp = () => {
-    setOtp(''); setOtpError('');
-    addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}` });
-  };  */
+  // OTP verification now happens at first login — see handleOtpVerify/handleResendOtp in pages/auth/login.tsx
 
     const rightPanel = (
-    <div style={{ width: '100%', maxWidth: 410 }}>
+    <div style={{ 
+        width: '100%', 
+        maxWidth: 450,
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-xl)',
+        boxShadow: 'var(--shadow-sm)',
+        padding: '32px 34px',
+     }}>
       {/* Step 1 */}
       {step === 1 && (
         <>
@@ -226,7 +185,6 @@ export function Register({ onNavigate }: RegisterProps) {
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Enter your details to get started.
           </p>
-
           <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
             <div style={{ flex: 1 }}>
               <Input label="First name" placeholder="Lisa" value={firstName}
@@ -239,28 +197,22 @@ export function Register({ onNavigate }: RegisterProps) {
                 error={step1Errors.lastName} required />
             </div>
           </div>
-
           <div style={{ marginBottom: 12 }}>
             <Input label="Work email" type="email" placeholder="lisa@tyto.co.za" value={email}
               onChange={e => { setEmail(e.target.value); setStep1Errors(p => ({ ...p, email: '' })); }}
               error={step1Errors.email} required />
           </div>
-
           <div style={{ marginBottom: 12 }}>
             <PasswordInput label="Password" placeholder="Min. 8 characters" value={password}
               onChange={e => { setPassword(e.target.value); setStep1Errors(p => ({ ...p, password: '' })); }}
               error={step1Errors.password} required />
           </div>
-
           <div style={{ marginBottom: 20 }}>
             <PwHints password={password} />
           </div>
-
-          <Button fullWidth size="lg" onClick={handleStep1Continue} disabled={!step1Valid} style={{ width: '100%', padding: '13px 20px', fontSize: 13,
-                          fontWeight: 700, borderRadius: 8, }}>
+          <Button fullWidth size="lg" onClick={handleStep1Continue} style={{ width: '100%', padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8, }}>
             Continue
           </Button>
-
           <p style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
             Already registered?{' '}
             <button
@@ -272,7 +224,6 @@ export function Register({ onNavigate }: RegisterProps) {
           </p>
         </>
       )}
-
       {/* Step 2 */}
       {step === 2 && (
         <>
@@ -289,12 +240,10 @@ export function Register({ onNavigate }: RegisterProps) {
           <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Help us configure your access correctly.
           </p>
-
           <div style={{ marginBottom: 12 }}>
             <Input label="Organisation" value="Tyto" readOnly
               style={{ background: 'var(--bg-hover)', color: 'var(--text-muted)' }} />
           </div>
-
           <div style={{ marginBottom: 12 }}>
             <Select
               label="Department"
@@ -303,7 +252,6 @@ export function Register({ onNavigate }: RegisterProps) {
               options={DEPARTMENTS}
             />
           </div>
-
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
               Role
@@ -328,49 +276,56 @@ export function Register({ onNavigate }: RegisterProps) {
               ))}
             </div>
           </div>
-
+          {submitError && (
+            <div style={{
+              background: 'var(--color-danger-light)', border: '1px solid var(--color-danger-border)',
+              borderRadius: 8, padding: '10px 14px', fontSize: 13,
+              color: 'var(--color-danger)', fontFamily: 'Inter, system-ui, sans-serif',
+            }}> {submitError}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 10 }}>
-            <Button variant="ghost" onClick={() => setStep(1)}
+            <Button variant="ghost" onClick={() => { setSubmitError(''); setStep(1); }}
               style={{ padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8, border: '1.5px solid var(--border)' }}>
               Back
             </Button>
-            <Button fullWidth loading={loading} onClick={() => { void handleStep2Continue(); }} disabled={!step2Valid} 
+            <Button fullWidth loading={loading} onClick={() => { void handleStep2Continue(); }} disabled={!step2Valid}
               style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}>
-              Complete Registration
+              Continue
             </Button>
           </div>
         </>
       )}
 
       {step === 3 && (
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+        <>
           <div style={{
-            width: 64, height: 64, borderRadius: '50%',
-            background: 'var(--color-success-light)', border: '2px solid var(--color-success)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px',
+            display: 'inline-block', background: 'var(--color-primary-light)', color: 'var(--color-primary)',
+            fontSize: 11, fontWeight: 700, padding: '3px 11px', borderRadius: 9999, letterSpacing: '.3px',
+            marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif',
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            STEP 3 OF 3
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Account Created!
+          <h1 style={{ fontSize: 23, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Check your email
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, marginBottom: 32, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Your account for <strong>{email}</strong> has been successfully configured. You can now access your dashboard using your password credentials.
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            A confirmation email has been sent to <strong>{email}</strong>. Click the link in that email to verify and activate your account.
           </p>
-
-          <Button fullWidth onClick={() => onNavigate('/login')} style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8 }}>
-            Proceed to Login
+          <Button fullWidth size="lg" onClick={() => onNavigate('/login')}
+            style={{ width: '100%', padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8 }}>
+            Go to login
           </Button>
-        </div>
+        </>
       )}
     </div>
   );
-
   return (
     <AuthLayout
       leftContent={<StepSidebar step={step} />}
       rightContent={rightPanel}
       onLogoClick={() => onNavigate('/')}
+      onHelpClick={() => onNavigate('/help')}
     />
   );
 }

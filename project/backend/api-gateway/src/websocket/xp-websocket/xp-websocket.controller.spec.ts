@@ -1,0 +1,60 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { XpWebsocketController } from './xp-websocket.controller';
+import { XpWebsocketGateway } from './xp-websocket.gateway';
+import { WebsocketTicketService } from '../websocket-ticket.service';
+
+describe('XpWebsocketController', () => {
+  let controller: XpWebsocketController;
+  let gateway: jest.Mocked<XpWebsocketGateway>;
+
+  beforeEach(async () => {
+    const gatewayMock = {
+      emitXpUpdate: jest.fn(),
+    };
+
+    const ticketServiceMock = {
+      issueTicket: jest.fn(),
+    }
+
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [XpWebsocketController],
+      providers: [
+        { provide: XpWebsocketGateway, useValue: gatewayMock },
+        { provide: WebsocketTicketService, useValue: ticketServiceMock }
+      ],
+    }).compile();
+
+    controller = module.get<XpWebsocketController>(XpWebsocketController);
+    gateway = module.get(XpWebsocketGateway);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  describe('handleXpGiven', () => {
+    it('should forward the auth0Id and amount to the gateway', () => {
+      const message = { auth0Id: 'auth0|123456789', amount: 50 };
+
+      controller.handleXpGiven(message);
+
+      expect(gateway.emitXpUpdate).toHaveBeenCalledTimes(1);
+      expect(gateway.emitXpUpdate).toHaveBeenCalledWith(
+        message.auth0Id,
+        message.amount,
+      );
+    });
+
+    it('should not alter the payload fields', () => {
+      const message = { auth0Id: 'auth0|other-user', amount: 0 };
+
+      controller.handleXpGiven(message);
+
+      expect(gateway.emitXpUpdate).toHaveBeenCalledWith('auth0|other-user', 0);
+    });
+  });
+});

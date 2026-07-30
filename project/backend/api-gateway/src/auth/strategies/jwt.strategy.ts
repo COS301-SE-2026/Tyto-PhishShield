@@ -13,6 +13,8 @@ export interface GatewayUser {
   auth0Id: string;
   email: string;
   role: string;
+  name?: string;
+  department?: string;
 }
 
 interface JwtPayload {

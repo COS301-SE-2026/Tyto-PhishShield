@@ -93,7 +93,7 @@ export function Input({
           {...props}
           style={{
             width: '100%',
-            border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border)'}`,
+            border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border-strong, var(--border))'}`,
             borderRadius: 'var(--radius-md)',
             padding: `9px ${rightIcon ? '36px' : '12px'} 9px ${leftIcon ? '36px' : '12px'}`,
             fontSize: 13,
@@ -177,7 +177,7 @@ export function Select({ label, error, options, ...props }: SelectProps) {
       <select
         {...props}
         style={{
-          width: '100%', border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border)'}`,
+          width: '100%', border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border-strong, var(--border))'}`,
           borderRadius: 'var(--radius-md)', padding: '9px 12px', fontSize: 13,
           color: 'var(--text-primary)', background: 'var(--bg-input)',
           fontFamily: 'Inter, system-ui, sans-serif', outline: 'none',

@@ -6,15 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "preview": "vite preview",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "serve": "serve -s dist"
   },
   "dependencies": {
     "eslint-plugin-react-x": "^5.7.5",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-router-dom": "^7.15.1"
+    "react-router-dom": "^7.15.1",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

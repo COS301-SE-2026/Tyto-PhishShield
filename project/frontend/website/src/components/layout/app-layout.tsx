@@ -15,28 +15,33 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({
-  children, activePath, onNavigate, title, subtitle,
-  breadcrumbs, securityScore = 72,
-}: AppLayoutProps) {
+  children, activePath, onNavigate, title, subtitle, breadcrumbs, securityScore = 72, }: AppLayoutProps) {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const initials = user?.email
-    ? user.email.split('@')[0].slice(0, 2).toUpperCase()
-    : '??';
-
+  const initials = (() => {
+    if (user?.name) {
+      const parts = user.name.trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    if (user?.email) return user.email.split('@')[0].slice(0, 2).toUpperCase();
+    return '??';
+  })();
   return (
     <div style={{
-      display: 'flex', height: '100vh', width: '100%', overflow: 'hidden',
-      background: 'var(--bg-page)',
-    }}>
-      <Sidebar
+      display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: 'var(--bg-page)', }}>
+
+      {
+        useAuth().isAuthenticated ?
+        <Sidebar
         activePath={activePath}
         onNavigate={onNavigate}
         securityScore={securityScore}
         collapsed={sidebarCollapsed}
       />
+        : ""
+      }
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
         {/* Topbar */}
@@ -60,7 +65,6 @@ export function AppLayout({
                 <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
-
             <div>
               {breadcrumbs && breadcrumbs.length > 0 ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
@@ -121,8 +125,22 @@ export function AppLayout({
               }}/>
             </button>
 
+            <button type="button"
+              onClick={() => onNavigate('/help')}
+              aria-label="Help Centre"
+              title="Help Centre"
+              style={{
+                background: 'var(--bg-hover)', border: '1.5px solid var(--border)',
+                width: 36, height: 36, borderRadius: 8, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-secondary)', position: 'relative',
+              }}
+            >
+              <span style={{ fontSize: 17, fontWeight: 500, lineHeight: 1, fontFamily: 'Inter, system-ui, sans-serif' }}>?</span>
+            </button> 
+
             <button
-              onClick={() => onNavigate('/profile')}
+              onClick={() => onNavigate('/users/profile')}
               style={{
                 width: 34, height: 34, borderRadius: '50%', background: 'var(--color-primary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

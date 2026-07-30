@@ -3,17 +3,21 @@ import { ConfigService } from '@nestjs/config';
 import { HttpException } from '@nestjs/common';
 import { AccountsController } from './accounts.controller';
 import { ProxyService } from '../proxy/proxy.service';
+import { RouteResolver } from '../proxy/proxy.routes';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import type { Request, Response } from 'express';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
   let proxyService: jest.Mocked<ProxyService>;
+  let routeResolver: jest.Mocked<RouteResolver>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountsController],
       providers: [
-        { provide: ProxyService, useValue: { forward: jest.fn() } },
+        { provide: ProxyService, useValue: { forward: jest.fn(), beterForward: jest.fn() } },
+        { provide: RouteResolver, useValue: { resolve: jest.fn() } },
         {
           provide: ConfigService,
           useValue: {
@@ -28,6 +32,7 @@ describe('AccountsController', () => {
 
     controller = module.get<AccountsController>(AccountsController);
     proxyService = module.get(ProxyService);
+    routeResolver = module.get(RouteResolver);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -74,27 +79,41 @@ describe('AccountsController', () => {
   // ===========================================================================
 
   describe('login()', () => {
-    it('should forward login request and return the token', async () => {
-      const body = { email: 'test@example.com', password: 'Password123!' };
-      const expected = { access_token: 'jwt-token', expires_in: 86400 };
-      proxyService.forward.mockResolvedValue(expected);
+    it('should proxy the login request using the resolved route', () => {
+      const req = {
+        originalUrl: '/api/accounts/auth/login',
+        url: '/api/accounts/auth/login',
+      } as unknown as Request;
+      const res = {} as Response;
+      const route = {
+        apiRoute: '/api/accounts',
+        targetService: 'http://accounts-service:3002/api',
+      };
+      routeResolver.resolve.mockReturnValue(route);
 
-      const result = await controller.login(body);
+      controller.login(req, res);
 
-      expect(proxyService.forward).toHaveBeenCalledWith({
-        url: 'http://accounts-service:3002/api/auth/login',
-        method: 'POST',
-        data: body,
-      });
-      expect(result).toEqual(expected);
+      expect(routeResolver.resolve).toHaveBeenCalledWith('/api/accounts/auth/login');
+      expect(req.url).toBe('/auth/login');
+      expect(proxyService.beterForward).toHaveBeenCalledWith(
+        req,
+        res,
+        'http://accounts-service:3002/api',
+      );
     });
 
-    it('should propagate 401 HttpException on invalid credentials', async () => {
-      proxyService.forward.mockRejectedValue(new HttpException('Unauthorized', 401));
+    it('should propogate errors from route resolver', async () => {
+      const req = {
+        originalUrl: '/api/accounts/auth/login',
+        url: '/api/accounts/auth/login',
+      } as unknown as Request;
+      const res = {} as Response;
 
-      await expect(
-        controller.login({ email: 'test@example.com', password: 'wrong' }),
-      ).rejects.toThrow(HttpException);
+      routeResolver.resolve.mockImplementation(() => {
+        throw new Error('Unknown route');
+      })
+
+      expect(() => controller.login(req, res)).toThrow('Unknown route');
     });
   });
 
@@ -103,14 +122,29 @@ describe('AccountsController', () => {
   // ===========================================================================
 
   describe('getMe()', () => {
-    it('should return the user from req.user', async () => {
+    it('should proxy the request to the accounts service with the auth header', async () => {
       const mockUser: GatewayUser = {
         auth0Id: 'auth0|abc123',
         email: 'test@example.com',
         role: 'user',
       };
-      const result = await controller.getMe({ user: mockUser } as never).then((user) => user);
-      expect(result).toEqual(mockUser);
+      const mockReq = {
+        user: mockUser,
+        headers: {
+          authorization: 'Bearer test-token',
+        },
+      };
+      const expectedResponse = { ...mockUser };
+      proxyService.forward.mockResolvedValue(expectedResponse);
+
+      const result = await controller.getMe(mockReq as never);
+
+      expect(proxyService.forward).toHaveBeenCalledWith({
+        url: 'http://accounts-service:3002/api/auth/me',
+        method: 'GET',
+        headers: { Authorization: 'Bearer test-token' },
+      });
+      expect(result).toEqual(expectedResponse);
     });
 
     it('should return the correct role for admin users', async () => {
@@ -119,8 +153,23 @@ describe('AccountsController', () => {
         email: 'admin@example.com',
         role: 'admin',
       };
-      const result = await controller.getMe({ user: adminUser } as never).then((user) => user.role);
-      expect(result).toBe('admin');
+      const mockReq = {
+        user: adminUser,
+        headers: {
+          authorization: 'Bearer admin-token',
+        },
+      };
+      const expectedResponse = { ...adminUser };
+      proxyService.forward.mockResolvedValue(expectedResponse);
+
+      const result = await controller.getMe(mockReq as never);
+
+      expect(proxyService.forward).toHaveBeenCalledWith({
+        url: 'http://accounts-service:3002/api/auth/me',
+        method: 'GET',
+        headers: { Authorization: 'Bearer admin-token' },
+      });
+      expect((result as GatewayUser).role).toBe('admin');
     });
   });
 });

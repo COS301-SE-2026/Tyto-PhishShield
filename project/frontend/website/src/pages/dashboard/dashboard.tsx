@@ -1,31 +1,24 @@
-import { useState, useEffect, JSX } from 'react';
+import { useState, useEffect, useMemo, useCallback, JSX } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
-import type { Campaign, XPResponse } from '../../types';
-import { getXP } from './dashboard.service';
+import type { Campaign } from '../../types';
+import { fetchXpNet, computeMyXpRank, type XpNetEntry } from './dashboard.service';
+import { connectXpSocket } from '../../services/xp-socket';
 
 interface DashboardProps {
   onNavigate: (path: string) => void;
   activePath: string;
 }
 
-// Below is mock stats data (we have to replace with API calls if these backend endpoints exist)
+// Below is mock stats data (to be replaced with API calls once backend endpoints exist)
 
 const MOCK_CAMPAIGNS: Campaign[] = [
   { id: '1', name: 'IT Support Reset', status: 'active', sentCount: 320, clickedCount: 42, reportedCount: 280, targetDepartments: ['IT & Security'], startDate: '2025-05-01', endDate: null, createdBy: 'admin' },
   { id: '2', name: 'Salary Increase Survey', status: 'complete', sentCount: 180, clickedCount: 9, reportedCount: 171, targetDepartments: ['Finance', 'Executive'], startDate: '2025-04-15', endDate: '2025-04-30', createdBy: 'admin' },
   { id: '3', name: 'HR Policy Update', status: 'active', sentCount: 240, clickedCount: 31, reportedCount: 208, targetDepartments: ['Human Resources'], startDate: '2025-05-05', endDate: null, createdBy: 'admin' },
   { id: '4', name: 'DHL Parcel Delivery', status: 'draft', sentCount: 0, clickedCount: 0, reportedCount: 0, targetDepartments: ['All'], startDate: '2025-05-20', endDate: null, createdBy: 'admin' },
-];
-
-const MOCK_LEADERBOARD = [
-  { rank: 1, name: 'Sipho Ndlovu', xp: 4820, initials: 'SN', medal: '🥇' },
-  { rank: 2, name: 'Alicia Patel', xp: 4310, initials: 'AP', medal: '🥈' },
-  { rank: 3, name: 'Marco van Dyk', xp: 3990, initials: 'MV', medal: '🥉' },
-  { rank: 4, name: 'Luke Walker', xp: 3560, initials: 'LW', medal: '' },
-  { rank: 5, name: 'Fatima Hassan', xp: 3210, initials: 'FH', medal: '' },
 ];
 
 const STATUS_BADGE: Record<string, JSX.Element> = {
@@ -42,13 +35,11 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     departments: 'all', scheduledDate: '',
   });
   const [loading, setLoading] = useState(false);
-
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
   const valid = !!form.name.trim() && !!form.emailSubject.trim() && !!form.emailBody.trim();
 
   const handleCreate = async () => {
     setLoading(true);
-    // TODO: POST /api/campaigns (if and when endpoint is available)
     await new Promise(r => setTimeout(r, 800));
     addToast({ type: 'success', title: 'Campaign created', message: `"${form.name}" saved as draft.` });
     setLoading(false);
@@ -60,7 +51,6 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Input label="Campaign name" placeholder="e.g. IT Support Reset" value={form.name}
           onChange={e => set('name', e.target.value)} required />
-
         <Select
           label="Target departments"
           value={form.departments}
@@ -75,17 +65,15 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             { value: 'executive', label: 'Executive' },
           ]}
         />
-
         <Input label="Email subject line" placeholder="e.g. URGENT: Password reset required"
           value={form.emailSubject} onChange={e => set('emailSubject', e.target.value)} required />
-
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 5, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Email body <span style={{ color: 'var(--color-danger)' }}>*</span>
           </label>
           <textarea
             rows={5}
-            placeholder="Paste the phishing email content here…"
+            placeholder="Paste the phishing email content here."
             value={form.emailBody}
             onChange={e => set('emailBody', e.target.value)}
             style={{
@@ -99,10 +87,8 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
             AI-generated email selection will be available once the generation microservice is ready.
           </p>
         </div>
-
         <Input label="Schedule date (optional)" type="date" value={form.scheduledDate}
           onChange={e => set('scheduledDate', e.target.value)} />
-
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <Button variant="ghost" onClick={onClose} style={{ flex: '0 0 auto', paddingLeft: 20, paddingRight: 20 }}>Cancel</Button>
           <Button fullWidth loading={loading} disabled={!valid} onClick={() => { void handleCreate(); }}>
@@ -116,7 +102,6 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
 function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string) => void; onNewCampaign: () => void }) {
   const { addToast } = useToast();
-
   const handleAssignTraining = () => {
     addToast({ type: 'info', title: 'Training assigned', message: '17 users have been assigned the Spear Phishing module.' });
   };
@@ -140,8 +125,7 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           </Card>
         ))}
       </div>
-
-      {/* Detection over time stub chart */}
+      {/* Detection over time mock chart */}
       <Card style={{ padding: '18px 20px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Phishing Detection Rate Over Time</h2>
@@ -175,10 +159,8 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           ))}
         </svg>
       </Card>
-
-      {/* Campaigns + leaderboard */}
+      {/* Campaigns */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.9fr) minmax(0,1fr)', gap: 14, marginBottom: 14 }}>
-        {/* Campaigns */}
         <Card>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Campaigns</h2>
@@ -223,35 +205,7 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
             </table>
           </div>
         </Card>
-
-        {/* Leaderboard */}
-        <Card>
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Top Defenders</h2>
-            <button onClick={() => onNavigate('/leaderboard')} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif' }}>View all</button>
-          </div>
-          {MOCK_LEADERBOARD.map((u, i) => (
-            <div key={u.rank}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
-                background: i === 0 ? 'var(--color-warning-light)' : 'transparent',
-                transition: 'background 0.12s',
-                cursor: 'pointer',
-              }}
-              onClick={() => onNavigate(`/users/${u.initials}`)}
-              onMouseEnter={e => { if (i !== 0) (e.currentTarget).style.background = 'var(--bg-hover)'; }}
-              onMouseLeave={e => { if (i !== 0) (e.currentTarget).style.background = 'transparent'; }}
-            >
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', width: 14, textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.rank}</span>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', flexShrink: 0 }}>{u.initials}</div>
-              <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.name}</span>
-              <span style={{ fontSize: 11, color: 'var(--color-primary)', fontWeight: 700, fontFamily: 'Inter, system-ui, sans-serif' }}>{u.xp.toLocaleString()} XP</span>
-              {u.medal && <span style={{ fontSize: 16 }}>{u.medal}</span>}
-            </div>
-          ))}
-        </Card>
       </div>
-
       {/* Alert banner */}
       <div style={{
         background: 'var(--color-warning-light)', border: '1px solid var(--color-warning-border)',
@@ -274,32 +228,80 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
   );
 }
 
-function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
-  const [xp, setXP] = useState(0);
+function UserDashboard({ onNavigate, onXpGained }: { onNavigate: (p: string) => void; onXpGained?: (amount: number) => void }) {
+  const { user } = useAuth();
   const { addToast } = useToast();
-  const xpError = (message?: string) =>  addToast({
-            type: 'error',
-            title: 'xp fetch',
-            message: message ?? "unable to fetch xp",
-        });
+  const [xpEntries, setXpEntries] = useState<XpNetEntry[] | null>(null);
+  const [recentGain, setRecentGain] = useState<number | null>(null);
   useEffect(() => {
-    const fetchXP = async () => {
-      const res: XPResponse = await getXP();
-      if (res.status == "Error") {
-        xpError(res.message)
+    let cancelled = false;
+    fetchXpNet().then(data => { if (!cancelled) setXpEntries(data); })
+      .catch(() => {
+      if (!cancelled) {
+        addToast({ type: 'error', title: 'XP stats load failed', message: 'Unable to fetch XP stats' });
       }
-      const xpValue: number = res.xp;
-      setXP(xpValue);
+    });
+  return () => { cancelled = true; };
+  }, [addToast]);
+
+    useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
+    connectXpSocket().then(s => {
+        if (cancelled) { s.disconnect(); return; }
+        socket = s;
+        s.on('xp-given-all', ({ auth0Id, amount }: { auth0Id: string; amount: number }) => {
+          if (auth0Id === user.auth0Id) {
+            onXpGained?.(amount);
+            setRecentGain(amount);
+          }
+          setXpEntries(prev => {
+            const list = prev ?? [];
+            const idx = list.findIndex(entry => entry.auth0Id === auth0Id);
+            if (idx === -1) {
+              if (auth0Id !== user.auth0Id) return list;
+              return [...list, {
+                auth0Id: user.auth0Id,
+                name: user.name ?? user.email,
+                email: user.email,
+                department: null,
+                totalXp: amount,
+              }];
+            }
+            const updated = [...list];
+            updated[idx] = { ...updated[idx], totalXp: updated[idx].totalXp + amount };
+            return updated;
+          });
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      socket?.disconnect();
     };
-    void fetchXP();
-  }, []);
+  }, [user, onXpGained]);
+
+  const { myXp, rankValue, rankDelta } = useMemo(() => {
+    if (!user || xpEntries === null) {
+      return { myXp: 0, rankValue: '—', rankDelta: 'Loading…' };
+    }
+    const { xp, rank, totalRanked } = computeMyXpRank(xpEntries, user.auth0Id);
+    if (rank === null) {
+      return { myXp: 0, rankValue: 'Unranked', rankDelta: 'No XP recorded yet' };
+    }
+    return { myXp: xp, rankValue: `#${rank}`, rankDelta: `of ${totalRanked} ranked users` };
+  }, [xpEntries, user]);
+
+  const xpDeltaLabel = recentGain !== null ? `+${recentGain} just now` : 'Updates live';
+
   return (
     <>
       {/* Personal stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 16 }}>
         {[
-          { lbl: 'XP Points', val: xp, delta: '+120 today', deltaColor: 'var(--color-success)' },
-          { lbl: 'Organisation Rank', val: '#4', delta: 'of 87 users', deltaColor: 'var(--text-muted)' },
+          { lbl: 'XP Points', val: myXp, delta: xpDeltaLabel, deltaColor: recentGain !== null ? 'var(--color-success)' : 'var(--text-muted)' },
+          { lbl: 'Organisation Rank', val: rankValue, delta: rankDelta, deltaColor: 'var(--text-muted)' },
           { lbl: 'Reports Filed', val: '28', delta: '+2 this week', deltaColor: 'var(--color-success)' },
           { lbl: 'Current Streak', val: '12 days', delta: 'Personal best!', deltaColor: 'var(--color-primary)' },
         ].map(m => (
@@ -312,7 +314,6 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
           </Card>
         ))}
       </div>
-
       {/* Personal detection chart */}
       <Card style={{ padding: '18px 20px', marginBottom: 16 }}>
         <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -332,7 +333,6 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
         </svg>
         <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Your phishing detection accuracy has improved 18% over the last 30 days.</p>
       </Card>
-
       {/* Pending training */}
       <Card>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -351,7 +351,17 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
             <Badge variant={t.status === 'in_progress' ? 'warning' : 'neutral'}>
               {t.status === 'in_progress' ? 'In Progress' : 'Not Started'}
             </Badge>
-            <Button size="sm" onClick={() => onNavigate('/training')}>Start</Button>
+            <Button 
+              size="sm" 
+              onClick={() => onNavigate('/training')}
+              style={{
+                minWidth: 72,
+                paddingLeft: 16,
+                paddingRight: 16,
+              }}
+              >
+                Start
+            </Button>
           </div>
         ))}
       </Card>
@@ -360,23 +370,16 @@ function UserDashboard({ onNavigate }: { onNavigate: (p: string) => void }) {
 }
 
 export function Dashboard({ onNavigate, activePath }: DashboardProps) {
-  //const { user, canAccess } = useAuth();
   const { canAccess } = useAuth();
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [showXpAnim, setShowXpAnim] = useState(false);
-  const [xpDelta] = useState(120);
-
-  useEffect(() => {
-    const shown = sessionStorage.getItem('xp_shown');
-    if (!shown) {
-      setTimeout(() => setShowXpAnim(true), 800);
-      sessionStorage.setItem('xp_shown', '1');
-    }
+  const [xpAnimDelta, setXpAnimDelta] = useState(0);
+  const handleXpGained = useCallback((amount: number) => {
+    setXpAnimDelta(amount);
+    setShowXpAnim(true);
   }, []);
-
   const isAdminOrAnalyst = canAccess('analyst');
   const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
   return (
     <>
       <AppLayout
@@ -388,12 +391,11 @@ export function Dashboard({ onNavigate, activePath }: DashboardProps) {
       >
         {isAdminOrAnalyst
           ? <AdminDashboard onNavigate={onNavigate} onNewCampaign={() => setNewCampaignOpen(true)} />
-          : <UserDashboard onNavigate={onNavigate} />
+          : <UserDashboard onNavigate={onNavigate} onXpGained={handleXpGained} />
         }
       </AppLayout>
-
       <NewCampaignModal isOpen={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} />
-      {showXpAnim && <XpAnimationOverlay delta={xpDelta} onDone={() => setShowXpAnim(false)} />}
+      {showXpAnim && <XpAnimationOverlay delta={xpAnimDelta} onDone={() => setShowXpAnim(false)} />}
     </>
   );
 }

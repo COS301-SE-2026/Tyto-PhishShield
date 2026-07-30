@@ -28,6 +28,83 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
+      <div
+        aria-live="polite"
+        style={{
+          position: 'fixed',
+          top: 20,
+          right: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          width: 400,
+        }}
+      >
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            style={{
+              padding: 16,
+              borderRadius: 8,
+              border: '1px solid',
+              background: toast.type === 'success'
+                      ? 'var(--color-success-light)'
+                      : toast.type === 'error'
+                        ? 'var(--color-danger-light)'
+                        : 'var(--color-warning-light)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: toast.type === 'success'
+                      ? 'var(--color-success)'
+                      : toast.type === 'error'
+                        ? 'var(--color-danger)'
+                        : 'var(--color-warning)',
+                  }}
+                >
+                  {toast.title}
+                </p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    lineHeight: 1.5,
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  {toast.message}
+                </p>
+              </div>
+
+              <button
+                type='button'
+                aria-label='Close toast'
+                onClick={() => removeToast(toast.id)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  fontSize: 16,
+                }}
+              >
+                X
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </ToastContext.Provider>
   );
 }

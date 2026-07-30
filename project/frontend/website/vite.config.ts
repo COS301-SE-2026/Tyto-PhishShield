@@ -12,6 +12,23 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 5173,
-  }
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://api-gateway:3001',
+        changeOrigin: true,
+      },
+      '/socket.io': {     // Socket.IO handshake path (needed for xp-socket.ts live XP updates)
+        target: 'http://api-gateway:3001',
+        changeOrigin: true,
+        ws: true,
+      },
+    }
+  },
+  preview: {
+    port: 5173,
+    strictPort: true,
+  },
 })

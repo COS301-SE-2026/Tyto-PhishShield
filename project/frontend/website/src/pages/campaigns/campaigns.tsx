@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge, Button, Modal, Input, Select } from '../../components/ui';
+import { Card, Badge, Button } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import type { Campaign, CampaignStatus } from '../../types';
@@ -25,75 +25,12 @@ const STATUS_BADGE: Record<CampaignStatus, React.ReactNode> = {
   scheduled: <Badge variant="warning">Scheduled</Badge>,
 };
 
-function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { addToast } = useToast();
-  const [form, setForm] = useState({
-    name: '', emailSubject: '', emailBody: '', departments: 'all', scheduledDate: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
-  const valid = !!form.name.trim() && !!form.emailSubject.trim() && !!form.emailBody.trim();
-
-  const handleCreate = async () => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 800)); // TODO: POST /api/campaigns
-    addToast({ type: 'success', title: 'Campaign created', message: `"${form.name}" saved as draft.` });
-    setLoading(false);
-    onClose();
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="New Campaign" maxWidth={560}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Input label="Campaign name" placeholder="e.g. IT Support Reset" value={form.name}
-          onChange={e => set('name', e.target.value)} required />
-        <Select label="Target departments" value={form.departments}
-          onChange={e => set('departments', e.target.value)}
-          options={[
-            { value: 'all', label: 'All departments' },
-            { value: 'it_security', label: 'IT & Security' },
-            { value: 'finance', label: 'Finance' },
-            { value: 'hr', label: 'Human Resources' },
-            { value: 'legal', label: 'Legal & Compliance' },
-            { value: 'operations', label: 'Operations' },
-            { value: 'executive', label: 'Executive' },
-          ]} />
-        <Input label="Email subject line" placeholder="e.g. URGENT: Password reset required"
-          value={form.emailSubject} onChange={e => set('emailSubject', e.target.value)} required />
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 5, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Email body <span style={{ color: 'var(--color-danger)' }}>*</span>
-          </label>
-          <textarea rows={5} placeholder="Paste the phishing email content here…"
-            value={form.emailBody} onChange={e => set('emailBody', e.target.value)}
-            style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-input)', fontFamily: 'Inter, system-ui, sans-serif', resize: 'vertical', outline: 'none', lineHeight: 1.5 }} />
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            AI-generated email selection will be available once the generation microservice is ready.
-          </p>
-        </div>
-        <Input label="Schedule date (optional)" type="date" value={form.scheduledDate}
-          onChange={e => set('scheduledDate', e.target.value)} />
-        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-          <Button variant="ghost" onClick={onClose} style={{ paddingLeft: 20, paddingRight: 20 }}>Cancel</Button>
-          <Button fullWidth loading={loading} disabled={!valid} onClick={() => { void handleCreate(); }}>
-            Save as Draft
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
 export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
-  //const { hasRole, canAccess } = useAuth();
   const { hasRole } = useAuth();
   const isAdmin = hasRole('admin');
   const [filter, setFilter] = useState<CampaignStatus | 'all'>('all');
-  const [newOpen, setNewOpen] = useState(false);
-
   const displayed = MOCK_CAMPAIGNS.filter(c => filter === 'all' || c.status === filter);
   const tabs: (CampaignStatus | 'all')[] = ['all', 'active', 'scheduled', 'draft', 'complete'];
-
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Campaigns"
       subtitle={`${MOCK_CAMPAIGNS.filter(c => c.status === 'active').length} active campaigns`}
@@ -114,14 +51,40 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
           ))}
         </div>
         {isAdmin && (
-          <Button onClick={() => setNewOpen(true)} icon={
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          }>
-            New Campaign
-          </Button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+            <Button variant="ghost" onClick={() => onNavigate('/campaigns/create-email')} icon={
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 4h16v16H4z" /><path d="m4 6 8 6 8-6" /><line x1="12" y1="15" x2="12" y2="21" /><line x1="9" y1="18" x2="15" y2="18" /></svg>
+            }
+            style={{
+              minWidth: 72,
+              paddingLeft: 16,
+              paddingRight: 16,
+            }}>
+              Create Email
+            </Button>
+            <Button variant="ghost" onClick={() => onNavigate('/campaigns/send-email')} icon={
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+            }
+            style={{
+              minWidth: 72,
+              paddingLeft: 16,
+              paddingRight: 16,
+            }}>
+              Send Existing Email
+            </Button>
+            <Button onClick={() => onNavigate('/campaigns/schedule')} icon={
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+            }
+            style={{
+              minWidth: 72,
+              paddingLeft: 16,
+              paddingRight: 16,
+            }}>
+              Schedule Campaign
+            </Button>
+          </div>
         )}
       </div>
-
       {/* Campaign cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {displayed.map(c => {
@@ -132,11 +95,6 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
               key={c.id}
               style={{ padding: '18px 20px', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
               onClick={() => {
-                if (c.id === '4') {
-                  onNavigate('/send-email-test');
-                  return;
-                }
-
                 onNavigate(`/campaigns/${c.id}`);
               }}
             >
@@ -178,8 +136,6 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
           </div>
         )}
       </div>
-
-      <NewCampaignModal isOpen={newOpen} onClose={() => setNewOpen(false)} />
     </AppLayout>
   );
 }
@@ -204,24 +160,20 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
   const { addToast } = useToast();
   const isAdmin = hasRole('admin');
   const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'reported' | 'clicked' | 'no_response'>('all');
-
   const campaign = MOCK_CAMPAIGNS.find(c => c.id === campaignId) ?? MOCK_CAMPAIGNS[0];
   const detRate = campaign.sentCount > 0 ? Math.round((campaign.reportedCount / campaign.sentCount) * 100) : 0;
   const clickRate = campaign.sentCount > 0 ? Math.round((campaign.clickedCount / campaign.sentCount) * 100) : 0;
-
   const filtered = USER_RESULTS.filter(u => outcomeFilter === 'all' || u.outcome === outcomeFilter);
 
   const handleEnd = () => {
     addToast({ type: 'warning', title: 'Campaign ended', message: `"${campaign.name}" has been ended.` });
     onNavigate('/campaigns');
   };
-
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate}
       title={campaign.name}
       breadcrumbs={[{ label: 'Campaigns', path: '/campaigns' }, { label: campaign.name }]}
       securityScore={72}>
-
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -235,7 +187,6 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
           <Button variant="danger" size="sm" onClick={handleEnd}>End Campaign</Button>
         )}
       </div>
-
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 20 }}>
         {[
@@ -250,7 +201,6 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
           </Card>
         ))}
       </div>
-
       {/* Details card */}
       <Card style={{ padding: '18px 20px', marginBottom: 16 }}>
         <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>Campaign Details</h3>
@@ -268,7 +218,6 @@ export function CampaignDetail({ onNavigate, activePath, campaignId }: CampaignD
           ))}
         </div>
       </Card>
-
       {/* User results table */}
       <Card>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -3,7 +3,14 @@
  *
  * - Ensures email and password meet basic validation; optional name allowed.
  */
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
+import { Department } from '../../users/entities/user.entity';
 
 export class RegisterDto {
   @IsEmail()
@@ -16,4 +23,8 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @IsOptional()
+  @IsEnum(Department)
+  department?: Department;
 }
