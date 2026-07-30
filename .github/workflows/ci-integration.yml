@@ -27,7 +27,7 @@ jobs:
           run: pnpm int:test:accounts
       
     education-integration:
-      name: accounts integration testing
+      name: education integration testing
       runs-on: ubuntu-24.04
       strategy:
         matrix:
