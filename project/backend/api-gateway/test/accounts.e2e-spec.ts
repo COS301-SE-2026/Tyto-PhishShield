@@ -11,6 +11,7 @@ import { AppService } from '../src/app.service';
 import { AccountsController } from '../src/accounts/accounts.controller';
 import { ProxyService } from '../src/proxy/proxy.service';
 import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
+import { RouteResolver } from '../src/proxy/proxy.routes';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,
@@ -34,13 +35,19 @@ describe('Accounts Gateway Endpoints (Integration)', () => {
             AUTH0_DOMAIN: 'test.us.auth0.com',
             AUTH0_AUDIENCE: 'https://phishshield-api',
             ACCOUNTS_SERVICE_URL: 'http://accounts-service:3002',
+            MAILING_SERVICE_URL: 'http://mailing-service:3003',
+            REPORT_SERVICE_URL: 'http://report-service:3004',
+            XP_SERVICE_URL: 'http://xp-service:3005',
+            EDUCATION_SERVICE_URL: 'http://education-service:3006',
+            ANALYTICS_SERVICE_URL: 'http://analytics-service:3007',
+            SERVER_DOMAIN: 'phishshield.local',
           })],
         }),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         HttpModule,
       ],
-      controllers: [AppController, AccountsController],
-      providers: [AppService, ProxyService, JwtStrategy],
+      controllers: [AccountsController],
+      providers: [ProxyService, JwtStrategy, RouteResolver],
     })
       .overrideProvider(HttpService)
       .useValue({ request: jest.fn() })

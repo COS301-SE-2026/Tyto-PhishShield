@@ -440,7 +440,7 @@ services:
     restart: on-failure
     container_name: addin
     ports:
-      - '3000:80'
+      - '3000:8080'
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:

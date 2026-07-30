@@ -311,6 +311,7 @@ export function Login({ onNavigate }: LoginProps) {
         leftContent={leftPanel}
         rightContent={rightPanel}
         onLogoClick={() => onNavigate('/')}
+        onHelpClick={() => onNavigate('/help')}
       />
       <ForgotPasswordModal isOpen={forgotOpen} onClose={() => setForgotOpen(false)} />
     </>
