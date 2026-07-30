@@ -186,7 +186,7 @@ All project documentation can be found in our
 | Document |
 |-----------|
 |📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
-| 🎨 [Brand Style Guide Preview](docs/demo-1/design-specifications/index.html) |
+| 🎨 [Brand Style Guide](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
 | 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
 
 </details> 
