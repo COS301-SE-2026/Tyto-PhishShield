@@ -169,7 +169,7 @@ All project documentation can be found in our
 |🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
 
 <h2 align="center"> 📁 Documentation Archive<h2>
-<details style="font-size: 16px;">
+<details style="font-size: 14px;">
 <summary>Demo 1 Documentation</summary>
 
 | Document |
@@ -177,6 +177,15 @@ All project documentation can be found in our
 |📋 [Software Requirements Specification (SRS)](docs/demo-1/Software_Requirements_Specification.md) |
 | 🎨 [Brand Style Guide Preview](docs/demo-1/design-specifications/index.html) |
 | 🎨 [Design Specification Document](docs/demo-1/design-specifications/design-specifications-document.md) |
+<br>
+
+<summary>Demo 2 Documentation</summary>
+
+| Document |
+|-----------|
+|📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
+| 🎨 [Brand Style Guide Preview](docs/demo-1/design-specifications/index.html) |
+| 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
 
 </details> 
 <br>
