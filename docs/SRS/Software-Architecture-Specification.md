@@ -1,9 +1,9 @@
 # Software Architecture Specification
 
-## Introducation
+## Introduction
 The system consists of three parts namely: The client side, the microservices and the event system.<br>
 The first level of the architecture is that we use a Client-Server architecture where the clients will communicate to the servers through the API gateway. Everything after the API gateway will form the server side of the architecture.<br>
-Going in deeper on the server side, to handle communication between microservices we use event driven messaging by using the event system. On the client side, clients will use a request response model to communicate with the API gateway. The API gateway will also use request response communication with the micrservices. The primary communication protocol that will be used accross the system will be HTTP. We may use Remote Procedure Calls (RPC) if it is seen that some services require a response back from the event system.<br>
+Going in deeper on the server side, to handle communication between microservices we use event driven messaging by using the event system. On the client side, clients will use a request response model to communicate with the API gateway. The API gateway will also use request response communication with the microservices. The primary communication protocol that will be used across the system will be HTTP. We may use Remote Procedure Calls (RPC) if it is seen that some services require a response back from the event system.<br>
 
 ## Architecture Diagram
 ![Architecture Diagram](<../images/Architecture Diagram.png>)
@@ -11,12 +11,12 @@ Going in deeper on the server side, to handle communication between microservice
 ## Architectural Requirements
 
 ### Architecture Patterns
-As already alluded to, there are two main architecture patterns being used. Microservices is used to handle each bussiness goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate bussiness logic and create a modular and scalable platform. An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistant with one another.<br>
+As already alluded to, there are two main architecture patterns being used. Microservices is used to handle each business goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate business logic and create a modular and scalable platform. An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistent with one another.<br>
 Thus in using these two architectural patterns the system essentially uses event driven microservices as its official architectural pattern.
 
 ### Design Patterns
-Analyising the system on a design level we can point out the usage of a few design patterns:<br>
-Firstly the API gateway acts as a facade, creating an interface through which the rest of the system can be used. This improves maintainablity since we make use of one entry point through which requests enter into the system which is easier to maintain than having multiple entry points.<br>
+Analyzing the system on a design level we can point out the usage of a few design patterns:<br>
+Firstly the API gateway acts as a facade, creating an interface through which the rest of the system can be used. This improves maintainability since we make use of one entry point through which requests enter into the system which is easier to maintain than having multiple entry points.<br>
 Then the event driven system acts as a mediator for the services. The event driven system can have multiple event exchanges through which services can receive different types of event messages and handle some system logic on the backend. This improves flexibility allowing system logic to be handled independently by separate services.
 
 ### Constraints 
@@ -33,6 +33,7 @@ Then the event driven system acts as a mediator for the services. The event driv
 	- high code modularity
 	- loose coupling between services
 	- ensuring the code is self documented and readable
+
 	Scalable:<br>
 	The system must be horizontally scalable to handle a minimum of 500 concurrent users. This can be measured by checking:<br>
 	- concurrent connection requests
@@ -50,9 +51,11 @@ Then the event driven system acts as a mediator for the services. The event driv
 	Performance of the system is important to maintain the live updates of statistics. This can be measured by checking:
 	- the number of requests handled per second
 	- the average response time for requests
+
 	Quantification:
 	- requests all take less than 1s
 	- handle 500 requests per second
+
 	Architectural Descision:
 	- Make use of caching for non-live reads
 	- Optimize database indexing
@@ -60,10 +63,12 @@ Then the event driven system acts as a mediator for the services. The event driv
 
  4. Reliability: See See [NFR 5](./Software_Requirements_Specification.md#non-functional-requirements)
 	
-	The system should be reliable and maintain a high uptime. In any event of a failure with an LLM the system should fallback to another model.<br>
+	The system should be reliable and maintain a high uptime. In any event of a failure with an LLM the system should fallback to another model.
+
 	Quantification:
 	- ensuring a 99.9% uptime
 	- making sure the system can quickly recover from any failures within 30s
+
 	Architectural descision:
 	- Make use of a load balancer and spin up multiple instances of the api-gateway. Balance requests between the instances.
 	- Add restart mechanisms to all services.
@@ -73,10 +78,12 @@ Then the event driven system acts as a mediator for the services. The event driv
 	The system must be secure as it will be dealing with personal details, and no unauthorized access should be allowed. The security is checked by:
 	- ensuring all data at rest and in transit are encrypted
 	- preventing injection and CSRF attacks
+
 	Quantification:
 	- RBAC on 100% of protected endpoints.
 	- 100% of data is encrypted in transit using TLS.
 	- 100% of sensitive data at rest is encrypted using AES-256 standers. (Snesitive data is catagorized by POPIA and GDPR)
+	
 	Architectural Decision:
 	- Implementation of AES-256 encryption at
 	rest
@@ -100,6 +107,7 @@ Then the event driven system acts as a mediator for the services. The event driv
 	The system must be usable and easy to interact with. Employees should not need to be trained on how to use the system. The system must be intuitive providing good user experience. This can be measured by checking:
 	- development of wireframes
 	- performance of UI tests
+
 	Quantification:
 	- WCAG 2.1 AA accessibility compliance
 
@@ -108,7 +116,7 @@ Then the event driven system acts as a mediator for the services. The event driv
 	The compatibility of the system is very important so that future integration with HR systems can take place. Using microservices enables the system to be integrated easily due to the separation of concerns.<br>
 	Quantification:
 	- Deployed on a single server using docker
-	- Compatable on screen resolutions from 1280px to 1920px+
+	- Compatible on screen resolutions from 1280px to 1920px+
 
 ### Architectural Responsibility
 API gateway is responsible for receiving client requests, authenticating clients and doing roll-based authentication control. The API gateway then routes user traffic to the correct microservice to handle user business logic.<br>
@@ -117,22 +125,25 @@ The event system contains multiple event queues in which an event being processe
 
 ### Technology Requirements
 #### React + Tailwind CSS
-	Making use of react and tailwind CSS with proper UI design from our frontend developers we can comply with the WCAG 2.1 AA accessibility.
+Making use of react and tailwind CSS with proper UI design from our frontend developers we can comply with the WCAG 2.1 AA accessibility.
 
 #### NestJS
-	Using NestJS we can build a proper api-gateway, and microservices which will be able to scale well and perform well, thus meeting the requirments for flexibility and performance.
+Using NestJS we can build a proper api-gateway, and microservices which will be able to scale well and perform well, thus meeting the requirements for flexibility and performance.
+
+### PostgreSQL
+Using PostegreSQL helps keep data persistent for our services and also performs well satisfying our performance requirements.
 
 #### Jest, Vitest and Supertest
-	Using these testing packages we can build tests to ensure our system is functionally suitable.
+Using these testing packages we can build tests to ensure our system is functionally suitable.
 
 #### Socket.IO, RabbitMQ
-	These technologies help drive the event driven aspect of our system maintaining live updates for the frontend as well as allowing background processing to take place between requests.
+These technologies help drive the event driven aspect of our system maintaining live updates for the frontend as well as allowing background processing to take place between requests.
 
 #### Caddy
-	Caddy helps reverse proxy requests coming to our server to the correct endpoints (frontend website or addin and backend api-gateway). Caddy can also be used as a load balancer.
+Caddy helps reverse proxy requests coming to our server to the correct endpoints (frontend website or addin and backend api-gateway). Caddy can also be used as a load balancer.
 
 #### Docker
-	Docker containerizes the system in seperate containers making our system portable and compatable.
+Docker containerizes the system in separate containers making our system portable and compatible.
 
 ## Deployment
 
