@@ -178,7 +178,9 @@ All project documentation can be found in our
 | 🎨 [Brand Style Guide Preview](docs/demo-1/design-specifications/index.html) |
 | 🎨 [Design Specification Document](docs/demo-1/design-specifications/design-specifications-document.md) |
 <br>
+</details> 
 
+<details style="font-size: 14px;">
 <summary>Demo 2 Documentation</summary>
 
 | Document |
