@@ -11,3 +11,4 @@ Welcome to the Tyto-PhishShield's documentation.
 - To view the design specification document: [Design Specification](./design-specifications/design-specifications-document.md)
 - To view the wireframes: [Wireframes](./figma/README.md)
 - Demo 1 Archive: [Demo 1](./demo-1/README.md)
+- Demo 2 Archive: [Demo 2](./demo-2/README.md)

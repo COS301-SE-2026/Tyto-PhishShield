@@ -162,7 +162,8 @@ All project documentation can be found in our
 | { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
 | 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
-| 📖 [Project Documentation](project/README.md) |
+| 📖 [Project Documentation](docs/README.md) |
+| 📃 [Project Code Files](project/README.md) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
 | 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
@@ -180,7 +181,6 @@ All project documentation can be found in our
 | { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
 | 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
-| 📖 [Project Documentation](project/README.md) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
 | 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
