@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
 import { User } from '../dto/user.dto';
+import { Department } from '../entities/user.entity';
 
 const mockAccountsService = {
   createUser: jest.fn(),
@@ -31,7 +32,7 @@ describe('AccountsController', () => {
         auth0Id: 'auth0|123',
         name: 'test',
         email: 'test@example.com',
-        department: 'Engineering',
+        department: Department.FINANCE,
       };
       mockAccountsService.createUser.mockResolvedValue(undefined);
 
@@ -48,7 +49,7 @@ describe('AccountsController', () => {
         auth0Id: 'auth0|123',
         name: 'test',
         email: 'test@example.com',
-        department: 'Engineering',
+        department: Department.FINANCE,
       });
 
       expect(result).toBeUndefined();
