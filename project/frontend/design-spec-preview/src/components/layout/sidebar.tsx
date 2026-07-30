@@ -31,7 +31,7 @@ function Sidebar({collapsed}: SidebarProps) {
                 aria-label="Go to brand section"
                 style={{
                     height: 60,
-                    padding: collapsed ? "15px 16px" : "15px 16px",
+                    padding: 16,
                     borderBottom: "1px solid rgba(255,255,255,0.07)",
                     display: 'flex',
                     alignItems: 'center',
