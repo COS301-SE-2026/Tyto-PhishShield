@@ -1,4 +1,5 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { Department } from '../entities/user.entity';
 
 export class User {
   @IsString()
@@ -15,5 +16,5 @@ export class User {
 
   @IsString()
   @IsOptional()
-  department: string;
+  department: Department;
 }

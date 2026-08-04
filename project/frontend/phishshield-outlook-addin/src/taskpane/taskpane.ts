@@ -3,9 +3,9 @@
  * See LICENSE in the project root for license information.
  */
 
-/* global document, Office, fetch, localStorage, console, HTMLElement, HTMLInputElement, HTMLButtonElement, HTMLFormElement, Response, Event */
+/* global document, Office, fetch, localStorage, console, HTMLElement, HTMLInputElement, HTMLButtonElement, HTMLFormElement, Response, Event, process */
 
-const API_BASE = "http://localhost:3001/api";
+const API_BASE = `${process.env.API_BASE}`;
 
 const LOGIN_URL = `${API_BASE}/accounts/auth/login`;
 const ME_URL = `${API_BASE}/accounts/auth/me`;
@@ -166,6 +166,7 @@ export async function login(email: string, password: string): Promise<void> {
 }
 
 export async function handleLogin(event: Event): Promise<void> {
+  console.log("Login form submitted");
   event.preventDefault();
 
   hideStatus();
@@ -321,6 +322,7 @@ export async function reportSelectedEmail(): Promise<void> {
 }
 
 Office.onReady((info) => {
+  console.log("Office Ready", info.host);
   if (info.host !== Office.HostType.Outlook) {
     return;
   }

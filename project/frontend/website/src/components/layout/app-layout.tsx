@@ -31,12 +31,17 @@ export function AppLayout({
   return (
     <div style={{
       display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: 'var(--bg-page)', }}>
-      <Sidebar
+
+      {
+        useAuth().isAuthenticated ?
+        <Sidebar
         activePath={activePath}
         onNavigate={onNavigate}
         securityScore={securityScore}
         collapsed={sidebarCollapsed}
       />
+        : ""
+      }
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
         {/* Topbar */}

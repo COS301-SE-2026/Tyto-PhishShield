@@ -29,10 +29,12 @@ export const authApi = {
     return parseResponse<RegisterResponse>(res);
   },
   login: async (dto: LoginDto): Promise<LoginResponse> => {
+    dto.sendOTP = true;
     const res = await fetch(`${API_BASE}/accounts/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto),
+      credentials: 'include',
     });
     if (!res.ok) throw new Error('Invalid email or password');
     return parseResponse<LoginResponse>(res);

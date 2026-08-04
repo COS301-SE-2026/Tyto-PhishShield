@@ -27,6 +27,7 @@ import {
   EmailDifficulty,
 } from '../entities/emails.entity';
 import { EmailsDto } from '../dto/emails.dto';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 const mockResendSend = jest.fn().mockResolvedValue({
   data: { id: 'mock-resend-id' },
@@ -63,6 +64,10 @@ describe('EmailService', () => {
     }),
   };
 
+  const mockAmqpConnection = {
+    publish: jest.fn().mockResolvedValue(undefined),
+  }
+
   // Mock email data
   const mockEmail = {
     email_id: 'uuid-1234',
@@ -86,6 +91,10 @@ describe('EmailService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: AmqpConnection,
+          useValue: mockAmqpConnection,
+        }
       ],
     }).compile();
 
@@ -124,6 +133,23 @@ describe('EmailService', () => {
       expect(mockEmailRepository.save).toHaveBeenCalledWith(mockEmail);
       expect(result).toEqual(mockEmail);
     });
+
+    it('should throw InternalServerErrorException when saving fails', async () => {
+      const createDto: EmailsDto = {
+        sender: 'admin@domain.com',
+        alias: 'Admin',
+        subject: 'Action Required',
+        content: '<p>Click here</p>',
+        difficulty: EmailDifficulty.HARD,
+      };
+
+      mockEmailRepository.create.mockReturnValue(mockEmail);
+      mockEmailRepository.save.mockRejectedValue(new Error('db unavailable'));
+
+      await expect(service.createEmail(createDto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
   });
 
   describe('getEmailByReference', () => {
@@ -142,6 +168,21 @@ describe('EmailService', () => {
 
       await expect(service.getEmailByReference('INVALID')).rejects.toThrow(
         NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException if no reference number is given', async () => {
+      await expect(service.getEmailByReference('')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockEmailRepository.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should throw InternalServerErrorException when query fails', async () => {
+      mockEmailRepository.findOne.mockRejectedValue(new Error('db unavailable'));
+
+      await expect(service.getEmailByReference('PHISH-001')).rejects.toThrow(
+        InternalServerErrorException,
       );
     });
   });
@@ -181,13 +222,23 @@ describe('EmailService', () => {
       expect(result.deliveryId).toBe('mock-resend-id');
     });
 
-    it('should throw an InternalServerErrorException if the resend API fails', async () => {
+    it('should throw an InternalServerErrorException if resend API fails', async () => {
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
       mockResendSend.mockRejectedValueOnce(new Error('API Down'));
 
       await expect(
         service.sendEmail('PHISH-001', 'test@test.com'),
       ).rejects.toThrow(InternalServerErrorException);
+    });
+
+    it('should succeed if publishing mailing.send event fails', async () => {
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockAmqpConnection.publish.mockRejectedValueOnce(new Error('broker down'));
+
+      const result = await service.sendEmail('PHISH-001', 'test@test.com');
+
+      expect(result.success).toBe(true);
+      expect(result.deliveryId).toBe('mock-resend-id');
     });
   });
 
@@ -226,6 +277,21 @@ describe('EmailService', () => {
         ),
       ).rejects.toThrow(InternalServerErrorException);
     });
+
+    it('should succeed when publishing mailing.schedule event fails', async () => {
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockAmqpConnection.publish.mockRejectedValueOnce(new Error('broker down'));
+
+      const targetDate = new Date('2026-05-25T14:30:00.000Z');
+      const result = await service.scheduleSendEmail(
+        'PHISH-001',
+        'test@test.com',
+        targetDate,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.deliveryId).toBe('mock-resend-id');
+    });
   });
 
   describe('getAllEmails', () => {
@@ -236,6 +302,14 @@ describe('EmailService', () => {
 
       expect(mockEmailRepository.find).toHaveBeenCalled();
       expect(result).toEqual([mockEmail]);
+    });
+
+    it('should throw InternalServerErrorException', async () => {
+      mockEmailRepository.find.mockRejectedValue(new Error('db unavailable'));
+
+      await expect(service.getAllEmails()).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
@@ -256,6 +330,24 @@ describe('EmailService', () => {
         expect.objectContaining(updateDto),
       );
       expect(result).toEqual(updatedEmail);
+    });
+
+    it('should throw NotFoundException when the email does not exist', async () => {
+      mockEmailRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateEmail('INVALID', { subject: 'New subject' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockEmailRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should throw InternalServerErrorException when saving fails', async () => {
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockEmailRepository.save.mockRejectedValue(new Error('db unavailable'));
+
+      await expect(
+        service.updateEmail('PHISH-001', { subject: 'New subject' }),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 });

@@ -5,23 +5,29 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
-@Entity('otps')
-export class Otp {
+@Entity('VerifiedDevices')
+export class VerifiedDevice {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column()
-  email!: string;
+  userId!: string;
 
   @Column()
-  code!: string;
+  tokenHash!: string;
 
   @Column()
-  expiresAt!: Date;
+  userAgent!: string;
 
-  @Column({ default: false })
-  used!: boolean;
+  @Column()
+  ipCreated!: string;
 
   @CreateDateColumn()
   createdAt!: Date;
+
+  @Column()
+  lastUsedAt!: Date;
+
+  @Column()
+  expiresAt!: Date;
 }

@@ -1,4 +1,4 @@
-import { getInitials, groupUsersByDepartment, resolveDepartment, type RealUser } from './leaderboard.service';
+import { getInitials, groupUsersByDepartment, resolveDepartment } from './leaderboard.service';
 
 describe('resolveDepartment', () => {
   it('returns the trimmed department when present', () => {
@@ -37,18 +37,10 @@ describe('getInitials', () => {
 });
 
 describe('groupUsersByDepartment', () => {
-  const baseUser: Omit<RealUser, 'id' | 'department' | 'xp'> = {
-    auth0Id: 'auth0|x',
-    email: 'x@example.com',
-    name: 'X',
-    role: 'user',
-    createdAt: '2026-06-01',
-  };
-
-  const users: RealUser[] = [
-    { ...baseUser, id: '1', department: 'Finance', xp: 100 },
-    { ...baseUser, id: '2', department: 'Finance', xp: 300 },
-    { ...baseUser, id: '3', department: null, xp: 50 },
+  const users = [
+    { department: 'Finance', xp: 100 },
+    { department: 'Finance', xp: 300 },
+    { department: null, xp: 50 },
   ];
 
   it('groups members by department and computes total/average XP', () => {

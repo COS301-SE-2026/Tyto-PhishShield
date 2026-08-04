@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { XpWebsocketController } from './xp-websocket.controller';
 import { XpWebsocketGateway } from './xp-websocket.gateway';
+import { WebsocketTicketService } from '../websocket-ticket.service';
 
 describe('XpWebsocketController', () => {
   let controller: XpWebsocketController;
@@ -11,9 +12,16 @@ describe('XpWebsocketController', () => {
       emitXpUpdate: jest.fn(),
     };
 
+    const ticketServiceMock = {
+      issueTicket: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [XpWebsocketController],
-      providers: [{ provide: XpWebsocketGateway, useValue: gatewayMock }],
+      providers: [
+        { provide: XpWebsocketGateway, useValue: gatewayMock },
+        { provide: WebsocketTicketService, useValue: ticketServiceMock }
+      ],
     }).compile();
 
     controller = module.get<XpWebsocketController>(XpWebsocketController);
@@ -29,7 +37,7 @@ describe('XpWebsocketController', () => {
   });
 
   describe('handleXpGiven', () => {
-    it('forwards the auth0Id and amount from the rabbit message to the gateway', () => {
+    it('should forward the auth0Id and amount to the gateway', () => {
       const message = { auth0Id: 'auth0|123456789', amount: 50 };
 
       controller.handleXpGiven(message);
@@ -41,7 +49,7 @@ describe('XpWebsocketController', () => {
       );
     });
 
-    it('does not transform or reorder the payload fields', () => {
+    it('should not alter the payload fields', () => {
       const message = { auth0Id: 'auth0|other-user', amount: 0 };
 
       controller.handleXpGiven(message);

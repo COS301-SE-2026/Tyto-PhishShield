@@ -15,11 +15,13 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 interface ReporterUser {
   auth0Id: string;
   email: string;
+
   role: string;
 }
 
 interface EmailSentPayload {
   recipient: string;
+
   referenceNumber: string;
   scheduledAt: string;
 }
@@ -32,6 +34,7 @@ export class ReportService {
     private readonly repo: Repository<Report>,
     @InjectRepository(Reportable)
     private readonly reportableRepo: Repository<Reportable>,
+
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
@@ -47,6 +50,7 @@ export class ReportService {
     const reportable = this.reportableRepo.create({
       referenceNumber: payload.referenceNumber,
       recipient: payload.recipient,
+
       sentAt: payload.scheduledAt ? new Date(payload.scheduledAt) : undefined,
     });
 
@@ -72,6 +76,7 @@ export class ReportService {
       auth0Id: user.auth0Id,
       reporterEmail: user.email,
       outlookMessageId: dto.outlookMessageId,
+
       emailSubject: dto.emailSubject,
       emailSender: dto.emailSender,
       emailBody: dto.emailBody,
@@ -90,7 +95,7 @@ export class ReportService {
 
     const isPhishingSimulation = dto.emailSender
       ?.toLowerCase()
-      .endsWith('@capstone-five-guys.dns.net.za');
+      .endsWith('@capstone-five-guys.dns.net.za'); //might change in future, temporary for demo 2, reportable table for future.
 
     if (isPhishingSimulation) {
       saved.status = ReportStatus.CONFIRMED_PHISHING;
@@ -98,8 +103,10 @@ export class ReportService {
 
       try {
         await this.amqpConnection.publish('xp-event-exchange', 'xp.give', {
+          //check with Darius for xp stuff and exchange.
           auth0Id: user.auth0Id,
           amount: 10,
+
           reason: 'Valid phishing report',
         });
         this.logger.log(`Published xp.give for user ${user.auth0Id}`);
@@ -116,11 +123,11 @@ export class ReportService {
             email: user.email,
             reportId: saved.id,
           },
-        );
+        ); //here are the events section,, necassary for demo 2.
         this.logger.log(`Published education.assign for user ${user.auth0Id}`);
       } catch (err) {
         this.logger.error(
-          `Failed to publish education.assign for ${user.auth0Id}`,
+          `Failed to pubish education.assign for ${user.auth0Id}`,
           err,
         );
       }
@@ -147,6 +154,7 @@ export class ReportService {
   async updateStatus(id: string, dto: UpdateStatusDto): Promise<Report> {
     const report = await this.findById(id);
     report.status = dto.status;
+
     return this.repo.save(report);
   }
 }
