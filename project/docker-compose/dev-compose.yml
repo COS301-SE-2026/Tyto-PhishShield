@@ -107,12 +107,16 @@ services:
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=dev
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
     # ports:
     #   - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:
@@ -152,6 +156,7 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
+      - ENVIRONMENT=dev
     # ports:
     #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
   
@@ -181,6 +186,12 @@ services:
       - PORT=${REPORT_SERVICE_PORT}
       - TCP_PORT=${REPORT_TCP_PORT}
       - DB_HOST=${REPORT_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}  
+      - DB_PASSWORD=${DB_PASSWORD} 
+      - DB_NAME=${REPORT_DB_NAME}  
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN} 
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
     # ports:
@@ -216,11 +227,15 @@ services:
     image: fiveguys301/xp:latest
     container_name: ${XP_APP_CONTAINER}
     environment:
-      - PORT=${XP_SERVICE_PORT}
-      - TCP_PORT=${XP_TCP_PORT}
-      - DB_HOST=${XP_DB_CONTAINER}
-      - XP_DB_PORT=${INTERNAL_DB_PORT}
+      - XP_SERVICE_PORT=${XP_SERVICE_PORT}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - XP_DB_CONTAINER=${XP_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - XP_DB_NAME=${XP_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
     # ports:
     #   - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
     depends_on:
@@ -330,7 +345,7 @@ services:
     restart: on-failure
     container_name: addin
     ports:
-      - '3000:80'
+      - '3000:8080'
 
   caddy:
     image: caddy:2.11.3

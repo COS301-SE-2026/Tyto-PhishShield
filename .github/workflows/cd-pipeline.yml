@@ -1,0 +1,23 @@
+name: CI/CD Pipeline
+
+on:
+    pull_request:
+        branches: [main]
+
+jobs:
+    backend:
+        uses: ./.github/workflows/ci-backend.yml
+    frontend:
+        uses: ./.github/workflows/ci-frontend.yml
+    
+    integration:
+        needs:
+            - backend
+            - frontend
+        uses: ./.github/workflows/ci-integration.yml
+
+    deploy:
+        needs:
+            - integration
+        uses: ./.github/workflows/deploy.yml
+        secrets: inherit

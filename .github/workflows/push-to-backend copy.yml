@@ -1,0 +1,9 @@
+name: Backend Push
+
+on:
+    push:
+        branches: [Backend]
+
+jobs:
+    backend:
+        uses: ./.github/workflows/ci-backend.yml

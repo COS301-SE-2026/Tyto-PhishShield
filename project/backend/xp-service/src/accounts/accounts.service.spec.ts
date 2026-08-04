@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AccountsService } from './accounts.service';
-import { UserEntity } from '../entities/user.entity';
+import { Department, UserEntity } from '../entities/user.entity';
 import { User } from '../dto/user.dto';
 import { InternalServerErrorException } from '@nestjs/common';
 
@@ -45,7 +45,7 @@ describe('AccountsService', () => {
       auth0Id: 'auth0|123',
       name: 'test',
       email: 'test@example.com',
-      department: 'Engineering',
+      department: Department.FINANCE,
     };
 
     it('should upsert the user with the correct data', async () => {
