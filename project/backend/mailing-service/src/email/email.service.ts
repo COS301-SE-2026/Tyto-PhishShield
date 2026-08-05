@@ -23,7 +23,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Emails } from '../entities/emails.entity';
+import { EmailTemplateEntity } from '../entities/email-template.entity';
+import { UserEntity } from '../entities/user.entity';
+import { EmailStatusEntity } from '../entities/email-status.entity';
+import { EmailStatusEnum } from '../entities/email-status.entity';
 import { Resend } from 'resend';
 import { EmailsDto } from '../dto/emails.dto';
 import * as crypto from 'crypto';
@@ -36,25 +39,29 @@ export class EmailService {
 
   constructor(
     private configService: ConfigService,
-    @InjectRepository(Emails)
-    private readonly emailRepository: Repository<Emails>,
+    @InjectRepository(EmailTemplateEntity)
+    private readonly emailTemplateRepository: Repository<EmailTemplateEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(EmailStatusEntity)
+    private readonly emailStatusRepository: Repository<EmailStatusEntity>,
     private readonly amqpConnection: AmqpConnection,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
   }
 
-  async createEmail(dto: EmailsDto): Promise<Emails> {
+  async createEmail(dto: EmailsDto): Promise<EmailTemplateEntity> {
     try {
       const uniqueHash = crypto.randomBytes(4).toString('hex').toUpperCase();
       const generatedReference = `PHISH-${uniqueHash}`;
 
-      const newEmail = this.emailRepository.create({
+      const newEmail = this.emailTemplateRepository.create({
         ...dto,
         referenceNumber: generatedReference,
       });
 
-      const savedEmail = await this.emailRepository.save(newEmail);
+      const savedEmail = await this.emailTemplateRepository.save(newEmail);
       this.logger.log(
         `Email successfully created with reference: ${generatedReference}`,
       );
@@ -65,9 +72,9 @@ export class EmailService {
     }
   }
 
-  async getAllEmails(): Promise<Emails[]> {
+  async getAllEmails(): Promise<EmailTemplateEntity[]> {
     try {
-      return await this.emailRepository.find();
+      return await this.emailTemplateRepository.find();
     } catch (error) {
       this.logger.error('Failed to fetch emails', error);
       throw new InternalServerErrorException(
@@ -76,15 +83,17 @@ export class EmailService {
     }
   }
 
-  async getEmailByReference(referenceNumber: string): Promise<Emails> {
+  async getEmailByReference(
+    referenceNumber: string,
+  ): Promise<EmailTemplateEntity> {
     if (!referenceNumber) {
       throw new NotFoundException('Reference number is required');
     }
 
-    let email: Emails | null;
+    let email: EmailTemplateEntity | null;
 
     try {
-      email = await this.emailRepository.findOne({
+      email = await this.emailTemplateRepository.findOne({
         where: { referenceNumber: referenceNumber },
       });
     } catch (error) {
@@ -111,12 +120,12 @@ export class EmailService {
   async updateEmail(
     referenceNumber: string,
     dto: Partial<EmailsDto>,
-  ): Promise<Emails> {
+  ): Promise<EmailTemplateEntity> {
     const email = await this.getEmailByReference(referenceNumber);
     Object.assign(email, dto);
 
     try {
-      const updatedEmail = await this.emailRepository.save(email);
+      const updatedEmail = await this.emailTemplateRepository.save(email);
       this.logger.log(`Email data updated for reference: ${referenceNumber}`);
       return updatedEmail;
     } catch (error) {
@@ -127,20 +136,31 @@ export class EmailService {
 
   async sendEmail(
     referenceNumber: string,
-    recipient: string,
+    auth0Id: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
-    const email = await this.getEmailByReference(referenceNumber);
-
-    const fromString = email.alias
-      ? `${email.alias} <${email.sender}>`
-      : email.sender;
-
     try {
+      const user = await this.userRepository.findOne({ where: { auth0Id } });
+
+      const email = await this.getEmailByReference(referenceNumber);
+
+      const fromString = email.alias
+        ? `${email.alias} <${email.sender}>`
+        : email.sender;
+
       const data = await this.resend.emails.send({
         from: fromString,
-        to: recipient,
+        to: user.email,
         subject: email.subject,
         html: email.content,
+      });
+
+      this.emailStatusRepository.create({
+        emailId: data.data.id,
+        auth0Id: auth0Id,
+        referenceNumber: referenceNumber,
+        status: EmailStatusEnum.REQUESTED,
+        occurredAt: new Date(),
+        createdAt: new Date(),
       });
 
       this.logger.log(`Email successfully dispatched from ${email.sender}`);
@@ -151,7 +171,8 @@ export class EmailService {
           'mailing-event-exchange',
           'mailing.send',
           {
-            recipient: recipient,
+            emailId: data.data.id,
+            recipient: user.email,
             referenceNumber: referenceNumber,
             scheduledAt: date.toISOString(),
           },
@@ -176,23 +197,34 @@ export class EmailService {
   }
 
   async scheduleSendEmail(
-    emailReferenceNumber: string,
-    recipient: string,
+    referenceNumber: string,
+    auth0Id: string,
     scheduledAt: Date,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
-    const email = await this.getEmailByReference(emailReferenceNumber);
-
-    const fromString = email.alias
-      ? `${email.alias} <${email.sender}>`
-      : email.sender;
-
     try {
+      const user = await this.userRepository.findOne({ where: { auth0Id } });
+
+      const email = await this.getEmailByReference(referenceNumber);
+
+      const fromString = email.alias
+        ? `${email.alias} <${email.sender}>`
+        : email.sender;
+
       const data = await this.resend.emails.send({
         from: fromString,
-        to: recipient,
+        to: user.email,
         subject: email.subject,
         html: email.content,
         scheduledAt: scheduledAt.toISOString(),
+      });
+
+      this.emailStatusRepository.create({
+        emailId: data.data.id,
+        auth0Id: auth0Id,
+        referenceNumber: referenceNumber,
+        status: EmailStatusEnum.REQUESTED,
+        occurredAt: new Date(),
+        createdAt: new Date(),
       });
 
       this.logger.log(
@@ -204,8 +236,9 @@ export class EmailService {
           'mailing-event-exchange',
           'mailing.schedule',
           {
-            referenceNumber: emailReferenceNumber,
-            recipient: recipient,
+            emailId: data.data.id,
+            referenceNumber: referenceNumber,
+            recipient: user.email,
             scheduledAt: scheduledAt.toISOString(),
           },
         );
@@ -215,12 +248,12 @@ export class EmailService {
 
       return {
         success: true,
-        message: `Email referencing ${emailReferenceNumber} has been successfully scheduled for ${scheduledAt.toISOString()}`,
+        message: `Email referencing ${referenceNumber} has been successfully scheduled for ${scheduledAt.toISOString()}`,
         deliveryId: data.data?.id || '',
       };
     } catch (error: any) {
       this.logger.error(
-        `Failed to schedule email referencing ${emailReferenceNumber}`,
+        `Failed to schedule email referencing ${referenceNumber}`,
         error,
       );
       const diagnosticMessage =
