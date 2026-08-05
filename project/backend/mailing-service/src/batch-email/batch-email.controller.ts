@@ -36,7 +36,7 @@ export class BatchEmailController {
   ): Promise<BatchPostReturnDto> {
     const result = await this.batchEmailService.sendBatchWithReference(
       referenceNumber,
-      sendBatchEmail.recipients,
+      sendBatchEmail.auth0Id,
     );
 
     return new BatchPostReturnDto({
@@ -51,7 +51,7 @@ export class BatchEmailController {
     @Body() sendBatchRandom: SendBatchRandomDto,
   ): Promise<BatchPostReturnDto> {
     const result = await this.batchEmailService.sendBatchRandomSameEmail(
-      sendBatchRandom.recipients,
+      sendBatchRandom.auth0Id,
       sendBatchRandom.difficulty,
       sendBatchRandom.scheduledFrom,
       sendBatchRandom.scheduledTo,
@@ -70,7 +70,7 @@ export class BatchEmailController {
     @Body() sendBatchRandom: SendBatchRandomDto,
   ): Promise<BatchPostReturnDto> {
     const result = await this.batchEmailService.sendBatchRandomDifferentEmail(
-      sendBatchRandom.recipients,
+      sendBatchRandom.auth0Id,
       sendBatchRandom.difficulty,
       sendBatchRandom.scheduledFrom,
       sendBatchRandom.scheduledTo,
