@@ -55,31 +55,19 @@ export function Campaigns({ onNavigate, activePath }: CampaignsProps) {
             <Button variant="ghost" onClick={() => onNavigate('/campaigns/create-email')} icon={
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 4h16v16H4z" /><path d="m4 6 8 6 8-6" /><line x1="12" y1="15" x2="12" y2="21" /><line x1="9" y1="18" x2="15" y2="18" /></svg>
             }
-            style={{
-              minWidth: 72,
-              paddingLeft: 16,
-              paddingRight: 16,
-            }}>
+            style={{ minWidth: 72 }}>
               Create Email
             </Button>
             <Button variant="ghost" onClick={() => onNavigate('/campaigns/send-email')} icon={
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
             }
-            style={{
-              minWidth: 72,
-              paddingLeft: 16,
-              paddingRight: 16,
-            }}>
+            style={{ minWidth: 72 }}>
               Send Existing Email
             </Button>
             <Button onClick={() => onNavigate('/campaigns/schedule')} icon={
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
             }
-            style={{
-              minWidth: 72,
-              paddingLeft: 16,
-              paddingRight: 16,
-            }}>
+            style={{ minWidth: 72 }}>
               Schedule Campaign
             </Button>
           </div>
