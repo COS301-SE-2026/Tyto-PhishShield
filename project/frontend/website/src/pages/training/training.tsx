@@ -519,9 +519,6 @@ export function UserTraining({
                   onClick={() => {
                     void handleSubmitAnswers();
                   }}
-                  style={{
-                    padding: '8px 16px',
-                  }}
                 >
                   Submit Answers
                 </Button>
