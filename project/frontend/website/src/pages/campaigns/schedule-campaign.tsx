@@ -529,8 +529,6 @@ export function ScheduleCampaign({
               onClick={() => onNavigate("/campaigns")}
               style={{
                 minWidth: 72,
-                paddingLeft: 16,
-                paddingRight: 16,
               }}
             >
               Cancel
@@ -544,8 +542,6 @@ export function ScheduleCampaign({
               }}
               style={{
                 minWidth: 160,
-                paddingLeft: 16,
-                paddingRight: 16,
               }}
             >
               Schedule Campaign
