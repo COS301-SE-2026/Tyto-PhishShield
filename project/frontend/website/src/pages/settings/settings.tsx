@@ -157,8 +157,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   style={{ 
                     alignSelf: 'flex-start',
                     minWidth: 80,
-                    paddingLeft: 16,
-                    paddingRight: 16,
                     }}>
                   Save Changes
                 </Button>
@@ -179,8 +177,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   style={{ 
                     alignSelf: 'flex-start',
                     minWidth: 80,
-                    paddingLeft: 16,
-                    paddingRight: 16, 
                   }}>
                   Update Password
                 </Button>
@@ -192,8 +188,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   style={{
                     alignSelf: 'flex-start',
                     minWidth: 80,
-                    paddingLeft: 16,
-                    paddingRight: 16, 
                   }}>
                   Sign out all devices
                 </Button>
@@ -293,8 +287,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   marginTop: 20, 
                   alignSelf: 'flex-start',
                   minWidth: 80,
-                  paddingLeft: 16,
-                  paddingRight: 16, 
                 }}>
                 Save Preferences
               </Button>
