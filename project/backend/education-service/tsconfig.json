@@ -20,5 +20,6 @@
     "ignoreDeprecations": "6.0",
     "types": ["jest"]
   },
-  "exclude": ["node_modules", "dist", "test"]
+  "exclude": ["node_modules", "dist"],
+  "include": ["src/**/*", "test/**/*"]
 }

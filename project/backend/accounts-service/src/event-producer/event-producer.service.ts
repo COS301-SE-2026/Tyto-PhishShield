@@ -11,7 +11,7 @@ export class EventProducerService {
   constructor(private readonly rmqClient: AmqpConnection) {}
 
   publishUserCreatedEvent(user: EventUser) {
-    this.rmqClient.publish(
+    return this.rmqClient.publish(
       EventProducerService.EVENT_EXCHANGE,
       'user.created',
       user,
@@ -19,7 +19,7 @@ export class EventProducerService {
   }
 
   publishUserUpdatedEvent(user: EventUser) {
-    this.rmqClient.publish(
+    return this.rmqClient.publish(
       EventProducerService.EVENT_EXCHANGE,
       'user.updated',
       user,
@@ -27,7 +27,7 @@ export class EventProducerService {
   }
 
   publishUserDeletedEvent(user: EventUser) {
-    this.rmqClient.publish(
+    return this.rmqClient.publish(
       EventProducerService.EVENT_EXCHANGE,
       'user.deleted',
       user,

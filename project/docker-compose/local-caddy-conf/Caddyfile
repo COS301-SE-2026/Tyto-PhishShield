@@ -1,8 +1,9 @@
 {
-    auto_https off
+    local_certs
 }
 
-:80 {
+localhost, phishshield.local {
+
     log {
         output file /var/log/caddy/access.log {
             roll_size 10MiB
@@ -17,18 +18,28 @@
         path /api/*
         header Origin *
         not header Origin https://capstone-five-guys.dns.net.za
-        not header Origin http://127.0.0.1
-        not header Origin http://localhost
+        not header Origin https://phishshield.local
+        not header Origin https://127.0.0.1
+        not header Origin https://localhost
     }
 
     handle @badApiOrigin {
         respond "Forbidden origin" 403
     }
 
+    handle /socket.io/* {
+        reverse_proxy api-gateway:3001
+    }
+
     handle /api/* {
         reverse_proxy api-gateway:3001 {
             header_up X-Request-ID {http.request.header.X-Request-ID}
         }
+    }
+
+    handle /addin/* {
+        uri strip_prefix /addin
+        reverse_proxy outlook-addin:8080
     }
 
     handle {

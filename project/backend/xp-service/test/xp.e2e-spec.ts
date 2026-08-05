@@ -20,8 +20,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Server } from 'http';
 import { AppModule } from '../src/app.module';
-import { UserEntity } from '../src/entities/user.entity';
+import { Department, UserEntity } from '../src/entities/user.entity';
 import { XpEntity } from '../src/entities/xp.entity';
+import { XpResponseDto } from '../src/dto/xp-response.dto';
+import { NetXpResponseDto } from '../src/dto/net-xp-response.dto';
 
 const TEST_AUTH0_ID = 'test-auth0-id-xp-e2e';
 
@@ -53,7 +55,7 @@ describe('XP service integration test', () => {
         auth0Id: TEST_AUTH0_ID,
         name: 'XP E2E Tester',
         email: 'xp-e2e@example.com',
-        department: 'Test Department',
+        department: Department.FINANCE,
       });
       seededUser = await userRepository.save(newUser);
       console.log('Successfully seeded user:', JSON.stringify(seededUser));
@@ -92,10 +94,16 @@ describe('XP service integration test', () => {
       .get('/xp')
       .expect(200)
       .expect((res: Response) => {
-        const body = res.body as XpEntity[];
+        const body = res.body as XpResponseDto[];
         console.log('GET /xp BODY:', JSON.stringify(body));
         expect(Array.isArray(body)).toBe(true);
         expect(body.length).toBeGreaterThan(0);
+
+        const entry = body.find((ent) => ent.user.auth0Id === TEST_AUTH0_ID);
+        expect(entry).toBeDefined();
+        expect(entry?.user.name).toEqual('XP E2E Tester');
+        expect(entry?.user.email).toEqual('xp-e2e@example.com');
+        expect(entry?.user.department).toEqual(Department.FINANCE);
       });
   });
 
@@ -104,11 +112,11 @@ describe('XP service integration test', () => {
       .get('/xp/net')
       .expect(200)
       .expect((res: Response) => {
-        const body = res.body as { auth0Id: string; totalXp: number }[];
+        const body = res.body as NetXpResponseDto[];
         console.log('GET /xp/net BODY:', JSON.stringify(body));
         expect(Array.isArray(body)).toBe(true);
         if (body.length > 0) {
-          expect(body[0]?.auth0Id).toBeDefined();
+          expect(body[0]?.user.auth0Id).toBeDefined();
           expect(typeof body[0]?.totalXp).toBe('number');
         }
       });
@@ -119,9 +127,16 @@ describe('XP service integration test', () => {
       .get(`/xp/${TEST_AUTH0_ID}`)
       .expect(200)
       .expect((res: Response) => {
-        const body = res.body as XpEntity[];
+        const body = res.body as XpResponseDto[];
         console.log(`GET /xp/${TEST_AUTH0_ID} BODY:`, JSON.stringify(body));
         expect(Array.isArray(body)).toBe(true);
+        expect(body.length).toBeGreaterThan(0);
+
+        for (const entry of body) {
+          expect(entry.user.auth0Id).toEqual(TEST_AUTH0_ID);
+          expect(entry.user.email).toEqual('xp-e2e@example.com');
+          expect(entry.user.department).toEqual(Department.FINANCE);
+        }
       });
   });
 
@@ -130,9 +145,9 @@ describe('XP service integration test', () => {
       .get(`/xp/${TEST_AUTH0_ID}/net`)
       .expect(200)
       .expect((res: Response) => {
-        const body = res.body as { auth0Id: string; totalXp: number };
+        const body = res.body as NetXpResponseDto;
         console.log(`GET /xp/${TEST_AUTH0_ID}/net BODY:`, JSON.stringify(body));
-        expect(body.auth0Id).toEqual(TEST_AUTH0_ID);
+        expect(body.user.auth0Id).toEqual(TEST_AUTH0_ID);
         expect(typeof body.totalXp).toBe('number');
         expect(body.totalXp).toBeGreaterThanOrEqual(250);
       });

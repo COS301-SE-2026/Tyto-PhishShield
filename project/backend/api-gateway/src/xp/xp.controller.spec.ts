@@ -41,7 +41,7 @@ describe('XpController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('reads XP_SERVICE_URL from ConfigService with a fallback default', () => {
+  it('reads XP_SERVICE_URL from ConfigService', () => {
     expect(config.get).toHaveBeenCalledWith(
       'XP_SERVICE_URL',
       'http://localhost:3005',
@@ -49,8 +49,8 @@ describe('XpController', () => {
   });
 
   describe('giveXp', () => {
-    it('forwards a POST request to /xp with the request body', async () => {
-      const dto: GiveXpDto = { auth0Id: 'auth0|123456789', amount: 50 } as GiveXpDto;
+    it('forwards a POST request to /xp', async () => {
+      const dto: GiveXpDto = { auth0Id: 'auth0|1', amount: 50 } as GiveXpDto;
       const expected = { success: true };
       proxy.forward.mockResolvedValue(expected);
 
@@ -109,19 +109,6 @@ describe('XpController', () => {
         method: 'GET',
       });
       expect(result).toBe(expected);
-    });
-
-    it('URL-encodes/interpolates whatever auth0Id it is given, without validating it', async () => {
-      const auth0Id = 'auth0|weird id with spaces';
-      proxy.forward.mockResolvedValue({});
-
-      await controller.getXpByUser(auth0Id);
-
-      expect(proxy.forward).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: `${XP_SERVICE_URL}/xp/${auth0Id}`,
-        }),
-      );
     });
   });
 

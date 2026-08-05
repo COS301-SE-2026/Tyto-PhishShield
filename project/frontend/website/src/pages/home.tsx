@@ -47,6 +47,19 @@ export function Home({ onNavigate }: HomeProps) {
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
           <button
+            onClick={() => onNavigate('/help')}
+            style={{
+              background: 'none', border: 'none',
+              color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 500,
+              padding: '7px 12px', cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.75)'}
+          >
+            Help
+          </button>
+          <button
             onClick={() => onNavigate('/login')}
             style={{
               background: 'none', border: '1.5px solid rgba(255,255,255,0.2)',

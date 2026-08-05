@@ -24,6 +24,8 @@ import { XpEntity } from '../entities/xp.entity';
 import { UserEntity } from '../entities/user.entity';
 import { GiveXpDto } from '../dto/give-xp.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { XpResponseDto } from '../dto/xp-response.dto';
+import { NetXpResponseDto } from '../dto/net-xp-response.dto';
 
 @Injectable()
 export class XpService {
@@ -54,13 +56,14 @@ export class XpService {
 
       const saved = await this.xpRepository.save(entry);
       this.logger.log(
-        `Awarded ${dto.amount} XP to user ${dto.auth0Id}, reason: ${dto.reason})`,
+        `Awarded ${dto.amount} XP to user ${dto.auth0Id}, reason: ${dto.reason}`,
       );
 
       try {
         await this.amqpConnection.publish('xp-event-exchange', 'xp.given', {
           auth0Id: user.auth0Id,
           amount: dto.amount,
+          reason: dto.reason,
         });
       } catch (publishError) {
         this.logger.error(
@@ -76,16 +79,32 @@ export class XpService {
     }
   }
 
-  async getAllXp(): Promise<XpEntity[]> {
+  async getAllXp(): Promise<XpResponseDto[]> {
     try {
-      return await this.xpRepository.find({ order: { createdAt: 'DESC' } });
+      const entries = await this.xpRepository.find({
+        order: { createdAt: 'DESC' },
+        relations: ['user'],
+      });
+
+      return entries.map((entry) => ({
+        id: entry.id,
+        amount: entry.amount,
+        reason: entry.reason,
+        createdAt: entry.createdAt,
+        user: {
+          auth0Id: entry.user.auth0Id,
+          name: entry.user.name,
+          email: entry.user.email,
+          department: entry.user.department,
+        },
+      }));
     } catch (error) {
       this.logger.error('Failed to fetch all XP records', error);
       throw new InternalServerErrorException('Failed to retrieve XP records');
     }
   }
 
-  async getXpByUser(auth0Id: string): Promise<XpEntity[]> {
+  async getXpByUser(auth0Id: string): Promise<XpResponseDto[]> {
     const user = await this.userRepository.findOneBy({ auth0Id });
 
     if (!user) {
@@ -94,10 +113,23 @@ export class XpService {
     }
 
     try {
-      return await this.xpRepository.find({
+      const entries = await this.xpRepository.find({
         where: { userId: user.id },
         order: { createdAt: 'DESC' },
       });
+
+      return entries.map((entry) => ({
+        id: entry.id,
+        amount: entry.amount,
+        reason: entry.reason,
+        createdAt: entry.createdAt,
+        user: {
+          auth0Id: user.auth0Id,
+          name: user.name,
+          email: user.email,
+          department: user.department,
+        },
+      }));
     } catch (error) {
       this.logger.error(
         `Failed to fetch XP records for user ${auth0Id}`,
@@ -109,9 +141,7 @@ export class XpService {
     }
   }
 
-  async getNetXpByUser(
-    auth0Id: string,
-  ): Promise<{ auth0Id: string; totalXp: number }> {
+  async getNetXpByUser(auth0Id: string): Promise<NetXpResponseDto> {
     const user = await this.userRepository.findOneBy({ auth0Id });
 
     if (!user) {
@@ -128,7 +158,16 @@ export class XpService {
         .getRawOne<{ totalXp: string }>();
 
       this.logger.log(`Fetched net XP for user ${auth0Id}`);
-      return { auth0Id, totalXp: Number(result?.totalXp ?? 0) };
+
+      return {
+        totalXp: Number(result?.totalXp ?? 0),
+        user: {
+          auth0Id: user.auth0Id,
+          name: user.name,
+          email: user.email,
+          department: user.department,
+        },
+      };
     } catch (error) {
       this.logger.error(
         `Failed to calculate net XP for user ${auth0Id}`,
@@ -140,13 +179,13 @@ export class XpService {
     }
   }
 
-  async getNetXpAllUsers(): Promise<{ auth0Id: string; totalXp: number }[]> {
+  async getNetXpAllUsers(): Promise<NetXpResponseDto[]> {
     try {
       /*
       Break down of this query:
-      - 3 columns are selected: auth0Id, name, totalXp.
+      - 5 columns are selected: auth0Id, name, email, department, totalXp.
       - innerJoin is performed on all users with at least one xp amount.
-      - groupBy: id, auth0Id, name (Postgres requires this).
+      - groupBy: id, auth0Id, name, email, department (Postgres requires this).
       - orderBy: totalXp decreasing.
       - all rows are returned.
        */
@@ -154,20 +193,35 @@ export class XpService {
         .createQueryBuilder('xp')
         .select('u.auth0Id', 'auth0Id')
         .addSelect('u.name', 'name')
+        .addSelect('u.email', 'email')
+        .addSelect('u.department', 'department')
         .addSelect('COALESCE(SUM(xp.amount), 0)', 'totalXp')
         .innerJoin(UserEntity, 'u', 'u.id = xp.userId')
         .groupBy('u.id')
         .addGroupBy('u.auth0Id')
         .addGroupBy('u.name')
+        .addGroupBy('u.email')
+        .addGroupBy('u.department')
         .orderBy('COALESCE(SUM(xp.amount), 0)', 'DESC')
-        .getRawMany<{ auth0Id: string; name: string; totalXp: string }>();
+        .getRawMany<{
+          auth0Id: string;
+          name: string;
+          email: string;
+          department: string;
+          totalXp: string;
+        }>();
 
       this.logger.log(`Fetched net XP leaderboard for ${rows.length} users`);
 
       // Replace totalXp with its numerical equivalence
       return rows.map((row) => ({
-        auth0Id: row.auth0Id,
         totalXp: Number(row.totalXp),
+        user: {
+          auth0Id: row.auth0Id,
+          name: row.name,
+          email: row.email,
+          department: row.department,
+        },
       }));
     } catch (error) {
       this.logger.error('Failed to fetch net XP for all users', error);

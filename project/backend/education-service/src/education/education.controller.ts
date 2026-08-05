@@ -6,6 +6,7 @@ import {
   UseGuards,
   Req,
   HttpCode,
+  Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -14,6 +15,7 @@ import { EducationService } from './education.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 interface AuthenticatedRequest extends Request {
   user: { auth0Id: string; email: string; role: string };
@@ -22,12 +24,24 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Education')
 @Controller('education')
 export class EducationController {
+  private readonly logger = new Logger(EducationController.name);
   constructor(private readonly educationService: EducationService) {}
 
-  @Post('questions')
+  @RabbitSubscribe({
+    // this is crucial to communicate with the other service.
+    exchange: 'education-event-exchange',
+    routingKey: 'education.assign',
+    queue: 'education-service-assign-queue',
+  })
+  async handleEducationAssignment(payload: { auth0Id: string }) {
+    this.logger.log(`Received education.assign for user ${payload.auth0Id}`);
+    await this.educationService.createAssignment(payload.auth0Id);
+  }
+
+  @Post('questions') // ok if this works we shoulb de good.
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add a question to the bank(admin' })
+  @ApiOperation({ summary: 'Add a question to the bank(admin)' })
   createQuestion(@Body() dto: CreateQuestionDto) {
     return this.educationService.createQuestion(dto);
   }
@@ -42,12 +56,12 @@ export class EducationController {
 
   @Get('assignments')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth() // maybe user as well in future?
   @ApiOperation({ summary: 'List all assignments (admin)' })
   findAllAssignments() {
     return this.educationService.findAllAssignments();
   }
-
+  // keep in mind what to do with the assignment fo admin pages.
   @Post('assignments')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -77,10 +91,10 @@ export class EducationController {
   }
 
   @Post('answers')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) //make sure the array length match what we have in the number of quuestions.
   @ApiBearerAuth()
   @HttpCode(200)
-  @ApiOperation({ summary: 'Submit answers for a pending assignment' })
+  @ApiOperation({ summary: 'Submit answers for a pening assignment' })
   submitAnswers(
     @Req() req: AuthenticatedRequest,
     @Body() dto: SubmitAnswersDto,

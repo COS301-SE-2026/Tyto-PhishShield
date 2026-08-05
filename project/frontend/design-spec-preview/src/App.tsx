@@ -2,47 +2,87 @@ import {useState} from 'react';
 import Sidebar from './components/layout/sidebar';
 import Header from './components/layout/header';
 import PageSection from './components/layout/page-section';
+import BrandSection from './components/design-preview/brand-section';
+import ColourSection from './components/design-preview/colour-section';
+import TypographySection from './components/design-preview/typography-section';
+import SpacingSection from './components/design-preview/spacing-section';
+import ComponentsSection from './components/design-preview/components-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
-
-  const pageStyle = darkMode? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900';
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return(
-    <div className={`min-h-screen ${pageStyle}`}>
-      <Sidebar/>
+    <div
+      data-theme={darkMode ? "dark" : "light"}
+      style={{
+        color: "var(--text-primary)",
+        background: "var(--bg-page)",
+        display: 'flex',
+        width: "100%",
+        height: "100vh",
+        overflow: 'hidden',
+      }}
+    >
+      <Sidebar collapsed={sidebarCollapsed}/>
 
-      <main className='lg:ml-64'>
-        <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+      <div
+        style={{
+          flex:1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
 
-        <PageSection id='brand' title='Brand Identity' darkMode={darkMode}>
-          <p>Brand Section</p>
-        </PageSection>
+        <Header 
+          darkMode={darkMode} 
+          setDarkMode={setDarkMode} 
+          onToggleSidebar={() => setSidebarCollapsed(value => !value)}
+        />
 
-        <PageSection id='colours' title='Colour System' darkMode={darkMode}>
-          <p>Colour Section</p>
-        </PageSection>
+        <main 
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            padding: "24px 26px",
+            background: "var(--bg-page)",
+          }}
+        >
+        
 
-        <PageSection id='typography' title='Typography' darkMode={darkMode}>
-          <p>Typography Section</p>
-        </PageSection>
+          <div 
+            style={{
+              display: 'flex',
+              flexDirection:'column',
+              gap: 24,
+              maxWidth: 1500,
+              margin: "0 auto",
+            }}
+          >
+            <PageSection id='brand' title='Brand Identity'>
+              <BrandSection/>
+            </PageSection>
 
-        <PageSection id='spacing' title='Spacing System' darkMode={darkMode}>
-          <p>Spacing Section</p>
-        </PageSection>
+            <PageSection id='colours' title='Colour System'>
+              <ColourSection/>
+            </PageSection>
 
-        <PageSection id='components' title='UI Components' darkMode={darkMode}>
-          <p>Components Section</p>
-        </PageSection>
+            <PageSection id='typography' title='Typography'>
+              <TypographySection/>
+            </PageSection>
 
-        <PageSection id='ratio' title='Ratio Example' darkMode={darkMode}>
-          <p>Ratio Section</p>
-        </PageSection>
+            <PageSection id='spacing' title='Spacing System'>
+              <SpacingSection/>
+            </PageSection>
 
-        <PageSection id='dashboard' title='Dashboard Layout' darkMode={darkMode}>
-          <p>Dashboard Section</p>
-        </PageSection>
-      </main>
+            <PageSection id='components' title='UI Components'>
+              <ComponentsSection/>
+            </PageSection>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

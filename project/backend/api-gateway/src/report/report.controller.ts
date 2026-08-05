@@ -62,13 +62,16 @@ export class ReportController {
       type: 'object',
       properties: {
         outlookMessageId: { type: 'string', example: 'MSG-001' },
-        emailSubject: {
+        emailSubject: { type: 'string', example: 'Urgent password reset' },
+        emailSender: {
           type: 'string',
-          example: 'Urgent: Update your password',
+          example: 'phisher@capstone-five-guys.dns.net.za',
         },
-        emailSender: { type: 'string', example: 'phisher@example.com' },
-        emailBody: { type: 'string', example: 'Click here to update...' },
-        emailReceivedAt: { type: 'string', example: '2025-06-18T10:00:00Z' },
+        emailBody: {
+          type: 'string',
+          example: 'Click here to reset your password…',
+        },
+        emailReceivedAt: { type: 'string', example: '2026-07-22T10:00:00Z' },
         notes: { type: 'string', example: 'Looks suspicious' },
       },
     },

@@ -1,10 +1,11 @@
-import { useState, useEffect, JSX } from 'react';
+import { useState, useEffect, useMemo, useCallback, JSX } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
-import type { Campaign, XPResponse } from '../../types';
-import { getXP } from './dashboard.service';
+import type { Campaign } from '../../types';
+import { fetchXpNet, computeMyXpRank, type XpNetEntry } from './dashboard.service';
+import { connectXpSocket } from '../../services/xp-socket';
 
 interface DashboardProps {
   onNavigate: (path: string) => void;
@@ -18,14 +19,6 @@ const MOCK_CAMPAIGNS: Campaign[] = [
   { id: '2', name: 'Salary Increase Survey', status: 'complete', sentCount: 180, clickedCount: 9, reportedCount: 171, targetDepartments: ['Finance', 'Executive'], startDate: '2025-04-15', endDate: '2025-04-30', createdBy: 'admin' },
   { id: '3', name: 'HR Policy Update', status: 'active', sentCount: 240, clickedCount: 31, reportedCount: 208, targetDepartments: ['Human Resources'], startDate: '2025-05-05', endDate: null, createdBy: 'admin' },
   { id: '4', name: 'DHL Parcel Delivery', status: 'draft', sentCount: 0, clickedCount: 0, reportedCount: 0, targetDepartments: ['All'], startDate: '2025-05-20', endDate: null, createdBy: 'admin' },
-];
-
-const MOCK_LEADERBOARD = [
-  { rank: 1, name: 'Sipho Ndlovu', xp: 4820, initials: 'SN', medal: '🥇' },
-  { rank: 2, name: 'Alicia Patel', xp: 4310, initials: 'AP', medal: '🥈' },
-  { rank: 3, name: 'Marco van Dyk', xp: 3990, initials: 'MV', medal: '🥉' },
-  { rank: 4, name: 'Luke Walker', xp: 3560, initials: 'LW', medal: '' },
-  { rank: 5, name: 'Fatima Hassan', xp: 3210, initials: 'FH', medal: '' },
 ];
 
 const STATUS_BADGE: Record<string, JSX.Element> = {
@@ -132,7 +125,7 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           </Card>
         ))}
       </div>
-      {/* Detection over time stub chart */}
+      {/* Detection over time mock chart */}
       <Card style={{ padding: '18px 20px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Phishing Detection Rate Over Time</h2>
@@ -166,9 +159,8 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           ))}
         </svg>
       </Card>
-      {/* Campaigns + leaderboard */}
+      {/* Campaigns */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.9fr) minmax(0,1fr)', gap: 14, marginBottom: 14 }}>
-        {/* Campaigns */}
         <Card>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Campaigns</h2>
@@ -213,32 +205,6 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
             </table>
           </div>
         </Card>
-        {/* Leaderboard */}
-        <Card>
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Top Defenders</h2>
-            <button onClick={() => onNavigate('/leaderboard')} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif' }}>View all</button>
-          </div>
-          {MOCK_LEADERBOARD.map((u, i) => (
-            <div key={u.rank}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
-                background: i === 0 ? 'var(--color-warning-light)' : 'transparent',
-                transition: 'background 0.12s',
-                cursor: 'pointer',
-              }}
-              onClick={() => onNavigate(`/users/${u.initials}`)}
-              onMouseEnter={e => { if (i !== 0) (e.currentTarget).style.background = 'var(--bg-hover)'; }}
-              onMouseLeave={e => { if (i !== 0) (e.currentTarget).style.background = 'transparent'; }}
-            >
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', width: 14, textAlign: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.rank}</span>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', flexShrink: 0 }}>{u.initials}</div>
-              <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.name}</span>
-              <span style={{ fontSize: 11, color: 'var(--color-primary)', fontWeight: 700, fontFamily: 'Inter, system-ui, sans-serif' }}>{u.xp.toLocaleString()} XP</span>
-              {u.medal && <span style={{ fontSize: 16 }}>{u.medal}</span>}
-            </div>
-          ))}
-        </Card>
       </div>
       {/* Alert banner */}
       <div style={{
@@ -262,30 +228,80 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
   );
 }
 
-function UserDashboard({ onNavigate, onXpToday }: { onNavigate: (p: string) => void; onXpToday?: (v: number) => void }) {
-  const [xp, setXP] = useState(0);
-  const [xpToday, setXpToday] = useState(0);
+function UserDashboard({ onNavigate, onXpGained }: { onNavigate: (p: string) => void; onXpGained?: (amount: number) => void }) {
+  const { user } = useAuth();
   const { addToast } = useToast();
+  const [xpEntries, setXpEntries] = useState<XpNetEntry[] | null>(null);
+  const [recentGain, setRecentGain] = useState<number | null>(null);
   useEffect(() => {
-    const fetchXP = async () => {
-      const res: XPResponse = await getXP();
-      if (res.status === 'Error') {
-        addToast({ type: 'error', title: 'XP fetch failed', message: res.message ?? 'Unable to fetch XP' });
-        return;
+    let cancelled = false;
+    fetchXpNet().then(data => { if (!cancelled) setXpEntries(data); })
+      .catch(() => {
+      if (!cancelled) {
+        addToast({ type: 'error', title: 'XP stats load failed', message: 'Unable to fetch XP stats' });
       }
-      setXP(res.xp);
-      setXpToday(res.xpToday ?? 0);
-      onXpToday?.(res.xpToday ?? 0);
+    });
+  return () => { cancelled = true; };
+  }, [addToast]);
+
+    useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
+    connectXpSocket().then(s => {
+        if (cancelled) { s.disconnect(); return; }
+        socket = s;
+        s.on('xp-given-all', ({ auth0Id, amount }: { auth0Id: string; amount: number }) => {
+          if (auth0Id === user.auth0Id) {
+            onXpGained?.(amount);
+            setRecentGain(amount);
+          }
+          setXpEntries(prev => {
+            const list = prev ?? [];
+            const idx = list.findIndex(entry => entry.auth0Id === auth0Id);
+            if (idx === -1) {
+              if (auth0Id !== user.auth0Id) return list;
+              return [...list, {
+                auth0Id: user.auth0Id,
+                name: user.name ?? user.email,
+                email: user.email,
+                department: null,
+                totalXp: amount,
+              }];
+            }
+            const updated = [...list];
+            updated[idx] = { ...updated[idx], totalXp: updated[idx].totalXp + amount };
+            return updated;
+          });
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      socket?.disconnect();
     };
-    void fetchXP();
-  }, []);
+  }, [user, onXpGained]);
+
+  const { myXp, rankValue, rankDelta } = useMemo(() => {
+    if (!user || xpEntries === null) {
+      return { myXp: 0, rankValue: '—', rankDelta: 'Loading…' };
+    }
+    const { xp, rank, totalRanked } = computeMyXpRank(xpEntries, user.auth0Id);
+    if (rank === null) {
+      return { myXp: 0, rankValue: 'Unranked', rankDelta: 'No XP recorded yet' };
+    }
+    return { myXp: xp, rankValue: `#${rank}`, rankDelta: `of ${totalRanked} ranked users` };
+  }, [xpEntries, user]);
+
+  const xpDeltaLabel = recentGain !== null ? `+${recentGain} just now` : 'Updates live';
+
   return (
     <>
       {/* Personal stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 16 }}>
         {[
-          { lbl: 'XP Points', val: xp, delta: xpToday > 0 ? `+${xpToday} today` : 'No XP earned today', deltaColor: 'var(--color-success)' },
-          { lbl: 'Organisation Rank', val: '#4', delta: 'of 87 users', deltaColor: 'var(--text-muted)' },
+          { lbl: 'XP Points', val: myXp, delta: xpDeltaLabel, deltaColor: recentGain !== null ? 'var(--color-success)' : 'var(--text-muted)' },
+          { lbl: 'Organisation Rank', val: rankValue, delta: rankDelta, deltaColor: 'var(--text-muted)' },
           { lbl: 'Reports Filed', val: '28', delta: '+2 this week', deltaColor: 'var(--color-success)' },
           { lbl: 'Current Streak', val: '12 days', delta: 'Personal best!', deltaColor: 'var(--color-primary)' },
         ].map(m => (
@@ -357,14 +373,11 @@ export function Dashboard({ onNavigate, activePath }: DashboardProps) {
   const { canAccess } = useAuth();
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [showXpAnim, setShowXpAnim] = useState(false);
-  const [xpDelta, setXpDelta] = useState(0);
-  const handleXpToday = (today: number) => {
-    if (today > 0 && !sessionStorage.getItem('xp_shown')) {
-      setXpDelta(today);
-      sessionStorage.setItem('xp_shown', '1');
-      setTimeout(() => setShowXpAnim(true), 800);
-    }
-  };
+  const [xpAnimDelta, setXpAnimDelta] = useState(0);
+  const handleXpGained = useCallback((amount: number) => {
+    setXpAnimDelta(amount);
+    setShowXpAnim(true);
+  }, []);
   const isAdminOrAnalyst = canAccess('analyst');
   const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return (
@@ -378,11 +391,11 @@ export function Dashboard({ onNavigate, activePath }: DashboardProps) {
       >
         {isAdminOrAnalyst
           ? <AdminDashboard onNavigate={onNavigate} onNewCampaign={() => setNewCampaignOpen(true)} />
-          : <UserDashboard onNavigate={onNavigate} onXpToday={handleXpToday} />
+          : <UserDashboard onNavigate={onNavigate} onXpGained={handleXpGained} />
         }
       </AppLayout>
       <NewCampaignModal isOpen={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} />
-      {showXpAnim && <XpAnimationOverlay delta={xpDelta} onDone={() => setShowXpAnim(false)} />}
+      {showXpAnim && <XpAnimationOverlay delta={xpAnimDelta} onDone={() => setShowXpAnim(false)} />}
     </>
   );
 }
