@@ -1149,6 +1149,9 @@ importers:
       eslint-plugin-react-x:
         specifier: ^5.7.5
         version: 5.7.9(eslint@10.4.0(jiti@2.7.0))(typescript@6.0.3)
+      lucide-react:
+        specifier: ^1.28.0
+        version: 1.28.0(react@19.2.6)
       react:
         specifier: ^19.2.5
         version: 19.2.6
@@ -7220,6 +7223,11 @@ packages:
 
   lru-memoizer@3.0.0:
     resolution: {integrity: sha512-m83w/cYXLdUIboKSPxzPAGfYnk+vqeDYXuoSrQRw1q+yVEd8IXhvMufN8Q5TIPe7e2jyX4SRNrDJI2Skw1yznQ==}
+
+  lucide-react@1.28.0:
+    resolution: {integrity: sha512-fARAFJULsGuDDydjp6+6blekG/sBIM29TerzLjc9bQUKAcEfrSc4ZQKb25KRz4OMKd87cZTb5dgq0w/T6KufVg==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
@@ -18153,6 +18161,10 @@ snapshots:
     dependencies:
       lodash.clonedeep: 4.5.0
       lru-cache: 11.3.6
+
+  lucide-react@1.28.0(react@19.2.6):
+    dependencies:
+      react: 19.2.6
 
   magic-string@0.30.17:
     dependencies:
