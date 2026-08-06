@@ -8,7 +8,10 @@ import {
 import { Resend } from 'resend';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EmailDifficulty, Emails } from '../entities/emails.entity';
+import {
+  EmailDifficulty,
+  EmailTemplateEntity,
+} from '../entities/email-template.entity';
 import { In, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
@@ -41,8 +44,8 @@ export class BatchEmailService {
 
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(Emails)
-    private readonly emailRepository: Repository<Emails>,
+    @InjectRepository(EmailTemplateEntity)
+    private readonly emailRepository: Repository<EmailTemplateEntity>,
     private readonly amqpConnection: AmqpConnection,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -152,7 +155,7 @@ export class BatchEmailService {
     difficulty: EmailDifficulty,
     size: number,
   ): Promise<string[]> {
-    let emails: Emails[];
+    let emails: EmailTemplateEntity[];
 
     try {
       // Query Builder:
@@ -227,7 +230,7 @@ export class BatchEmailService {
 
   private async fetchEmailsByReferenceNumbers(
     referenceNumbers: string[],
-  ): Promise<Map<string, Emails>> {
+  ): Promise<Map<string, EmailTemplateEntity>> {
     // Find all the email templates relative to their reference numbers
     const emails = await this.emailRepository.find({
       where: { referenceNumber: In(referenceNumbers) },
@@ -283,7 +286,7 @@ export class BatchEmailService {
     }
   }
 
-  private formatFromAddress(email: Emails): string {
+  private formatFromAddress(email: EmailTemplateEntity): string {
     return email.alias ? `${email.alias} <${email.sender}>` : email.sender;
   }
 
@@ -301,7 +304,7 @@ export class BatchEmailService {
 
   private buildResendItem(
     dispatch: RecipientDispatch,
-    email: Emails,
+    email: EmailTemplateEntity,
   ): ResendBatchItem {
     const item: ResendBatchItem = {
       from: this.formatFromAddress(email),
