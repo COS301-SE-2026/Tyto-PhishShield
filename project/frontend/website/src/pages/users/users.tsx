@@ -342,9 +342,8 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-ZA') : '—'}
                     </td>
                     <td style={{ padding: '11px 16px' }}>
-                      <Button size="sm" variant="ghost"
+                      <Button variant="primary"
                         onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
-                        style={{ border: '1px solid var(--border)' }}
                       >
                         Manage
                       </Button>
