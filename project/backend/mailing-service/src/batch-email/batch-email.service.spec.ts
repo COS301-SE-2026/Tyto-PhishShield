@@ -34,8 +34,8 @@ jest.mock('resend', () => ({
   })),
 }));
 
-const FUTURE_DATE_FROM = new Date('2026-08-01T10:00:00.000Z');
-const FUTURE_DATE_TO = new Date('2026-08-01T12:00:00.000Z');
+const FUTURE_DATE_FROM = new Date(Date.now() + 24 * 60 * 60 * 1000);
+const FUTURE_DATE_TO = new Date(Date.now() + 26 * 60 * 60 * 1000);
 
 describe('BatchEmailService', () => {
   let service: BatchEmailService;
