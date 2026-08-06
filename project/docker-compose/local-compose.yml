@@ -415,6 +415,57 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+
+  llm_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${LLM_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${LLM_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${LLM_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - llm_pgdata:/var/lib/postgresql/data
+
+    ports:
+      # Left side must be unique
+      - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  llm_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/llm-service/Dockerfile
+
+      # Must be unique
+    container_name: ${LLM_APP_CONTAINER}
+    environment:
+      - PORT=${LLM_SERVICE_PORT}
+      - TCP_PORT=${LLM_TCP_PORT}
+      - DB_HOST=${LLM_DB_CONTAINER}
+      - LLM_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      # Left side must be unique
+      - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
+
+    depends_on:
+      llm_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
   
   # builds the website using the website's dockerfile
   website:
@@ -489,6 +540,7 @@ volumes:
   xp_pgdata:
   education_pgdata:
   analytics_pgdata:
+  llm_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local
