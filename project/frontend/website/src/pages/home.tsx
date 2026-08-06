@@ -1,6 +1,7 @@
 import { LogoLockup } from '../components/ui/owl-logo';
 import { ThemeToggle } from '../components/ui';
 import { useTheme } from '../context/theme-context';
+import { Mail, Trophy, ShieldCheck, BarChart3} from 'lucide-react';
 
 interface HomeProps {
   onNavigate: (path: string) => void;
@@ -10,22 +11,22 @@ const FEATURES = [
   {
     title: 'Simulated Phishing',
     desc: 'Safe, AI-generated campaigns using GPT-4 and Llama-3 that mirror real-world attacks closely.',
-    icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>,
+    icon: ShieldCheck,
   },
   {
     title: 'Live Analytics',
     desc: 'Real-time dashboards tracking detection rates, click behaviour, and organisational trends.',
-    icon: <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></>,
+    icon: BarChart3,
   },
   {
     title: 'Gamified Learning',
     desc: 'XP points, badges, and leaderboards that drive engagement and long-term retention.',
-    icon: <><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></>,
+    icon: Trophy,
   },
   {
     title: 'Outlook Add-in',
     desc: 'Native Report Phish button in Outlook across desktop, web, and mobile via Office.js.',
-    icon: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+    icon: Mail,
   },
 ];
 
@@ -178,38 +179,44 @@ export function Home({ onNavigate }: HomeProps) {
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: 18,
         }}>
-          {FEATURES.map((f, i) => (
-            <div key={i} style={{
-              background: 'var(--bg-card)', 
-              borderRadius: 14, 
-              padding: '28px 22px',
-              border: '1px solid var(--border)', 
-              boxShadow: 'var(--shadow-sm)',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              cursor: 'default',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget).style.transform = 'translateY(-2px)';
-              (e.currentTarget).style.boxShadow = '0 8px 24px rgba(37,99,235,0.1)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget).style.transform = 'none';
-              (e.currentTarget).style.boxShadow = 'var(--shadow-sm)';
-            }}
-            >
-              <div style={{
-                width: 42, height: 42, background: 'var(--color-primary-light)',
-                borderRadius: 10, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', marginBottom: 16,
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {f.icon}
-                </svg>
+          {FEATURES.map((f) => {
+            const Icon = f.icon;
+            return(
+              <div key={f.title} style={{
+                background: 'var(--bg-card)', 
+                borderRadius: 14, 
+                padding: '28px 22px',
+                border: '1px solid var(--border)', 
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                cursor: 'default',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget).style.transform = 'translateY(-2px)';
+                (e.currentTarget).style.boxShadow = '0 8px 24px rgba(37,99,235,0.1)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget).style.transform = 'none';
+                (e.currentTarget).style.boxShadow = 'var(--shadow-sm)';
+              }}
+              >
+                <div style={{
+                  width: 42, height: 42, background: 'var(--color-primary-light)',
+                  borderRadius: 10, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', marginBottom: 16,
+                }}>
+                  <Icon
+                    size={20}
+                    strokeWidth={2}
+                    color='var(--color-primary)'
+                    aria-hidden='true'
+                  />
+                </div>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 7, fontFamily: 'Inter, system-ui, sans-serif' }}>{f.title}</h3>
+                <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>{f.desc}</p>
               </div>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 7, fontFamily: 'Inter, system-ui, sans-serif' }}>{f.title}</h3>
-              <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.65, fontFamily: 'Inter, system-ui, sans-serif' }}>{f.desc}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
