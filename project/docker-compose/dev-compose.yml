@@ -16,9 +16,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '1.5'
+          memory: 512M
         reservations:
           cpus: '0.25'
+          memory: 128M
 
   mailing_db:
     image: postgres:15-alpine
@@ -47,7 +49,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     # ports:
     #   # Left side must be unique
@@ -84,6 +90,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 256M
     
   accounts_db:
     image: postgres:15-alpine
@@ -106,7 +113,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
   
   accounts_app:
     image: fiveguys301/accounts:latest
@@ -147,7 +158,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '1.0'
+          memory: 256M
 
   api_app:
     image: fiveguys301/api:latest
@@ -184,7 +196,11 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '2.0'
+          memory: 384M
+        reservations:
           cpus: '1.0'
+          memory: 128M
   
   report_db:
     image: postgres:15-alpine
@@ -207,7 +223,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
   report_app:
     image: fiveguys301/report:latest
@@ -237,6 +257,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 192M
 
   xp_db:
     image: postgres:15-alpine
@@ -259,7 +280,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
   xp_app:
     image: fiveguys301/xp:latest
@@ -287,6 +312,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 256M
 
   education_db:
     image: postgres:15-alpine
@@ -310,6 +336,10 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 192M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
       
   education_app:
     image: fiveguys301/education:latest
@@ -331,6 +361,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 192M
 
     depends_on:
       education_db:
@@ -363,7 +394,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
       
   analytics_app:
     image: fiveguys301/analytics:latest
@@ -388,7 +423,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '1.0'
+          memory: '256M'
 
   website:
     image: fiveguys301/website:latest
@@ -400,7 +436,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '1.0'
+          memory: 192M
   
   outlook-addin:
     image: fiveguys301/addin:latest
@@ -412,6 +449,7 @@ services:
       resources:
         limits:
           cpus: '0.25'
+          memory: 64M
 
   caddy:
     image: caddy:2.11.3
@@ -428,7 +466,11 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '1.0'
+          memory: 128M
+        reservations:
           cpus: '0.25'
+          memory: 32M
   
   watchtower:
     image: containrrr/watchtower:1.7.1
@@ -443,7 +485,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '0.1'
+          memory: 32M
     
 
 volumes:

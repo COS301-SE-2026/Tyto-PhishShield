@@ -12,9 +12,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
+          cpus: '1.5'
+          memory: 512M
         reservations:
           cpus: '0.25'
+          memory: 128M
 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
@@ -34,7 +36,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     # Env variables, must be unique
     environment:
@@ -70,6 +76,8 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 256M
+
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -114,7 +122,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
     volumes:
       - accounts_pgdata:/var/lib/postgresql/data
     ports:
@@ -155,7 +167,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '1.0'
+          memory: 256M
     depends_on:
       accounts_db:
         condition: service_healthy
@@ -205,7 +218,11 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '2.0'
+          memory: 384M
+        reservations:
           cpus: '1.0'
+          memory: 128M
     volumes:
       - api_gateway_logs:/var/log/api-gateway
     depends_on:
@@ -234,7 +251,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     volumes:
       - report_pgdata:/var/lib/postgresql/data
@@ -267,6 +288,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 192M
 
     ports:
       # Left side must be unique
@@ -302,7 +324,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     volumes:
       - xp_pgdata:/var/lib/postgresql/data
@@ -337,6 +363,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 256M
 
     depends_on:
       xp_db:
@@ -376,6 +403,10 @@ services:
       resources:
         limits:
           cpus: '0.5'
+          memory: 192M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
       
 # Main service app container
   education_app:
@@ -403,7 +434,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '0.5'
+          memory: 192M
 
     depends_on:
       education_db:
@@ -437,7 +469,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     ports:
       # Left side must be unique
@@ -464,7 +500,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: '1.0'
+          memory: '256M'
 
     depends_on:
       analytics_db:
@@ -489,7 +526,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '1.0'
+          memory: 192M
+
 
   # builds the outlook-addin using its dockerfile
   outlook-addin:
@@ -507,6 +546,7 @@ services:
       resources:
         limits:
           cpus: '0.25'
+          memory: 64M
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
@@ -531,7 +571,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: '0.5'
+          memory: 192M
 
   caddy:
     image: caddy:2.11.3
@@ -548,7 +589,11 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '1.0'
+          memory: 128M
+        reservations:
           cpus: '0.25'
+          memory: 32M
 
 volumes:
   # Must be same as volume name for db
