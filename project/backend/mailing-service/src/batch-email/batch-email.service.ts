@@ -15,6 +15,7 @@ import {
 import { In, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { UserEntity } from '../entities/user.entity';
 
 const MAILING_EVENT_EXCHANGE = 'mailing-event-exchange';
 
@@ -24,7 +25,7 @@ interface BatchSendResult {
 }
 
 interface RecipientDispatch {
-  recipient: string;
+  auth0Id: string;
   referenceNumber: string;
   scheduledAt: Date;
 }
@@ -46,6 +47,8 @@ export class BatchEmailService {
     private readonly configService: ConfigService,
     @InjectRepository(EmailTemplateEntity)
     private readonly emailRepository: Repository<EmailTemplateEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
     private readonly amqpConnection: AmqpConnection,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -54,12 +57,12 @@ export class BatchEmailService {
 
   async sendBatchWithReference(
     referenceNumber: string,
-    recipients: string[],
+    auth0Ids: string[],
   ): Promise<BatchSendResult> {
     const now = new Date();
 
-    const dispatches: RecipientDispatch[] = recipients.map((recipient) => ({
-      recipient,
+    const dispatches: RecipientDispatch[] = auth0Ids.map((auth0Id) => ({
+      auth0Id,
       referenceNumber: referenceNumber,
       scheduledAt: now,
     }));
@@ -68,7 +71,7 @@ export class BatchEmailService {
   }
 
   async sendBatchRandomSameEmail(
-    recipients: string[],
+    auth0Ids: string[],
     difficulty: EmailDifficulty,
     scheduledFrom: Date,
     scheduledTo: Date,
@@ -80,19 +83,17 @@ export class BatchEmailService {
     const referenceNumber = await this.getRandomEmailByDifficulty(difficulty);
 
     const scheduledAts = this.resolveScheduledTimes(
-      recipients.length,
+      auth0Ids.length,
       scheduledFrom,
       scheduledTo,
       randomisedTimes,
     );
 
-    const dispatches: RecipientDispatch[] = recipients.map(
-      (recipient, index) => ({
-        recipient,
-        referenceNumber,
-        scheduledAt: scheduledAts[index],
-      }),
-    );
+    const dispatches: RecipientDispatch[] = auth0Ids.map((auth0Id, index) => ({
+      auth0Id,
+      referenceNumber,
+      scheduledAt: scheduledAts[index],
+    }));
 
     return this.dispatchBatch(
       dispatches,
@@ -101,7 +102,7 @@ export class BatchEmailService {
   }
 
   async sendBatchRandomDifferentEmail(
-    recipients: string[],
+    auth0Ids: string[],
     difficulty: EmailDifficulty,
     scheduledFrom: Date,
     scheduledTo: Date,
@@ -112,28 +113,26 @@ export class BatchEmailService {
 
     const referenceNumberPool = await this.getRandomEmailByDifficultyArray(
       difficulty,
-      recipients.length,
+      auth0Ids.length,
     );
 
     const referenceNumbers = this.buildRoundRobinReferenceNumbers(
       referenceNumberPool,
-      recipients.length,
+      auth0Ids.length,
     );
 
     const scheduledAts = this.resolveScheduledTimes(
-      recipients.length,
+      auth0Ids.length,
       scheduledFrom,
       scheduledTo,
       randomisedTimes,
     );
 
-    const dispatches: RecipientDispatch[] = recipients.map(
-      (recipient, index) => ({
-        recipient,
-        referenceNumber: referenceNumbers[index],
-        scheduledAt: scheduledAts[index],
-      }),
-    );
+    const dispatches: RecipientDispatch[] = auth0Ids.map((auth0Id, index) => ({
+      auth0Id,
+      referenceNumber: referenceNumbers[index],
+      scheduledAt: scheduledAts[index],
+    }));
 
     return this.dispatchBatch(
       dispatches,
@@ -201,14 +200,16 @@ export class BatchEmailService {
     const emailsByReference =
       await this.fetchEmailsByReferenceNumbers(referenceNumbers);
 
-    const payload = dispatches.map((dispatch) =>
-      this.buildResendItem(
-        dispatch,
-        emailsByReference.get(dispatch.referenceNumber),
+    const payload = await Promise.all(
+      dispatches.map((dispatch) =>
+        this.buildResendItem(
+          dispatch,
+          emailsByReference.get(dispatch.referenceNumber),
+        ),
       ),
     );
 
-    await this.sendResendBatch(payload);
+    const emailsIds = await this.sendResendBatch(payload);
 
     this.logger.log(
       `Dispatched batch of ${dispatches.length} email(s) for ${details}`,
@@ -220,7 +221,7 @@ export class BatchEmailService {
       ? 'mailing.batch_send'
       : 'mailing.batch_schedule';
 
-    await this.publishBatchDispatchEvent(routing, dispatches);
+    await this.publishBatchDispatchEvent(routing, dispatches, emailsIds);
 
     return {
       success: true,
@@ -258,11 +259,13 @@ export class BatchEmailService {
   private async publishBatchDispatchEvent(
     routingKey: string,
     dispatches: RecipientDispatch[],
+    emailIds: string[],
   ): Promise<void> {
-    const entries = dispatches.map((dispatch) => ({
-      recipient: dispatch.recipient,
+    const entries = dispatches.map((dispatch, index) => ({
+      auth0Id: dispatch.auth0Id,
       referenceNumber: dispatch.referenceNumber,
       scheduledAt: dispatch.scheduledAt.toISOString(),
+      emailId: emailIds[index],
     }));
 
     this.logger.log(
@@ -302,44 +305,65 @@ export class BatchEmailService {
     }
   }
 
-  private buildResendItem(
+  private async buildResendItem(
     dispatch: RecipientDispatch,
     email: EmailTemplateEntity,
-  ): ResendBatchItem {
-    const item: ResendBatchItem = {
-      from: this.formatFromAddress(email),
-      to: [dispatch.recipient],
-      subject: email.subject,
-      html: email.content,
-    };
-
-    // Add scheduledAt field if the scheduledAt time is inside the 5-min time.
-    if (!this.isImmediate(dispatch.scheduledAt)) {
-      item.scheduledAt = dispatch.scheduledAt.toISOString();
-    }
-
-    return item;
-  }
-
-  private async sendResendBatch(payload: ResendBatchItem[]): Promise<void> {
-    let error: { message?: string } | null | undefined;
-
+  ): Promise<ResendBatchItem> {
     try {
-      ({ error } = await this.resend.batch.send(payload));
-    } catch (sendError) {
-      this.logger.error('Resend batch API call failed', sendError);
-      const diagnosticMessage =
-        sendError instanceof Error
-          ? sendError.message
-          : 'Resend batch send failed';
-      throw new InternalServerErrorException(diagnosticMessage);
-    }
+      const user = await this.userRepository.findOne({
+        where: { auth0Id: dispatch.auth0Id },
+      });
 
-    if (error) {
-      this.logger.error('Resend batch API returned an error', error);
-      throw new InternalServerErrorException(
-        error.message ?? 'Resend batch send failed',
-      );
+      if (!user) {
+        throw new NotFoundException(
+          `User not found for auth0Id: ${dispatch.auth0Id}`,
+        );
+      }
+
+      const item: ResendBatchItem = {
+        from: this.formatFromAddress(email),
+        to: [user.email],
+        subject: email.subject,
+        html: email.content,
+      };
+
+      // Add scheduledAt field if the scheduledAt time is inside the 5-min time.
+      if (!this.isImmediate(dispatch.scheduledAt)) {
+        item.scheduledAt = dispatch.scheduledAt.toISOString();
+      }
+
+      return item;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Failed to find user: ${dispatch.auth0Id}`);
+      throw new InternalServerErrorException(error);
+    }
+  }
+  private async sendResendBatch(payload: ResendBatchItem[]): Promise<string[]> {
+    try {
+      const { data, error } = await this.resend.batch.send(payload);
+      if (error) {
+        this.logger.error('Resend batch API returned an error', error);
+        throw new InternalServerErrorException(
+          error.message ?? 'Resend batch send failed',
+        );
+      }
+      const emailIds: string[] = data.data.map((item) => item.id);
+
+      if (emailIds.length !== payload.length) {
+        this.logger.warn(
+          `emailIds do not align with the amount of recipients. Event published is incorrect`,
+        );
+      }
+
+      return emailIds;
+    } catch (error) {
+      this.logger.error('Resend batch API call failed', error);
+      const diagnosticMessage =
+        error instanceof Error ? error.message : 'Resend batch send failed';
+      throw new InternalServerErrorException(diagnosticMessage);
     }
   }
 

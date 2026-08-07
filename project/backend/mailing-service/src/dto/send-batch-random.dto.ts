@@ -16,7 +16,7 @@ export class SendBatchRandomDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
-  @IsString()
+  @IsString({ each: true })
   auth0Id: string[];
 
   @IsNotEmpty()
