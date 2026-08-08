@@ -3,7 +3,7 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
-import type { Campaign } from '../../types';
+import type { Wave } from '../../types';
 import { fetchXpNet, computeMyXpRank, type XpNetEntry } from './dashboard.service';
 import { connectXpSocket } from '../../services/xp-socket';
 
@@ -14,7 +14,7 @@ interface DashboardProps {
 
 // Below is mock stats data (to be replaced with API calls once backend endpoints exist)
 
-const MOCK_CAMPAIGNS: Campaign[] = [
+const MOCK_WAVES: Wave[] = [
   { id: '1', name: 'IT Support Reset', status: 'active', sentCount: 320, clickedCount: 42, reportedCount: 280, targetDepartments: ['IT & Security'], startDate: '2025-05-01', endDate: null, createdBy: 'admin' },
   { id: '2', name: 'Salary Increase Survey', status: 'complete', sentCount: 180, clickedCount: 9, reportedCount: 171, targetDepartments: ['Finance', 'Executive'], startDate: '2025-04-15', endDate: '2025-04-30', createdBy: 'admin' },
   { id: '3', name: 'HR Policy Update', status: 'active', sentCount: 240, clickedCount: 31, reportedCount: 208, targetDepartments: ['Human Resources'], startDate: '2025-05-05', endDate: null, createdBy: 'admin' },
@@ -28,7 +28,7 @@ const STATUS_BADGE: Record<string, JSX.Element> = {
   scheduled:<Badge variant="warning">Scheduled</Badge>,
 };
 
-function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function NewWaveModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { addToast } = useToast();
   const [form, setForm] = useState({
     name: '', emailSubject: '', emailBody: '',
@@ -41,15 +41,15 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const handleCreate = async () => {
     setLoading(true);
     await new Promise(r => setTimeout(r, 800));
-    addToast({ type: 'success', title: 'Campaign created', message: `"${form.name}" saved as draft.` });
+    addToast({ type: 'success', title: 'Wave created', message: `"${form.name}" saved as draft.` });
     setLoading(false);
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="New Campaign" maxWidth={560}>
+    <Modal isOpen={isOpen} onClose={onClose} title="New Wave" maxWidth={560}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Input label="Campaign name" placeholder="e.g. IT Support Reset" value={form.name}
+        <Input label="Wave name" placeholder="e.g. IT Support Reset" value={form.name}
           onChange={e => set('name', e.target.value)} required />
         <Select
           label="Target departments"
@@ -100,7 +100,7 @@ function NewCampaignModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   );
 }
 
-function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string) => void; onNewCampaign: () => void }) {
+function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => void; onNewWave: () => void }) {
   const { addToast } = useToast();
   const handleAssignTraining = () => {
     addToast({ type: 'info', title: 'Training assigned', message: '17 users have been assigned the Spear Phishing module.' });
@@ -159,34 +159,34 @@ function AdminDashboard({ onNavigate, onNewCampaign }: { onNavigate: (p: string)
           ))}
         </svg>
       </Card>
-      {/* Campaigns */}
+      {/* Phishing Waves */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.9fr) minmax(0,1fr)', gap: 14, marginBottom: 14 }}>
         <Card>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Campaigns</h2>
-            <Button onClick={onNewCampaign} icon={
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Phishing Waves</h2>
+            <Button onClick={onNewWave} icon={
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             }>
-              New Campaign
+              New Wave
             </Button>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-hover)' }}>
-                  {['CAMPAIGN','SENT','CLICKED','REPORTED','STATUS'].map(h => (
+                  {['WAVE','SENT','CLICKED','REPORTED','STATUS'].map(h => (
                     <th key={h} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', letterSpacing: '0.5px', fontFamily: 'Inter, system-ui, sans-serif', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {MOCK_CAMPAIGNS.map(c => (
+                {MOCK_WAVES.map(c => (
                   <tr key={c.id} style={{ borderTop: '1px solid var(--border)' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <td style={{ padding: '11px 16px' }}>
                       <button
-                        onClick={() => onNavigate(`/campaigns/${c.id}`)}
+                        onClick={() => onNavigate(`/waves/${c.id}`)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', padding: 0, fontFamily: 'Inter, system-ui, sans-serif', textAlign: 'left' }}
                       >
                         {c.name}
@@ -371,7 +371,7 @@ function UserDashboard({ onNavigate, onXpGained }: { onNavigate: (p: string) => 
 
 export function Dashboard({ onNavigate, activePath }: DashboardProps) {
   const { canAccess } = useAuth();
-  const [newCampaignOpen, setNewCampaignOpen] = useState(false);
+  const [newWaveOpen, setNewWaveOpen] = useState(false);
   const [showXpAnim, setShowXpAnim] = useState(false);
   const [xpAnimDelta, setXpAnimDelta] = useState(0);
   const handleXpGained = useCallback((amount: number) => {
@@ -390,11 +390,11 @@ export function Dashboard({ onNavigate, activePath }: DashboardProps) {
         securityScore={72}
       >
         {isAdminOrAnalyst
-          ? <AdminDashboard onNavigate={onNavigate} onNewCampaign={() => setNewCampaignOpen(true)} />
+          ? <AdminDashboard onNavigate={onNavigate} onNewWave={() => setNewWaveOpen(true)} />
           : <UserDashboard onNavigate={onNavigate} onXpGained={handleXpGained} />
         }
       </AppLayout>
-      <NewCampaignModal isOpen={newCampaignOpen} onClose={() => setNewCampaignOpen(false)} />
+      <NewWaveModal isOpen={newWaveOpen} onClose={() => setNewWaveOpen(false)} />
       {showXpAnim && <XpAnimationOverlay delta={xpAnimDelta} onDone={() => setShowXpAnim(false)} />}
     </>
   );
