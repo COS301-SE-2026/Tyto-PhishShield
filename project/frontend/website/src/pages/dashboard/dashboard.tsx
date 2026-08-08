@@ -160,7 +160,7 @@ function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => 
         </svg>
       </Card>
       {/* Phishing Waves */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.9fr) minmax(0,1fr)', gap: 14, marginBottom: 14 }}>
+      <div style={{ marginBottom: 14 }}>
         <Card>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Phishing Waves</h2>
