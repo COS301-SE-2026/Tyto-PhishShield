@@ -9,6 +9,7 @@ import { Analytics } from './pages/analytics/analytics';
 import { Reports } from './pages/analytics/reports';
 import { Training } from './pages/training/training';
 import { Campaigns } from './pages/campaigns/campaigns';
+import { Emails } from './pages/emails/emails';
 import { ScheduleCampaign } from './pages/campaigns/schedule-campaign';
 import { CreateEmail } from './pages/campaigns/create-email';
 import { SendEmail } from './pages/campaigns/send-existing-email';
@@ -39,6 +40,7 @@ function App() {
       <Route path="/analytics" element={ <ProtectedRoute minRole="analyst"><Analytics onNavigate={handleNavigate} activePath="/analytics" /></ProtectedRoute> } />
       <Route path="/analytics/reports" element={ <ProtectedRoute minRole="analyst"><Reports onNavigate={handleNavigate} activePath="/analytics/reports" /></ProtectedRoute> } />
       <Route path="/campaigns" element={ <ProtectedRoute minRole="analyst"><Campaigns onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
+      <Route path="/emails" element={ <ProtectedRoute minRole="analyst"><Emails onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/campaigns/schedule" element={ <ProtectedRoute minRole="admin"><ScheduleCampaign onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
       <Route path="/campaigns/create-email" element={ <ProtectedRoute minRole="admin"><CreateEmail onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
       <Route path="/campaigns/send-email" element={ <ProtectedRoute minRole="admin"><SendEmail onNavigate={handleNavigate} activePath="/campaigns" /></ProtectedRoute> } />
