@@ -84,6 +84,24 @@ export class AnalyticsService {
         };
     }
 
+    async getUserStats(auth0Id: string) {
+        const [reports, confirmed, falsePositive, xpEvents, educationCompleted] = 
+        await Promise.all([
+            this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_SUBMITTED } }),
+            this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_CONFIRMED } }),
+            this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE } }),
+            this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.XP_GIVEN } }),
+            this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.EDUCATION_COMPLETED } }),
+        ]);
+
+        const totalXp = xpEvents.reduce((sum, e) => {
+            const amount = e.payload?.['amount'];
+            return sum + (typeof amount === 'number' ? amount: 0);
+        }, 0);
+
+        return { reports, confirmed, falsePositive, totalXp, educationCompleted };
+    }
+
     private async count(eventType: AnalyticsEventType): Promise<number> {
         return this.repo.count({ where: {eventType} });
     }
