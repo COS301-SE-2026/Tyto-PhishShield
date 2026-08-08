@@ -56,6 +56,12 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
     return userLevel >= ROLE_LEVEL[item.minRole];
   });
   const sections = ['MAIN', 'ANALYTICS', 'SYSTEM'];
+  const activeItem = visibleItems.reduce<NavItem | null>((best, item) => {
+    const matches = activePath === item.path || activePath.startsWith(item.path + '/');
+    if (!matches) return best;
+    if (!best || item.path.length > best.path.length) return item;
+  return best;
+  }, null);  
   const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
   const scoreLabel = securityScore >= 70 ? 'Good' : securityScore >= 40 ? 'Fair' : 'At Risk';
   return (
@@ -102,7 +108,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
                 </div>
               )}
               {items.map(item => {
-                const isActive = activePath === item.path || activePath.startsWith(item.path + '/');
+                const isActive = item.id === activeItem?.id;
                 return (
                   <button
                     key={item.id}
