@@ -53,6 +53,21 @@ export class AnalyticsService {
         };
     }
 
+    async getReportStats(from?: string, to?: string) {
+        const where = this.buildDateWhere(from, to);
+
+        const [submitted, confirmed, falsePositive] = await Promise.all([
+            this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_SUBMITTED, ...where}}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_CONFIRMED, ...where}}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE, ...where}}),
+        ]);
+
+        const detectionRate = submitted > 0 ? Math.round((confirmed / submitted) * 100) : 0;
+
+        return { submitted, confirmed, falsePositive, detectionRate };
+
+    }
+
     private async count(eventType: AnalyticsEventType): Promise<number> {
         return this.repo.count({ where: {eventType} });
     }
@@ -63,5 +78,16 @@ export class AnalyticsService {
             const val = e.payload?.[field];
             return sum + (typeof val === 'number' ? val : 0);
         }, 0);
+    }
+
+    private buildDateWhere(from?: string, to?: string) {
+        if (from && to) return { occurredAt: Between( new Date(from), new Date(to)) };
+        if (from) return  {
+            occurredAt: MoreThanOrEqual(new Date(from))
+        };
+        if (to) return {
+            occurredAt: LessThanOrEqual(new Date(to))
+        };
+        return {};
     }
 }
