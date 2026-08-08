@@ -23,14 +23,16 @@ import {
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
-  Emails,
+  EmailTemplateEntity,
   EmailDifficulty,
-} from '../entities/emails.entity';
+} from '../entities/email-template.entity';
 import { EmailsDto } from '../dto/emails.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { UserEntity } from '../entities/user.entity';
 
 const mockResendSend = jest.fn().mockResolvedValue({
   data: { id: 'mock-resend-id' },
+  error: null,
 });
 
 jest.mock('resend', () => {
@@ -56,6 +58,10 @@ describe('EmailService', () => {
     findOne: jest.fn(),
   };
 
+  const mockUserRepository = {
+    findOne: jest.fn(),
+  }
+
   // Mock the getting the api key
   const mockConfigService = {
     get: jest.fn((key: string) => {
@@ -79,13 +85,23 @@ describe('EmailService', () => {
     difficulty: EmailDifficulty.HARD,
   };
 
+  const mockUser = {
+    auth0Id: 'auth0|1',
+    name: 'Test User',
+    email: 'test@example.com',
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EmailService,
         {
-          provide: getRepositoryToken(Emails),
+          provide: getRepositoryToken(EmailTemplateEntity),
           useValue: mockEmailRepository,
+        },
+        {
+          provide: getRepositoryToken(UserEntity),
+          useValue: mockUserRepository,
         },
         {
           provide: ConfigService,
@@ -94,7 +110,7 @@ describe('EmailService', () => {
         {
           provide: AmqpConnection,
           useValue: mockAmqpConnection,
-        }
+        },
       ],
     }).compile();
 
@@ -189,13 +205,14 @@ describe('EmailService', () => {
 
   describe('sendEmail', () => {
     it('should successfully send an email and use alias', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
 
-      const result = await service.sendEmail('PHISH-001', 'test@test.com');
+      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id);
 
       expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
-          to: 'test@test.com',
+          to: mockUser.email,
           from: `${mockEmail.alias} <${mockEmail.sender}>`,
         }),
       );
@@ -208,14 +225,15 @@ describe('EmailService', () => {
       const emailWithoutAlias = { ...mockEmail };
       delete emailWithoutAlias.alias;
 
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(emailWithoutAlias);
 
-      const result = await service.sendEmail('PHISH-001', 'test@test.com');
+      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id);
 
       expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: emailWithoutAlias.sender,
-          to: 'test@test.com',
+          to: mockUser.email,
         }),
       );
       expect(result.success).toBe(true);
@@ -223,39 +241,51 @@ describe('EmailService', () => {
     });
 
     it('should throw an InternalServerErrorException if resend API fails', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
       mockResendSend.mockRejectedValueOnce(new Error('API Down'));
 
       await expect(
-        service.sendEmail('PHISH-001', 'test@test.com'),
+        service.sendEmail('PHISH-001', mockUser.auth0Id),
       ).rejects.toThrow(InternalServerErrorException);
     });
 
     it('should succeed if publishing mailing.send event fails', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
       mockAmqpConnection.publish.mockRejectedValueOnce(new Error('broker down'));
 
-      const result = await service.sendEmail('PHISH-001', 'test@test.com');
+      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id);
 
       expect(result.success).toBe(true);
       expect(result.deliveryId).toBe('mock-resend-id');
+    });
+
+    it('should throw error when user is not found', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+
+      await expect(
+        service.sendEmail('PHISH-001', 'unknown-auth0-id'),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
   describe('scheduleSendEmail', () => {
     it('should successfully schedule an email with the provided date', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
 
       const targetDate = new Date('2026-05-25T14:30:00.000Z');
       const result = await service.scheduleSendEmail(
         'PHISH-001',
-        'test@test.com',
+        mockUser.auth0Id,
         targetDate,
       );
 
       expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
-          to: 'test@test.com',
+          to: mockUser.email,
           scheduledAt: targetDate.toISOString(),
         }),
       );
@@ -264,7 +294,30 @@ describe('EmailService', () => {
       expect(result.deliveryId).toBe('mock-resend-id');
     });
 
+    it('should throw error when user is not found', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.scheduleSendEmail('PHISH-001', 'unknown-auth0-id', new Date()),
+      ).rejects.toThrow(InternalServerErrorException);
+      expect(mockEmailRepository.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when Resend returns an error', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockResendSend.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'invalid scheduledAt' },
+      });
+
+      await expect(
+        service.scheduleSendEmail('PHISH-001', mockUser.auth0Id, new Date()),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+
     it('should throw an InternalServerErrorException if scheduling fails', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
       mockResendSend.mockRejectedValueOnce(new Error('API Down'));
 
@@ -272,20 +325,21 @@ describe('EmailService', () => {
       await expect(
         service.scheduleSendEmail(
           'PHISH-001',
-          'test@test.com',
+          mockUser.auth0Id,
           targetDate,
         ),
       ).rejects.toThrow(InternalServerErrorException);
     });
 
     it('should succeed when publishing mailing.schedule event fails', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
       mockAmqpConnection.publish.mockRejectedValueOnce(new Error('broker down'));
 
       const targetDate = new Date('2026-05-25T14:30:00.000Z');
       const result = await service.scheduleSendEmail(
         'PHISH-001',
-        'test@test.com',
+        mockUser.auth0Id,
         targetDate,
       );
 
