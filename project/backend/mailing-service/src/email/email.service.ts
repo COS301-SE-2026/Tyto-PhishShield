@@ -25,8 +25,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { UserEntity } from '../entities/user.entity';
-import { EmailStatusEntity } from '../entities/email-status.entity';
-import { EmailStatusEnum } from '../entities/email-status.entity';
 import { Resend } from 'resend';
 import { EmailsDto } from '../dto/emails.dto';
 import * as crypto from 'crypto';
@@ -43,8 +41,6 @@ export class EmailService {
     private readonly emailTemplateRepository: Repository<EmailTemplateEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    @InjectRepository(EmailStatusEntity)
-    private readonly emailStatusRepository: Repository<EmailStatusEntity>,
     private readonly amqpConnection: AmqpConnection,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -141,27 +137,27 @@ export class EmailService {
     try {
       const user = await this.userRepository.findOne({ where: { auth0Id } });
 
+      if (!user) {
+        this.logger.error(`User: ${auth0Id}, not found in db.`);
+        throw new NotFoundException(`User: ${auth0Id}, not found in db.`);
+      }
+
       const email = await this.getEmailByReference(referenceNumber);
 
       const fromString = email.alias
         ? `${email.alias} <${email.sender}>`
         : email.sender;
 
-      const data = await this.resend.emails.send({
+      const { data, error } = await this.resend.emails.send({
         from: fromString,
         to: user.email,
         subject: email.subject,
         html: email.content,
       });
 
-      this.emailStatusRepository.create({
-        emailId: data.data.id,
-        auth0Id: auth0Id,
-        referenceNumber: referenceNumber,
-        status: EmailStatusEnum.REQUESTED,
-        occurredAt: new Date(),
-        createdAt: new Date(),
-      });
+      if (error) {
+        throw new InternalServerErrorException(error.message);
+      }
 
       this.logger.log(`Email successfully dispatched from ${email.sender}`);
 
@@ -171,7 +167,7 @@ export class EmailService {
           'mailing-event-exchange',
           'mailing.send',
           {
-            emailId: data.data.id,
+            emailId: data.id,
             recipient: user.email,
             referenceNumber: referenceNumber,
             scheduledAt: date.toISOString(),
@@ -183,7 +179,7 @@ export class EmailService {
       return {
         success: true,
         message: `Email with referencing number: ${referenceNumber}, sent instantly.`,
-        deliveryId: data.data?.id || '',
+        deliveryId: data.id || '',
       };
     } catch (error: unknown) {
       this.logger.error(
@@ -204,13 +200,18 @@ export class EmailService {
     try {
       const user = await this.userRepository.findOne({ where: { auth0Id } });
 
+      if (!user) {
+        this.logger.error(`User: ${auth0Id}, not found in db.`);
+        throw new NotFoundException(`User: ${auth0Id}, not found in db.`);
+      }
+
       const email = await this.getEmailByReference(referenceNumber);
 
       const fromString = email.alias
         ? `${email.alias} <${email.sender}>`
         : email.sender;
 
-      const data = await this.resend.emails.send({
+      const { data, error } = await this.resend.emails.send({
         from: fromString,
         to: user.email,
         subject: email.subject,
@@ -218,14 +219,9 @@ export class EmailService {
         scheduledAt: scheduledAt.toISOString(),
       });
 
-      this.emailStatusRepository.create({
-        emailId: data.data.id,
-        auth0Id: auth0Id,
-        referenceNumber: referenceNumber,
-        status: EmailStatusEnum.REQUESTED,
-        occurredAt: new Date(),
-        createdAt: new Date(),
-      });
+      if (error) {
+        throw new InternalServerErrorException(error.message);
+      }
 
       this.logger.log(
         `Email successfully scheduled for dispatch at ${scheduledAt.toISOString()}`,
@@ -236,7 +232,7 @@ export class EmailService {
           'mailing-event-exchange',
           'mailing.schedule',
           {
-            emailId: data.data.id,
+            emailId: data.id,
             referenceNumber: referenceNumber,
             recipient: user.email,
             scheduledAt: scheduledAt.toISOString(),
@@ -249,7 +245,7 @@ export class EmailService {
       return {
         success: true,
         message: `Email referencing ${referenceNumber} has been successfully scheduled for ${scheduledAt.toISOString()}`,
-        deliveryId: data.data?.id || '',
+        deliveryId: data.id || '',
       };
     } catch (error: any) {
       this.logger.error(
