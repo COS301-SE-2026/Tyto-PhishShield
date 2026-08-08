@@ -217,8 +217,8 @@ function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => 
           </svg>
         </div>
         <div style={{ flex: 1 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#78350F', fontFamily: 'Inter, system-ui, sans-serif' }}>17 users clicked "CEO Wire Transfer". </span>
-          <span style={{ fontSize: 12, color: '#92400E', fontFamily: 'Inter, system-ui, sans-serif' }}>Assign them the Spear Phishing awareness module.</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>17 users clicked "CEO Wire Transfer". </span>
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Assign them the Spear Phishing awareness module.</span>
         </div>
         <Button size="sm" onClick={handleAssignTraining} style={{ background: 'var(--color-warning)', color: '#fff', border: 'none', whiteSpace: 'nowrap' }}>
           Assign Training
