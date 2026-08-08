@@ -6,6 +6,7 @@ import { useToast } from '../../context/toast-context';
 import { API_BASE, authFetch } from '../../services/api';
 import { fetchLeaderboardXp } from '../leaderboard/leaderboard.service';
 import { connectXpSocket } from '../../services/xp-socket';
+import { ShieldCheck, Check, User, Search, Trash2, Ban, Lock } from 'lucide-react';
 
 type UserRole = 'admin' | 'analyst' | 'user';
 
@@ -32,10 +33,6 @@ const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   analyst: 'Can view campaigns, analytics and reports',
   user: 'Standard access — training and personal dashboard only',
 };
-
-function RoleIcon({ size = 14 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-}
 
 function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
   user: RealUser | null;
@@ -132,7 +129,7 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
                       </span>
                     )}
                     {isSelected && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <Check size={14} strokeWidth={3} color='var(--color-primary)' />
                     )}
                   </div>
                 </div>
@@ -155,21 +152,21 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Manage — ${user.name}`} maxWidth={380}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {hasRole('admin') && actionBtn('Edit Role', <RoleIcon />, () => setView('editRole'))}
+        {hasRole('admin') && actionBtn('Edit Role', <ShieldCheck size={14} />, () => setView('editRole'))}
         {actionBtn('View User', (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          <User size={14} />
         ), () => { onClose(); onNavigate(`/users/${user.id}`); })}
         {hasRole('admin') && actionBtn('Reset Password', (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <Lock size={14} />
         ), () => { addToast({ type: 'success', title: 'Reset email sent', message: `Password reset link sent to ${user.email}` }); onClose(); })}
         {hasRole('admin') && actionBtn(
           user.status === 'suspended' ? 'Reinstate User' : 'Suspend User',
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
+          <Ban size={14} />,
           () => { addToast({ type: 'warning', title: user.status === 'suspended' ? 'User reinstated' : 'User suspended', message: `${user.name} — note: full Auth0 block requires a backend update.` }); onClose(); },
           user.status !== 'suspended',
         )}
         {hasRole('admin') && actionBtn('Remove User', (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <Trash2 size={14} />
         ), () => { void handleRemove(); }, true)}
       </div>
     </Modal>
@@ -277,7 +274,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
             placeholder="Search by name or email…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            leftIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+            leftIcon={<Search size={14} aria-hidden='true'/>}
           />
         </div>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontSize: 12, background: 'var(--bg-input)', color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', cursor: 'pointer' }}>
