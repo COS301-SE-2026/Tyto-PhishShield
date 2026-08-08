@@ -102,6 +102,31 @@ export class AnalyticsService {
         return { reports, confirmed, falsePositive, totalXp, educationCompleted };
     }
 
+    async getTimeSeries(from: string, to: string): Promise<{ date: string; reports:number; emailsSent: number; xpGiven: number;}[]> {
+        const events = await this.repo.find({
+            where: {
+                occurredAt: Between(new Date(from), new Date(to)),
+            },
+            order: { occurredAt: 'ASC'}
+        });
+
+        const byDay = new Map<string, { reports: number; emailsSent: number; xpGiven: number }>();
+
+        for (const event of events) {
+            const day = event.occurredAt.toISOString().split('T')[0];
+            if (!byDay.has(day)) byDay.set(day, { reports: 0, emailsSent: 0, xpGiven: 0 });
+            const bucket = byDay.get(day)!;
+
+            if (event.eventType === AnalyticsEventType.REPORT_SUBMITTED) bucket.reports++;
+            if ([AnalyticsEventType.EMAIL_SENT,AnalyticsEventType.EMAIL_BATCH_SENT].includes(event.eventType)) bucket.emailsSent++;
+            if (event.eventType === AnalyticsEventType.XP_GIVEN) {
+                const amount = event.payload?.['amount'];
+                bucket.xpGiven += typeof amount === 'number' ? amount : 0;
+            }
+        }
+        return Array.from(byDay.entries()).map(([date, data]) => ({ date, ...data }));
+    }
+
     private async count(eventType: AnalyticsEventType): Promise<number> {
         return this.repo.count({ where: {eventType} });
     }
