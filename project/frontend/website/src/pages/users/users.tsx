@@ -28,8 +28,8 @@ type AccountsUser = Omit<RealUser, 'xp' | 'xpToday' | 'status'>;
 type SortKey = 'name' | 'xp' | 'email';
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  admin: 'Full access — manage users, campaigns, analytics',
-  analyst: 'Can view campaigns, analytics and reports',
+  admin: 'Full access — manage users, phishing waves, analytics',
+  analyst: 'Can view phishing waves, analytics and reports',
   user: 'Standard access — training and personal dashboard only',
 };
 
