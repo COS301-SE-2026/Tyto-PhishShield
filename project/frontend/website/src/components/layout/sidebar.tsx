@@ -22,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   // Main
   { id: 'dashboard',  label: 'Dashboard',   path: '/dashboard',  section: 'MAIN',
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
-  { id: 'campaigns',  label: 'Phishing Waves',   path: '/campaigns', section: 'MAIN', minRole: 'analyst',
+  { id: 'waves',      label: 'Phishing Waves', path: '/waves',     section: 'MAIN', minRole: 'analyst',
     icon: <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> },
   { id: 'emails',     label: 'Emails',      path: '/emails',     section: 'MAIN', minRole: 'analyst',
     icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg> },
