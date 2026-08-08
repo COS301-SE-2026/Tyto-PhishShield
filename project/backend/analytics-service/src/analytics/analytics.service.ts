@@ -68,6 +68,22 @@ export class AnalyticsService {
 
     }
 
+    async getMailingStats(from?: string, to?: string) {
+        const where = this.buildDateWhere(from, to);
+
+        const [sent, scheduled, batchSent, batchScheduled] = await Promise.all([
+            this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_SENT, ...where}}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_SCHEDULED, ...where}}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_BATCH_SENT, ...where}}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_SCHEDULED, ...where } }),
+        ]);
+
+        return {
+            totalSent: sent + batchSent,
+            scheduled: scheduled + batchScheduled,
+        };
+    }
+
     private async count(eventType: AnalyticsEventType): Promise<number> {
         return this.repo.count({ where: {eventType} });
     }
