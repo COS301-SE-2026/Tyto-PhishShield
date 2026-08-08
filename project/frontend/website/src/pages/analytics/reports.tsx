@@ -6,7 +6,7 @@ interface ReportsProps { onNavigate: (path: string) => void; activePath: string;
 
 const REPORTS = [
   { title: 'Monthly Security Summary — April 2025', generated: '2025-05-01', type: 'Monthly', size: '248 KB' },
-  { title: 'Campaign Report — CEO Wire Transfer', generated: '2025-04-30', type: 'Campaign', size: '112 KB' },
+  { title: 'Wave Report — CEO Wire Transfer', generated: '2025-04-30', type: 'Wave', size: '112 KB' },
   { title: 'Department Risk Assessment — Q1 2025', generated: '2025-04-01', type: 'Risk', size: '380 KB' },
   { title: 'Training Completion Report — Q1 2025', generated: '2025-04-01', type: 'Training', size: '195 KB' },
 ];
