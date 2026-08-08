@@ -127,6 +127,34 @@ export class AnalyticsService {
         return Array.from(byDay.entries()).map(([date, data]) => ({ date, ...data }));
     }
 
+    async getLeaderboard(limit = 10): Promise<{
+        auth0Id: string;
+        email: string;
+        totalXp:number;
+        reportCount: number;
+    }[]> {
+        const xpEvents = await this.repo.find({
+            where: { eventType: AnalyticsEventType.XP_GIVEN },
+        });
+
+        const reportEvents = await this.repo.find({
+            where: { eventType: AnalyticsEventType.REPORT_CONFIRMED},
+        });
+
+        const users = new Map<string, { email: string; totalXp: number; reportCount: number }>();
+
+        for (const e of reportEvents) {
+            if (!e.auth0Id) continue;
+            const entry = users.get(e.auth0Id);
+            if (entry) entry.reportCount++;
+        }
+
+        return Array.from(users.entries())
+            .map(([auth0Id,data]) => ({auth0Id, ...data}))
+            .sort((a,b) => b.totalXp - a.totalXp)
+            .slice(0, limit);
+    }       
+
     private async count(eventType: AnalyticsEventType): Promise<number> {
         return this.repo.count({ where: {eventType} });
     }
