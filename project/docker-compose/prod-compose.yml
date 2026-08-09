@@ -7,7 +7,7 @@ services:
     hostname: rabbitmq-server
 
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - prod_rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
@@ -42,10 +42,7 @@ services:
       start_period: 30s
 
     volumes:
-      # This must be unique not to override other db's data
-      # This must be hard coded
       - prod_mailing_pgdata:/var/lib/postgresql/data
-      - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
     deploy:
       resources:
         limits:
@@ -54,10 +51,6 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
-
-    # ports:
-    #   # Left side must be unique
-    #   - "$MAILING_DB_PORT:5432"
 
   mailing_app:
     image: fiveguys301/mailing:latest
@@ -75,10 +68,6 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-
-    # ports:
-    #   - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
-
     depends_on:
       mailing_db:
         condition: service_healthy
@@ -107,9 +96,7 @@ services:
       start_period: 30s
     container_name: ${ACCOUNTS_DB_CONTAINER}
     volumes:
-      - accounts_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - '${ACCOUNTS_DB_PORT}:5432'
+      - prod_accounts_pgdata:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -146,8 +133,6 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    # ports:
-    #   - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:
       accounts_db:
         condition: service_healthy
@@ -191,8 +176,6 @@ services:
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=dev
-    # ports:
-    #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     deploy:
       resources:
         limits:
@@ -217,9 +200,7 @@ services:
       retries: 5
       start_period: 30s
     volumes:
-      - report_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
+      - prod_report_pgdata:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -244,8 +225,6 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    # ports:
-    #   - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
     depends_on:
       report_db:
         condition: service_healthy
@@ -274,9 +253,7 @@ services:
       retries: 5
       start_period: 30s
     volumes:
-      - xp_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
+      - prod_xp_pgdata:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -299,8 +276,6 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - XP_DB_NAME=${XP_DB_NAME}
       - DB_SYNC=${DB_SYNC}
-    # ports:
-    #   - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
     depends_on:
       xp_db:
         condition: service_healthy
@@ -329,9 +304,7 @@ services:
       retries: 5
       start_period: 30s
     volumes:
-      - education_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
+      - prod_education_pgdata:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -355,8 +328,6 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    # ports:
-    #   - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
     deploy:
       resources:
         limits:
@@ -387,10 +358,7 @@ services:
       start_period: 30s
 
     volumes:
-      - analytics_pgdata:/var/lib/postgresql/data
-
-    # ports:
-    #   - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
+      - prod_analytics_pgdata:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -456,13 +424,13 @@ services:
     container_name: caddy
     restart: unless-stopped
     ports: 
-      - '80:80'
-      - '443:443'
+      - '127.0.0.1:8002:80'
+      - '127.0.0.1:8003:443'
     volumes:
-      - ./dev-caddy-conf:/etc/caddy/
-      - caddy_logs:/var/log/caddy
-      - caddy_data:/data
-      - caddy_config:/config
+      - ./prod-caddy-conf:/etc/caddy/
+      - prod_caddy_logs:/var/log/caddy
+      - prod_caddy_data:/data
+      - prod_caddy_config:/config
     deploy:
       resources:
         limits:
@@ -470,36 +438,19 @@ services:
           memory: 128M
         reservations:
           cpus: '0.25'
-          memory: 32M
-  
-  watchtower:
-    image: containrrr/watchtower:1.7.1
-    container_name: watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_POLL_INTERVAL: "3600"
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_DEBUG: "true"
-      DOCKER_API_VERSION: "1.40"
-    deploy:
-      resources:
-        limits:
-          cpus: '0.1'
-          memory: 32M
-    
+          memory: 32M    
 
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
   prod_mailing_pgdata:
-  accounts_pgdata:
-  xp_pgdata:
-  report_pgdata:
-  education_pgdata:
-  analytics_pgdata:
-  caddy_data:
-  caddy_config:
-  caddy_logs:
-  rabbitmq_data:
+  prod_accounts_pgdata:
+  prod_xp_pgdata:
+  prod_report_pgdata:
+  prod_education_pgdata:
+  prod_analytics_pgdata:
+  prod_caddy_data:
+  prod_caddy_config:
+  prod_caddy_logs:
+  prod_rabbitmq_data:
     driver: local

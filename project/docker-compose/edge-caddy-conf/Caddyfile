@@ -1,0 +1,7 @@
+staging.capstone-five-guys.dns.net.za:443 {
+    reverse_proxy 127.0.0.1:8000
+}
+
+tyto-phishshield.capstone-five-guys.dns.net.za:443 {
+    reverse_proxy 127.0.0.1:8002
+}

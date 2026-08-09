@@ -1,4 +1,4 @@
-staging.capstone-five-guys.dns.net.za:443 {
+tyto-phishshield.capstone-five-guys.dns.net.za:443 {
     log {
         output file /var/log/caddy/access.log {
             roll_size 10MiB
