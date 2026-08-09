@@ -89,6 +89,7 @@ export class AnalyticsController {
 
     })
     async onEducationAssigned(payload: EducationPayload) {
+        //console.log('edu completed', payload); //debugging
         await this.analyticsService.recordEvent({
             eventType: AnalyticsEventType.EDUCATION_ASSIGNED,
             auth0Id: payload.auth0Id,
@@ -105,5 +106,31 @@ export class AnalyticsController {
             payload: payload as any,
         });
     }
+
+    @RabbitSubscribe({
+        exchange: 'mailing-event-exchange',
+        routingKey: 'mailing.send',
+        queue: 'analytics-mailing-send-queue',
+    })
+    async onEmailSent(payload: MailingPayload) {
+        await this.analyticsService.recordEvent({
+            eventType: AnalyticsEventType.EMAIL_SENT,
+            payload: payload as any,
+        });
+    }
+
+    @RabbitSubscribe({
+        exchange: 'mailing-event-exchange',
+        routingKey: 'mailing.batch_send',
+        queue: 'analytics-mailing-batch-send-queue',
+    })
+    async onBatchEmailSent(@Payload() payload: MailingPayload) {
+        await this.analyticsService.recordEvent({
+            eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+            payload: { count: payload.entries?.length ?? 0 },
+        });
+    }
+
+    
 
 }
