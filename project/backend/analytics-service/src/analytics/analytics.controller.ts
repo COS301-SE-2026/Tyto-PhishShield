@@ -58,4 +58,29 @@ export class AnalyticsController {
             payload: payload as any,
         });
     }
+
+    @RabbitSubscribe({
+        exchange: 'xp-event-exchange',
+        routingKey: 'xp.give',
+        queue: 'analytics-xp-queue',
+    })
+    async onXpGiven(payload: XpPayload) {
+        await this.analyticsService.recordEvent({
+            eventType: AnalyticsEventType.XP_GIVEN,
+            auth0Id: payload.auth0Id,
+            payload: payload as any,
+        });
+
+        // Whenever XP is given for a phishing report, we report that report as confirmed.
+        //This is a bit of a hack - better to listen to dedicated report.confirmend event.
+        if (payload.reason && payload.reason.includes('phishing')) {
+            await this.analyticsService.recordEvent({
+                eventType: AnalyticsEventType.REPORT_CONFIRMED,
+                auth0Id: payload.auth0Id,
+                payload: payload as any,
+            });
+        }
+    }
+
+    
 }
