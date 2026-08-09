@@ -183,4 +183,29 @@ export class AnalyticsController {
     getMailingStats(@Query('from') from?: string, @Query('to') to?: string) {
         return this.analyticsService.getMailingStats(from, to);
     }
+
+    @Get('timeseries')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'from', required: false })
+    @ApiQuery({ name: 'to', required: false})
+    getTimeSeries(@Query('from') from: string, @Query('to') to: string) {
+        return this.analyticsService.getTimeSeries(from, to);
+      }
+
+    @Get('leaderboard')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'limit', required: false })
+    getLeaderboard(@Query('limit') limit?: string) {
+        const lim = limit ? parseInt(limit, 10) : 10;
+        return this.analyticsService.getLeaderboard(lim);
+      }
+
+    @Get('users/:auth0Id')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    getUserStats(@Param('auth0Id') auth0Id: string) {
+        return this.analyticsService.getUserStats(auth0Id);
+    }
 }
