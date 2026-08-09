@@ -107,6 +107,7 @@ export class AnalyticsService {
     }
     //time series data, this will be used for graphs and charts.
     async getTimeSeries(from: string, to: string): Promise<{ date: string; reports:number; emailsSent: number; xpGiven: number;}[]> {
+        //TODO: if the range is too large this could load all events into memory, could trim down to only the event types we care about, but for now this is fine.
         const events = await this.repo.find({
             where: {
                 occurredAt: Between(new Date(from), new Date(to)),
@@ -116,48 +117,59 @@ export class AnalyticsService {
 
         const byDay = new Map<string, { reports: number; emailsSent: number; xpGiven: number }>();
 
-        for (const event of events) {
-            const day = event.occurredAt.toISOString().split('T')[0];
-            if (!byDay.has(day)) byDay.set(day, { reports: 0, emailsSent: 0, xpGiven: 0 });
-            const bucket = byDay.get(day)!;
-
-            if (event.eventType === AnalyticsEventType.REPORT_SUBMITTED) bucket.reports++;
-            if ([AnalyticsEventType.EMAIL_SENT,AnalyticsEventType.EMAIL_BATCH_SENT].includes(event.eventType)) bucket.emailsSent++;
-            if (event.eventType === AnalyticsEventType.XP_GIVEN) {
-                const amount = event.payload?.['amount'];
-                bucket.xpGiven += typeof amount === 'number' ? amount : 0;
+            for (const e of events) {
+              const day = e.occurredAt.toISOString().split('T')[0];
+              if (!byDay.has(day)) byDay.set(day, { reports: 0, emailsSent: 0, xpGiven: 0 });
+              const bucket = byDay.get(day)!;
+        
+              if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) bucket.reports++;
+              if (
+                e.eventType === AnalyticsEventType.EMAIL_SENT ||
+                e.eventType === AnalyticsEventType.EMAIL_BATCH_SENT
+              ) bucket.emailsSent++;
+              if (e.eventType === AnalyticsEventType.XP_GIVEN) {
+                const amt = e.payload?.['amount'];
+                bucket.xpGiven += typeof amt === 'number' ? amt : 0;
+              }
             }
-        }
         return Array.from(byDay.entries()).map(([date, data]) => ({ date, ...data }));
     }
 
-    async getLeaderboard(limit = 10): Promise<{
-        auth0Id: string;
-        email: string;
-        totalXp:number;
-        reportCount: number;
-    }[]> {
-        const xpEvents = await this.repo.find({
-            where: { eventType: AnalyticsEventType.XP_GIVEN },
-        });
+  async getLeaderboard(limit = 10) {
+    const xpEvents = await this.repo.find({
+      where: { eventType: AnalyticsEventType.XP_GIVEN },
+    });
+    const confirmedReports = await this.repo.find({
+      where: { eventType: AnalyticsEventType.REPORT_CONFIRMED },
+    });
 
-        const reportEvents = await this.repo.find({
-            where: { eventType: AnalyticsEventType.REPORT_CONFIRMED},
-        });
+    const users = new Map<string, { email: string; totalXp: number; reportCount: number }>();
 
-        const users = new Map<string, { email: string; totalXp: number; reportCount: number }>();
+    for (const e of xpEvents) {
+      if (!e.auth0Id) continue;
+      const entry = users.get(e.auth0Id) ?? {
+        email: e.email ?? 'unknown',
+        totalXp: 0,
+        reportCount: 0,
+      };
+      entry.totalXp += typeof e.payload?.['amount'] === 'number' ? (e.payload['amount'] as number) : 0;
+      users.set(e.auth0Id, entry);
+    }
 
-        for (const e of reportEvents) {
-            if (!e.auth0Id) continue;
-            const entry = users.get(e.auth0Id);
-            if (entry) entry.reportCount++;
-        }
+    for (const e of confirmedReports) {
+      if (!e.auth0Id) continue;
+      const entry = users.get(e.auth0Id);
+      if (entry) entry.reportCount++;
+    }
 
-        return Array.from(users.entries())
-            .map(([auth0Id,data]) => ({auth0Id, ...data}))
-            .sort((a,b) => b.totalXp - a.totalXp)
-            .slice(0, limit);
-    }       
+    return Array.from(users.entries())
+      .map(([auth0Id, data]) => ({
+        auth0Id,
+        ...data,
+      }))
+      .sort((a, b) => b.totalXp - a.totalXp)
+      .slice(0, limit);
+  }     
 
     private async count(eventType: AnalyticsEventType): Promise<number> {
         return this.repo.count({ where: {eventType} });
