@@ -57,7 +57,7 @@ export class AnalyticsService {
     }
 
     async getReportStats(from?: string, to?: string) {
-        const where = this.buildDateWhere(from, to);
+        const where = this.makeWhere(from, to);
 
         const [submitted, confirmed, falsePositive] = await Promise.all([
             this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_SUBMITTED, ...where}}),
@@ -72,12 +72,13 @@ export class AnalyticsService {
     }
 
     async getMailingStats(from?: string, to?: string) {
-        const where = this.buildDateWhere(from, to);
+        const where = this.makeWhere(from, to);
 
         const [sent, scheduled, batchSent, batchScheduled] = await Promise.all([
             this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_SENT, ...where}}),
             this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_SCHEDULED, ...where}}),
             this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_BATCH_SENT, ...where}}),
+            // batch_schedule stored as EMAIL_SCHEDULED with a batch flag.
             this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_SCHEDULED, ...where } }),
         ]);
 
@@ -86,9 +87,9 @@ export class AnalyticsService {
             scheduled: scheduled + batchScheduled,
         };
     }
-
+    //per use stuff, thsi might be moved to accounts service later.
     async getUserStats(auth0Id: string) {
-        const [reports, confirmed, falsePositive, xpEvents, educationCompleted] = 
+        const [reports, confirmed, falsePos, xpEvents, eduDone] = 
         await Promise.all([
             this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_SUBMITTED } }),
             this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_CONFIRMED } }),
@@ -102,9 +103,9 @@ export class AnalyticsService {
             return sum + (typeof amount === 'number' ? amount: 0);
         }, 0);
 
-        return { reports, confirmed, falsePositive, totalXp, educationCompleted };
+        return { reports, confirmed, falsePositive: falsePos, totalXp, educationCompleted: eduDone };
     }
-
+    //time series data, this will be used for graphs and charts.
     async getTimeSeries(from: string, to: string): Promise<{ date: string; reports:number; emailsSent: number; xpGiven: number;}[]> {
         const events = await this.repo.find({
             where: {
@@ -170,7 +171,7 @@ export class AnalyticsService {
         }, 0);
     }
 
-    private buildDateWhere(from?: string, to?: string) {
+    private makeWhere(from?: string, to?: string) {
         if (from && to) return { occurredAt: Between( new Date(from), new Date(to)) };
         if (from) return  {
             occurredAt: MoreThanOrEqual(new Date(from))
