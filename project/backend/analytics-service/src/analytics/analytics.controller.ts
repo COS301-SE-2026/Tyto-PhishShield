@@ -82,5 +82,28 @@ export class AnalyticsController {
         }
     }
 
-    
+    @RabbitSubscribe({
+        exchange: 'education-event-exchange',
+        routingKey: 'education.assigned',
+        queue: 'analytics-education-assigned-queue',
+
+    })
+    async onEducationAssigned(payload: EducationPayload) {
+        await this.analyticsService.recordEvent({
+            eventType: AnalyticsEventType.EDUCATION_ASSIGNED,
+            auth0Id: payload.auth0Id,
+            email: payload.email,
+            payload: payload as any,
+        });
+
+        // Whenever education is assigned, it's because the user reported a real phishing email(false positive)
+        // so we count that as a false positive report.
+        await this.analyticsService.recordEvent({
+            eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+            auth0Id: payload.auth0Id,
+            email: payload.email,
+            payload: payload as any,
+        });
+    }
+
 }
