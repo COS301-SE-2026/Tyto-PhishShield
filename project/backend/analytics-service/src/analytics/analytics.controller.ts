@@ -121,6 +121,18 @@ export class AnalyticsController {
 
     @RabbitSubscribe({
         exchange: 'mailing-event-exchange',
+        routingKey: 'mailing.schedule',
+        queue: 'analytics-mailing-schedule-queue',
+    })
+    async onEmailScheduled(payload: MailingPayload) {
+        await this.analyticsService.recordEvent({
+            eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+            payload: payload as any,
+        });
+    }
+
+    @RabbitSubscribe({
+        exchange: 'mailing-event-exchange',
         routingKey: 'mailing.batch_send',
         queue: 'analytics-mailing-batch-send-queue',
     })
@@ -131,6 +143,15 @@ export class AnalyticsController {
         });
     }
 
-    
-
+    @RabbitSubscribe({
+        exchange: 'mailing-event-exchange',
+        routingKey: 'mailing.batch_schedule',
+        queue: 'analytics-mailing-batch-schedule-queue',
+    })
+        async onBatchEmailScheduled(@Payload() payload: MailingPayload) {
+        await this.analyticsService.recordEvent({
+            eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+            payload: { count: payload.entries?.length ?? 0, batch: true },
+        });
+    }
 }
