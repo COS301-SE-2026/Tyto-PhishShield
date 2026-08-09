@@ -11,8 +11,8 @@ import {
 const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
 
 interface ScheduleWaveProps {
-  onNavigate: (path: string) => void;
-  activePath: string;
+  readonly onNavigate: (path: string) => void;
+  readonly activePath: string;
 }
 
 type EmailDistribution = "same" | "different";
