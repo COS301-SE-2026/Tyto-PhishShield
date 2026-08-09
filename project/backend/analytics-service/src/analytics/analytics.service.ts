@@ -182,7 +182,8 @@ export class AnalyticsService {
             return sum + (typeof val === 'number' ? val : 0);
         }, 0);
     }
-
+    //WARNING: if no dates given this will return all events, which could be a lot, so be careful with this one.
+    //TODO: maybe mandatory date range later.
     private makeWhere(from?: string, to?: string) {
         if (from && to) return { occurredAt: Between( new Date(from), new Date(to)) };
         if (from) return  {
