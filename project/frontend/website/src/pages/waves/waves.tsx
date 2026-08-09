@@ -6,8 +6,20 @@ import { useToast } from '../../context/toast-context';
 import type { Wave, WaveStatus } from '../../types';
 
 interface WavesProps {
-  onNavigate: (path: string) => void;
-  activePath: string;
+  readonly onNavigate: (path: string) => void;
+  readonly activePath: string;
+}
+
+function getClickRateColor(clickRate: number): string {
+  if (clickRate > 15) return 'var(--color-danger)';
+  if (clickRate > 8) return 'var(--color-warning)';
+  return 'var(--color-success)';
+}
+
+function getOutcomeBadgeVariant(outcome: string): 'success' | 'danger' | 'neutral' {
+  if (outcome === 'reported') return 'success';
+  if (outcome === 'clicked') return 'danger';
+  return 'neutral';
 }
 
 const MOCK_WAVES: Wave[] = [
@@ -39,7 +51,7 @@ export function Waves({ onNavigate, activePath }: WavesProps) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card)', borderRadius: 10, padding: 4, border: '1px solid var(--border)' }}>
           {tabs.map(t => (
-            <button key={t} onClick={() => setFilter(t)} style={{
+            <button key={t} type="button" onClick={() => setFilter(t)} style={{
               padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer',
               fontSize: 12, fontWeight: 600, fontFamily: 'Inter, system-ui, sans-serif',
               background: filter === t ? 'var(--color-primary)' : 'transparent',
@@ -104,7 +116,7 @@ export function Waves({ onNavigate, activePath }: WavesProps) {
                   <div style={{ display: 'flex', gap: 20, flexShrink: 0 }}>
                     {[
                       { lbl: 'Sent', val: w.sentCount.toLocaleString(), color: 'var(--text-primary)' },
-                      { lbl: 'Clicked', val: `${clickRate}%`, color: clickRate > 15 ? 'var(--color-danger)' : clickRate > 8 ? 'var(--color-warning)' : 'var(--color-success)' },
+                      { lbl: 'Clicked', val: `${clickRate}%`, color: getClickRateColor(clickRate) },
                       { lbl: 'Reported', val: `${detectionRate}%`, color: 'var(--color-success)' },
                     ].map(s => (
                       <div key={s.lbl} style={{ textAlign: 'center' }}>
@@ -129,9 +141,9 @@ export function Waves({ onNavigate, activePath }: WavesProps) {
 }
 
 interface WaveDetailProps {
-  onNavigate: (path: string) => void;
-  activePath: string;
-  waveId: string;
+  readonly onNavigate: (path: string) => void;
+  readonly activePath: string;
+  readonly waveId: string;
 }
 
 const USER_RESULTS = [
@@ -179,7 +191,7 @@ export function WaveDetail({ onNavigate, activePath, waveId }: WaveDetailProps) 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 20 }}>
         {[
           { lbl: 'Emails Sent', val: wave.sentCount.toLocaleString(), color: 'var(--text-primary)' },
-          { lbl: 'Click Rate', val: `${clickRate}%`, color: clickRate > 15 ? 'var(--color-danger)' : clickRate > 8 ? 'var(--color-warning)' : 'var(--color-success)' },
+          { lbl: 'Click Rate', val: `${clickRate}%`, color: getClickRateColor(clickRate) },
           { lbl: 'Detection Rate', val: `${detRate}%`, color: 'var(--color-success)' },
           { lbl: 'No Response', val: String(wave.sentCount - wave.clickedCount - wave.reportedCount), color: 'var(--text-muted)' },
         ].map(s => (
@@ -212,7 +224,7 @@ export function WaveDetail({ onNavigate, activePath, waveId }: WaveDetailProps) 
           <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>User Results</h3>
           <div style={{ display: 'flex', gap: 6 }}>
             {(['all', 'reported', 'clicked', 'no_response'] as const).map(f => (
-              <button key={f} onClick={() => setOutcomeFilter(f)} style={{
+              <button key={f} type="button" onClick={() => setOutcomeFilter(f)} style={{
                 padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', cursor: 'pointer',
                 fontSize: 11, fontWeight: 600, fontFamily: 'Inter, system-ui, sans-serif',
                 background: outcomeFilter === f ? 'var(--color-primary)' : 'var(--bg-hover)',
@@ -232,12 +244,12 @@ export function WaveDetail({ onNavigate, activePath, waveId }: WaveDetailProps) 
             </tr>
           </thead>
           <tbody>
-            {filtered.map((u, i) => (
-              <tr key={i} style={{ borderTop: '1px solid var(--border)' }}>
+            {filtered.map(u => (
+              <tr key={u.name} style={{ borderTop: '1px solid var(--border)' }}>
                 <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.name}</td>
                 <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.dept}</td>
                 <td style={{ padding: '10px 16px' }}>
-                  <Badge variant={u.outcome === 'reported' ? 'success' : u.outcome === 'clicked' ? 'danger' : 'neutral'}>
+                  <Badge variant={getOutcomeBadgeVariant(u.outcome)}>
                     {u.outcome === 'no_response' ? 'No Response' : u.outcome.charAt(0).toUpperCase() + u.outcome.slice(1)}
                   </Badge>
                 </td>
