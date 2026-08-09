@@ -162,10 +162,10 @@ export class AnalyticsService {
         return this.repo.count({ where: {eventType} });
     }
 
-    private async sum(eventType: AnalyticsEventType, field: string): Promise<number> {
-        const events = await this.repo.find({ where: { eventType } });
+    private async sumXp(): Promise<number> {
+        const events = await this.repo.find({ where: { eventType: AnalyticsEventType.XP_GIVEN } });
         return events.reduce((sum, e ) => {
-            const val = e.payload?.[field];
+            const val = e.payload?.['amount'];
             return sum + (typeof val === 'number' ? val : 0);
         }, 0);
     }
