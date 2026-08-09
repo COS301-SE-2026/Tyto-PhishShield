@@ -17,39 +17,42 @@ export class AnalyticsService {
         private readonly repo: Repository<AnalyticsEvent>,
     ) {}
 
+    //just store whatever comes in, we can figure out the queries later.
     async recordEvent(input: RecordEventInput): Promise<void> {
         const event = this.repo.create(input);
         await this.repo.save(event);
+        //console.log(`recorded $(input.eventType)', input); // debugging
     }
 //first will be the overview which will do a count for every event type, later will be the more specific types, but for a more general view we have this part.
-    async getOverview(): Promise<{
-        totalEmailsSent: number;
-        totalReports: number;
-        confirmedPhishing: number;
-        falsePositives: number;
-        totalXpGiven: number;
-        educationAssigned: number;
-        educationCompleted: number;
-    }> {
-        const counts = await Promise.all([
-            this.count(AnalyticsEventType.EMAIL_SENT),
-            this.count(AnalyticsEventType.EMAIL_BATCH_SENT),
-            this.count(AnalyticsEventType.REPORT_SUBMITTED),
-            this.count(AnalyticsEventType.REPORT_CONFIRMED),
-            this.count(AnalyticsEventType.REPORT_FALSE_POSITIVE),
-            this.sum(AnalyticsEventType.XP_GIVEN, 'amount'),
-            this.count(AnalyticsEventType.EDUCATION_ASSIGNED),
-            this.count(AnalyticsEventType.EDUCATION_COMPLETED),
+    async getOverview() {
+        const [
+            singleSent,
+            batchSent,
+            reports,
+            confirmed,
+            falsePos,
+            totalXp,
+            eduAssigned,
+            eduDone,
+        ] = await Promise.all([
+            this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_SENT }}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.EMAIL_BATCH_SENT }}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_SUBMITTED }}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_CONFIRMED }}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE }}),
+            this.sumXp(),
+            this.repo.count({ where: { eventType: AnalyticsEventType.EDUCATION_ASSIGNED }}),
+            this.repo.count({ where: { eventType: AnalyticsEventType.EDUCATION_COMPLETED }}),
         ]);
 
         return {
-            totalEmailsSent: counts[0] + counts[1],
-            totalReports: counts[2],
-            confirmedPhishing: counts[3],
-            falsePositives: counts[4],
-            totalXpGiven: counts[5],
-            educationAssigned: counts[6],
-            educationCompleted: counts[7],
+            totalEmailsSent: singleSent + batchSent,
+            totalReports: reports,
+            confirmedPhishing: confirmed,
+            falsePositives: falsePos,
+            totalXpGiven: totalXp,
+            educationAssigned: eduAssigned,
+            educationCompleted: eduDone,
         };
     }
 
