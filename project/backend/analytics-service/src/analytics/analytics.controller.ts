@@ -10,6 +10,7 @@ import { MessagePattern } from '@nestjs/microservices';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsEventType } from './entities/analytics-event.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { get } from 'http';
 
 //payload shapes, could move to shared types later, but for now just here.
 
@@ -139,6 +140,7 @@ export class AnalyticsController {
     async onBatchEmailSent(@Payload() payload: MailingPayload) {
         await this.analyticsService.recordEvent({
             eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+            //just store the count for now, not the whole array
             payload: { count: payload.entries?.length ?? 0 },
         });
     }
@@ -153,5 +155,32 @@ export class AnalyticsController {
             eventType: AnalyticsEventType.EMAIL_SCHEDULED,
             payload: { count: payload.entries?.length ?? 0, batch: true },
         });
+    }
+
+    @Get('overview')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Top level stats for admin dashboard' })
+    async getOverview() {
+        return this.analyticsService.getOverview();
+    }
+
+    @Get('reports')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'from', required: false })
+    @ApiQuery({ name: 'to', required: false})
+    getReportStats(@Query('from') from?: string, @Query('to') to?: string) {
+        //Note: if dates are invaled will just return 0s, will validate in future.
+        return this.analyticsService.getReportStats(from, to);
+    }
+
+    @Get('mailing')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'from', required: false })
+    @ApiQuery({ name: 'to', required: false})
+    getMailingStats(@Query('from') from?: string, @Query('to') to?: string) {
+        return this.analyticsService.getMailingStats(from, to);
     }
 }
