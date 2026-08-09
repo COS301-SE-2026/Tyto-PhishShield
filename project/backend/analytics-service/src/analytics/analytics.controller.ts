@@ -208,4 +208,14 @@ export class AnalyticsController {
     getUserStats(@Param('auth0Id') auth0Id: string) {
         return this.analyticsService.getUserStats(auth0Id);
     }
+    // for service to service
+    @MessagePattern('analytics.getUserStats')
+    getUserStatsTcp(auth0Id: string) {
+        return this.analyticsService.getUserStats(auth0Id);
+    }
+
+    @MessagePattern('analytics.getOverview')
+    getOverviewTcp() {
+        return this.analyticsService.getOverview();
+    }
 }
