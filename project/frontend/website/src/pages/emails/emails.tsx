@@ -2,8 +2,8 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Card } from '../../components/ui';
 
 interface EmailsProps {
-  onNavigate: (path: string) => void;
-  activePath: string;
+  readonly onNavigate: (path: string) => void;
+  readonly activePath: string;
 }
 
 export function Emails({ onNavigate, activePath }: EmailsProps) {
