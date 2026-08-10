@@ -89,4 +89,60 @@ export class AnalyticsController {
             headers: authHeader(req),
         });
       }
+      
+      @Get('timeseries')
+      @ApiOperation({ summary: 'Time series data for charts'})
+      @ApiQuery({ name: 'from', required: false})
+      @ApiQuery({ name: 'to', required: false})
+      getTimeSeries(
+        @Req() req: AuthenticatedRequest,
+        @Query('from') from? :string,
+        @Query('to') to?: string,
+      ) {
+        const qs = this.buildQuery({ from, to });
+        return this.proxy.forward({
+            url: `${this.analyticsServiceUrl}/api/analytics/timeseries${qs}`,
+            method: 'GET',
+            headers: authHeader(req),
+        });
+      }
+
+      @Get('leaderboard')
+      @ApiOperation({ summary: 'Top users by XP'})
+      @ApiQuery({ name: 'limit', required: false})
+      getLeaderboard(
+        @Req() req: AuthenticatedRequest,
+        @Query('limit') limit?: string,
+      ) {
+        const qs = this.buildQuery({ limit});
+        return this.proxy.forward({
+            url: `${this.analyticsServiceUrl}/api/analytics/leaderboard${qs}`,
+            method: 'GET',
+            headers: authHeader(req),
+        });
+      }
+
+      @Get('users/:auth0Id')
+      @ApiOperation({ summary: 'Per-user analytics'})
+      getUserStats(
+        @Req() req: AuthenticatedRequest,
+        @Param('auth0Id') auth0Id: string,
+      ) {
+        return this.proxy.forward({
+            url: `${this.analyticsServiceUrl}/api/analytics/users/${auth0Id}`,
+            method: 'GET',
+            headers: authHeader(req),
+        });
+      }
+
+      private buildQuery(params: Record<string, string | undefined>): string {
+        const defined = Object.entries(params).filter(
+            ([, v]) => v !== undefined,
+        );
+        if (defined.length === 0) return '';
+        const sp = new URLSearchParams(
+            defined as [string, string][],
+        );
+        return `?${sp.toString()}`;
+      }
 }
