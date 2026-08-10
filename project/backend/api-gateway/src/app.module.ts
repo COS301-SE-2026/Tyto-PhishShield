@@ -20,6 +20,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
 //import { OtpModule } from './otp/otp.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { WebsocketModule } from './websocket/websocket.module';
       },
     ]),
     WebsocketModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [
