@@ -17,8 +17,10 @@ describe('EmailStatusController', () => {
 
   const mockEmailStatus = {
     emailId: 'test-email-id',
-    auth0Id: 'auth0|1',
+    messageId: 'test-message-id',
     status: EmailStatusEnum.SENT,
+    webhookEventId: 'test-webhook-event-id',
+    occurredAt: new Date(),
   } as EmailStatusEntity;
 
   beforeEach(async () => {
@@ -57,11 +59,11 @@ describe('EmailStatusController', () => {
 
   describe('getStatus', () => {
     it('should call service.getStatus and return an array of statuses', async () => {
-      const auth0Id = 'auth0|1';
+      const emailId = 'test-email-id';
       mockEmailStatusService.getStatus.mockResolvedValue([mockEmailStatus]);
 
-      const result = await controller.getStatus(auth0Id);
-      expect(mockEmailStatusService.getStatus).toHaveBeenCalledWith(auth0Id);
+      const result = await controller.getStatus(emailId);
+      expect(mockEmailStatusService.getStatus).toHaveBeenCalledWith(emailId);
       expect(result).toEqual([mockEmailStatus]);
     });
   });
