@@ -24,7 +24,7 @@ export class AnalyticsEvent {
   id!: string;
 
   @Index()
-  @Column({ type: 'enum', enum: 'AnalyticsEventType' })
+  @Column({ type: 'enum', enum: Object.values(AnalyticsEventType) })
   eventType!: AnalyticsEventType;
 
   @Index()
