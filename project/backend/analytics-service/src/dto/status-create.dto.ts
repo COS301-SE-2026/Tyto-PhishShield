@@ -1,16 +1,13 @@
 import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 import { EmailStatusEnum } from '../entities/email-status.entity';
+import { Type } from 'class-transformer';
 
 export class StatusCreateDto {
   @IsString()
   emailId: string;
 
   @IsString()
-  @IsOptional()
-  messageId: string | null;
-
-  @IsString()
-  auth0Id: string;
+  messageId: string;
 
   @IsEnum(EmailStatusEnum)
   status: EmailStatusEnum;
@@ -20,9 +17,9 @@ export class StatusCreateDto {
   reason: string | null;
 
   @IsString()
-  @IsOptional()
-  webhookEventId: string | null;
+  webhookEventId: string;
 
+  @Type(() => Date)
   @IsDate()
   occurredAt: Date;
 }

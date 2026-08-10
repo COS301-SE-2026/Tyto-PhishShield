@@ -20,6 +20,15 @@ export class EmailStatusService {
 
   async createStatus(body: StatusCreateDto): Promise<EmailStatusEntity> {
     try {
+      const entity = await this.statusRepository.findOne({
+        where: { webhookEventId: body.webhookEventId },
+      });
+      if (entity) {
+        this.logger.warn(
+          `Entity with webhookEventId: ${body.webhookEventId} already exists`,
+        );
+        return entity;
+      }
       const newStatus = this.statusRepository.create(body);
 
       const savedStatus = await this.statusRepository.save(newStatus);
@@ -35,14 +44,14 @@ export class EmailStatusService {
     }
   }
 
-  async getStatus(auth0Id: string): Promise<EmailStatusEntity[]> {
+  async getStatus(emailId: string): Promise<EmailStatusEntity[]> {
     try {
       const entries = await this.statusRepository.find({
-        where: { auth0Id },
+        where: { emailId },
       });
 
       this.logger.log(
-        `Found ${entries.length}, status entries for auth0Id: ${auth0Id}`,
+        `Found ${entries.length}, status entries for emailId: ${emailId}`,
       );
 
       return entries;

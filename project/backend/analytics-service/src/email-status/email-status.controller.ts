@@ -14,14 +14,14 @@ export class EmailStatusController {
     return this.emailStatusService.createStatus(body);
   }
 
-  @Get(':auth0id')
+  @Get(':emailId/get')
   async getStatus(
-    @Param('auth0id') auth0Id: string,
+    @Param('emailId') emailId: string,
   ): Promise<EmailStatusEntity[]> {
-    return this.emailStatusService.getStatus(auth0Id);
+    return this.emailStatusService.getStatus(emailId);
   }
 
-  @Delete(':emailId')
+  @Delete(':emailId/delete')
   async deleteStatus(
     @Param('emailId') emailId: string,
   ): Promise<EmailStatusEntity> {

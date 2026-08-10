@@ -7,18 +7,18 @@ import {
 } from 'typeorm';
 
 export enum EmailStatusEnum {
-  BOUNCED = 'bounced',
-  CLICKED = 'clicked',
-  COMPLAINED = 'complained',
-  DELIVERED = 'delivered',
-  DELIVERED_DELAYED = 'delivered_delayed',
-  FAILED = 'failed',
-  OPENED = 'opened',
-  RECEIVED = 'received',
-  REQUESTED = 'requested',
-  SCHEDULED = 'scheduled',
-  SENT = 'sent',
-  SUPPRESSED = 'suppressed',
+  BOUNCED = 'email.bounced',
+  CLICKED = 'email.clicked',
+  COMPLAINED = 'email.complained',
+  DELIVERED = 'email.delivered',
+  DELIVERED_DELAYED = 'email.delivered_delayed',
+  FAILED = 'email.failed',
+  OPENED = 'email.opened',
+  RECEIVED = 'email.received',
+  REQUESTED = 'email.requested',
+  SCHEDULED = 'email.scheduled',
+  SENT = 'email.sent',
+  SUPPRESSED = 'email.suppressed',
 }
 
 @Entity('email_status')
@@ -31,15 +31,8 @@ export class EmailStatusEntity {
   emailId: string;
 
   @Index()
-  @Column({ nullable: true })
-  messageId: string | null;
-
-  @Index()
   @Column()
-  auth0Id: string;
-
-  @Column()
-  referenceNumber: string;
+  messageId: string;
 
   @Column({ type: 'enum', enum: EmailStatusEnum })
   status: EmailStatusEnum;
@@ -47,8 +40,8 @@ export class EmailStatusEntity {
   @Column({ type: 'text', nullable: true })
   reason: string | null;
 
-  @Column({ unique: true, nullable: true })
-  webhookEventId: string | null;
+  @Column({ unique: true })
+  webhookEventId: string;
 
   @Column({ type: 'timestamptz' })
   occurredAt: Date;
