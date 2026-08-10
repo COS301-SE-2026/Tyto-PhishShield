@@ -188,11 +188,11 @@ export function CreateEmail({
         activePath={activePath}
         onNavigate={onNavigate}
         title="Create Email Template"
-        subtitle="Create a reusable phishing email for campaigns"
+        subtitle="Create a reusable phishing email for phishing waves"
         breadcrumbs={[
             {
-            label: 'Campaigns',
-            path: '/campaigns',
+            label: 'Phishing Waves',
+            path: '/waves',
             },
             {
             label: 'Create Email Template',
@@ -338,7 +338,7 @@ export function CreateEmail({
                 >
                 <Button
                     variant="ghost"
-                    onClick={() => onNavigate('/campaigns')}
+                    onClick={() => onNavigate('/waves')}
                     style={{
                         minWidth: 72,
                         paddingLeft: 16,
@@ -405,7 +405,7 @@ export function CreateEmail({
                 }}
                 >
                 The template has been saved and can now be used when
-                sending emails or campaigns.
+                sending emails or phishing waves.
                 </p>
 
                 <div
@@ -565,14 +565,14 @@ export function CreateEmail({
                 >
                 <Button
                     variant="ghost"
-                    onClick={() => onNavigate('/campaigns')}
+                    onClick={() => onNavigate('/waves')}
                     style={{
                         minWidth: 72,
                         paddingLeft: 16,
                         paddingRight: 16,
                     }}
                 >
-                    Return to Campaigns
+                    Return to Phishing Waves
                 </Button>
 
                 <div
@@ -596,7 +596,7 @@ export function CreateEmail({
 
                     <Button
                     onClick={() =>
-                        onNavigate('/campaigns/send-email')
+                        onNavigate('/waves/send-email')
                     }
                     style={{
                         minWidth: 72,

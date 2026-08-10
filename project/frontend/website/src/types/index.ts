@@ -49,12 +49,12 @@ export interface RegisterResponse {
   userId: string;
 }
 
-export type CampaignStatus = 'draft' | 'active' | 'complete' | 'scheduled';
+export type WaveStatus = 'draft' | 'active' | 'complete' | 'scheduled';
 
-export interface Campaign {
+export interface Wave {
   id: string;
   name: string;
-  status: CampaignStatus;
+  status: WaveStatus;
   sentCount: number;
   clickedCount: number;
   reportedCount: number;
@@ -65,8 +65,6 @@ export interface Campaign {
   emailSubject?: string;
   emailBody?: string;
 }
-
-// Training (ready for Demo 2?)
 
 export type TrainingStatus = 'not_started' | 'in_progress' | 'completed';
 

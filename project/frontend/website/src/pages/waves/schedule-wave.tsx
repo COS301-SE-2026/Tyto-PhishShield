@@ -10,15 +10,15 @@ import {
 
 const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
 
-interface ScheduleCampaignProps {
-  onNavigate: (path: string) => void;
-  activePath: string;
+interface ScheduleWaveProps {
+  readonly onNavigate: (path: string) => void;
+  readonly activePath: string;
 }
 
 type EmailDistribution = "same" | "different";
 
-interface CampaignForm {
-  campaignName: string;
+interface WaveForm {
+  waveName: string;
   emailDistribution: EmailDistribution;
   difficulty: EmailDifficulty;
   recipientsInput: string;
@@ -28,7 +28,7 @@ interface CampaignForm {
 }
 
 interface FormErrors {
-  campaignName?: string;
+  waveName?: string;
   recipients?: string;
   scheduledFrom?: string;
   scheduledTo?: string;
@@ -45,8 +45,8 @@ const DIFFICULTY_OPTIONS = [
   { value: "hard", label: "Hard" },
 ];
 
-const initialForm: CampaignForm = {
-  campaignName: "",
+const initialForm: WaveForm = {
+  waveName: "",
   emailDistribution: "same",
   difficulty: "medium",
   recipientsInput: "",
@@ -77,13 +77,13 @@ function formatInvalidRecipients(recipients: string[]): string {
   return `Invalid email address${recipients.length === 1 ? "" : "es"}: ${recipients.join(", ")}`;
 }
 
-export function ScheduleCampaign({
+export function ScheduleWave({
   onNavigate,
   activePath,
-}: ScheduleCampaignProps) {
+}: ScheduleWaveProps) {
   const { addToast } = useToast();
 
-  const [form, setForm] = useState<CampaignForm>(initialForm);
+  const [form, setForm] = useState<WaveForm>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [scheduling, setScheduling] = useState(false);
 
@@ -98,19 +98,19 @@ export function ScheduleCampaign({
     [parsedRecipients],
   );
 
-  const setField = <K extends keyof CampaignForm>(
+  const setField = <K extends keyof WaveForm>(
     field: K,
-    value: CampaignForm[K],
+    value: WaveForm[K],
   ) => {
     setForm((previous) => ({
       ...previous,
       [field]: value,
     }));
 
-    if (field === "campaignName") {
+    if (field === "waveName") {
       setErrors((previous) => ({
         ...previous,
-        campaignName: undefined,
+        waveName: undefined,
       }));
     }
 
@@ -140,8 +140,8 @@ export function ScheduleCampaign({
   const validateForm = (): boolean => {
     const nextErrors: FormErrors = {};
 
-    if (!form.campaignName.trim()) {
-      nextErrors.campaignName = "Campaign name required.";
+    if (!form.waveName.trim()) {
+      nextErrors.waveName = "Wave name required.";
     }
 
     if (parsedRecipients.length === 0) {
@@ -186,12 +186,12 @@ export function ScheduleCampaign({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleScheduleCampaign = async () => {
+  const handleScheduleWave = async () => {
     if (!validateForm()) {
       addToast({
         type: "error",
-        title: "Campaign validation failed",
-        message: "Correct the highlighted field before scheduling the campaign",
+        title: "Wave validation failed",
+        message: "Correct the highlighted field before scheduling the Wave",
       });
 
       return;
@@ -218,20 +218,20 @@ export function ScheduleCampaign({
 
       addToast({
         type: "success",
-        title: "Campaign scheduled",
+        title: "Wave scheduled",
         message:
           response.message ||
-          `"${form.campaignName.trim()}" was scheduled for ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? "" : "s"}.`,
+          `"${form.waveName.trim()}" was scheduled for ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? "" : "s"}.`,
       });
 
-      onNavigate("/campaigns");
+      onNavigate("/waves");
     } catch (error) {
       console.error(error);
 
       addToast({
         type: "error",
-        title: "Campaign scheduling failed",
-        message: "The campaign could not be scheduled.",
+        title: "Wave scheduling failed",
+        message: "The Wave could not be scheduled.",
       });
     } finally {
       setScheduling(false);
@@ -267,15 +267,15 @@ export function ScheduleCampaign({
     <AppLayout
       activePath={activePath}
       onNavigate={onNavigate}
-      title="Scehdule Campaign"
+      title="Scehdule Wave"
       subtitle="Schedule generated phishing emails for recipients"
       breadcrumbs={[
         {
-          label: "Campaigns",
-          path: "/campaigns",
+          label: "Waves",
+          path: "/waves",
         },
         {
-          label: "Scehdule Campaign",
+          label: "Schedule Wave",
         },
       ]}
       securityScore={72}
@@ -297,7 +297,7 @@ export function ScheduleCampaign({
                 fontFamily: "Inter, system-ui, sans-serif",
               }}
             >
-              Campaign Details
+              Wave Details
             </h2>
           </div>
 
@@ -309,12 +309,12 @@ export function ScheduleCampaign({
             }}
           >
             <Input
-              label="Campaign name"
-              placeholder="Enter campaign name"
+              label="Wave name"
+              placeholder="Enter Wave name"
               required
-              value={form.campaignName}
-              error={errors.campaignName}
-              onChange={(event) => setField("campaignName", event.target.value)}
+              value={form.waveName}
+              error={errors.waveName}
+              onChange={(event) => setField("waveName", event.target.value)}
             />
 
             <div
@@ -347,13 +347,13 @@ export function ScheduleCampaign({
             </div>
 
             <div>
-              <label htmlFor="campaign-recipients" style={labelStyle}>
+              <label htmlFor="wave-recipients" style={labelStyle}>
                 Recipients{" "}
                 <span style={{ color: "var(--color-danger)" }}>*</span>
               </label>
 
               <textarea
-                id="campaign-recipients"
+                id="wave-recipients"
                 rows={5}
                 placeholder="user1@example.com, user2@example.com"
                 value={form.recipientsInput}
@@ -505,7 +505,7 @@ export function ScheduleCampaign({
                   lineHeight: 1.5,
                 }}
               >
-                Spread email delivery randomly accross the scheduled campaign
+                Spread email delivery randomly across the scheduled Wave
                 period.
               </span>
             </label>
@@ -526,7 +526,7 @@ export function ScheduleCampaign({
             <Button
               variant="ghost"
               disabled={scheduling}
-              onClick={() => onNavigate("/campaigns")}
+              onClick={() => onNavigate("/waves")}
               style={{
                 minWidth: 72,
               }}
@@ -538,13 +538,13 @@ export function ScheduleCampaign({
               loading={scheduling}
               disabled={scheduling}
               onClick={() => {
-                void handleScheduleCampaign();
+                void handleScheduleWave();
               }}
               style={{
                 minWidth: 160,
               }}
             >
-              Schedule Campaign
+              Schedule Wave
             </Button>
           </div>
         </Card>
