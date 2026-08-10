@@ -101,15 +101,15 @@ export class EmailController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Dispatch the email with Resend' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
-  @ApiBody({ schema: { example: { recipient: 'target@example.com' } } })
+  @ApiBody({ schema: { example: { auth0Id: 'auth0|example' } } })
   sendEmail(
     @Param('referenceNumber') referenceNumber: string,
-    @Body('recipient') recipient: string,
+    @Body('auth0Id') auth0Id: string,
   ) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}/send-single`,
       method: 'POST',
-      data: { recipient },
+      data: { auth0Id },
     });
   }
 
@@ -120,20 +120,20 @@ export class EmailController {
   @ApiBody({
     schema: {
       example: {
-        recipient: 'target@example.com',
+        auth0Id: 'auth0|example',
         scheduledAt: '2026-05-25T14:30:00.000Z',
       },
     },
   })
   scheduleSendEmail(
     @Param('referenceNumber') referenceNumber: string,
-    @Body('recipient') recipient: string,
+    @Body('auth0Id') auth0Id: string,
     @Body('scheduledAt') scheduledAt: string,
   ) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}/schedule-send-single`,
       method: 'POST',
-      data: { recipient, scheduledAt },
+      data: { auth0Id, scheduledAt },
     });
   }
 }

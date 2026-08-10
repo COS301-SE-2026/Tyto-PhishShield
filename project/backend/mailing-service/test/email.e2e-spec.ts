@@ -13,17 +13,25 @@
  * - POST /emails/:referenceNumber/schedule-send-single - Schedules an email for future delivery via Resend.
  */
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
-import { EmailDifficulty } from '../src/entities/emails.entity';
+import { EmailDifficulty } from '../src/entities/email-template.entity';
+import { Repository } from 'typeorm';
+import { UserEntity } from '../src/entities/user.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
-const TEST_SENDER = process.env.RESEND_EMAIL;
+const TEST_SENDER = `test@${process.env.DOMAIN}`;
 const TEST_RECIPIENT = process.env.RESEND_EMAIL_DELIVERED;
+const TEST_AUTH0_ID = 'auth0|1';
 
 describe('Email service integration test', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
+  let userRepository: Repository<UserEntity>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -33,9 +41,22 @@ describe('Email service integration test', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
+    
+    userRepository = moduleFixture.get<Repository<UserEntity>>(
+      getRepositoryToken(UserEntity),
+    )
+
+    await userRepository.save(
+      userRepository.create({
+        auth0Id: TEST_AUTH0_ID,
+        name: 'E2e Test User',
+        email: TEST_RECIPIENT,
+      }),
+    );
   }, 30000);
 
   afterAll(async () => {
+    await userRepository.delete({ auth0Id: TEST_AUTH0_ID });
     await app.close();
   });
 
@@ -75,6 +96,12 @@ describe('Email service integration test', () => {
       });
   });
 
+  it('/emails/:referenceNumber (GET) - should throw 404 for unknows reference', () => {
+    return request(app.getHttpServer())
+      .get('/emails/PHISH-NOTAREF')
+      .expect(404);
+  });
+
   it('/emails/:referenceNumber (PATCH) - should update the email', () => {
     return request(app.getHttpServer())
       .patch(`/emails/${testReferenceNumber}`)
@@ -88,7 +115,7 @@ describe('Email service integration test', () => {
   it('/emails/:referenceNumber/send-single (POST) - should send email via Resend', () => {
     return request(app.getHttpServer())
       .post(`/emails/${testReferenceNumber}/send-single`)
-      .send({ recipient: TEST_RECIPIENT })
+      .send({ auth0Id: TEST_AUTH0_ID })
       .expect((res) => {
         console.log('BODY:', JSON.stringify(res.body));
       })
@@ -100,6 +127,13 @@ describe('Email service integration test', () => {
       });
   });
 
+  it('/emails/:referneceNumber/send-single (POST) - should throw error if user auth0Id does not exist', () => {
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/send-single`)
+      .send({ auth0Id: 'auth0|non-existent' })
+      .expect(500);
+  });
+
   it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule email via Resend', () => {
     const futureDate = new Date();
     futureDate.setMinutes(futureDate.getMinutes() + 1);
@@ -107,7 +141,7 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post(`/emails/${testReferenceNumber}/schedule-send-single`)
       .send({
-        recipient: TEST_RECIPIENT,
+        auth0Id: TEST_AUTH0_ID,
         scheduledAt: futureDate.toISOString(),
       })
       .expect(200)
@@ -117,5 +151,18 @@ describe('Email service integration test', () => {
         expect(res.body.message).toContain('successfully scheduled');
         expect(res.body.deliveryId).toBeDefined();
       });
+  });
+
+  it('/emails/:referneceNumber/schedule-send-single (POST) - should throw error if user auth0Id does not exist', () => {
+    const futureDate = new Date();
+    futureDate.setMinutes(futureDate.getMinutes() + 1);
+
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/schedule-send-single`)
+      .send({
+        auth0Id: 'auth0|non-existent',
+        scheduledAt: futureDate.toISOString(),
+      })
+      .expect(500);
   });
 });

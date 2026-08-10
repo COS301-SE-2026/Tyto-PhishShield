@@ -55,7 +55,7 @@ describe('BatchEmailController', () => {
   describe('sendBatchWithReference', () => {
     const referenceNumber = 'PHISH-001';
     const body: SendBatchEmailDto = {
-      recipients: ['a@example.com', 'b@example.com'],
+      auth0Id: ['auth0|example1', 'auth0|example2'],
     };
 
     it('should forwards a POST request to /batch-emails/:referenceNumber/send-batch-with-reference', () => {
@@ -92,7 +92,7 @@ describe('BatchEmailController', () => {
 
   describe('sendBatchRandomSameEmail', () => {
     const body: SendBatchRandomDto = {
-      recipients: ['a@example.com', 'b@example.com'],
+      auth0Id: ['auth0|example1', 'auth0|example2'],
       difficulty: EmailDifficulty.MEDIUM,
       scheduledFrom: new Date('2026-06-24T10:00:00.000Z'),
       scheduledTo: new Date('2026-06-24T12:00:00.000Z'),
@@ -133,7 +133,7 @@ describe('BatchEmailController', () => {
 
   describe('sendBatchRandomDifferentEmail', () => {
     const body: SendBatchRandomDto = {
-      recipients: ['a@example.com', 'b@example.com', 'c@example.com'],
+      auth0Id: ['auth0|example1', 'auth0|example2', 'auth0|example3'],
       difficulty: EmailDifficulty.HARD,
       scheduledFrom: new Date('2026-06-24T08:00:00.000Z'),
       scheduledTo: new Date('2026-06-24T09:00:00.000Z'),

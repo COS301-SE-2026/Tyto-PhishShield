@@ -21,6 +21,7 @@ import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 //import { OtpModule } from './otp/otp.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
       },
     ]),
     WebsocketModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [
