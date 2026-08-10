@@ -164,7 +164,7 @@ describe('EmailController', () => {
 
   describe('sendEmail', () => {
     const referenceNumber = 'PHISH-001';
-    const recipient = 'delivered@resend.dev';
+    const auth0Id = 'auth0|example';
 
     it('should forward a PATCH request to /emails/:referenceNumber/send-single', () => {
       mockProxyService.forward.mockReturnValue({
@@ -172,12 +172,12 @@ describe('EmailController', () => {
         message: 'sent instantly.',
       });
 
-      controller.sendEmail(referenceNumber, recipient);
+      controller.sendEmail(referenceNumber, auth0Id);
 
       expect(mockProxyService.forward).toHaveBeenCalledWith({
         url: `${MAILING_SERVICE_URL}/emails/${referenceNumber}/send-single`,
         method: 'POST',
-        data: { recipient },
+        data: { auth0Id },
       });
     });
 
@@ -189,7 +189,7 @@ describe('EmailController', () => {
       };
       mockProxyService.forward.mockReturnValue(proxyResponse);
 
-      const result = controller.sendEmail(referenceNumber, recipient);
+      const result = controller.sendEmail(referenceNumber, auth0Id);
 
       expect(result).toBe(proxyResponse);
     });
@@ -197,7 +197,7 @@ describe('EmailController', () => {
 
   describe('scheduleSendEmail', () => {
     const referenceNumber = 'PHISH-001';
-    const recipient = 'delivered@resend.dev';
+    const auth0Id = 'auth0Id|example';
     const scheduledAt = '2026-06-25T10:00:00.000Z';
 
     it('should forward a PATCH request to /emails/:referenceNumber/schedule-send-single', () => {
@@ -206,12 +206,12 @@ describe('EmailController', () => {
         message: 'successfully scheduled',
       });
 
-      controller.scheduleSendEmail(referenceNumber, recipient, scheduledAt);
+      controller.scheduleSendEmail(referenceNumber, auth0Id, scheduledAt);
 
       expect(mockProxyService.forward).toHaveBeenCalledWith({
         url: `${MAILING_SERVICE_URL}/emails/${referenceNumber}/schedule-send-single`,
         method: 'POST',
-        data: { recipient, scheduledAt },
+        data: { auth0Id, scheduledAt },
       });
     });
 
@@ -225,7 +225,7 @@ describe('EmailController', () => {
 
       const result = controller.scheduleSendEmail(
         referenceNumber,
-        recipient,
+        auth0Id,
         scheduledAt,
       );
 
@@ -233,10 +233,10 @@ describe('EmailController', () => {
     });
 
     it('should include both recipient and scheduledAt in the forwarded data', () => {
-      controller.scheduleSendEmail(referenceNumber, recipient, scheduledAt);
+      controller.scheduleSendEmail(referenceNumber, auth0Id, scheduledAt);
 
       const call = mockProxyService.forward.mock.calls[0][0];
-      expect(call.data).toEqual({ recipient, scheduledAt });
+      expect(call.data).toEqual({ auth0Id, scheduledAt });
     });
   });
 });
