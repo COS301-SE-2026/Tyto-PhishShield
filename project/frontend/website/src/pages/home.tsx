@@ -10,7 +10,7 @@ interface HomeProps {
 const FEATURES = [
   {
     title: 'Simulated Phishing',
-    desc: 'Safe, AI-generated campaigns using GPT-4 and Llama-3 that mirror real-world attacks closely.',
+    desc: 'Safe, AI-generated phishing waves using GPT-4 and Llama-3 that mirror real-world attacks closely.',
     icon: ShieldCheck,
   },
   {
@@ -223,11 +223,11 @@ export function Home({ onNavigate }: HomeProps) {
       {/* How it works */}
       <section style={{ background: '#0F172A', padding: '80px 48px', textAlign: 'center', flexShrink: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#60A5FA', letterSpacing: '1px', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>HOW IT WORKS</div>
-        <h2 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>Three steps from campaign to insight</h2>
+        <h2 style={{ color: '#fff', fontSize: 28, fontWeight: 700, marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>Three steps from wave to insight</h2>
         <p style={{ color: 'rgba(255,255,255,0.38)', marginBottom: 52, fontSize: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>From admin launch to employee learning in minutes.</p>
         <div style={{ display: 'flex', justifyContent: 'center', maxWidth: 860, margin: '0 auto', flexWrap: 'wrap', gap: 0 }}>
           {[
-            { n: '1', title: 'Admin launches campaign', desc: 'Configure target group, AI model, and phishing template. Schedule and deploy.' },
+            { n: '1', title: 'Admin launches wave', desc: 'Configure target group, AI model, and phishing template. Schedule and deploy.' },
             { n: '2', title: 'Employee receives email', desc: 'AI-generated phishing email lands in Outlook. Employee clicks or reports via add-in.' },
             { n: '3', title: 'Instant teachable moment', desc: 'Immediate feedback highlights specific warning signs. XP awarded for correct reporting.' },
           ].map((s, i, arr) => (

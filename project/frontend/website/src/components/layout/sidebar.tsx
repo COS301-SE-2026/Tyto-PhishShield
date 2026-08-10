@@ -1,7 +1,7 @@
 import React from 'react';
 import { LogoLockup } from '../ui/owl-logo';
 import { useAuth } from '../../context/auth-context';
-import { LogOut, Settings, FileText, LayoutDashboard, ShieldCheck, Users, BookOpen, Trophy, BarChart3 } from 'lucide-react';
+import { LogOut, Settings, FileText, LayoutDashboard, ShieldCheck, Users, BookOpen, Trophy, BarChart3, Mail } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -16,8 +16,10 @@ const NAV_ITEMS: NavItem[] = [
   // Main
   { id: 'dashboard',  label: 'Dashboard',   path: '/dashboard',  section: 'MAIN',
     icon: <LayoutDashboard size={15} /> },
-  { id: 'campaigns',  label: 'Campaigns',   path: '/campaigns',  section: 'MAIN', minRole: 'analyst',
+  { id: 'waves',  label: 'Phishing Waves',   path: '/waves',  section: 'MAIN', minRole: 'analyst',
     icon: <ShieldCheck size={15} /> },
+  { id: 'emails', label: 'Emails', path: '/emails', section: 'MAIN', minRole: 'analyst',
+    icon: <Mail size={15} /> },
   { id: 'users',      label: 'Users',       path: '/users',      section: 'MAIN', minRole: 'analyst',
     icon: <Users size={15} /> },
   { id: 'training',   label: 'Training',    path: '/training',   section: 'MAIN',
@@ -27,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   // Analytics
   { id: 'analytics',  label: 'Analytics',   path: '/analytics',  minRole: 'analyst', section: 'ANALYTICS',
     icon: <BarChart3 size={15} /> },
-  { id: 'reports',    label: 'Reports',     path: '/reports',    minRole: 'analyst', section: 'ANALYTICS',
+  { id: 'reports', label: 'Reports', path: '/analytics/reports', minRole: 'analyst', section: 'ANALYTICS',
     icon: <FileText size={15} /> },
   // System
   { id: 'settings',   label: 'Settings',    path: '/settings',   section: 'SYSTEM',
@@ -51,6 +53,12 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
     return userLevel >= ROLE_LEVEL[item.minRole];
   });
   const sections = ['MAIN', 'ANALYTICS', 'SYSTEM'];
+  const activeItem = visibleItems.reduce<NavItem | null>((best, item) => {
+    const matches = activePath === item.path || activePath.startsWith(item.path + '/');
+    if (!matches) return best;
+    if (!best || item.path.length > best.path.length) return item;
+  return best;
+  }, null);  
   const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
   const scoreLabel = securityScore >= 70 ? 'Good' : securityScore >= 40 ? 'Fair' : 'At Risk';
   return (
@@ -97,7 +105,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
                 </div>
               )}
               {items.map(item => {
-                const isActive = activePath === item.path || activePath.startsWith(item.path + '/');
+                const isActive = item.id === activeItem?.id;
                 return (
                   <button
                     key={item.id}
