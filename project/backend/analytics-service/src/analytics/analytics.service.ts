@@ -94,7 +94,7 @@ export class AnalyticsService {
             this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_SUBMITTED } }),
             this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_CONFIRMED } }),
             this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE } }),
-            this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.XP_GIVEN } }),
+            this.repo.find({ where: { auth0Id, eventType: AnalyticsEventType.XP_GIVEN } }),
             this.repo.count({ where: { auth0Id, eventType: AnalyticsEventType.EDUCATION_COMPLETED } }),
         ]);
 

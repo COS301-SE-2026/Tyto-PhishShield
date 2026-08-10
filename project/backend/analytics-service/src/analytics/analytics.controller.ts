@@ -5,7 +5,7 @@ import {
   ApiTags,
   ApiQuery,
 } from '@nestjs/swagger';
-import { RabbitSubscribe, Payload } from '@golevelup/nestjs-rabbitmq';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { MessagePattern } from '@nestjs/microservices';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsEventType } from './entities/analytics-event.entity';
@@ -137,7 +137,7 @@ export class AnalyticsController {
         routingKey: 'mailing.batch_send',
         queue: 'analytics-mailing-batch-send-queue',
     })
-    async onBatchEmailSent(@Payload() payload: MailingPayload) {
+    async onBatchEmailSent(payload: MailingPayload) {
         await this.analyticsService.recordEvent({
             eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
             //just store the count for now, not the whole array
@@ -150,7 +150,7 @@ export class AnalyticsController {
         routingKey: 'mailing.batch_schedule',
         queue: 'analytics-mailing-batch-schedule-queue',
     })
-        async onBatchEmailScheduled(@Payload() payload: MailingPayload) {
+        async onBatchEmailScheduled(payload: MailingPayload) {
         await this.analyticsService.recordEvent({
             eventType: AnalyticsEventType.EMAIL_SCHEDULED,
             payload: { count: payload.entries?.length ?? 0, batch: true },
