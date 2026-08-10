@@ -19,6 +19,7 @@ import { APP_GUARD, Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 //import { OtpModule } from './otp/otp.module';
 import { WebhookModule } from './webhook/webhook.module';
 
@@ -30,6 +31,7 @@ import { WebhookModule } from './webhook/webhook.module';
     ReportModule,
     XpModule,
     EducationModule,
+    AnalyticsModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {
