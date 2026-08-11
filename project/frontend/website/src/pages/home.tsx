@@ -37,6 +37,7 @@ function CompanyContactSection() {
   const [errors, setErrors] = useState<CompanyContactErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const setField = (field: keyof CompanyContactForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -55,15 +56,41 @@ function CompanyContactSection() {
     await new Promise(r => setTimeout(r, 700));
     setSubmitting(false);
     setSubmitted(true);
-    addToast({ type: 'success', title: 'Message sent', message: 'Thanks! Our team will be in touch shortly.' });
+    addToast({ type: 'success', title: 'Message sent', message: 'Thanks - our team will be contacting you shortly.' });
   };
+
+  if (!expanded) {
+    return (
+      <section style={{ padding: '80px 48px', maxWidth: 700, margin: '0 auto', width: '100%', flexShrink: 0, textAlign: 'center' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '1px', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          FOR OTHER ORGANISATIONS
+        </div>
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          Bring PhishShield to your company
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.7, marginBottom: 26, fontFamily: 'Inter, system-ui, sans-serif' }}>
+          PhishShield isn&apos;t limited to Tyto — we can stand up a dedicated deployment for your organisation too.
+        </p>
+        <Button onClick={() => setExpanded(true)}>Learn more</Button>
+      </section>
+    );
+  }
 
   return (
     <section style={{ padding: '80px 48px', maxWidth: 1100, margin: '0 auto', width: '100%', flexShrink: 0 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 48 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '1px', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            FOR OTHER ORGANISATIONS
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '1px', fontFamily: 'Inter, system-ui, sans-serif' }}>
+              FOR OTHER ORGANISATIONS
+            </div>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}
+            >
+              Show less
+            </button>
           </div>
           <h2 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Bring PhishShield to your company
@@ -105,7 +132,7 @@ function CompanyContactSection() {
                 <Check size={20} color="var(--color-success)" strokeWidth={3} aria-hidden="true" />
               </div>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>
-                Thanks for contacting us
+                Thanks for reaching out
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
                 We have received your message and will be in touch shortly.
