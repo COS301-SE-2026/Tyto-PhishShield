@@ -36,8 +36,10 @@ export class WebhookController {
     private readonly proxy: ProxyService,
     private readonly config: ConfigService,
   ) {
-    const port = this.config.get<string>('ANALYTICS_SERVICE_PORT', '3007');
-    this.analyticsServiceUrl = `http://localhost:${port}`;
+    this.analyticsServiceUrl = this.config.get<string>(
+      'ANALYTICS_SERVICE_URL',
+      'http://localhost:3007',
+    );
   }
 
   @Public()
