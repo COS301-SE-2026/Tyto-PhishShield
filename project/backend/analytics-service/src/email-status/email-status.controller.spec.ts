@@ -4,7 +4,7 @@ import { EmailStatusService } from './email-status.service';
 import {
   EmailStatusEntity,
   EmailStatusEnum,
-} from '../entities/email-status.entity';
+} from './entities/email-status.entity';
 
 describe('EmailStatusController', () => {
   let controller: EmailStatusController;

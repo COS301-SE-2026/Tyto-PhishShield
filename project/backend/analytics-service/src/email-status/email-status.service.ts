@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EmailStatusEntity } from '../entities/email-status.entity';
+import { EmailStatusEntity } from './entities/email-status.entity';
 import { StatusCreateDto } from '../dto/status-create.dto';
 
 @Injectable()
