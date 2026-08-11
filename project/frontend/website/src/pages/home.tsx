@@ -163,8 +163,9 @@ function CompanyContactSection() {
                   onChange={e => setField('workEmail', e.target.value)}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>Message (optional)</label>
+                  <label htmlFor="company-contact-message" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>Message (optional)</label>
                   <textarea
+                    id="company-contact-message"
                     rows={3} placeholder="Tell us a bit about your organisation and needs."
                     value={form.message}
                     onChange={e => setField('message', e.target.value)}
