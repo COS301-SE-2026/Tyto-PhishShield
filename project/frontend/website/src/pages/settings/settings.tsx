@@ -209,7 +209,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>Text size</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {([['normal','A', 14], ['large','A', 17], ['xl','A', 20]] as const).map(([s, lbl, sz]) => (
-                    <button key={s} onClick={() => setFontSize(s)} style={{
+                    <button key={s} type="button" onClick={() => setFontSize(s)} style={{
                       flex: 1, padding: '10px', borderRadius: 8, cursor: 'pointer',
                       border: `1.5px solid ${fontSize === s ? 'var(--color-primary)' : 'var(--border)'}`,
                       background: fontSize === s ? 'var(--color-primary-light)' : 'var(--bg-hover)',
