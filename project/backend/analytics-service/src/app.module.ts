@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmailStatusModule } from './email-status/email-status.module';
+import { EmailStatusEntity } from './email-status/entities/email-status.entity';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { EmailStatusModule } from './email-status/email-status.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [AnalyticsEvent],
+        entities: [AnalyticsEvent, EmailStatusEntity],
         synchronize: true,
       }),
     }),
