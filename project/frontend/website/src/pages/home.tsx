@@ -1,10 +1,163 @@
+import { useState } from 'react';
 import { LogoLockup } from '../components/ui/owl-logo';
-import { ThemeToggle } from '../components/ui';
+import { ThemeToggle, Card, Input, Button } from '../components/ui';
 import { useTheme } from '../context/theme-context';
-import { Mail, Trophy, ShieldCheck, BarChart3} from 'lucide-react';
+import { useToast } from '../context/toast-context';
+import { Mail, Trophy, ShieldCheck, BarChart3, Building2, Check } from 'lucide-react';
 
 interface HomeProps {
   onNavigate: (path: string) => void;
+}
+
+
+const SALES_EMAIL = 'cos301.fiveguys@gmail.com';
+const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+const COMPANY_BENEFITS = [
+  'A dedicated instance for your organisation - your own users, departments, and admins.',
+  'AI-generated phishing simulations tailored to your industry and threat landscape.',
+  'Native Outlook add-in so employees can report suspicious emails in one click.',
+  'Real-time analytics and gamified training to track security culture over time.',
+];
+
+interface CompanyContactForm {
+  companyName: string;
+  workEmail: string;
+  message: string;
+}
+
+interface CompanyContactErrors {
+  companyName?: string;
+  workEmail?: string;
+}
+
+function CompanyContactSection() {
+  const { addToast } = useToast();
+  const [form, setForm] = useState<CompanyContactForm>({ companyName: '', workEmail: '', message: '' });
+  const [errors, setErrors] = useState<CompanyContactErrors>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const setField = (field: keyof CompanyContactForm, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+
+  const handleSubmit = async () => {
+    const nextErrors: CompanyContactErrors = {};
+    if (!form.companyName.trim()) nextErrors.companyName = 'Company name is required.';
+    if (!form.workEmail.trim()) nextErrors.workEmail = 'Work email is required.';
+    else if (!EMAIL_PATTERN.test(form.workEmail.trim())) nextErrors.workEmail = 'Enter a valid email address.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setSubmitting(true);
+    await new Promise(r => setTimeout(r, 700));
+    setSubmitting(false);
+    setSubmitted(true);
+    addToast({ type: 'success', title: 'Message sent', message: 'Thanks! Our team will be in touch shortly.' });
+  };
+
+  return (
+    <section style={{ padding: '80px 48px', maxWidth: 1100, margin: '0 auto', width: '100%', flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 48 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '1px', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            FOR OTHER ORGANISATIONS
+          </div>
+          <h2 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            Bring PhishShield to your company
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.7, marginBottom: 22, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            PhishShield is not limited to Tyto. We can stand up a dedicated deployment for your
+            organisation, so your team gets the same simulated phishing training, analytics, and
+            gamified learning shown above.
+          </p>
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            {COMPANY_BENEFITS.map(b => (
+              <li key={b} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{
+                  width: 18, height: 18, borderRadius: '50%', background: 'var(--color-primary-light)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
+                }}>
+                  <Check size={11} strokeWidth={3} color="var(--color-primary)" aria-hidden="true" />
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, fontFamily: 'Inter, system-ui, sans-serif' }}>{b}</span>
+              </li>
+            ))}
+          </ul>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Mail size={15} color="var(--text-muted)" aria-hidden="true" />
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+              Prefer email? Reach us directly at{' '}
+              <a href={`mailto:${SALES_EMAIL}`} style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{SALES_EMAIL}</a>
+            </span>
+          </div>
+        </div>
+
+        <Card style={{ padding: '28px 26px' }}>
+          {submitted ? (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%', background: 'var(--color-success-light)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px',
+              }}>
+                <Check size={20} color="var(--color-success)" strokeWidth={3} aria-hidden="true" />
+              </div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                Thanks for contacting us
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                We have received your message and will be in touch shortly.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <div style={{
+                  width: 34, height: 34, background: 'var(--color-primary-light)', borderRadius: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <Building2 size={17} color="var(--color-primary)" aria-hidden="true" />
+                </div>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                  Get in touch
+                </h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <Input
+                  label="Company name" placeholder="e.g. Acme Corp" required
+                  value={form.companyName} error={errors.companyName}
+                  onChange={e => setField('companyName', e.target.value)}
+                />
+                <Input
+                  label="Work email" placeholder="you@company.com" type="email" required
+                  value={form.workEmail} error={errors.workEmail}
+                  onChange={e => setField('workEmail', e.target.value)}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>Message (optional)</label>
+                  <textarea
+                    rows={3} placeholder="Tell us a bit about your organisation and needs."
+                    value={form.message}
+                    onChange={e => setField('message', e.target.value)}
+                    style={{
+                      width: '100%', border: '1.5px solid var(--border-strong, var(--border))', borderRadius: 'var(--radius-md)',
+                      padding: '9px 12px', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-input)',
+                      outline: 'none', resize: 'vertical', fontFamily: 'Inter, system-ui, sans-serif',
+                    }}
+                  />
+                </div>
+                <Button loading={submitting} disabled={submitting} onClick={() => { void handleSubmit(); }} fullWidth>
+                  Send message
+                </Button>
+              </div>
+            </>
+          )}
+        </Card>
+      </div>
+    </section>
+  );
 }
 
 const FEATURES = [
@@ -247,6 +400,8 @@ export function Home({ onNavigate }: HomeProps) {
           ))}
         </div>
       </section>
+
+      <CompanyContactSection />
 
       {/* CTA */}
       <section style={{ background: '#2563EB', padding: '64px 48px', textAlign: 'center', flexShrink: 0 }}>
