@@ -3,6 +3,7 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button, Input, PasswordInput } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
+import { useAccessibility } from '../../context/accessibility-context';
 import { useToast } from '../../context/toast-context';
 import { User, Lock, Palette, Accessibility, Bell, Sun, Moon } from 'lucide-react';
 
@@ -13,6 +14,7 @@ type SettingsTab = 'profile' | 'security' | 'appearance' | 'accessibility' | 'no
 export function Settings({ onNavigate, activePath }: SettingsProps) {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { fontSize, setFontSize, highContrast, setHighContrast, reduceMotion, setReduceMotion, enhancedFocus, setEnhancedFocus, } = useAccessibility();
   const { addToast } = useToast();
 
   const [tab, setTab] = useState<SettingsTab>('profile');
@@ -28,12 +30,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
   const [confirmPw, setConfirmPw] = useState('');
   const [pwError, setPwError] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
-
-  // Accessibility
-  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xl'>('normal');
-  const [highContrast, setHighContrast] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [screenReader, setScreenReader] = useState(false);
 
   // Notifications 
   const [notifTraining, setNotifTraining] = useState(true);
@@ -213,7 +209,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>Text size</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {([['normal','A', 14], ['large','A', 17], ['xl','A', 20]] as const).map(([s, lbl, sz]) => (
-                    <button key={s} onClick={() => { setFontSize(s); document.documentElement.style.fontSize = sz + 'px'; }} style={{
+                    <button key={s} onClick={() => setFontSize(s)} style={{
                       flex: 1, padding: '10px', borderRadius: 8, cursor: 'pointer',
                       border: `1.5px solid ${fontSize === s ? 'var(--color-primary)' : 'var(--border)'}`,
                       background: fontSize === s ? 'var(--color-primary-light)' : 'var(--bg-hover)',
@@ -233,10 +229,9 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
               <Toggle value={reduceMotion} onChange={setReduceMotion}
                 label="Reduce motion"
                 desc="Minimises animations and transitions throughout the interface." />
-              <Toggle value={screenReader} onChange={setScreenReader}
-                label="Screen reader optimised"
-                desc="Enhances ARIA labels and keyboard navigation for screen reader users." />
-
+              <Toggle value={enhancedFocus} onChange={setEnhancedFocus}
+                label="Enhanced keyboard focus indicators"
+                desc="Makes the focus outline bolder and higher-contrast when navigating by keyboard." />
               <div style={{ marginTop: 16, padding: '12px 14px', background: 'var(--color-primary-light)', borderRadius: 8, border: '1px solid var(--color-primary-mid)' }}>
                 <p style={{ fontSize: 12, color: 'var(--color-primary)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.5 }}>
                   PhishShield targets WCAG 2.1 Level AA compliance. If you experience accessibility issues, please contact <a href="mailto:admin@tyto.co.za" style={{ fontWeight: 600 }}>admin@tyto.co.za</a>.
