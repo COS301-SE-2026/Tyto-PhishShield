@@ -1,5 +1,5 @@
 import {
-  createContext, useContext, useState, useEffect,
+  createContext, useContext, useState, useEffect, useMemo,
   type ReactNode,
 } from 'react';
 
@@ -25,7 +25,7 @@ function readBoolean(key: string, fallback: boolean): boolean {
   return saved === null ? fallback : saved === 'true';
 }
 
-export function AccessibilityProvider({ children }: { children: ReactNode }) {
+export function AccessibilityProvider({ children }: { readonly children: ReactNode }) {
   const [fontSize, setFontSize] = useState<FontSize>(() => {
     const saved = localStorage.getItem('a11y-font-size');
     return saved === 'large' || saved === 'xl' ? saved : 'normal';
@@ -42,24 +42,27 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   }, [fontSize]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-contrast', highContrast ? 'high' : 'normal');
+    document.documentElement.dataset.contrast = highContrast ? 'high' : 'normal';
     localStorage.setItem('a11y-high-contrast', String(highContrast));
   }, [highContrast]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-motion', reduceMotion ? 'reduced' : 'normal');
+    document.documentElement.dataset.motion = reduceMotion ? 'reduced' : 'normal';
     localStorage.setItem('a11y-reduce-motion', String(reduceMotion));
   }, [reduceMotion]);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-focus', enhancedFocus ? 'enhanced' : 'normal');
+    document.documentElement.dataset.focus = enhancedFocus ? 'enhanced' : 'normal';
     localStorage.setItem('a11y-enhanced-focus', String(enhancedFocus));
   }, [enhancedFocus]);
 
+  const value = useMemo(() => ({
+    fontSize, setFontSize, highContrast, setHighContrast,
+    reduceMotion, setReduceMotion, enhancedFocus, setEnhancedFocus,
+  }), [fontSize, highContrast, reduceMotion, enhancedFocus]);
+
   return (
-    <AccessibilityContext.Provider value={{
-      fontSize, setFontSize, highContrast, setHighContrast, reduceMotion, setReduceMotion, enhancedFocus, setEnhancedFocus,
-    }}>
+    <AccessibilityContext.Provider value= {value}>
       {children}
     </AccessibilityContext.Provider>
   );
