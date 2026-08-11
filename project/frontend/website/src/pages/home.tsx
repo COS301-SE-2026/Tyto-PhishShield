@@ -3,6 +3,7 @@ import { LogoLockup } from '../components/ui/owl-logo';
 import { ThemeToggle, Card, Input, Button } from '../components/ui';
 import { useTheme } from '../context/theme-context';
 import { useToast } from '../context/toast-context';
+import { authApi } from '../services/api';
 import { Mail, Trophy, ShieldCheck, BarChart3, Building2, Check } from 'lucide-react';
 
 interface HomeProps {
@@ -53,10 +54,19 @@ function CompanyContactSection() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setSubmitting(true);
-    await new Promise(r => setTimeout(r, 700));
-    setSubmitting(false);
-    setSubmitted(true);
-    addToast({ type: 'success', title: 'Message sent', message: 'Thanks - our team will be contacting you shortly.' });
+    try {
+      await authApi.contactSales({
+        companyName: form.companyName.trim(),
+        workEmail: form.workEmail.trim(),
+        message: form.message.trim() || undefined,
+      });
+      setSubmitted(true);
+      addToast({ type: 'success', title: 'Message sent', message: 'Thanks — check your inbox for more information.' });
+    } catch (err: unknown) {
+      addToast({ type: 'error', title: 'Could not send message', message: err instanceof Error ? err.message : 'Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!expanded) {
@@ -78,19 +88,13 @@ function CompanyContactSection() {
 
   return (
     <section style={{ padding: '80px 48px', maxWidth: 1100, margin: '0 auto', width: '100%', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+        <Button size="sm" onClick={() => setExpanded(false)}>Show less</Button>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 48 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '1px', fontFamily: 'Inter, system-ui, sans-serif' }}>
-              FOR OTHER ORGANISATIONS
-            </div>
-            <button
-              type="button"
-              onClick={() => setExpanded(false)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}
-            >
-              Show less
-            </button>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '1px', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            FOR OTHER ORGANISATIONS
           </div>
           <h2 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>
             Bring PhishShield to your company
