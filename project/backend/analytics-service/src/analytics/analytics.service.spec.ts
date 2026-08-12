@@ -71,5 +71,63 @@ describe('AnalyticsService', () => {
       expect(repo.save).toHaveBeenCalledWith(created);
     });
   });
-  
+
+    describe('getOverview', () => {
+    beforeEach(() => {
+      // make count return different values depending on eventType
+      repo.count.mockImplementation(({ where }: any) => {
+        switch (where?.eventType) {
+          case AnalyticsEventType.EMAIL_SENT:
+            return 10;
+          case AnalyticsEventType.EMAIL_BATCH_SENT:
+            return 5;
+          case AnalyticsEventType.REPORT_SUBMITTED:
+            return 20;
+          case AnalyticsEventType.REPORT_CONFIRMED:
+            return 8;
+          case AnalyticsEventType.REPORT_FALSE_POSITIVE:
+            return 12;
+          case AnalyticsEventType.EDUCATION_ASSIGNED:
+            return 12; // same as false positive, logically
+          case AnalyticsEventType.EDUCATION_COMPLETED:
+            return 6;
+          default:
+            return 0;
+        }
+      });
+
+      // sumXp uses find for XP_GIVEN events
+      repo.find.mockResolvedValue([
+        { payload: { amount: 10 } },
+        { payload: { amount: 25 } },
+        { payload: { amount: 'not a number' } }, // should be ignored
+      ] as any);
+    });
+
+    it('returns aggregated overview counts', async () => {
+      const result = await service.getOverview();
+
+      expect(result).toEqual({
+        totalEmailsSent: 15, // 10 + 5
+        totalReports: 20,
+        confirmedPhishing: 8,
+        falsePositives: 12,
+        totalXpGiven: 35, // 10 + 25 (string ignored)
+        educationAssigned: 12,
+        educationCompleted: 6,
+      });
+    });
+
+    it('returns zero totals when no events exist', async () => {
+      repo.count.mockResolvedValue(0);
+      repo.find.mockResolvedValue([] as any);
+
+      const result = await service.getOverview();
+
+      expect(result.totalEmailsSent).toBe(0);
+      expect(result.totalXpGiven).toBe(0);
+      expect(result.totalReports).toBe(0);
+    });
+  });
+
 });
