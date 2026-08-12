@@ -204,4 +204,167 @@ describe('AnalyticsService', () => {
       });
     });
 
+      describe('getUserStats', () => {
+        const auth0Id = 'auth0|123';
+    
+        beforeEach(() => {
+          repo.count.mockImplementation(({ where }: any) => {
+            switch (where?.eventType) {
+              case AnalyticsEventType.REPORT_SUBMITTED:
+                return 5;
+              case AnalyticsEventType.REPORT_CONFIRMED:
+                return 2;
+              case AnalyticsEventType.REPORT_FALSE_POSITIVE:
+                return 3;
+              case AnalyticsEventType.EDUCATION_COMPLETED:
+                return 1;
+              default:
+                return 0;
+            }
+          });
+    
+          repo.find.mockResolvedValue([
+            { payload: { amount: 50 } },
+            { payload: { amount: 75 } },
+          ] as any);
+        });
+    
+        it('returns aggregated user stats including total XP', async () => {
+          const result = await service.getUserStats(auth0Id);
+    
+          expect(result.reports).toBe(5);
+          expect(result.confirmed).toBe(2);
+          expect(result.falsePositive).toBe(3);
+          expect(result.educationCompleted).toBe(1);
+          expect(result.totalXp).toBe(125); // 50 + 75
+        });
+    
+        it('handles user with no XP events', async () => {
+          repo.find.mockResolvedValue([] as any);
+          const result = await service.getUserStats(auth0Id);
+    
+          expect(result.totalXp).toBe(0);
+        });
+      });
+
+        describe('getTimeSeries', () => {
+    it('groups events by day and aggregates counts', async () => {
+      const from = '2026-08-01';
+      const to = '2026-08-02';
+      const events = [
+        {
+          occurredAt: new Date('2026-08-01T10:00:00Z'),
+          eventType: AnalyticsEventType.EMAIL_SENT,
+        },
+        {
+          occurredAt: new Date('2026-08-01T11:00:00Z'),
+          eventType: AnalyticsEventType.REPORT_SUBMITTED,
+        },
+        {
+          occurredAt: new Date('2026-08-01T12:00:00Z'),
+          eventType: AnalyticsEventType.XP_GIVEN,
+          payload: { amount: 10 },
+        },
+        {
+          occurredAt: new Date('2026-08-02T09:00:00Z'),
+          eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+        },
+        {
+          occurredAt: new Date('2026-08-02T10:00:00Z'),
+          eventType: AnalyticsEventType.REPORT_SUBMITTED,
+        },
+      ];
+
+      repo.find.mockResolvedValue(events as any);
+
+      const result = await service.getTimeSeries(from, to);
+
+      expect(result).toEqual([
+        { date: '2026-08-01', reports: 1, emailsSent: 1, xpGiven: 10 },
+        { date: '2026-08-02', reports: 1, emailsSent: 1, xpGiven: 0 },
+      ]);
+    });
+
+    it('returns empty array when no events in range', async () => {
+      repo.find.mockResolvedValue([] as any);
+
+      const result = await service.getTimeSeries('2026-08-01', '2026-08-02');
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getLeaderboard', () => {
+    it('returns top users by XP with report count', async () => {
+      const xpEvents = [
+        { auth0Id: 'user1', email: 'u1@example.com', payload: { amount: 100 } },
+        { auth0Id: 'user2', email: 'u2@example.com', payload: { amount: 50 } },
+        { auth0Id: 'user1', email: 'u1@example.com', payload: { amount: 30 } },
+      ];
+      const confirmedReports = [
+        { auth0Id: 'user1' },
+        { auth0Id: 'user1' },
+        { auth0Id: 'user2' },
+      ];
+
+      repo.find
+        .mockResolvedValueOnce(xpEvents as any)
+        .mockResolvedValueOnce(confirmedReports as any);
+
+      const result = await service.getLeaderboard(2);
+
+      expect(result).toEqual([
+        {
+          auth0Id: 'user1',
+          email: 'u1@example.com',
+          totalXp: 130,
+          reportCount: 2,
+        },
+        {
+          auth0Id: 'user2',
+          email: 'u2@example.com',
+          totalXp: 50,
+          reportCount: 1,
+        },
+      ]);
+    });
+
+    it('skips entries without auth0Id', async () => {
+      const xpEvents = [
+        { auth0Id: null, payload: { amount: 100 } }, // should be ignored
+        { auth0Id: 'user1', payload: { amount: 10 } },
+      ];
+      const confirmedReports = [
+        { auth0Id: 'user1' },
+      ];
+
+      repo.find
+        .mockResolvedValueOnce(xpEvents as any)
+        .mockResolvedValueOnce(confirmedReports as any);
+
+      const result = await service.getLeaderboard(10);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].auth0Id).toBe('user1');
+      expect(result[0].totalXp).toBe(10);
+    });
+
+    it('defaults limit to 10 and sorts by totalXp desc', async () => {
+      const xpEvents = Array.from({ length: 12 }, (_, i) => ({
+        auth0Id: `user${i}`,
+        payload: { amount: i + 1 },
+      }));
+      repo.find
+        .mockResolvedValueOnce(xpEvents as any)
+        .mockResolvedValueOnce([] as any);
+
+      const result = await service.getLeaderboard();
+
+      expect(result).toHaveLength(10);
+      expect(result[0].totalXp).toBe(12); // highest amount last in array? see note below
+      // Actually the sort should put highest first, so first should be user11 (amount 12)
+      expect(result[0].auth0Id).toBe('user11');
+    });
+  });
+
 });
