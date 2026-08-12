@@ -130,4 +130,47 @@ describe('AnalyticsService', () => {
     });
   });
 
+    describe('getReportStats', () => {
+    it('calculates detection rate correctly when reports exist', async () => {
+      repo.count.mockImplementation(({ where }: any) => {
+        if (where?.eventType === AnalyticsEventType.REPORT_SUBMITTED) return 20;
+        if (where?.eventType === AnalyticsEventType.REPORT_CONFIRMED) return 8;
+        if (where?.eventType === AnalyticsEventType.REPORT_FALSE_POSITIVE)
+          return 12;
+        return 0;
+      });
+
+      const result = await service.getReportStats();
+
+      expect(result.submitted).toBe(20);
+      expect(result.confirmed).toBe(8);
+      expect(result.falsePositive).toBe(12);
+      expect(result.detectionRate).toBe(40); // 8/20 * 100
+    });
+
+    it('returns zero detection rate when no reports submitted', async () => {
+      repo.count.mockResolvedValue(0);
+
+      const result = await service.getReportStats();
+
+      expect(result.detectionRate).toBe(0);
+    });
+
+    it('passes date filters to repository count', async () => {
+      const from = '2026-08-01';
+      const to = '2026-08-10';
+      repo.count.mockResolvedValue(0);
+
+      await service.getReportStats(from, to);
+
+      // check that count was called with where containing occurredAt
+      expect(repo.count).toHaveBeenCalledWith({
+        where: {
+          eventType: AnalyticsEventType.REPORT_SUBMITTED,
+          occurredAt: expect.anything(), // Between object
+        },
+      });
+    });
+  });
+
 });
