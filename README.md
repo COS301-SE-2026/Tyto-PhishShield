@@ -176,14 +176,14 @@ All project documentation can be found in our
 | Documents |
 |-----------|
 | 📁 [Root Archive: ](docs/demo-2/README.md) |
-| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
-| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
-| { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
-| 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
+| 📋 [Software Requirements Specification (SRS)](docs/demo-2/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/demo-2/Software-Architecture-Specification.md) |
+| { }&ensp; [Coding Standards](docs/demo-2/standards-and-policies/coding-standards.md) |
+| 🧪 [Testing Policy](docs/demo-2/standards-and-policies/testing-policy.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
-| 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
+| 🎨 [Design Specification Document](docs/demo-2/PhishShield-Brand-Style-Guide.pdf) |
 | 🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
 | 🎬 [Demo 2 videos](https://drive.google.com/drive/folders/10Y1lEcmk7wfp3HCWWZjnnqrf9gLC6ggJ?usp=sharing) |
 
