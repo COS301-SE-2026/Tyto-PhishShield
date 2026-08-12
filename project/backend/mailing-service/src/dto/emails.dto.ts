@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
-import { EmailDifficulty } from '../entities/emails.entity';
+import { EmailDifficulty } from '../entities/email-template.entity';
 
 export class EmailsDto {
   @IsEmail()

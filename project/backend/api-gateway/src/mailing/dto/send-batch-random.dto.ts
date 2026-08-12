@@ -1,6 +1,6 @@
 import {
   IsArray,
-  IsEmail,
+  IsString,
   ArrayMinSize,
   ArrayMaxSize,
   IsNotEmpty,
@@ -21,8 +21,8 @@ export class SendBatchRandomDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
-  @IsEmail({}, { each: true })
-  recipients!: string[];
+  @IsString({ each: true })
+  auth0Id!: string[];
 
   @IsNotEmpty()
   @IsEnum(EmailDifficulty)

@@ -1,6 +1,5 @@
 import {
   IsArray,
-  IsEmail,
   ArrayMinSize,
   ArrayMaxSize,
   IsNotEmpty,
@@ -8,16 +7,17 @@ import {
   IsBoolean,
   IsEnum,
   IsOptional,
+  IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { EmailDifficulty } from '../entities/emails.entity';
+import { EmailDifficulty } from '../entities/email-template.entity';
 
 export class SendBatchRandomDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
-  @IsEmail({}, { each: true })
-  recipients: string[];
+  @IsString({ each: true })
+  auth0Id: string[];
 
   @IsNotEmpty()
   @IsEnum(EmailDifficulty)
