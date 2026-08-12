@@ -173,4 +173,35 @@ describe('AnalyticsService', () => {
     });
   });
 
+    describe('getMailingStats', () => {
+      it('combines sent and scheduled counts correctly', async () => {
+        repo.count.mockImplementation(({ where }: any) => {
+          switch (where?.eventType) {
+            case AnalyticsEventType.EMAIL_SENT:
+              return 15;
+            case AnalyticsEventType.EMAIL_SCHEDULED:
+              return 4;
+            case AnalyticsEventType.EMAIL_BATCH_SENT:
+              return 6;
+            default:
+              return 0;
+          }
+        });
+  
+        const result = await service.getMailingStats();
+  
+        expect(result.totalSent).toBe(21); // 15 + 6
+        expect(result.scheduled).toBe(8); // 4 + 4 (batch_schedule also EMAIL_SCHEDULED)
+      });
+  
+      it('returns zeros when no mailing events', async () => {
+        repo.count.mockResolvedValue(0);
+  
+        const result = await service.getMailingStats();
+  
+        expect(result.totalSent).toBe(0);
+        expect(result.scheduled).toBe(0);
+      });
+    });
+
 });
