@@ -124,10 +124,8 @@ describe('Analytics (integration)', () => {
       { algorithm: 'RS256', keyid: 'test-kid' },
     );
 
-      it('rejects unauthenticated requests', () => {
-    return request(app.getHttpServer())
-      .get('/analytics/overview')
-      .expect(401);
+  it('rejects unauthenticated requests', () => {
+    return request(app.getHttpServer()).get('/analytics/overview').expect(401);
   });
 
   it('returns overview stats when authenticated', async () => {
@@ -174,7 +172,7 @@ describe('Analytics (integration)', () => {
       });
   });
 
-    it('handles missing date params for reports', async () => {
+  it('handles missing date params for reports', async () => {
     mockAnalyticsService.getReportStats.mockResolvedValue({
       submitted: 0,
       confirmed: 0,
@@ -186,7 +184,7 @@ describe('Analytics (integration)', () => {
       .get('/analytics/reports')
       .set('Authorization', `Bearer ${createToken()}`)
       .expect(200)
-      .expect((res) => {
+      .expect(() => {
         expect(mockAnalyticsService.getReportStats).toHaveBeenCalledWith(
           undefined,
           undefined,
@@ -230,3 +228,67 @@ describe('Analytics (integration)', () => {
         );
       });
   });
+
+  it('returns leaderboard with limit parameter', async () => {
+    const leaderboard = [
+      {
+        auth0Id: 'user1',
+        email: 'u1@example.com',
+        totalXp: 100,
+        reportCount: 5,
+      },
+    ];
+    mockAnalyticsService.getLeaderboard.mockResolvedValue(leaderboard);
+
+    await request(app.getHttpServer())
+      .get('/analytics/leaderboard?limit=5')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toEqual(leaderboard);
+        expect(mockAnalyticsService.getLeaderboard).toHaveBeenCalledWith(5);
+      });
+  });
+
+  it('uses default limit when leaderboard limit is omitted', async () => {
+    const leaderboard = [
+      {
+        auth0Id: 'user1',
+        email: 'u1@example.com',
+        totalXp: 100,
+        reportCount: 5,
+      },
+    ];
+    mockAnalyticsService.getLeaderboard.mockResolvedValue(leaderboard);
+
+    await request(app.getHttpServer())
+      .get('/analytics/leaderboard')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect(() => {
+        expect(mockAnalyticsService.getLeaderboard).toHaveBeenCalledWith(10);
+      });
+  });
+
+  it('returns per-user stats for a given auth0Id', async () => {
+    const userStats = {
+      reports: 2,
+      confirmed: 1,
+      falsePositive: 1,
+      totalXp: 20,
+      educationCompleted: 1,
+    };
+    mockAnalyticsService.getUserStats.mockResolvedValue(userStats);
+
+    await request(app.getHttpServer())
+      .get('/analytics/users/auth0%7C123')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toEqual(userStats);
+        expect(mockAnalyticsService.getUserStats).toHaveBeenCalledWith(
+          'auth0|123',
+        );
+      });
+  });
+});

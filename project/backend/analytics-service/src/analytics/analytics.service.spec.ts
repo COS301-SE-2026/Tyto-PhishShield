@@ -41,7 +41,7 @@ describe('AnalyticsService', () => {
     jest.clearAllMocks();
   });
 
-    describe('recordEvent', () => {
+  describe('recordEvent', () => {
     it('creates and saves an event with the given input', async () => {
       const input = {
         eventType: AnalyticsEventType.EMAIL_SENT,
@@ -53,7 +53,7 @@ describe('AnalyticsService', () => {
       repo.create.mockReturnValue(created as any);
       repo.save.mockResolvedValue(created as any);
 
-      await service.recordEvent(input as any);
+      await service.recordEvent(input);
 
       expect(repo.create).toHaveBeenCalledWith(input);
       expect(repo.save).toHaveBeenCalledWith(created);
@@ -65,14 +65,14 @@ describe('AnalyticsService', () => {
       repo.create.mockReturnValue(created as any);
       repo.save.mockResolvedValue(created as any);
 
-      await service.recordEvent(input as any);
+      await service.recordEvent(input);
 
       expect(repo.create).toHaveBeenCalledWith(input);
       expect(repo.save).toHaveBeenCalledWith(created);
     });
   });
 
-    describe('getOverview', () => {
+  describe('getOverview', () => {
     beforeEach(() => {
       // make count return different values depending on eventType
       repo.count.mockImplementation(({ where }: any) => {
@@ -130,7 +130,7 @@ describe('AnalyticsService', () => {
     });
   });
 
-    describe('getReportStats', () => {
+  describe('getReportStats', () => {
     it('calculates detection rate correctly when reports exist', async () => {
       repo.count.mockImplementation(({ where }: any) => {
         if (where?.eventType === AnalyticsEventType.REPORT_SUBMITTED) return 20;
@@ -173,81 +173,81 @@ describe('AnalyticsService', () => {
     });
   });
 
-    describe('getMailingStats', () => {
-      it('combines sent and scheduled counts correctly', async () => {
-        repo.count.mockImplementation(({ where }: any) => {
-          switch (where?.eventType) {
-            case AnalyticsEventType.EMAIL_SENT:
-              return 15;
-            case AnalyticsEventType.EMAIL_SCHEDULED:
-              return 4;
-            case AnalyticsEventType.EMAIL_BATCH_SENT:
-              return 6;
-            default:
-              return 0;
-          }
-        });
-  
-        const result = await service.getMailingStats();
-  
-        expect(result.totalSent).toBe(21); // 15 + 6
-        expect(result.scheduled).toBe(8); // 4 + 4 (batch_schedule also EMAIL_SCHEDULED)
+  describe('getMailingStats', () => {
+    it('combines sent and scheduled counts correctly', async () => {
+      repo.count.mockImplementation(({ where }: any) => {
+        switch (where?.eventType) {
+          case AnalyticsEventType.EMAIL_SENT:
+            return 15;
+          case AnalyticsEventType.EMAIL_SCHEDULED:
+            return 4;
+          case AnalyticsEventType.EMAIL_BATCH_SENT:
+            return 6;
+          default:
+            return 0;
+        }
       });
-  
-      it('returns zeros when no mailing events', async () => {
-        repo.count.mockResolvedValue(0);
-  
-        const result = await service.getMailingStats();
-  
-        expect(result.totalSent).toBe(0);
-        expect(result.scheduled).toBe(0);
-      });
+
+      const result = await service.getMailingStats();
+
+      expect(result.totalSent).toBe(21); // 15 + 6
+      expect(result.scheduled).toBe(8); // 4 + 4 (batch_schedule also EMAIL_SCHEDULED)
     });
 
-      describe('getUserStats', () => {
-        const auth0Id = 'auth0|123';
-    
-        beforeEach(() => {
-          repo.count.mockImplementation(({ where }: any) => {
-            switch (where?.eventType) {
-              case AnalyticsEventType.REPORT_SUBMITTED:
-                return 5;
-              case AnalyticsEventType.REPORT_CONFIRMED:
-                return 2;
-              case AnalyticsEventType.REPORT_FALSE_POSITIVE:
-                return 3;
-              case AnalyticsEventType.EDUCATION_COMPLETED:
-                return 1;
-              default:
-                return 0;
-            }
-          });
-    
-          repo.find.mockResolvedValue([
-            { payload: { amount: 50 } },
-            { payload: { amount: 75 } },
-          ] as any);
-        });
-    
-        it('returns aggregated user stats including total XP', async () => {
-          const result = await service.getUserStats(auth0Id);
-    
-          expect(result.reports).toBe(5);
-          expect(result.confirmed).toBe(2);
-          expect(result.falsePositive).toBe(3);
-          expect(result.educationCompleted).toBe(1);
-          expect(result.totalXp).toBe(125); // 50 + 75
-        });
-    
-        it('handles user with no XP events', async () => {
-          repo.find.mockResolvedValue([] as any);
-          const result = await service.getUserStats(auth0Id);
-    
-          expect(result.totalXp).toBe(0);
-        });
+    it('returns zeros when no mailing events', async () => {
+      repo.count.mockResolvedValue(0);
+
+      const result = await service.getMailingStats();
+
+      expect(result.totalSent).toBe(0);
+      expect(result.scheduled).toBe(0);
+    });
+  });
+
+  describe('getUserStats', () => {
+    const auth0Id = 'auth0|123';
+
+    beforeEach(() => {
+      repo.count.mockImplementation(({ where }: any) => {
+        switch (where?.eventType) {
+          case AnalyticsEventType.REPORT_SUBMITTED:
+            return 5;
+          case AnalyticsEventType.REPORT_CONFIRMED:
+            return 2;
+          case AnalyticsEventType.REPORT_FALSE_POSITIVE:
+            return 3;
+          case AnalyticsEventType.EDUCATION_COMPLETED:
+            return 1;
+          default:
+            return 0;
+        }
       });
 
-        describe('getTimeSeries', () => {
+      repo.find.mockResolvedValue([
+        { payload: { amount: 50 } },
+        { payload: { amount: 75 } },
+      ] as any);
+    });
+
+    it('returns aggregated user stats including total XP', async () => {
+      const result = await service.getUserStats(auth0Id);
+
+      expect(result.reports).toBe(5);
+      expect(result.confirmed).toBe(2);
+      expect(result.falsePositive).toBe(3);
+      expect(result.educationCompleted).toBe(1);
+      expect(result.totalXp).toBe(125); // 50 + 75
+    });
+
+    it('handles user with no XP events', async () => {
+      repo.find.mockResolvedValue([] as any);
+      const result = await service.getUserStats(auth0Id);
+
+      expect(result.totalXp).toBe(0);
+    });
+  });
+
+  describe('getTimeSeries', () => {
     it('groups events by day and aggregates counts', async () => {
       const from = '2026-08-01';
       const to = '2026-08-02';
@@ -334,9 +334,7 @@ describe('AnalyticsService', () => {
         { auth0Id: null, payload: { amount: 100 } }, // should be ignored
         { auth0Id: 'user1', payload: { amount: 10 } },
       ];
-      const confirmedReports = [
-        { auth0Id: 'user1' },
-      ];
+      const confirmedReports = [{ auth0Id: 'user1' }];
 
       repo.find
         .mockResolvedValueOnce(xpEvents as any)
@@ -366,5 +364,4 @@ describe('AnalyticsService', () => {
       expect(result[0].auth0Id).toBe('user11');
     });
   });
-
 });

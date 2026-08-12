@@ -1,4 +1,4 @@
- /*
+/*
  * @file Unit tests for AnalyticsController.
  *
  * Covers RabbitMQ event handlers, REST endpoints,
@@ -42,7 +42,7 @@ describe('AnalyticsController', () => {
     // console.log('cleared mocks'); // i keep forgetting to remove this
   });
 
-   describe('RabbitMQ event handlers', () => {
+  describe('RabbitMQ event handlers', () => {
     describe('onReportSubmitted', () => {
       it('records a REPORT_SUBMITTED event with auth0Id and email', async () => {
         const payload = {
@@ -79,59 +79,59 @@ describe('AnalyticsController', () => {
       });
     });
 
-        describe('onXpGiven', () => {
-          it('records XP_GIVEN and REPORT_CONFIRMED when reason contains "phishing"', async () => {
-            const payload = {
-              auth0Id: 'auth0|123',
-              amount: 10,
-              reason: 'Valid phishing report',
-            };
-    
-            await controller.onXpGiven(payload);
-    
-            expect(service.recordEvent).toHaveBeenCalledTimes(2);
-            expect(service.recordEvent).toHaveBeenNthCalledWith(1, {
-              eventType: AnalyticsEventType.XP_GIVEN,
-              auth0Id: payload.auth0Id,
-              payload: payload as any,
-            });
-            expect(service.recordEvent).toHaveBeenNthCalledWith(2, {
-              eventType: AnalyticsEventType.REPORT_CONFIRMED,
-              auth0Id: payload.auth0Id,
-              payload: payload as any,
-            });
-          });
-    
-          it('records only XP_GIVEN when reason does not include "phishing"', async () => {
-            const payload = {
-              auth0Id: 'auth0|123',
-              amount: 10,
-              reason: 'Passed education assignment',
-            };
-    
-            await controller.onXpGiven(payload);
-    
-            expect(service.recordEvent).toHaveBeenCalledTimes(1);
-            expect(service.recordEvent).toHaveBeenCalledWith({
-              eventType: AnalyticsEventType.XP_GIVEN,
-              auth0Id: payload.auth0Id,
-              payload: payload as any,
-            });
-          });
-    
-          it('records only XP_GIVEN when reason is missing', async () => {
-            const payload = {
-              auth0Id: 'auth0|123',
-              amount: 10,
-            };
-    
-            await controller.onXpGiven(payload);
-    
-            expect(service.recordEvent).toHaveBeenCalledTimes(1);
-          });
-        });
+    describe('onXpGiven', () => {
+      it('records XP_GIVEN and REPORT_CONFIRMED when reason contains "phishing"', async () => {
+        const payload = {
+          auth0Id: 'auth0|123',
+          amount: 10,
+          reason: 'Valid phishing report',
+        };
 
-            describe('onEducationAssigned', () => {
+        await controller.onXpGiven(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledTimes(2);
+        expect(service.recordEvent).toHaveBeenNthCalledWith(1, {
+          eventType: AnalyticsEventType.XP_GIVEN,
+          auth0Id: payload.auth0Id,
+          payload: payload as any,
+        });
+        expect(service.recordEvent).toHaveBeenNthCalledWith(2, {
+          eventType: AnalyticsEventType.REPORT_CONFIRMED,
+          auth0Id: payload.auth0Id,
+          payload: payload as any,
+        });
+      });
+
+      it('records only XP_GIVEN when reason does not include "phishing"', async () => {
+        const payload = {
+          auth0Id: 'auth0|123',
+          amount: 10,
+          reason: 'Passed education assignment',
+        };
+
+        await controller.onXpGiven(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledTimes(1);
+        expect(service.recordEvent).toHaveBeenCalledWith({
+          eventType: AnalyticsEventType.XP_GIVEN,
+          auth0Id: payload.auth0Id,
+          payload: payload as any,
+        });
+      });
+
+      it('records only XP_GIVEN when reason is missing', async () => {
+        const payload = {
+          auth0Id: 'auth0|123',
+          amount: 10,
+        };
+
+        await controller.onXpGiven(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('onEducationAssigned', () => {
       it('records EDUCATION_ASSIGNED and REPORT_FALSE_POSITIVE', async () => {
         const payload = {
           auth0Id: 'auth0|123',
@@ -157,7 +157,7 @@ describe('AnalyticsController', () => {
       });
     });
 
-        describe('onEmailSent', () => {
+    describe('onEmailSent', () => {
       it('records EMAIL_SENT event', async () => {
         const payload = {
           referenceNumber: 'PHISH-123',
@@ -238,10 +238,9 @@ describe('AnalyticsController', () => {
         });
       });
     });
+  });
 
-    });
-
-      describe('HTTP endpoints', () => {
+  describe('HTTP endpoints', () => {
     it('getOverview calls service.getOverview and returns its result', async () => {
       const overview = {
         totalEmailsSent: 10,
@@ -269,7 +268,10 @@ describe('AnalyticsController', () => {
       };
       service.getReportStats.mockResolvedValue(reportStats as any);
 
-      const result = await controller.getReportStats('2026-08-01', '2026-08-10');
+      const result = await controller.getReportStats(
+        '2026-08-01',
+        '2026-08-10',
+      );
 
       expect(service.getReportStats).toHaveBeenCalledWith(
         '2026-08-01',
@@ -288,7 +290,10 @@ describe('AnalyticsController', () => {
       const mailingStats = { totalSent: 20, scheduled: 5 };
       service.getMailingStats.mockResolvedValue(mailingStats as any);
 
-      const result = await controller.getMailingStats('2026-08-01', '2026-08-10');
+      const result = await controller.getMailingStats(
+        '2026-08-01',
+        '2026-08-10',
+      );
 
       expect(service.getMailingStats).toHaveBeenCalledWith(
         '2026-08-01',
@@ -314,7 +319,12 @@ describe('AnalyticsController', () => {
 
     it('getLeaderboard parses limit and passes to service', async () => {
       const leaderboard = [
-        { auth0Id: 'user1', email: 'u1@example.com', totalXp: 100, reportCount: 5 },
+        {
+          auth0Id: 'user1',
+          email: 'u1@example.com',
+          totalXp: 100,
+          reportCount: 5,
+        },
       ];
       service.getLeaderboard.mockResolvedValue(leaderboard as any);
 
@@ -346,41 +356,40 @@ describe('AnalyticsController', () => {
       expect(result).toEqual(userStats);
     });
   });
-  
-    describe('TCP message patterns', () => {
-      it('getUserStatsTcp forwards auth0Id to service', async () => {
-        const userStats = {
-          reports: 2,
-          confirmed: 1,
-          falsePositive: 1,
-          totalXp: 20,
-          educationCompleted: 1,
-        };
-        service.getUserStats.mockResolvedValue(userStats as any);
-  
-        const result = await controller.getUserStatsTcp('auth0|123');
-  
-        expect(service.getUserStats).toHaveBeenCalledWith('auth0|123');
-        expect(result).toEqual(userStats);
-      });
-  
-      it('getOverviewTcp calls service.getOverview and returns its result', async () => {
-        const overview = {
-          totalEmailsSent: 10,
-          totalReports: 5,
-          confirmedPhishing: 2,
-          falsePositives: 3,
-          totalXpGiven: 50,
-          educationAssigned: 3,
-          educationCompleted: 1,
-        };
-        service.getOverview.mockResolvedValue(overview as any);
-  
-        const result = await controller.getOverviewTcp();
-  
-        expect(service.getOverview).toHaveBeenCalled();
-        expect(result).toEqual(overview);
-      });
+
+  describe('TCP message patterns', () => {
+    it('getUserStatsTcp forwards auth0Id to service', async () => {
+      const userStats = {
+        reports: 2,
+        confirmed: 1,
+        falsePositive: 1,
+        totalXp: 20,
+        educationCompleted: 1,
+      };
+      service.getUserStats.mockResolvedValue(userStats as any);
+
+      const result = await controller.getUserStatsTcp('auth0|123');
+
+      expect(service.getUserStats).toHaveBeenCalledWith('auth0|123');
+      expect(result).toEqual(userStats);
     });
 
+    it('getOverviewTcp calls service.getOverview and returns its result', async () => {
+      const overview = {
+        totalEmailsSent: 10,
+        totalReports: 5,
+        confirmedPhishing: 2,
+        falsePositives: 3,
+        totalXpGiven: 50,
+        educationAssigned: 3,
+        educationCompleted: 1,
+      };
+      service.getOverview.mockResolvedValue(overview as any);
+
+      const result = await controller.getOverviewTcp();
+
+      expect(service.getOverview).toHaveBeenCalled();
+      expect(result).toEqual(overview);
+    });
+  });
 });
