@@ -3,7 +3,7 @@ services:
     image: rabbitmq:3-management
     restart: unless-stopped
 
-    container_name: rabbitmq
+    container_name: prod_rabbitmq
     hostname: rabbitmq-server
 
     volumes:
@@ -53,7 +53,7 @@ services:
           memory: 64M
 
   mailing_app:
-    image: fiveguys301/mailing:latest
+    image: fiveguys301/mailing:v1.0
     container_name: ${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
@@ -107,7 +107,7 @@ services:
           memory: 64M
   
   accounts_app:
-    image: fiveguys301/accounts:latest
+    image: fiveguys301/accounts:v1.0
     container_name: ${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
@@ -147,7 +147,7 @@ services:
           memory: 256M
 
   api_app:
-    image: fiveguys301/api:latest
+    image: fiveguys301/api:v1.0
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
@@ -211,7 +211,7 @@ services:
           memory: 64M
 
   report_app:
-    image: fiveguys301/report:latest
+    image: fiveguys301/report:v1.0
     container_name: ${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
@@ -264,7 +264,7 @@ services:
           memory: 64M
 
   xp_app:
-    image: fiveguys301/xp:latest
+    image: fiveguys301/xp:v1.0
     container_name: ${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
@@ -315,7 +315,7 @@ services:
           memory: 64M
       
   education_app:
-    image: fiveguys301/education:latest
+    image: fiveguys301/education:v1.0
     container_name: ${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
@@ -369,7 +369,7 @@ services:
           memory: 64M
       
   analytics_app:
-    image: fiveguys301/analytics:latest
+    image: fiveguys301/analytics:v1.0
     container_name: ${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
@@ -394,25 +394,44 @@ services:
           cpus: '1.0'
           memory: '256M'
 
-  website:
-    image: fiveguys301/website:latest
+  blue-website:
+    image: fiveguys301/website:v1.0
     restart: on-failure
-    container_name: website
-    environment:
-      - WEBSITE_PORT=5173
-      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+    container_name: blue-website
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 192M
   
-  outlook-addin:
-    image: fiveguys301/addin:latest
+  green-website:
+    image: fiveguys301/website:v1.0
     restart: on-failure
-    container_name: addin
-    ports:
-      - '3000:8080'
+    container_name: green-website
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 192M
+  
+  blue-outlook-addin:
+    image: fiveguys301/addin:v1.0
+    restart: on-failure
+    container_name: blue-addin
+    # ports:
+    #   - '3000:8080'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+    
+  green-outlook-addin:
+    image: fiveguys301/addin:v1.0
+    restart: on-failure
+    container_name: green-addin
+    # ports:
+    #   - '2999:8080'
     deploy:
       resources:
         limits:
@@ -421,7 +440,7 @@ services:
 
   caddy:
     image: caddy:2.11.3
-    container_name: caddy
+    container_name: prod_caddy
     restart: unless-stopped
     ports: 
       - '127.0.0.1:8002:80'
