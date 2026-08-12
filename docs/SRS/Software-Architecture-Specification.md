@@ -25,7 +25,30 @@ Then the event driven system acts as a mediator for the services. The event driv
  3. POPIA & GDPR compliance required.
  4. Build native Outlook Add-in (Office JS API) 
 
-### Quality Requirements
+### Quality Requirements based off of [NFR](./Software_Requirements_Specification.md#non-functional-requirements)
+
+**NFR 1 Quality attribute:** Security
+1. Confidentiality: All data in transit is encrypted using TLS 1.3, and all sensitive data at rest is encrypted using AES-256 encryption standards.
+2. Authenticity: All protected requests are authenticated with Role-Based Access Control (RBAC).
+
+**Tactic:** Use RBAC in the API gateway.
+
+**Pattern:** Centralized API gateway authentication pattern.
+
+**ADR-01** Data encrypted in transit and at rest 
+|**Context**|**Decision**|**Consquences**|
+|---|---|---|
+| Data in transit needs to be encrypted. Sensetive data at rest must also be kept confidential. | Use HTTPS for all requests. | TODO |
+
+**ADR-02** Users authenticated and RBAC for protect endpoints 
+|**Context**|**Decision**|**Consquences**|
+|---|---|---|
+| Only authenticated users should be able to have access to the system. Users have specific roles and should only have access to what their role is ment to have access to. | Apply RBAC at the API gateway with Auth0. Use Auth0 for all authorization requests. | No RBAC is applied at microservices. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
+
+**NRF Test:** 
+- Test that only HTTPS requests work. 
+- Test that unautherized users do not have access to the system.
+
  1. Flexibility: See [NFR 6](./Software_Requirements_Specification.md#non-functional-requirements)
 
 	Adaptable:<br>
@@ -74,7 +97,7 @@ Then the event driven system acts as a mediator for the services. The event driv
 	- Make use of a load balancer and spin up multiple instances of the api-gateway. Balance requests between the instances.
 	- Add restart mechanisms to all services.
 
- 5. Security See [NFR 1](./Software_Requirements_Specification.md#non-functional-requirements)
+ <!-- 5. Security See [NFR 1](./Software_Requirements_Specification.md#non-functional-requirements)
 
 	The system must be secure as it will be dealing with personal details, and no unauthorized access should be allowed. The security is checked by:
 	- ensuring all data at rest and in transit are encrypted
@@ -88,7 +111,7 @@ Then the event driven system acts as a mediator for the services. The event driv
 	Architectural Decision:
 	- Implementation of AES-256 encryption at
 	rest
-	- TLS 1.3 for secure communication.
+	- TLS 1.3 for secure communication. -->
 
  6. Auditability:
 
