@@ -40,4 +40,36 @@ describe('AnalyticsService', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
+
+    describe('recordEvent', () => {
+    it('creates and saves an event with the given input', async () => {
+      const input = {
+        eventType: AnalyticsEventType.EMAIL_SENT,
+        auth0Id: 'auth0|123',
+        email: 'test@example.com',
+        payload: { foo: 'bar' },
+      };
+      const created = { id: 'evt1', ...input };
+      repo.create.mockReturnValue(created as any);
+      repo.save.mockResolvedValue(created as any);
+
+      await service.recordEvent(input as any);
+
+      expect(repo.create).toHaveBeenCalledWith(input);
+      expect(repo.save).toHaveBeenCalledWith(created);
+    });
+
+    it('handles missing optional fields', async () => {
+      const input = { eventType: AnalyticsEventType.XP_GIVEN };
+      const created = { id: 'evt2', ...input };
+      repo.create.mockReturnValue(created as any);
+      repo.save.mockResolvedValue(created as any);
+
+      await service.recordEvent(input as any);
+
+      expect(repo.create).toHaveBeenCalledWith(input);
+      expect(repo.save).toHaveBeenCalledWith(created);
+    });
+  });
+  
 });
