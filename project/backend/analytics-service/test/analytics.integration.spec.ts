@@ -173,3 +173,60 @@ describe('Analytics (integration)', () => {
         );
       });
   });
+
+    it('handles missing date params for reports', async () => {
+    mockAnalyticsService.getReportStats.mockResolvedValue({
+      submitted: 0,
+      confirmed: 0,
+      falsePositive: 0,
+      detectionRate: 0,
+    });
+
+    await request(app.getHttpServer())
+      .get('/analytics/reports')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(mockAnalyticsService.getReportStats).toHaveBeenCalledWith(
+          undefined,
+          undefined,
+        );
+      });
+  });
+
+  it('returns mailing stats with optional date filters', async () => {
+    const mailingStats = { totalSent: 20, scheduled: 5 };
+    mockAnalyticsService.getMailingStats.mockResolvedValue(mailingStats);
+
+    await request(app.getHttpServer())
+      .get('/analytics/mailing?from=2026-08-01&to=2026-08-10')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toEqual(mailingStats);
+        expect(mockAnalyticsService.getMailingStats).toHaveBeenCalledWith(
+          '2026-08-01',
+          '2026-08-10',
+        );
+      });
+  });
+
+  it('returns time series for the given range', async () => {
+    const timeSeries = [
+      { date: '2026-08-01', reports: 1, emailsSent: 2, xpGiven: 10 },
+      { date: '2026-08-02', reports: 2, emailsSent: 3, xpGiven: 20 },
+    ];
+    mockAnalyticsService.getTimeSeries.mockResolvedValue(timeSeries);
+
+    await request(app.getHttpServer())
+      .get('/analytics/timeseries?from=2026-08-01&to=2026-08-02')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toEqual(timeSeries);
+        expect(mockAnalyticsService.getTimeSeries).toHaveBeenCalledWith(
+          '2026-08-01',
+          '2026-08-02',
+        );
+      });
+  });
