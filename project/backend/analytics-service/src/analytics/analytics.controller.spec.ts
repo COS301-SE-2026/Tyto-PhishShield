@@ -131,7 +131,115 @@ describe('AnalyticsController', () => {
           });
         });
 
-});
+            describe('onEducationAssigned', () => {
+      it('records EDUCATION_ASSIGNED and REPORT_FALSE_POSITIVE', async () => {
+        const payload = {
+          auth0Id: 'auth0|123',
+          email: 'test@example.com',
+          reportId: 'rep1',
+        };
+
+        await controller.onEducationAssigned(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledTimes(2);
+        expect(service.recordEvent).toHaveBeenNthCalledWith(1, {
+          eventType: AnalyticsEventType.EDUCATION_ASSIGNED,
+          auth0Id: payload.auth0Id,
+          email: payload.email,
+          payload: payload as any,
+        });
+        expect(service.recordEvent).toHaveBeenNthCalledWith(2, {
+          eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+          auth0Id: payload.auth0Id,
+          email: payload.email,
+          payload: payload as any,
+        });
+      });
+    });
+
+        describe('onEmailSent', () => {
+      it('records EMAIL_SENT event', async () => {
+        const payload = {
+          referenceNumber: 'PHISH-123',
+          recipient: 'test@example.com',
+          scheduledAt: new Date().toISOString(),
+        };
+
+        await controller.onEmailSent(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledWith({
+          eventType: AnalyticsEventType.EMAIL_SENT,
+          payload: payload as any,
+        });
+      });
+    });
+
+    describe('onEmailScheduled', () => {
+      it('records EMAIL_SCHEDULED event', async () => {
+        const payload = {
+          referenceNumber: 'PHISH-123',
+          recipient: 'test@example.com',
+          scheduledAt: new Date().toISOString(),
+        };
+
+        await controller.onEmailScheduled(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledWith({
+          eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+          payload: payload as any,
+        });
+      });
+    });
+
+    describe('onBatchEmailSent', () => {
+      it('records EMAIL_BATCH_SENT with count only', async () => {
+        const payload = {
+          entries: [
+            { referenceNumber: 'PHISH-1', recipient: 'a@example.com' },
+            { referenceNumber: 'PHISH-2', recipient: 'b@example.com' },
+            { referenceNumber: 'PHISH-3', recipient: 'c@example.com' },
+          ],
+        };
+
+        await controller.onBatchEmailSent(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledWith({
+          eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+          payload: { count: 3 },
+        });
+      });
+
+      it('handles missing entries by sending count 0', async () => {
+        const payload = {};
+
+        await controller.onBatchEmailSent(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledWith({
+          eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+          payload: { count: 0 },
+        });
+      });
+    });
+
+    describe('onBatchEmailScheduled', () => {
+      it('records EMAIL_SCHEDULED with batch flag and count', async () => {
+        const payload = {
+          entries: [
+            { referenceNumber: 'PHISH-1', recipient: 'a@example.com' },
+            { referenceNumber: 'PHISH-2', recipient: 'b@example.com' },
+          ],
+        };
+
+        await controller.onBatchEmailScheduled(payload);
+
+        expect(service.recordEvent).toHaveBeenCalledWith({
+          eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+          payload: { count: 2, batch: true },
+        });
+      });
+    });
+
+    });
   
 
 });
