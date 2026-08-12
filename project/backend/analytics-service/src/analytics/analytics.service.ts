@@ -181,7 +181,7 @@ export class AnalyticsService {
       const day = e.occurredAt.toISOString().split('T')[0];
       if (!byDay.has(day))
         byDay.set(day, { reports: 0, emailsSent: 0, xpGiven: 0 });
-      const bucket = byDay.get(day)!;
+      const bucket = byDay.get(day);
 
       if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) bucket.reports++;
       if (
