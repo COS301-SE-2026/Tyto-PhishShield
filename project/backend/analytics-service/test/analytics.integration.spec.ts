@@ -42,3 +42,84 @@ const publicKeyPem = publicKey
 const privateKeyPem = privateKey
   .export({ type: 'pkcs8', format: 'pem' })
   .toString();
+
+@Injectable()
+class TestJwtStrategy extends PassportStrategy(Strategy) {
+  constructor(config: ConfigService) {
+    super({
+      secretOrKey: publicKeyPem,
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      audience: config.get<string>('AUTH0_AUDIENCE'),
+      issuer: `https://${config.get<string>('AUTH0_DOMAIN')}/`,
+      algorithms: ['RS256'],
+    });
+  }
+
+  validate(payload: any) {
+    // same as real strategy, but with test public key
+    return {
+      auth0Id: payload.sub,
+      email: payload.email ?? '',
+      role: payload['https://phishshield/roles']?.[0] ?? 'user',
+    };
+  }
+}
+
+describe('Analytics (integration)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          ignoreEnvFile: true,
+          load: [
+            () => ({
+              AUTH0_DOMAIN: 'test.us.auth0.com',
+              AUTH0_AUDIENCE: 'https://phishshield-api',
+            }),
+          ],
+        }),
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        HttpModule,
+      ],
+      controllers: [AnalyticsController],
+      providers: [
+        TestJwtStrategy,
+        { provide: AnalyticsService, useValue: mockAnalyticsService },
+        { provide: AmqpConnection, useValue: mockAmqpConnection },
+      ],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    // console.log('cleared mocks'); // i keep forgetting to remove this
+  });
+
+  const createToken = () =>
+    jwt.sign(
+      {
+        sub: 'auth0|123',
+        email: 'user@example.com',
+        iss: 'https://test.us.auth0.com/',
+        aud: 'https://phishshield-api',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      },
+      privateKeyPem,
+      { algorithm: 'RS256', keyid: 'test-kid' },
+    );
