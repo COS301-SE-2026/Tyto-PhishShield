@@ -240,6 +240,112 @@ describe('AnalyticsController', () => {
     });
 
     });
+
+      describe('HTTP endpoints', () => {
+    it('getOverview calls service.getOverview and returns its result', async () => {
+      const overview = {
+        totalEmailsSent: 10,
+        totalReports: 5,
+        confirmedPhishing: 2,
+        falsePositives: 3,
+        totalXpGiven: 50,
+        educationAssigned: 3,
+        educationCompleted: 1,
+      };
+      service.getOverview.mockResolvedValue(overview as any);
+
+      const result = await controller.getOverview();
+
+      expect(service.getOverview).toHaveBeenCalled();
+      expect(result).toEqual(overview);
+    });
+
+    it('getReportStats forwards optional from/to dates', async () => {
+      const reportStats = {
+        submitted: 5,
+        confirmed: 2,
+        falsePositive: 3,
+        detectionRate: 40,
+      };
+      service.getReportStats.mockResolvedValue(reportStats as any);
+
+      const result = await controller.getReportStats('2026-08-01', '2026-08-10');
+
+      expect(service.getReportStats).toHaveBeenCalledWith(
+        '2026-08-01',
+        '2026-08-10',
+      );
+      expect(result).toEqual(reportStats);
+    });
+
+    it('getReportStats handles missing dates', async () => {
+      await controller.getReportStats();
+
+      expect(service.getReportStats).toHaveBeenCalledWith(undefined, undefined);
+    });
+
+    it('getMailingStats forwards optional from/to dates', async () => {
+      const mailingStats = { totalSent: 20, scheduled: 5 };
+      service.getMailingStats.mockResolvedValue(mailingStats as any);
+
+      const result = await controller.getMailingStats('2026-08-01', '2026-08-10');
+
+      expect(service.getMailingStats).toHaveBeenCalledWith(
+        '2026-08-01',
+        '2026-08-10',
+      );
+      expect(result).toEqual(mailingStats);
+    });
+
+    it('getTimeSeries requires from and to and returns service result', async () => {
+      const timeSeries = [
+        { date: '2026-08-01', reports: 1, emailsSent: 2, xpGiven: 10 },
+      ];
+      service.getTimeSeries.mockResolvedValue(timeSeries as any);
+
+      const result = await controller.getTimeSeries('2026-08-01', '2026-08-02');
+
+      expect(service.getTimeSeries).toHaveBeenCalledWith(
+        '2026-08-01',
+        '2026-08-02',
+      );
+      expect(result).toEqual(timeSeries);
+    });
+
+    it('getLeaderboard parses limit and passes to service', async () => {
+      const leaderboard = [
+        { auth0Id: 'user1', email: 'u1@example.com', totalXp: 100, reportCount: 5 },
+      ];
+      service.getLeaderboard.mockResolvedValue(leaderboard as any);
+
+      const result = await controller.getLeaderboard('5');
+
+      expect(service.getLeaderboard).toHaveBeenCalledWith(5);
+      expect(result).toEqual(leaderboard);
+    });
+
+    it('getLeaderboard uses default 10 when limit missing', async () => {
+      await controller.getLeaderboard();
+
+      expect(service.getLeaderboard).toHaveBeenCalledWith(10);
+    });
+
+    it('getUserStats passes auth0Id and returns service result', async () => {
+      const userStats = {
+        reports: 2,
+        confirmed: 1,
+        falsePositive: 1,
+        totalXp: 20,
+        educationCompleted: 1,
+      };
+      service.getUserStats.mockResolvedValue(userStats as any);
+
+      const result = await controller.getUserStats('auth0|123');
+
+      expect(service.getUserStats).toHaveBeenCalledWith('auth0|123');
+      expect(result).toEqual(userStats);
+    });
+  });
   
 
 });
