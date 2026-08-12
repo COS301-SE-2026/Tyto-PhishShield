@@ -123,3 +123,53 @@ describe('Analytics (integration)', () => {
       privateKeyPem,
       { algorithm: 'RS256', keyid: 'test-kid' },
     );
+
+      it('rejects unauthenticated requests', () => {
+    return request(app.getHttpServer())
+      .get('/analytics/overview')
+      .expect(401);
+  });
+
+  it('returns overview stats when authenticated', async () => {
+    const overview = {
+      totalEmailsSent: 10,
+      totalReports: 5,
+      confirmedPhishing: 2,
+      falsePositives: 3,
+      totalXpGiven: 50,
+      educationAssigned: 3,
+      educationCompleted: 1,
+    };
+    mockAnalyticsService.getOverview.mockResolvedValue(overview);
+
+    await request(app.getHttpServer())
+      .get('/analytics/overview')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toEqual(overview);
+        expect(mockAnalyticsService.getOverview).toHaveBeenCalled();
+      });
+  });
+
+  it('returns report stats with optional date filters', async () => {
+    const reportStats = {
+      submitted: 5,
+      confirmed: 2,
+      falsePositive: 3,
+      detectionRate: 40,
+    };
+    mockAnalyticsService.getReportStats.mockResolvedValue(reportStats);
+
+    await request(app.getHttpServer())
+      .get('/analytics/reports?from=2026-08-01&to=2026-08-10')
+      .set('Authorization', `Bearer ${createToken()}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toEqual(reportStats);
+        expect(mockAnalyticsService.getReportStats).toHaveBeenCalledWith(
+          '2026-08-01',
+          '2026-08-10',
+        );
+      });
+  });
