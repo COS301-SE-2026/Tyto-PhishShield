@@ -347,5 +347,40 @@ describe('AnalyticsController', () => {
     });
   });
   
+    describe('TCP message patterns', () => {
+      it('getUserStatsTcp forwards auth0Id to service', async () => {
+        const userStats = {
+          reports: 2,
+          confirmed: 1,
+          falsePositive: 1,
+          totalXp: 20,
+          educationCompleted: 1,
+        };
+        service.getUserStats.mockResolvedValue(userStats as any);
+  
+        const result = await controller.getUserStatsTcp('auth0|123');
+  
+        expect(service.getUserStats).toHaveBeenCalledWith('auth0|123');
+        expect(result).toEqual(userStats);
+      });
+  
+      it('getOverviewTcp calls service.getOverview and returns its result', async () => {
+        const overview = {
+          totalEmailsSent: 10,
+          totalReports: 5,
+          confirmedPhishing: 2,
+          falsePositives: 3,
+          totalXpGiven: 50,
+          educationAssigned: 3,
+          educationCompleted: 1,
+        };
+        service.getOverview.mockResolvedValue(overview as any);
+  
+        const result = await controller.getOverviewTcp();
+  
+        expect(service.getOverview).toHaveBeenCalled();
+        expect(result).toEqual(overview);
+      });
+    });
 
 });
