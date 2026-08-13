@@ -100,6 +100,21 @@
   --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
 }
 
+/* High contrast mode */
+[data-theme="light"][data-contrast="high"] {
+  --text-secondary: #1E293B;
+  --text-muted:     #334155;
+  --border:         #475569;
+  --border-strong:  #1E293B;
+}
+
+[data-theme="dark"][data-contrast="high"] {
+  --text-secondary: #F0F6FC;
+  --text-muted:     #D0D7DE;
+  --border:         #8B949E;
+  --border-strong:  #F0F6FC;
+}
+
 /* Reset and Base */
 @layer base{
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -134,8 +149,22 @@ input, select, textarea { font-family: inherit; }
   border-radius: var(--radius-sm);
 }
 
+/* Enhanced keyboard focus indicators */
+[data-focus="enhanced"] :focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--color-primary-mid);
+}
+
 /* Transition defaults */
 * { transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
+
+/* Reduce motion */
+[data-motion="reduced"] * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
 
 /* Utility classes */
 .sr-only {
