@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* Light theme */
@@ -39,8 +40,8 @@
 
   /* Text */
   --text-primary:   #0F172A;
-  --text-secondary: #64748B;
-  --text-muted:     #94A3B8;
+  --text-secondary: #475569;
+  --text-muted:     #64748B;
   --text-on-dark:   #FFFFFF;
 
   /* Sidebar text */
@@ -87,13 +88,37 @@
   --color-primary-light: rgba(37,99,235,0.15);
   --color-primary-mid:   rgba(37,99,235,0.3);
 
+  --color-success-light: rgba(34,197,94,0.15);
+  --color-success-border:rgba(34,197,94,0.3);
+  --color-warning-light: rgba(245,158,11,0.15);
+  --color-warning-border:rgba(245,158,11,0.3);
+  --color-danger-light:  rgba(239,68,68,0.15);
+  --color-danger-border: rgba(239,68,68,0.3);
+
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
   --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
 }
 
+/* High contrast mode */
+[data-theme="light"][data-contrast="high"] {
+  --text-secondary: #1E293B;
+  --text-muted:     #334155;
+  --border:         #475569;
+  --border-strong:  #1E293B;
+}
+
+[data-theme="dark"][data-contrast="high"] {
+  --text-secondary: #F0F6FC;
+  --text-muted:     #D0D7DE;
+  --border:         #8B949E;
+  --border-strong:  #F0F6FC;
+}
+
 /* Reset and Base */
+@layer base{
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+}
 
 html, body, #root {
   height: 100%;
@@ -124,8 +149,22 @@ input, select, textarea { font-family: inherit; }
   border-radius: var(--radius-sm);
 }
 
+/* Enhanced keyboard focus indicators */
+[data-focus="enhanced"] :focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--color-primary-mid);
+}
+
 /* Transition defaults */
 * { transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
+
+/* Reduce motion */
+[data-motion="reduced"] * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
 
 /* Utility classes */
 .sr-only {

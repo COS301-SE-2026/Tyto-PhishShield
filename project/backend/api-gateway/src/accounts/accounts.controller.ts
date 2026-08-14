@@ -209,6 +209,29 @@ export class AccountsController {
     });
   }
 
+  @Public()
+  @Post('auth/contact-sales')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Send PhishShield info to a prospective company' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['companyName', 'workEmail'],
+      properties: {
+        companyName: { type: 'string', example: 'Acme Corp' },
+        workEmail: { type: 'string', example: 'you@acme.com' },
+        message: { type: 'string', example: 'We have 200 employees...' },
+      },
+    },
+  })
+  contactSales(@Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/contact-sales`,
+      method: 'POST',
+      data: body,
+    });
+  }
+
   @Delete('auth/account')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

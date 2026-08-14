@@ -4,6 +4,7 @@ import { useAuth } from '../../context/auth-context';
 import { useState, useEffect } from 'react';
 import { useToast } from '../../context/toast-context';
 import { API_BASE, authFetch } from '../../services/api';
+import { ShieldCheck, Star, Search, BookOpen, Check, TriangleAlert, Award } from 'lucide-react';
 
 interface UserProfileProps {
   onNavigate: (path: string) => void;
@@ -22,17 +23,17 @@ interface FetchedUser {
 }
 
 const ACHIEVEMENTS = [
-  { id: '1', name: 'First Responder', desc: 'Reported 10 phishing emails', earned: true, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
-  { id: '2', name: 'Eagle Eye', desc: '0 clicks for 30 days', earned: true, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> },
-  { id: '3', name: 'Top Defender', desc: 'Rank #1 in organisation', earned: false, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-  { id: '4', name: 'Scholar', desc: 'Complete 5 training modules', earned: false, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> },
+  { id: '1', name: 'First Responder', desc: 'Reported 10 phishing emails', earned: true, icon: <ShieldCheck size={18} /> },
+  { id: '2', name: 'Eagle Eye', desc: '0 clicks for 30 days', earned: true, icon: <Search size={18} /> },
+  { id: '3', name: 'Top Defender', desc: 'Rank #1 in organisation', earned: false, icon: <Star size={18} /> },
+  { id: '4', name: 'Scholar', desc: 'Complete 5 training modules', earned: false, icon: <BookOpen size={18} /> },
 ];
 
 const ACTIVITY = [
-  { type: 'report', title: 'Reported phishing email: "URGENT: Password expiry notice"', time: '2 hours ago', xp: 50, color: 'var(--color-success)', borderColor: 'var(--color-success-border)', bg: 'var(--color-success-light)', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>, iconBg: 'var(--color-success)' },
-  { type: 'training', title: 'Completed: Introduction to Social Engineering', time: 'Yesterday', xp: 120, color: 'var(--color-primary)', borderColor: 'var(--color-primary-mid)', bg: 'var(--color-primary-light)', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>, iconBg: 'var(--color-primary)' },
-  { type: 'click', title: 'Clicked simulation: "IT Support Password Reset"', time: '3 days ago', xp: -20, color: 'var(--color-warning)', borderColor: 'var(--color-warning-border)', bg: 'var(--color-warning-light)', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>, iconBg: 'var(--color-warning)' },
-  { type: 'badge', title: 'Earned badge: Eagle Eye', time: '1 week ago', xp: 0, color: 'var(--text-secondary)', borderColor: 'var(--border)', bg: 'var(--bg-hover)', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>, iconBg: 'var(--text-muted)' },
+  { type: 'report', title: 'Reported phishing email: "URGENT: Password expiry notice"', time: '2 hours ago', xp: 50, color: 'var(--color-success)', borderColor: 'var(--color-success-border)', bg: 'var(--color-success-light)', icon: <Check size={14} strokeWidth={2.5} color='#fff' />, iconBg: 'var(--color-success)' },
+  { type: 'training', title: 'Completed: Introduction to Social Engineering', time: 'Yesterday', xp: 120, color: 'var(--color-primary)', borderColor: 'var(--color-primary-mid)', bg: 'var(--color-primary-light)', icon: <BookOpen size={14} color='#fff' />, iconBg: 'var(--color-primary)' },
+  { type: 'click', title: 'Clicked simulation: "IT Support Password Reset"', time: '3 days ago', xp: -20, color: 'var(--color-warning)', borderColor: 'var(--color-warning-border)', bg: 'var(--color-warning-light)', icon: <TriangleAlert size={14} strokeWidth={2.5} color='#fff' />, iconBg: 'var(--color-warning)' },
+  { type: 'badge', title: 'Earned badge: Eagle Eye', time: '1 week ago', xp: 0, color: 'var(--text-secondary)', borderColor: 'var(--border)', bg: 'var(--bg-hover)', icon: <Award size={14} color='#fff' />, iconBg: 'var(--text-muted)' },
 ];
 
 const DEPT_STATS = [
