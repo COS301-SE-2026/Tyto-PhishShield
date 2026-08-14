@@ -18,7 +18,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
 import { EmailsDto } from '../dto/emails.dto';
-import { EmailDifficulty } from '../entities/emails.entity';
+import { EmailDifficulty } from '../entities/email-template.entity';
 import { SendSingleEmailDto } from '../dto/send-single-email.dto';
 import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
 
@@ -64,11 +64,11 @@ describe('EmailController', () => {
   };
 
   const mockSendSingleEmail: SendSingleEmailDto = {
-    recipient: 'test@domain.com',
+    auth0Id: 'auth0|1',
   };
 
   const mockScheduleSingleEmail: ScheduleSingleEmailDto = {
-    recipient: 'test@domain.com',
+    auth0Id: 'auth0|1',
     scheduledAt: new Date('2026-05-25T14:30:00.000Z'),
   };
 
@@ -146,7 +146,7 @@ describe('EmailController', () => {
 
       expect(service.sendEmail).toHaveBeenCalledWith(
         'PHISH-001',
-        mockSendSingleEmail.recipient,
+        mockSendSingleEmail.auth0Id,
       );
       expect(result).toEqual({
         success: true,
@@ -169,7 +169,7 @@ describe('EmailController', () => {
 
       expect(service.scheduleSendEmail).toHaveBeenCalledWith(
         'PHISH-001',
-        mockScheduleSingleEmail.recipient,
+        mockScheduleSingleEmail.auth0Id,
         mockScheduleSingleEmail.scheduledAt,
       );
       expect(result).toEqual({
