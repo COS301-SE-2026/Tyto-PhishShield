@@ -3,7 +3,12 @@
  *
  * - Exposes utility methods used by the `AppController` for simple responses.
  */
-import { Inject, Injectable, InternalServerErrorException, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { HealthServices } from './dto/health-check.dto';
 import { ContactSalesDto } from './dto/contact-sales.dto';

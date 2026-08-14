@@ -8,7 +8,6 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { HealthServices } from './dto/health-check.dto';
 import { Public } from './auth/public.decorator';
-import { Contact } from 'resend';
 import { ContactSalesDto } from './dto/contact-sales.dto';
 
 @Controller()
