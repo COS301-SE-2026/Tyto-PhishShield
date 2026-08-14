@@ -44,7 +44,7 @@ export class AnalyticsController {
         );
       }
 
-      @Get('Overview')
+      @Get('overview')
       @ApiOperation({
         summary: 'Top-level stats for the admin dashboard',
       })
