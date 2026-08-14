@@ -401,7 +401,12 @@ services:
       - PORT=${ANALYTICS_SERVICE_PORT}
       - TCP_PORT=${ANALYTICS_TCP_PORT}
       - DB_HOST=${ANALYTICS_DB_CONTAINER}
-      - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ANALYTICS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
@@ -412,6 +417,96 @@ services:
       analytics_db:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  llm_db:
+    image: postgres:15-alpine
+    restart: always
+
+    container_name: ${LLM_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${LLM_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${LLM_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - llm_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  llm_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/llm-service/Dockerfile
+
+    container_name: ${LLM_APP_CONTAINER}
+    environment:
+      - PORT=${LLM_SERVICE_PORT}
+      - TCP_PORT=${LLM_TCP_PORT}
+      - DB_HOST=${LLM_DB_CONTAINER}
+      - LLM_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
+
+    depends_on:
+      llm_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+  
+  waves_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${WAVES_DB_CONTAINER}
+
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${WAVES_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${WAVES_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - waves_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${WAVES_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  waves_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/waves-service/Dockerfile
+
+    container_name: ${WAVES_APP_CONTAINER}
+    environment:
+      - PORT=${WAVES_SERVICE_PORT}
+      - TCP_PORT=${WAVES_TCP_PORT}
+      - DB_HOST=${WAVES_DB_CONTAINER}
+      - WAVES_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      - "${WAVES_SERVICE_PORT}:${WAVES_SERVICE_PORT}"
+
+    depends_on:
+      waves_db:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -489,6 +584,8 @@ volumes:
   xp_pgdata:
   education_pgdata:
   analytics_pgdata:
+  llm_pgdata:
+  waves_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local

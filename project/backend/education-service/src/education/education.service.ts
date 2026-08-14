@@ -152,7 +152,22 @@ export class EducationService {
     assignment.xpAwarded = passed ? XP_AWARDED : 0;
     assignment.completedAt = new Date();
     await this.assignmentRepo.save(assignment);
-
+    try {
+      await this.amqpConnection.publish(
+        'education-event-exchange',
+        'education.completed',
+        {
+          auth0Id: auth0Id,
+          assignmentId: assignment.id,
+          passed: passed,
+        },
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to publish education.completed for ${auth0Id}`,
+        err,
+      );
+    }
     if (passed) {
       try {
         await this.amqpConnection.publish('xp-event-exchange', 'xp.give', {

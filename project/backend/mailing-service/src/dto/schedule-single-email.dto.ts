@@ -6,17 +6,13 @@
  * Elements: recipient, scheduledAt
  */
 
-import { IsNotEmpty, IsDate, IsEmail } from 'class-validator';
+import { IsNotEmpty, IsDate, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ScheduleSingleEmailDto {
-  // @IsNotEmpty()
-  // @IsString()
-  // auth0Id: string;
-
-  @IsEmail()
   @IsNotEmpty()
-  recipient: string;
+  @IsString()
+  auth0Id: string;
 
   @IsNotEmpty()
   @IsDate()
