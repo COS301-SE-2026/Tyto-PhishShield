@@ -1,4 +1,4 @@
-dev-caddy.internal {
+prod-caddy.internal {
     tls internal
 
     log {
@@ -22,21 +22,21 @@ dev-caddy.internal {
     }
 
     handle /socket.io/* {
-        reverse_proxy api-gateway:3001
+        reverse_proxy prod_api-gateway:3001
     }
 
     handle /api/* {
-        reverse_proxy api-gateway:3001 {
+        reverse_proxy prod_api-gateway:3001 {
             header_up X-Request-ID {http.request.header.X-Request-ID}
         }
     }
 
     handle /addin/* {
         uri strip_prefix /addin
-        reverse_proxy outlook-addin:8080
+        reverse_proxy blue-outlook-addin:8080
     }
 
     handle {
-        reverse_proxy website:5173
+        reverse_proxy blue-website:5173
     }
 }

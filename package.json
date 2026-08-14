@@ -103,7 +103,9 @@
 		"demo1:backend": "pnpm dc:up",
 		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website",
 		"db:seed": "pnpm dc:up && node ./project/scripts/seed.js",
-		"server:update:dev": "node ./project/scripts/send-dev-compose.js"
+		"server:update:dev": "node ./project/scripts/send-dev-compose.js",
+		"server:update:prod": "node ./project/scripts/send-prod-compose.js",
+		"server:update:caddy": "node ./project/scripts/send-edge-caddy.js"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^11.0.21",

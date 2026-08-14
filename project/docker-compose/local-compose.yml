@@ -613,11 +613,11 @@ services:
     build:
       context: ../../
       dockerfile: project/frontend/website/Dockerfile
+      args:
+        VITE_API_GATEWAY_URL: "https://localhost/"
+        VITE_BASE_PATH: "/"
     restart: on-failure
     container_name: website
-    environment:
-      - WEBSITE_PORT=5173
-      - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
     ports:
     - '5173:5173'
     deploy:

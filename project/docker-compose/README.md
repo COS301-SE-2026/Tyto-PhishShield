@@ -229,3 +229,12 @@ If you continue experiencing issues, contact the project maintainers and include
 - Browser error (if applicable)
 - Outlook version
 - Windows version
+
+# How to set up certificates on the server
+run `sudo docker cp   prod_caddy:/data/caddy/pki/authorities/local/root.crt   /home/fiveguys/certs/prod-root.crt` to get the certificate.
+
+run `sudo cp certs/prod-root.crt /usr/local/share/ca-certificates/` to add certificate in the local system.
+
+run `sudo update-ca-certificates` to update the system about the newly added certificate.
+
+run `sudo caddy reload --config ./edge-caddy-conf/Caddyfile --adapter caddyfile` to refresh the root reverse proxy.
