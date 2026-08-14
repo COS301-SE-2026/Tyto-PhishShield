@@ -37,7 +37,6 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { ContactSalesDto } from './dto/contact-sales.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
 import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
@@ -91,13 +90,6 @@ export class AuthController {
   @HttpCode(200)
   forgotPassword(@Body('email') email: string) {
     return this.authService.forgotPassword(email);
-  }
-
-
-  @Post('contact-sales')
-  @HttpCode(200)
-  contactSales(@Body() dto: ContactSalesDto) {
-    return this.authService.contactSales(dto);
   }
 
   @Delete('account')

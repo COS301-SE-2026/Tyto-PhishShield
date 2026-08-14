@@ -16,6 +16,12 @@ RUN pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 WORKDIR /app/project/frontend/website
 
+ARG VITE_API_GATEWAY_URL
+ARG VITE_BASE_PATH
+
+ENV VITE_API_GATEWAY_URL=$VITE_API_GATEWAY_URL
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
+
 RUN pnpm run build
 
 RUN pnpm add -g serve --ignore-scripts

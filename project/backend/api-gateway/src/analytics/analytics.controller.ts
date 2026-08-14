@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Req,
-  UseGuards,
-  Query,
-  Param,
-} from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Query, Param } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
@@ -19,12 +12,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 
 interface AuthenticatedRequest extends Request {
-    user: GatewayUser;
+  user: GatewayUser;
 }
 
 function authHeader(req: Request): Record<string, string> {
-    const token = req.headers['authorization'];
-    return token ? { Authorization: token } : {};
+  const token = req.headers['authorization'];
+  return token ? { Authorization: token } : {};
 }
 
 @ApiTags('Analytics')
@@ -32,117 +25,113 @@ function authHeader(req: Request): Record<string, string> {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class AnalyticsController {
-    private readonly analyticsServiceUrl: string;
+  private readonly analyticsServiceUrl: string;
 
-      constructor(
-        private readonly proxy: ProxyService,
-        private readonly config: ConfigService,
-      ) {
-        this.analyticsServiceUrl = this.config.get<string>(
-          'ANALYTICS_SERVICE_URL',
-          'http://localhost:3006',
-        );
-      }
+  constructor(
+    private readonly proxy: ProxyService,
+    private readonly config: ConfigService,
+  ) {
+    this.analyticsServiceUrl = this.config.get<string>(
+      'ANALYTICS_SERVICE_URL',
+      'http://localhost:3006',
+    );
+  }
 
-      @Get('overview')
-      @ApiOperation({
-        summary: 'Top-level stats for the admin dashboard',
-      })
-      getOverview(@Req() req: AuthenticatedRequest) {
-        return this.proxy.forward({
-            url: `${this.analyticsServiceUrl}/api/analytics/overview`,
-            method: 'GET',
-            headers: authHeader(req),
-        });
-      }
+  @Get('Overview')
+  @ApiOperation({
+    summary: 'Top-level stats for the admin dashboard',
+  })
+  getOverview(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/overview`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
 
-      @Get('reports')
-      @ApiOperation({ summary: 'Report statistcs within optional date range'})
-      @ApiQuery({ name: 'from', required: false})
-      @ApiQuery({ name: 'to', required: false})
-      getReportStats(
-        @Req() req: AuthenticatedRequest,
-        @Query('from') from? :string,
-        @Query('to') to?: string,
-      ) {
-        const qs = this.buildQuery({ from, to });
-        return this.proxy.forward({
-            url: `${this.analyticsServiceUrl}/api/analytics/reports${qs}`,
-            method: 'GET',
-            headers: authHeader(req),
-        });
-      }
+  @Get('reports')
+  @ApiOperation({ summary: 'Report statistcs within optional date range' })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  getReportStats(
+    @Req() req: AuthenticatedRequest,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const qs = this.buildQuery({ from, to });
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/reports${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
 
-      @Get('mailing')
-      @ApiOperation({ summary: 'Mailing statistcs within optional date range'})
-      @ApiQuery({ name: 'from', required: false})
-      @ApiQuery({ name: 'to', required: false})
-      getMailingStats(
-        @Req() req: AuthenticatedRequest,
-        @Query('from') from? :string,
-        @Query('to') to?: string,
-      ) {
-        const qs = this.buildQuery({ from, to });
-        return this.proxy.forward({
-            url: `${this.analyticsServiceUrl}/api/analytics/mailing${qs}`,
-            method: 'GET',
-            headers: authHeader(req),
-        });
-      }
-      
-      @Get('timeseries')
-      @ApiOperation({ summary: 'Time series data for charts'})
-      @ApiQuery({ name: 'from', required: false})
-      @ApiQuery({ name: 'to', required: false})
-      getTimeSeries(
-        @Req() req: AuthenticatedRequest,
-        @Query('from') from? :string,
-        @Query('to') to?: string,
-      ) {
-        const qs = this.buildQuery({ from, to });
-        return this.proxy.forward({
-            url: `${this.analyticsServiceUrl}/api/analytics/timeseries${qs}`,
-            method: 'GET',
-            headers: authHeader(req),
-        });
-      }
+  @Get('mailing')
+  @ApiOperation({ summary: 'Mailing statistcs within optional date range' })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  getMailingStats(
+    @Req() req: AuthenticatedRequest,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const qs = this.buildQuery({ from, to });
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/mailing${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
 
-      @Get('leaderboard')
-      @ApiOperation({ summary: 'Top users by XP'})
-      @ApiQuery({ name: 'limit', required: false})
-      getLeaderboard(
-        @Req() req: AuthenticatedRequest,
-        @Query('limit') limit?: string,
-      ) {
-        const qs = this.buildQuery({ limit});
-        return this.proxy.forward({
-            url: `${this.analyticsServiceUrl}/api/analytics/leaderboard${qs}`,
-            method: 'GET',
-            headers: authHeader(req),
-        });
-      }
+  @Get('timeseries')
+  @ApiOperation({ summary: 'Time series data for charts' })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  getTimeSeries(
+    @Req() req: AuthenticatedRequest,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const qs = this.buildQuery({ from, to });
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/timeseries${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
 
-      @Get('users/:auth0Id')
-      @ApiOperation({ summary: 'Per-user analytics'})
-      getUserStats(
-        @Req() req: AuthenticatedRequest,
-        @Param('auth0Id') auth0Id: string,
-      ) {
-        return this.proxy.forward({
-            url: `${this.analyticsServiceUrl}/api/analytics/users/${auth0Id}`,
-            method: 'GET',
-            headers: authHeader(req),
-        });
-      }
+  @Get('leaderboard')
+  @ApiOperation({ summary: 'Top users by XP' })
+  @ApiQuery({ name: 'limit', required: false })
+  getLeaderboard(
+    @Req() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+  ) {
+    const qs = this.buildQuery({ limit });
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/leaderboard${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
 
-      private buildQuery(params: Record<string, string | undefined>): string {
-        const defined = Object.entries(params).filter(
-            ([, v]) => v !== undefined,
-        );
-        if (defined.length === 0) return '';
-        const sp = new URLSearchParams(
-            defined as [string, string][],
-        );
-        return `?${sp.toString()}`;
-      }
+  @Get('users/:auth0Id')
+  @ApiOperation({ summary: 'Per-user analytics' })
+  getUserStats(
+    @Req() req: AuthenticatedRequest,
+    @Param('auth0Id') auth0Id: string,
+  ) {
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/users/${auth0Id}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
+  private buildQuery(params: Record<string, string | undefined>): string {
+    const defined = Object.entries(params).filter(([, v]) => v !== undefined);
+    if (defined.length === 0) return '';
+    const sp = new URLSearchParams(defined as [string, string][]);
+    return `?${sp.toString()}`;
+  }
 }

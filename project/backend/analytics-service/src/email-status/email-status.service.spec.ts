@@ -8,7 +8,7 @@ import { EmailStatusService } from './email-status.service';
 import {
   EmailStatusEntity,
   EmailStatusEnum,
-} from '../entities/email-status.entity';
+} from './entities/email-status.entity';
 import { StatusCreateDto } from '../dto/status-create.dto';
 
 describe('EmailStatusService', () => {

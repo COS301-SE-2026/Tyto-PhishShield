@@ -9,6 +9,14 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
@@ -25,6 +33,14 @@ services:
 
     # Must have own name
     container_name: ${MAILING_DB_CONTAINER}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     # Env variables, must be unique
     environment:
@@ -56,6 +72,12 @@ services:
 
       # Must be unique
     container_name: ${MAILING_APP_CONTAINER}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -97,6 +119,14 @@ services:
       retries: 5
       start_period: 30s
     container_name: ${ACCOUNTS_DB_CONTAINER}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
     volumes:
       - accounts_pgdata:/var/lib/postgresql/data
     ports:
@@ -134,6 +164,11 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
     ports:
       - '${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
     depends_on:
       accounts_db:
         condition: service_healthy
@@ -150,6 +185,8 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - OUR_EMAIL=${OUR_EMAIL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
@@ -180,6 +217,14 @@ services:
       - OUTLOOK_ADDIN_CORS=${OUTLOOK_ADDIN_CORS}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 384M
+        reservations:
+          cpus: '1.0'
+          memory: 128M
     volumes:
       - api_gateway_logs:/var/log/api-gateway
     depends_on:
@@ -205,6 +250,14 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     volumes:
       - report_pgdata:/var/lib/postgresql/data
@@ -233,6 +286,11 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
 
     ports:
       # Left side must be unique
@@ -265,6 +323,14 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     volumes:
       - xp_pgdata:/var/lib/postgresql/data
@@ -295,6 +361,11 @@ services:
     ports:
       # Left side must be unique
       - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
     depends_on:
       xp_db:
@@ -330,6 +401,14 @@ services:
     ports:
       # Left side must be unique
       - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
       
 # Main service app container
   education_app:
@@ -354,6 +433,11 @@ services:
     ports:
       # Left side must be unique
       - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
 
     depends_on:
       education_db:
@@ -384,6 +468,14 @@ services:
 
     volumes:
       - analytics_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     ports:
       # Left side must be unique
@@ -412,6 +504,11 @@ services:
     ports:
       # Left side must be unique
       - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '256M'
 
     depends_on:
       analytics_db:
@@ -516,13 +613,19 @@ services:
     build:
       context: ../../
       dockerfile: project/frontend/website/Dockerfile
+      args:
+        VITE_API_GATEWAY_URL: "https://localhost/"
+        VITE_BASE_PATH: "/"
     restart: on-failure
     container_name: website
-    environment:
-      - WEBSITE_PORT=5173
-      - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
     ports:
     - '5173:5173'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 192M
+
 
   # builds the outlook-addin using its dockerfile
   outlook-addin:
@@ -536,6 +639,11 @@ services:
     container_name: addin
     ports:
       - '3000:8080'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
 
   # handles pgadmin access for local developers to view the database on thier machine
   pgadmin:
@@ -557,6 +665,11 @@ services:
       - ./.pgpass:/var/lib/pgadmin/.pgpass:ro
     ports:
       - "5050:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
 
   caddy:
     image: caddy:2.11.3
@@ -570,6 +683,14 @@ services:
       - caddy_logs:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 32M
 
 volumes:
   # Must be same as volume name for db

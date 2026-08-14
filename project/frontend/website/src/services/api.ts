@@ -86,7 +86,7 @@ export const authApi = {
   },
   
   contactSales: async (dto: { companyName: string; workEmail: string; message?: string }): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/accounts/auth/contact-sales`, {
+    const res = await fetch(`${API_BASE}/company/contact-sales`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto),

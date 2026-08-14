@@ -1,5 +1,5 @@
 import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
-import { EmailStatusEnum } from '../entities/email-status.entity';
+import { EmailStatusEnum } from '../email-status/entities/email-status.entity';
 import { Type } from 'class-transformer';
 
 export class StatusCreateDto {
