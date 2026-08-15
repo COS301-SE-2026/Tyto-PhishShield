@@ -10,19 +10,21 @@ RUN chown -R appuser:phishshield /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/report-service/package.json ./project/backend/report-service/package.json
-COPY project/backend/report-service/ ./project/backend/report-service/
 
 RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-retry-mintimeout 10000 -g \
  && pnpm config set fetch-retry-maxtimeout 120000 -g \
  && pnpm config set fetch-timeout 120000 -g \
- && pnpm config set network-concurrency 8 -g
+ && pnpm config set network-concurrency 8 -g \
+ && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
-RUN pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+COPY project/backend/report-service/ ./project/backend/report-service/
 
 WORKDIR /app/project/backend/report-service
 
 RUN rm -f tsconfig.build.tsbuildinfo && pnpm run build
+
+RUN pnpm deploy --filter report-service --prod /out
 
 FROM node:24.19-alpine3.24@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS runtime
 
@@ -31,6 +33,8 @@ RUN addgroup -S phishshield && adduser -S appuser -G phishshield
 WORKDIR /app
 
 RUN chown -R appuser:phishshield /app
+
+COPY --from=build /out ./
 
 COPY --from=build /app/project/backend/report-service/dist/ ./dist/
 
