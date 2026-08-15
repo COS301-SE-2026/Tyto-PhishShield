@@ -82,7 +82,12 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/<service-name>/package.json ./project/backend/<service-name>/package.json
 COPY project/backend/<service-name>/ ./project/backend/<service-name>/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set fetch-retries 8 -g \
+ && pnpm config set fetch-retry-mintimeout 10000 -g \
+ && pnpm config set fetch-retry-maxtimeout 120000 -g \
+ && pnpm config set fetch-timeout 120000 -g \
+ && pnpm config set network-concurrency 8 -g \
+ && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 WORKDIR /app/project/backend/<service-name>
 
@@ -229,6 +234,9 @@ imports: [
         },
       ],
       enableControllerDiscovery: true,
+      connectionInitOptions: {
+        wait: false,
+      },
     })
   ],
 ```

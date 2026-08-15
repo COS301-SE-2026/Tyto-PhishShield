@@ -13,6 +13,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   mailing_db:
     image: postgres:15-alpine
@@ -38,6 +46,14 @@ services:
       # This must be hard coded
       - mailing_pgdata:/var/lib/postgresql/data
       - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
     # ports:
     #   # Left side must be unique
@@ -70,6 +86,11 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
     
   accounts_db:
     image: postgres:15-alpine
@@ -89,6 +110,14 @@ services:
       - accounts_pgdata:/var/lib/postgresql/data
     # ports:
     #   - '${ACCOUNTS_DB_PORT}:5432'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
   
   accounts_app:
     image: fiveguys301/accounts:latest
@@ -126,12 +155,19 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
 
   api_app:
     image: fiveguys301/api:latest
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - OUR_EMAIL=${OUR_EMAIL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
@@ -159,6 +195,14 @@ services:
       - ENVIRONMENT=dev
     # ports:
     #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 384M
+        reservations:
+          cpus: '1.0'
+          memory: 128M
   
   report_db:
     image: postgres:15-alpine
@@ -178,6 +222,14 @@ services:
       - report_pgdata:/var/lib/postgresql/data
     # ports:
     #   - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
   report_app:
     image: fiveguys301/report:latest
@@ -203,6 +255,11 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
 
   xp_db:
     image: postgres:15-alpine
@@ -222,6 +279,14 @@ services:
       - xp_pgdata:/var/lib/postgresql/data
     # ports:
     #   - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
 
   xp_app:
     image: fiveguys301/xp:latest
@@ -245,6 +310,11 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   education_db:
     image: postgres:15-alpine
@@ -264,6 +334,14 @@ services:
       - education_pgdata:/var/lib/postgresql/data
     # ports:
     #   - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
       
   education_app:
     image: fiveguys301/education:latest
@@ -281,6 +359,11 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
     # ports:
     #   - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
 
     depends_on:
       education_db:
@@ -310,6 +393,14 @@ services:
 
     # ports:
     #   - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
       
   analytics_app:
     image: fiveguys301/analytics:latest
@@ -331,6 +422,11 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '256M'
 
   website:
     image: fiveguys301/website:latest
@@ -339,6 +435,11 @@ services:
     environment:
       - WEBSITE_PORT=5173
       - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 192M
   
   outlook-addin:
     image: fiveguys301/addin:latest
@@ -346,19 +447,32 @@ services:
     container_name: addin
     ports:
       - '3000:8080'
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
 
   caddy:
     image: caddy:2.11.3
     container_name: caddy
     restart: unless-stopped
     ports: 
-      - '80:80'
-      - '443:443'
+      - '127.0.0.1:8000:80'
+      - '127.0.0.1:8001:443'
     volumes:
       - ./dev-caddy-conf:/etc/caddy/
       - caddy_logs:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 32M
   
   watchtower:
     image: containrrr/watchtower:1.7.1
@@ -370,6 +484,11 @@ services:
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_DEBUG: "true"
       DOCKER_API_VERSION: "1.40"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 32M
     
 
 volumes:

@@ -11,13 +11,14 @@ import { BatchEmailController } from './batch-email.controller';
 import { BatchEmailService } from './batch-email.service';
 import { EmailModule } from '../email/email.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Emails } from '../entities/emails.entity';
+import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { mailingRabbitMQModule } from '../rabbitmq.module';
+import { UserEntity } from '../entities/user.entity';
 
 @Module({
   imports: [
     EmailModule,
-    TypeOrmModule.forFeature([Emails]),
+    TypeOrmModule.forFeature([EmailTemplateEntity, UserEntity]),
     mailingRabbitMQModule,
   ],
   controllers: [BatchEmailController],

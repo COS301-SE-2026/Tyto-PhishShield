@@ -12,3 +12,4 @@ allowBuilds:
   protobufjs: true
   'protobufjs@8.0.1': true
   unrs-resolver: true
+  ngrok: true
