@@ -6,7 +6,7 @@ interface ReportsProps { onNavigate: (path: string) => void; activePath: string;
 
 const REPORTS = [
   { title: 'Monthly Security Summary — April 2025', generated: '2025-05-01', type: 'Monthly', size: '248 KB' },
-  { title: 'Campaign Report — CEO Wire Transfer', generated: '2025-04-30', type: 'Campaign', size: '112 KB' },
+  { title: 'Wave Report — CEO Wire Transfer', generated: '2025-04-30', type: 'Wave', size: '112 KB' },
   { title: 'Department Risk Assessment — Q1 2025', generated: '2025-04-01', type: 'Risk', size: '380 KB' },
   { title: 'Training Completion Report — Q1 2025', generated: '2025-04-01', type: 'Training', size: '195 KB' },
 ];
@@ -19,7 +19,7 @@ export function Reports({ onNavigate, activePath }: ReportsProps) {
       subtitle="Download and schedule security reports" securityScore={72}>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <Button onClick={() => addToast({ type: 'info', title: 'Report generation', message: 'Custom report builder coming in Demo 2.' })} icon={
+        <Button onClick={() => addToast({ type: 'info', title: 'Report generation', message: 'Custom report builder coming in Demo 3.' })} icon={
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         }>
           Generate Report

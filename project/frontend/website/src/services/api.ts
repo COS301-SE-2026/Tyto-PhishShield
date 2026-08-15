@@ -84,6 +84,16 @@ export const authApi = {
     if (res.status === 404) return { message: 'Reset email sent (stub)' };
     return parseResponse<{ message: string }>(res);
   },
+  
+  contactSales: async (dto: { companyName: string; workEmail: string; message?: string }): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/company/contact-sales`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) throw new Error('Could not send message, please try again');
+    return parseResponse<{ message: string }>(res);
+  },
 };
 
 export const authFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {

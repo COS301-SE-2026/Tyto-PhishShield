@@ -12,8 +12,8 @@ export enum EmailDifficulty {
   HARD = 'hard',
 }
 
-@Entity({ name: 'emails' })
-export class Emails {
+@Entity({ name: 'email_templates' })
+export class EmailTemplateEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

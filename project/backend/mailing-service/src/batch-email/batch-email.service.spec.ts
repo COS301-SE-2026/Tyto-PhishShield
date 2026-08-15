@@ -23,10 +23,18 @@ import {
 } from '@nestjs/common';
 import { BatchEmailService } from './batch-email.service';
 import { EmailService } from '../email/email.service';
-import { Emails, EmailDifficulty } from '../entities/emails.entity';
+import { EmailTemplateEntity, EmailDifficulty } from '../entities/email-template.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { UserEntity } from '../entities/user.entity';
 
-const mockResendBatchSend = jest.fn().mockResolvedValue({ error: null });
+const mockResendBatchSend = jest.fn().mockResolvedValue({
+  data: { date: [{
+    id: 'resend-id-1'
+    },{
+    id: 'resend-id-2'
+    }] },
+  error: null,
+});
 
 jest.mock('resend', () => ({
   Resend: jest.fn().mockImplementation(() => ({
@@ -34,8 +42,8 @@ jest.mock('resend', () => ({
   })),
 }));
 
-const FUTURE_DATE_FROM = new Date('2026-08-01T10:00:00.000Z');
-const FUTURE_DATE_TO = new Date('2026-08-01T12:00:00.000Z');
+const FUTURE_DATE_FROM = new Date(Date.now() + 24 * 60 * 60 * 1000);
+const FUTURE_DATE_TO = new Date(Date.now() + 26 * 60 * 60 * 1000);
 
 describe('BatchEmailService', () => {
   let service: BatchEmailService;
@@ -52,6 +60,10 @@ describe('BatchEmailService', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+  };
+
+  const mockUserRepository = {
+    findOne: jest.fn().mockResolvedValue({ email: 'test@example.com' }),
   };
 
   const mockEmailService = {
@@ -87,7 +99,8 @@ describe('BatchEmailService', () => {
         BatchEmailService,
         { provide: ConfigService, useValue: mockConfigService },
         { provide: EmailService, useValue: mockEmailService },
-        { provide: getRepositoryToken(Emails), useValue: mockEmailRepository },
+        { provide: getRepositoryToken(EmailTemplateEntity), useValue: mockEmailRepository },
+        { provide: getRepositoryToken(UserEntity), useValue: mockUserRepository },
         { provide: AmqpConnection, useValue: mockAmqpConnection },
       ],
     }).compile();
@@ -107,34 +120,38 @@ describe('BatchEmailService', () => {
   });
 
   describe('sendBatchWithReference', () => {
-    const recipients = ['a@example.com', 'b@example.com'];
+    const auth0Ids = ['auth0|1', 'auth0|2'];
 
     it('should send a batch and return success using alias', async () => {
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
-      mockResendBatchSend.mockResolvedValue({ error: null });
+      mockResendBatchSend.mockResolvedValue({
+        data: { data: [{ id: 'resend-id-1' }, { id: 'resend-id-2' }] },
+        error: null,
+      });
 
-      const result = await service.sendBatchWithReference('PHISH-001', recipients);
+      const result = await service.sendBatchWithReference('PHISH-001', auth0Ids);
 
       expect(mockEmailRepository.find).toHaveBeenCalled();
       expect(mockResendBatchSend).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             from: `${mockEmail.alias} <${mockEmail.sender}>`,
-            to: [recipients[0]],
+            to: ['test@example.com'],
           }),
         ]),
       );
       expect(result.success).toBe(true);
       expect(result.message).toContain('PHISH-001');
-      expect(result.message).toContain(`${recipients.length}`);
+      expect(result.message).toContain(`${auth0Ids.length}`);
     });
 
     it('should send a batch without alias', async () => {
       const emailWithoutAlias = { ...mockEmail, alias: undefined };
       mockEmailRepository.find.mockResolvedValue([emailWithoutAlias]);
-      mockResendBatchSend.mockResolvedValue({ error: null });
+      mockResendBatchSend.mockResolvedValue({ data: { data: [{ id: 'resend-1' }, { id: 'resend-2' }] },
+  error: null });
 
-      await service.sendBatchWithReference('PHISH-001', recipients);
+      await service.sendBatchWithReference('PHISH-001', auth0Ids);
 
       expect(mockResendBatchSend).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -150,7 +167,7 @@ describe('BatchEmailService', () => {
       });
 
       await expect(
-        service.sendBatchWithReference('PHISH-001', recipients),
+        service.sendBatchWithReference('PHISH-001', auth0Ids),
       ).rejects.toThrow(InternalServerErrorException);
     });
 
@@ -159,18 +176,18 @@ describe('BatchEmailService', () => {
       mockResendBatchSend.mockRejectedValueOnce(new Error('Network failure'));
 
       await expect(
-        service.sendBatchWithReference('PHISH-001', recipients),
+        service.sendBatchWithReference('PHISH-001', auth0Ids),
       ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
   describe('sendBatchRandomSameEmail', () => {
-    const recipients = ['a@example.com', 'b@example.com'];
+    const auth0Ids = ['auth0|1', 'auth0|2'];
 
     it('should throw BadRequestException when scheduledTo is before scheduledFrom', async () => {
       await expect(
         service.sendBatchRandomSameEmail(
-          recipients,
+          auth0Ids,
           EmailDifficulty.MEDIUM,
           FUTURE_DATE_TO,
           FUTURE_DATE_FROM,
@@ -182,10 +199,11 @@ describe('BatchEmailService', () => {
     it('sends a single batch with a scheduledAt per recipient when randomisedTimes=true and dates differs', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
-      mockResendBatchSend.mockResolvedValue({ error: null });
+      mockResendBatchSend.mockResolvedValue({ data: { data: [{ id: 'resend-1' }, { id: 'resend-2' }] },
+  error: null });
 
       const result = await service.sendBatchRandomSameEmail(
-        recipients,
+        auth0Ids,
         EmailDifficulty.MEDIUM,
         FUTURE_DATE_FROM,
         FUTURE_DATE_TO,
@@ -194,7 +212,7 @@ describe('BatchEmailService', () => {
 
       expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
       const [payload] = mockResendBatchSend.mock.calls[0];
-      expect(payload).toHaveLength(recipients.length);
+      expect(payload).toHaveLength(auth0Ids.length);
       payload.forEach((item: any) => {
         expect(item.scheduledAt).toEqual(expect.any(String));
       });
@@ -204,12 +222,13 @@ describe('BatchEmailService', () => {
     it('should send a batch at scheduledFrom when dates are same', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
-      mockResendBatchSend.mockResolvedValue({ error: null });
+      mockResendBatchSend.mockResolvedValue({ data: { data: [{ id: 'resend-1' }, { id: 'resend-2' }] },
+  error: null });
 
       const sameDate = new Date('2026-08-01T10:00:00.000Z');
 
       const result = await service.sendBatchRandomSameEmail(
-        recipients,
+        auth0Ids,
         EmailDifficulty.MEDIUM,
         sameDate,
         sameDate,
@@ -225,7 +244,7 @@ describe('BatchEmailService', () => {
 
       await expect(
         service.sendBatchRandomSameEmail(
-          recipients,
+          auth0Ids,
           EmailDifficulty.EASY,
           FUTURE_DATE_FROM,
           FUTURE_DATE_TO,
@@ -236,12 +255,12 @@ describe('BatchEmailService', () => {
   });
 
   describe('sendBatchRandomDifferentEmail', () => {
-    const recipients = ['a@example.com', 'b@example.com'];
+    const auth0Ids = ['auth0|1', 'auth0|2'];
 
     it('should throw BadRequestException when scheduledTo is before scheduledFrom', async () => {
       await expect(
         service.sendBatchRandomDifferentEmail(
-          recipients,
+          auth0Ids,
           EmailDifficulty.MEDIUM,
           FUTURE_DATE_TO,
           FUTURE_DATE_FROM,
@@ -257,10 +276,11 @@ describe('BatchEmailService', () => {
       ];
       mockQueryBuilder.getMany.mockResolvedValue(mockEmails);
       mockEmailRepository.find.mockResolvedValue(mockEmails);
-      mockResendBatchSend.mockResolvedValue({ error: null });
+      mockResendBatchSend.mockResolvedValue({ data: { data: [{ id: 'resend-1' }, { id: 'resend-2' }] },
+  error: null });
 
       const result = await service.sendBatchRandomDifferentEmail(
-        recipients,
+        auth0Ids,
         EmailDifficulty.MEDIUM,
         FUTURE_DATE_FROM,
         FUTURE_DATE_TO,
@@ -269,7 +289,7 @@ describe('BatchEmailService', () => {
 
       expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
       const [payload] = mockResendBatchSend.mock.calls[0];
-      expect(payload).toHaveLength(recipients.length);
+      expect(payload).toHaveLength(auth0Ids.length);
       expect(result.success).toBe(true);
     });
 
@@ -280,10 +300,11 @@ describe('BatchEmailService', () => {
       ];
       mockQueryBuilder.getMany.mockResolvedValue(mockEmails);
       mockEmailRepository.find.mockResolvedValue(mockEmails);
-      mockResendBatchSend.mockResolvedValue({ error: null });
+      mockResendBatchSend.mockResolvedValue({ data: { data: [{ id: 'resend-1' }, { id: 'resend-2' }] },
+  error: null });
 
       const result = await service.sendBatchRandomDifferentEmail(
-        recipients,
+        auth0Ids,
         EmailDifficulty.MEDIUM,
         FUTURE_DATE_FROM,
         FUTURE_DATE_TO,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { LogoLockup } from '../ui/owl-logo';
 import { useAuth } from '../../context/auth-context';
+import { LogOut, Settings, FileText, LayoutDashboard, ShieldCheck, Users, BookOpen, Trophy, BarChart3, Mail } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -11,33 +12,28 @@ interface NavItem {
   section?: string;
 }
 
-const Icon = ({ d, d2 }: { d: string; d2?: string }) => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d}/>{d2 && <path d={d2}/>}
-  </svg>
-);
-
 const NAV_ITEMS: NavItem[] = [
   // Main
   { id: 'dashboard',  label: 'Dashboard',   path: '/dashboard',  section: 'MAIN',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
-  { id: 'campaigns',  label: 'Campaigns',   path: '/campaigns',  section: 'MAIN', minRole: 'analyst',
-    icon: <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> },
+    icon: <LayoutDashboard size={15} /> },
+  { id: 'waves',  label: 'Phishing Waves',   path: '/waves',  section: 'MAIN', minRole: 'analyst',
+    icon: <ShieldCheck size={15} /> },
+  { id: 'emails', label: 'Emails', path: '/emails', section: 'MAIN', minRole: 'analyst',
+    icon: <Mail size={15} /> },
   { id: 'users',      label: 'Users',       path: '/users',      section: 'MAIN', minRole: 'analyst',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+    icon: <Users size={15} /> },
   { id: 'training',   label: 'Training',    path: '/training',   section: 'MAIN',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> },
+    icon: <BookOpen size={15} /> },
   { id: 'leaderboard',label: 'Leaderboard', path: '/leaderboard', section: 'MAIN',
-    icon: <Icon d="M22 12 18 12 15 21 9 3 6 12 2 12"/> },
+    icon: <Trophy size={15} /> },
   // Analytics
   { id: 'analytics',  label: 'Analytics',   path: '/analytics',  minRole: 'analyst', section: 'ANALYTICS',
-    icon: <Icon d="M18 20V10" d2="M12 20V4 M6 20v-6"/> },
-  { id: 'reports',    label: 'Reports',     path: '/reports',    minRole: 'analyst', section: 'ANALYTICS',
-    icon: <Icon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" d2="M14 2v6h6 M16 13H8 M16 17H8 M10 9H8"/> },
+    icon: <BarChart3 size={15} /> },
+  { id: 'reports', label: 'Reports', path: '/analytics/reports', minRole: 'analyst', section: 'ANALYTICS',
+    icon: <FileText size={15} /> },
   // System
   { id: 'settings',   label: 'Settings',    path: '/settings',   section: 'SYSTEM',
-    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
+    icon: <Settings size={15} /> },
 ];
 
 const ROLE_LEVEL: Record<string, number> = { admin: 3, analyst: 2, user: 1 };
@@ -57,6 +53,12 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
     return userLevel >= ROLE_LEVEL[item.minRole];
   });
   const sections = ['MAIN', 'ANALYTICS', 'SYSTEM'];
+  const activeItem = visibleItems.reduce<NavItem | null>((best, item) => {
+    const matches = activePath === item.path || activePath.startsWith(item.path + '/');
+    if (!matches) return best;
+    if (!best || item.path.length > best.path.length) return item;
+  return best;
+  }, null);  
   const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
   const scoreLabel = securityScore >= 70 ? 'Good' : securityScore >= 40 ? 'Fair' : 'At Risk';
   return (
@@ -103,7 +105,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
                 </div>
               )}
               {items.map(item => {
-                const isActive = activePath === item.path || activePath.startsWith(item.path + '/');
+                const isActive = item.id === activeItem?.id;
                 return (
                   <button
                     key={item.id}
@@ -175,11 +177,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
           onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
           onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.35)'}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
+          <LogOut size={15} />
           {!collapsed && 'Sign out'}
         </button>
       </div>

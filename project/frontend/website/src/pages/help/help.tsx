@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card } from '../../components/ui';
+import { LayoutDashboard,BookOpen, Trophy, Mail, BookMarked, Library } from 'lucide-react';
 
 interface HelpProps {
   onNavigate: (path: string) => void;
@@ -205,37 +206,37 @@ export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
       label: 'Dashboard',
       description: 'Your overview, XP, and recent activity',
       onClick: () => onNavigate('/dashboard'),
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+      icon: <LayoutDashboard size={16} />
     },
     {
       label: 'Training',
       description: 'Work through your assigned training modules',
       onClick: () => onNavigate('/training'),
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+      icon: <BookOpen size={16} />
     },
     {
       label: 'Leaderboard',
       description: 'See your rank and how departments compare',
       onClick: () => onNavigate('/leaderboard'),
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+      icon: <Trophy size={16} />
     },
     {
       label: 'Contact Support',
       description: 'Email the Tyto support team for anything else not covered here',
       onClick: () => { window.location.href = 'mailto:support@tyto.co.za'; },
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 6 12 13 2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>,
+      icon: <Mail size={16} />
     },
     {
       label: 'User Guide',
       description: 'A continuously updated manual of using the website and its features',
       onClick: () => { window.open('https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual', '_blank', 'noopener,noreferrer'); },
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+      icon: <BookMarked size={16} />
     },
     {
       label: 'Wiki and other documentation',
       description: 'Setup guides and (technical) service references',
       onClick: () => { window.open('https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki', '_blank', 'noopener,noreferrer'); },
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+      icon: <Library size={16} />
     },
   ];
 

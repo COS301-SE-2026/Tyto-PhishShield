@@ -86,9 +86,8 @@ RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-retry-mintimeout 10000 -g \
  && pnpm config set fetch-retry-maxtimeout 120000 -g \
  && pnpm config set fetch-timeout 120000 -g \
- && pnpm config set network-concurrency 8 -g
-
-RUN pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+ && pnpm config set network-concurrency 8 -g \
+ && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 WORKDIR /app/project/backend/<service name>
 
@@ -245,6 +244,9 @@ imports: [
         },
       ],
       enableControllerDiscovery: true,
+      connectionInitOptions: {
+        wait: false,
+      },
     })
   ],
 ```

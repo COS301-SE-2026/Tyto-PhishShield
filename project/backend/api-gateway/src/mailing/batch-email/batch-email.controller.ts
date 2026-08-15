@@ -57,7 +57,7 @@ export class BatchEmailController {
   })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   @ApiBody({
-    schema: { example: { recipients: ['a@example.com', 'b@example.com'] } },
+    schema: { example: { auth0Id: ['auth0|example1', 'auth0|example2'] } },
   })
   sendBatchWithReference(
     @Param('referenceNumber') referenceNumber: string,
@@ -78,7 +78,7 @@ export class BatchEmailController {
   @ApiBody({
     schema: {
       example: {
-        recipients: ['a@example.com', 'b@example.com'],
+        auth0Id: ['auth0|example1', 'auth0|example2'],
         difficulty: 'medium',
         scheduledFrom: '2026-06-24T10:00:00.000Z',
         scheduledTo: '2026-06-24T12:00:00.000Z',
@@ -103,7 +103,7 @@ export class BatchEmailController {
   @ApiBody({
     schema: {
       example: {
-        recipients: ['a@example.com', 'b@example.com'],
+        auth0Id: ['auth0|example1', 'auth0|example2'],
         difficulty: 'medium',
         scheduledFrom: '2026-06-24T10:00:00.000Z',
         scheduledTo: '2026-06-24T12:00:00.000Z',

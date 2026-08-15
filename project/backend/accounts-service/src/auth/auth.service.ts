@@ -77,6 +77,7 @@ export class AuthService {
   private cachedMgmtToken: string | null = null;
   private mgmtTokenExpiry: number = 0;
   private readonly DOMAIN: string;
+  
 
   constructor(
     private readonly config: ConfigService,
