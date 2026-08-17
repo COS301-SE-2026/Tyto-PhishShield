@@ -118,28 +118,7 @@
 		"amqplib": "^2.0.1",
 		"cross-env": "^10.1.0",
 		"dotenv": "^17.4.2",
-		"dotenv-cli": "^11.0.0"
-	},
-	"dependencies": {
-		"@golevelup/nestjs-rabbitmq": "^9.0.2",
-		"@nestjs/axios": "^4.0.1",
-		"@nestjs/config": "^4.0.4",
-		"@nestjs/passport": "^11.0.5",
-		"@nestjs/swagger": "^11.4.3",
-		"@nestjs/typeorm": "^11.0.1",
-		"@tailwindcss/postcss": "^4.3.0",
-		"class-transformer": "^0.5.1",
-		"class-validator": "^0.15.1",
-		"jwks-rsa": "^4.0.1",
-		"ngrok": "5.0.0-beta.2",
-		"passport": "^0.7.0",
-		"passport-jwt": "^4.0.1",
-		"pg": "^8.20.0",
-		"reflect-metadata": "^0.2.2",
-		"resend": "^6.18.1",
-		"rxjs": "^7.8.2",
-		"typeorm": "^0.3.29",
-		"winston": "^3.19.0",
-		"winston-daily-rotate-file": "^5.0.0"
+		"dotenv-cli": "^11.0.0",
+		"ngrok": "5.0.0-beta.2"
 	}
 }

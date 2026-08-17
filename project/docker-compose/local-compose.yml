@@ -226,7 +226,7 @@ services:
           cpus: '1.0'
           memory: 128M
     volumes:
-      - api_gateway_logs:/var/log/api-gateway
+      - api_gateway_logs_v2:/var/log/api-gateway
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -695,7 +695,7 @@ services:
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
-  api_gateway_logs:
+  api_gateway_logs_v2:
   caddy_data:
   caddy_config:
   caddy_logs:
