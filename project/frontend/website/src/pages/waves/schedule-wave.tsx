@@ -1,4 +1,4 @@
-import { useState, useMemo, type CSSProperties } from "react";
+import { useState, useMemo, type CSSProperties, useEffect, useCallback } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select, Badge } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
@@ -7,8 +7,7 @@ import {
   sendBatchRandomSameEmail,
   type EmailDifficulty,
 } from "../../services/send-batch-email";
-
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
+import { getUsers, type User } from "../../services/user";
 
 interface ScheduleWaveProps {
   readonly onNavigate: (path: string) => void;
@@ -21,7 +20,6 @@ interface WaveForm {
   waveName: string;
   emailDistribution: EmailDistribution;
   difficulty: EmailDifficulty;
-  recipientsInput: string;
   scheduledFrom: string;
   scheduledTo: string;
   randomisedTimes: boolean;
@@ -49,33 +47,10 @@ const initialForm: WaveForm = {
   waveName: "",
   emailDistribution: "same",
   difficulty: "medium",
-  recipientsInput: "",
   scheduledFrom: "",
   scheduledTo: "",
   randomisedTimes: true,
 };
-
-function parseRecipients(value: string): string[] {
-  const recipients = value
-    .split(/[,;]+/) //recipients email addresses can be seperated by a comma or a semicolon
-    .map((recipient) => recipient.trim())
-    .filter(Boolean);
-
-  const uniqueRecipients = new Map<string, string>();
-
-  recipients.forEach((recipient) => {
-    const normalisedRecipient = recipient.toLowerCase();
-
-    if (!uniqueRecipients.has(normalisedRecipient)) {
-      uniqueRecipients.set(normalisedRecipient, recipient);
-    }
-  });
-  return [...uniqueRecipients.values()];
-}
-
-function formatInvalidRecipients(recipients: string[]): string {
-  return `Invalid email address${recipients.length === 1 ? "" : "es"}: ${recipients.join(", ")}`;
-}
 
 export function ScheduleWave({
   onNavigate,
@@ -86,17 +61,88 @@ export function ScheduleWave({
   const [form, setForm] = useState<WaveForm>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [scheduling, setScheduling] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedAuth0Ids, setSelectedAuth0Ids] = useState<string[]>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [userLoading, setUserLoading] = useState(true);
 
-  const parsedRecipients = useMemo(
-    () => parseRecipients(form.recipientsInput),
-    [form.recipientsInput],
-  );
+  const fetchUsers = useCallback(async () => {
+    setUserLoading(true);
 
-  const invalidRecipients = useMemo(
+    try{
+      const availableUsers = await getUsers();
+
+      setUsers(
+        availableUsers.filter((user) => user.isActive)
+      );
+    } catch (error) {
+      console.error(error);
+
+      addToast({
+        type: 'error',
+        title: 'Could not load users',
+        message: error instanceof Error ? error.message : 'Users could not be loaded',
+      });
+    } finally {
+      setUserLoading(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => {
+    void fetchUsers();
+  }, [fetchUsers]);
+
+  const departments = useMemo(
     () =>
-      parsedRecipients.filter((recipient) => !EMAIL_PATTERN.test(recipient)),
-    [parsedRecipients],
+    [...new Set(
+      users.map((user) => user.department).filter((department): department is string => Boolean(department))
+    )].sort(),
+    [users],
   );
+
+  const filteredUsers = useMemo(() => {
+    const search = userSearch.trim().toLowerCase();
+
+    return users.filter((user) => 
+      !search || user.name.toLowerCase().includes(search) || user.email.toLowerCase().includes(search) || user.auth0Id.toLowerCase().includes(search)
+    );
+  }, [users, userSearch]);
+
+  const toggleUserSelection = (auth0Id: string) => {
+    setSelectedAuth0Ids((previous) => previous.includes(auth0Id) 
+      ? previous.filter((id) => id !== auth0Id)
+      : [...previous, auth0Id]
+    );
+
+    setErrors((previous) => ({
+      ...previous,
+      recipients: undefined,
+    }));
+  };
+
+  const selectDepartmentUsers = () => {
+    if (!selectedDepartment) {
+      return;
+    }
+
+    const departmentAuth0Ids = users.filter((user) => user.department === selectedDepartment).map((user) => user.auth0Id);
+
+    setSelectedAuth0Ids((previous) => [
+      ...new Set([...previous, ...departmentAuth0Ids]),
+    ]);
+
+    setSelectedDepartment('');
+
+    setErrors((previous) => ({
+      ...previous,
+      recipients: undefined,
+    }));
+  };
+
+  const clearRecipients = () => {
+    setSelectedAuth0Ids([]);
+  };
 
   const setField = <K extends keyof WaveForm>(
     field: K,
@@ -111,13 +157,6 @@ export function ScheduleWave({
       setErrors((previous) => ({
         ...previous,
         waveName: undefined,
-      }));
-    }
-
-    if (field === "recipientsInput") {
-      setErrors((previous) => ({
-        ...previous,
-        recipients: undefined,
       }));
     }
 
@@ -144,10 +183,8 @@ export function ScheduleWave({
       nextErrors.waveName = "Wave name required.";
     }
 
-    if (parsedRecipients.length === 0) {
-      nextErrors.recipients = "Enter at least one recipient email address.";
-    } else if (invalidRecipients.length > 0) {
-      nextErrors.recipients = formatInvalidRecipients(invalidRecipients);
+    if (selectedAuth0Ids.length === 0) {
+      nextErrors.recipients = "Select at least one recipient.";
     }
 
     if (!form.scheduledFrom) {
@@ -209,7 +246,7 @@ export function ScheduleWave({
           : sendBatchRandomDifferentEmail;
 
       const response = await sendBatch(
-        parsedRecipients,
+        selectedAuth0Ids,
         form.difficulty,
         scheduledFrom,
         scheduledTo,
@@ -221,7 +258,7 @@ export function ScheduleWave({
         title: "Wave scheduled",
         message:
           response.message ||
-          `"${form.waveName.trim()}" was scheduled for ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? "" : "s"}.`,
+          `"${form.waveName.trim()}" was scheduled for ${selectedAuth0Ids.length} recipient${selectedAuth0Ids.length === 1 ? "" : "s"}.`,
       });
 
       onNavigate("/waves");
@@ -347,80 +384,151 @@ export function ScheduleWave({
             </div>
 
             <div>
-              <label htmlFor="wave-recipients" style={labelStyle}>
+              <label style={labelStyle}>
                 Recipients{" "}
                 <span style={{ color: "var(--color-danger)" }}>*</span>
               </label>
 
-              <textarea
-                id="wave-recipients"
-                rows={5}
-                placeholder="user1@example.com, user2@example.com"
-                value={form.recipientsInput}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  minHeight: 170,
-                  padding: "10px 12px",
-                  border: `1.5px solid ${
-                    errors.recipients ? "var(--color-danger)" : "var(--border)"
-                  }`,
-                  borderRadius: 8,
-                  outline: "none",
-                  resize: "vertical",
-                  background: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  fontFamily: "Inter, system-ui, sans-serif",
-                }}
-                onChange={(event) =>
-                  setField("recipientsInput", event.target.value)
-                }
-              />
-
-              {errors.recipients && (
-                <p style={errorStyle}>{errors.recipients}</p>
-              )}
+              <p style={supportingTextStyle}>
+                Search for users or select recipients by department.
+              </p>
 
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginTop: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
                 }}
               >
-                <Badge
-                  variant={invalidRecipients.length > 0 ? "danger" : "success"}
+                <div
+                  style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(180px, 1fr) auto',
+                  gap: 12,
+                  alignItems: 'end',
+                }}
                 >
-                  {parsedRecipients.length}{" "}
-                  {parsedRecipients.length === 1 ? "recipient" : "recipients"}
-                </Badge>
+                  <Select
+                    label="Department"
+                    value={selectedDepartment}
+                    onChange={(event) => setSelectedDepartment(event?.target.value)}
+                    disabled={userLoading}
+                    options={[
+                      { value: "", label: "All departments" },
+                      ...departments.map((department) => ({
+                        value: department,
+                        label: department,
+                      })),
+                    ]}
+                  />
 
-                {invalidRecipients.length > 0 && (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: "var(--color-danger)",
-                    }}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!selectedDepartment || userLoading}
+                    onClick={selectDepartmentUsers}
                   >
-                    {invalidRecipients.length} invalid
-                  </span>
-                )}
+                    Select Department
+                  </Button>
+                </div>
+
+                <Input
+                  label="Search users"
+                  placeholder="Search by name, email or auth0Id"
+                  value={userSearch}
+                  onChange={(event) => setUserSearch(event.target.value)}
+                  disabled={userLoading}
+                />
+
+                {errors.recipients && <p style={errorStyle}>{errors.recipients}</p>}
+
+                <div
+                  style={{
+                    display:'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <Badge variant={selectedAuth0Ids.length > 0 ? 'success': 'neutral'}>
+                    {selectedAuth0Ids.length}{" "}
+                    {selectedAuth0Ids.length === 1 ? "recipient" : "recipients"} selected
+                  </Badge>
+
+                  {selectedAuth0Ids.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearRecipients}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    maxHeight: 280,
+                    overflowY: 'auto',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                  }}
+                >
+                  {userLoading ? (
+                    <p style={{...supportingTextStyle, padding: 16}}>
+                      Loading users...
+                    </p>
+                  ) : filteredUsers.length === 0 ? (
+                    <p style={{...supportingTextStyle, padding: 16}}>
+                      No users found.
+                    </p>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <label
+                        key={user.auth0Id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: 12,
+                          borderBottom: '1px solid var(--border)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedAuth0Ids.includes(user.auth0Id)}
+                          onChange={() => toggleUserSelection(user.auth0Id)}
+                        />
+
+                        <div style={{minWidth: 0}}>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: 'var(--text-primary)'
+                            }}
+                          >
+                            {user.name}
+                          </div>
+
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: 'var(--text-secondary)',
+                              marginTop:4,
+                            }}
+                          >
+                            {user.email}
+                            {user.department && `  -${user.department}`}
+                          </div>
+                        </div>
+                      </label>
+                    ))
+                  )
+                  }
+                </div>
               </div>
-
-              {invalidRecipients.length > 0 && (
-                <p style={errorStyle}>
-                  {formatInvalidRecipients(invalidRecipients)}
-                </p>
-              )}
-
-              <p style={supportingTextStyle}>
-                Duplicate addresses are removed automatically. <br />
-                Separate addresses with commas or semicolons.
-              </p>
             </div>
 
             <div
@@ -536,7 +644,7 @@ export function ScheduleWave({
 
             <Button
               loading={scheduling}
-              disabled={scheduling}
+              disabled={scheduling || userLoading || selectedAuth0Ids.length === 0}
               onClick={() => {
                 void handleScheduleWave();
               }}
