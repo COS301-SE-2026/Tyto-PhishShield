@@ -85,7 +85,17 @@ export class UsersService {
   async updateRole(id: string, role: UserRole): Promise<User> {
     const user = await this.findById(id);
     user.role = role;
-    return this.repo.save(user);
+    const saved = await this.repo.save(user);
+  
+    this.event.publishUserUpdatedEvent({
+      id: saved.id,
+      auth0Id: saved.auth0Id,
+      name: saved.name,
+      email: saved.email,
+      department: saved.department,
+    }).catch((err) => console.error('Failed to publish user.updated event', err));
+  
+    return saved;
   }
 
   async updateProfile(
@@ -128,5 +138,9 @@ export class UsersService {
 
   async deactivate(id: string): Promise<void> {
     await this.repo.update({ id }, { isActive: false });
+  }
+
+  async activate(id: string): Promise<void> {
+    await this.repo.update({ id }, { isActive: true });
   }
 }
