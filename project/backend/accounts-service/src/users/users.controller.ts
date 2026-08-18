@@ -32,6 +32,7 @@ import { UpdateRoleDto } from '../auth/dto/update-role.dto';
 import { AuthService } from '../auth/auth.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
+import { UpdateActiveDto } from '../auth/dto/update-active.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -67,7 +68,12 @@ export class UsersController {
   @Patch(':id/role')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  updateRole(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
+  async updateRole(
+    @Param('id') id: string,
+    @Body() dto: UpdateRoleDto,
+  ) {
+    const user = await this.usersService.findById(id);
+    await this.authService.updateAuth0UserRole(user.auth0Id, [dto.role]);
     return this.usersService.updateRole(id, dto.role);
   }
 
@@ -76,6 +82,28 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @HttpCode(204)
   async remove(@Param('id') id: string) {
-    await this.usersService.deactivate(id);
+    const user = await this.usersService.findById(id);
+    await this.authService.deleteUser(user.auth0Id);
+    await this.usersService.remove(id);
+  }
+
+  @Patch(':id/active')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updateActive(
+    @Param('id') id: string,
+    @Body() dto: UpdateActiveDto,
+  ) {
+    const user = await this.usersService.findById(id);
+  
+    if (dto.isActive) {
+      await this.authService.unblockUser(user.auth0Id);
+      await this.usersService.activate(id);
+    } else {
+      await this.authService.blockUser(user.auth0Id);
+      await this.usersService.deactivate(id);
+    }
+  
+    return { message: dto.isActive ? 'User activated' : 'User deactivated' };
   }
 }
