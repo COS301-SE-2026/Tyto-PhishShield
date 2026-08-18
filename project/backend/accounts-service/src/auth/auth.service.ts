@@ -506,5 +506,26 @@ export class AuthService {
     }
   }
 
+  async blockUser(auth0Id: string): Promise<void> {
+    const mgmtToken = await this.getManagementToken();
+    await firstValueFrom(
+      this.http.patch(
+        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+        { blocked: true },
+        { headers: { Authorization: `Bearer ${mgmtToken}` } },
+      ),
+    );
+  }
   
+  async unblockUser(auth0Id: string): Promise<void> {
+    const mgmtToken = await this.getManagementToken();
+    await firstValueFrom(
+      this.http.patch(
+        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+        { blocked: false },
+        { headers: { Authorization: `Bearer ${mgmtToken}` } },
+      ),
+    );
+  }
+
 }
