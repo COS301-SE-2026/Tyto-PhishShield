@@ -40,6 +40,7 @@ import { ExtendedVerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserSyncService } from '../users/user-sync.service';
+import { Department } from '../users/entities/user.entity';
 
 interface Auth0TokenResponse {
   access_token: string;
@@ -478,4 +479,32 @@ export class AuthService {
   
     return { message: 'Password updated successfully' };
   }
+
+  async updateAuth0UserProfile(
+    auth0Id: string,
+    data: { name?: string; department?: Department },
+  ): Promise<void> {
+    const mgmtToken = await this.getManagementToken();
+  
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          {
+            ...(data.name !== undefined && { name: data.name }),
+            ...(data.department !== undefined && {
+              user_metadata: { department: data.department },
+            }),
+          },
+          { headers: { Authorization: `Bearer ${mgmtToken}` } },
+        ),
+      );
+    } catch (err: unknown) {
+      const e = err as AxiosErrorShape;
+      console.error('Update Auth0 profile error:', e.response?.data ?? e.message);
+      throw new InternalServerErrorException('Failed to sync profile with Auth0');
+    }
+  }
+
+  
 }
