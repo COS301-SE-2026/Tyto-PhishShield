@@ -37,7 +37,7 @@ interface OTP {
 export class OtpService {
   private readonly resend: Resend;
   private OTPs: OTP[];
-  private readonly accountsServiceUrl;
+  private readonly accountsServiceUrl: string;
 
   constructor(
     private readonly config: ConfigService,

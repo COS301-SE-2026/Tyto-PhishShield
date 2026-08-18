@@ -170,18 +170,7 @@ export class AuthService {
         );
       }
       auth0User = data;
-      if (data && (await this.userSyncService.needSyncing(auth0User.user_id))) {
-        const createDbUser: CreateUserInput = {
-          auth0Id: auth0User.user_id,
-          email: data.email,
-          name: data.name,
-          role:
-            (await this.getAuth0UserRoles(auth0User.user_id))[0]?.name ??
-            UserRole.USER,
-          isVerified: false,
-        };
-        void this.userSyncService.syncAuth0User(createDbUser);
-      }
+      this.isActive(auth0User.user_id);
     } catch (err: unknown) {
       if (!(err instanceof UnauthorizedException)) {
         console.log(err);
@@ -191,13 +180,6 @@ export class AuthService {
       } else {
         throw err;
       }
-    }
-
-    const user = await this.usersService.findByAuth0Id(auth0User.user_id);
-    if (user && !user.isActive) {
-      throw new UnauthorizedException(
-        'Account is deactivated. Please contact support.',
-      );
     }
 
     try {
@@ -350,6 +332,22 @@ export class AuthService {
     return data[0];
   }
 
+  async getAuth0UserByAuth0Id(auth0ID: string): Promise<Auth0UserResponse> {
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get<Auth0UserResponse[]>(
+        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0ID)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+            Accept: 'application/json',
+          },
+        },
+      ),
+    );
+    return data[0];
+  }
+
   async getAuth0Roles(): Promise<Auth0Roles[]> {
     const mgmtToken = await this.getManagementToken();
     const { data } = await firstValueFrom(
@@ -426,5 +424,29 @@ export class AuthService {
         roles: rollIDsToAdd,
       },
     });
+  }
+
+  async isActive(auth0ID: string): Promise<boolean> {
+    if (auth0ID && (await this.userSyncService.needSyncing(auth0ID))) {
+      const auth0User = await this.getAuth0UserByAuth0Id(auth0ID);
+      const createDbUser: CreateUserInput = {
+        auth0Id: auth0User.user_id,
+        email: auth0User.email,
+        name: auth0User.name,
+        role:
+          (await this.getAuth0UserRoles(auth0ID))[0]?.name ??
+          UserRole.USER,
+        isVerified: false,
+      };
+      void this.userSyncService.syncAuth0User(createDbUser);
+    }
+
+    const user = await this.usersService.findByAuth0Id(auth0ID);
+    if (user && !user.isActive) {
+      throw new UnauthorizedException(
+        'Account is deactivated. Please contact support.',
+      );
+    }
+    return user?.isActive ?? false;
   }
 }

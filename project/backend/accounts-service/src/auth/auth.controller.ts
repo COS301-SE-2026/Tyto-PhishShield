@@ -143,4 +143,10 @@ export class AuthController {
   resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendOtp(dto);
   }
+
+  @Get('is-active')
+  @HttpCode(200)
+  isActive(@Body() authID: string) {
+    return this.authService.isActive(authID);
+  }
 }

@@ -25,6 +25,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
 import { RouteResolver } from '../proxy/proxy.routes';
+import { AccountsService } from './accounts.service';
+import { LoginDto } from '../dto/login.dto';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -44,6 +46,7 @@ export class AccountsController {
     private readonly proxy: ProxyService,
     private readonly routes: RouteResolver,
     private readonly config: ConfigService,
+    private readonly accountsService: AccountsService
   ) {
     this.accountsServiceUrl = this.config.get<string>(
       'ACCOUNTS_SERVICE_URL',
@@ -139,9 +142,16 @@ export class AccountsController {
     },
   })
   login(@Req() req: Request, @Res() res: Response) {
-    const route = this.routes.resolve(req.originalUrl);
-    req.url = req.url.replace(route.apiRoute, '');
-    return this.proxy.beterForward(req, res, route.targetService);
+    // const route = this.routes.resolve(req.originalUrl);
+    // req.url = req.url.replace(route.apiRoute, '');
+    // this.proxy.beterForward(req, res, route.targetService);
+    // if (res.statusCode === 401 || res.statusCode === 200) {
+
+    //   return res;
+    // } else { //If some other error happend with accounts try login directly from api-gateway
+      const body: LoginDto = req.body.json as LoginDto;
+      return this.accountsService.login(body);
+    // }
   }
 
   @Post('auth/logout')
