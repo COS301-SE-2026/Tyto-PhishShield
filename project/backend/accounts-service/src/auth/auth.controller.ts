@@ -41,6 +41,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
 import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -79,10 +80,7 @@ export class AuthController {
 
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
-  updateProfile(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: UpdateProfileDto,
-  ) {
+  updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(req.user.auth0Id, dto);
   }
 
@@ -142,5 +140,18 @@ export class AuthController {
   @HttpCode(200)
   resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendOtp(dto);
+  }
+
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      req.user.auth0Id,
+      req.user.email,
+      dto,
+    );
   }
 }

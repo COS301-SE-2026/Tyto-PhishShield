@@ -291,7 +291,8 @@ export class AuthService {
     auth0Id: string,
     dto: UpdateProfileDto,
   ): Promise<{ message: string }> {
-    await this.usersService.updateProfile(auth0Id, dto);
+    const user = await this.usersService.updateProfile(auth0Id, dto);
+    await this.updateAuth0UserProfile(auth0Id, dto);
     return { message: 'Profile updated successfully' };
   }
 
