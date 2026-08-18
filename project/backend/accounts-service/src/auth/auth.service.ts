@@ -390,45 +390,50 @@ export class AuthService {
     return data;
   }
 
-  async updateAuth0UserRole(auth0Id: string, roles: UserRole[]) {
-    const mgmtToken = await this.getManagementToken();
-    //Get current roles:
-    const userRoles = await this.getAuth0UserRoles(auth0Id);
-    const rollIDsToRemove: string[] = [];
-    for (const roll of userRoles) {
-      rollIDsToRemove.push(roll.id);
-    }
-    //remove current roles:
-    this.http.delete(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`, {
-      headers: {
-        Authorization: `Bearer ${mgmtToken}`,
-        'Content-Type': 'application/json',
-      },
-      data: {
-        roles: rollIDsToRemove,
-      },
-    });
-    //Find roleID that match roles of what we want to add:
-    const allRoles = await this.getAuth0Roles();
-    const rollIDsToAdd: string[] = [];
-    for (let i = 0; i < roles.length; i++) {
-      for (const roll of allRoles) {
-        if (roll.name === roles[i]) {
-          rollIDsToAdd.push(roll.id);
-        }
-      }
-    }
-    //Add roles to auth0
-    this.http.post(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`, {
-      headers: {
-        Authorization: `Bearer ${mgmtToken}`,
-        'Content-Type': 'application/json',
-      },
-      data: {
-        roles: rollIDsToAdd,
-      },
-    });
+async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
+  const mgmtToken = await this.getManagementToken();
+
+  // Remove existing roles
+  const userRoles = await this.getAuth0UserRoles(auth0Id);
+  const rollIDsToRemove = userRoles.map((r) => r.id);
+  if (rollIDsToRemove.length > 0) {
+    await firstValueFrom(
+      this.http.delete(
+        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+            'Content-Type': 'application/json',
+          },
+          data: { roles: rollIDsToRemove },
+        },
+      ),
+    );
   }
+
+  // Find IDs of desired roles
+  const allRoles = await this.getAuth0Roles();
+  const rollIDsToAdd: string[] = [];
+  for (const roleName of roles) {
+    const found = allRoles.find((r) => r.name === roleName);
+    if (found) rollIDsToAdd.push(found.id);
+  }
+
+  if (rollIDsToAdd.length > 0) {
+    await firstValueFrom(
+      this.http.post(
+        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
+        { roles: rollIDsToAdd },
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      ),
+    );
+  }
+}
 
   private async verifyPassword(email: string, password: string): Promise<boolean> {
     try {
