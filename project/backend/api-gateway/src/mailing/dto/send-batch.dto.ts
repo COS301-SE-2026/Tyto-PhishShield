@@ -1,11 +1,11 @@
 import {
-  IsArray,
-  ArrayMinSize,
   ArrayMaxSize,
-  IsNotEmpty,
-  IsDate,
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
+  IsDate,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -17,7 +17,7 @@ export enum EmailDifficulty {
   HARD = 'hard',
 }
 
-export class SendBatchRandomDto {
+export class SendBatchDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
@@ -45,4 +45,8 @@ export class SendBatchRandomDto {
   @IsString()
   @IsNotEmpty()
   waveName!: string;
+
+  @IsString()
+  @IsOptional()
+  referenceNumber?: string;
 }
