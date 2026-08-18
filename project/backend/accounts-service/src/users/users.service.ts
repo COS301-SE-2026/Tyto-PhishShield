@@ -86,15 +86,19 @@ export class UsersService {
     const user = await this.findById(id);
     user.role = role;
     const saved = await this.repo.save(user);
-  
-    this.event.publishUserUpdatedEvent({
-      id: saved.id,
-      auth0Id: saved.auth0Id,
-      name: saved.name,
-      email: saved.email,
-      department: saved.department,
-    }).catch((err) => console.error('Failed to publish user.updated event', err));
-  
+
+    this.event
+      .publishUserUpdatedEvent({
+        id: saved.id,
+        auth0Id: saved.auth0Id,
+        name: saved.name,
+        email: saved.email,
+        department: saved.department,
+      })
+      .catch((err) =>
+        console.error('Failed to publish user.updated event', err),
+      );
+
     return saved;
   }
 
@@ -109,13 +113,17 @@ export class UsersService {
     if (data.department !== undefined) user.department = data.department;
 
     const saved = await this.repo.save(user);
-    this.event.publishUserUpdatedEvent({
-      id: saved.id,
-      auth0Id: saved.auth0Id,
-      name: saved.name,
-      email: saved.email,
-      department: saved.department,
-    }).catch((err) => console.error('Failed to publish user.updated event', err));
+    this.event
+      .publishUserUpdatedEvent({
+        id: saved.id,
+        auth0Id: saved.auth0Id,
+        name: saved.name,
+        email: saved.email,
+        department: saved.department,
+      })
+      .catch((err) =>
+        console.error('Failed to publish user.updated event', err),
+      );
 
     return saved;
   }

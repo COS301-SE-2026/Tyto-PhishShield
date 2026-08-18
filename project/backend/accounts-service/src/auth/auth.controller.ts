@@ -80,7 +80,10 @@ export class AuthController {
 
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
-  updateProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateProfileDto) {
+  updateProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: UpdateProfileDto,
+  ) {
     return this.authService.updateProfile(req.user.auth0Id, dto);
   }
 

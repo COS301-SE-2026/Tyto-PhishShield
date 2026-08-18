@@ -79,7 +79,6 @@ export class AuthService {
   private cachedMgmtToken: string | null = null;
   private mgmtTokenExpiry: number = 0;
   private readonly DOMAIN: string;
-  
 
   constructor(
     private readonly config: ConfigService,
@@ -291,7 +290,7 @@ export class AuthService {
     auth0Id: string,
     dto: UpdateProfileDto,
   ): Promise<{ message: string }> {
-    const user = await this.usersService.updateProfile(auth0Id, dto);
+    await this.usersService.updateProfile(auth0Id, dto);
     await this.updateAuth0UserProfile(auth0Id, dto);
     return { message: 'Profile updated successfully' };
   }
@@ -391,52 +390,55 @@ export class AuthService {
     return data;
   }
 
-async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
-  const mgmtToken = await this.getManagementToken();
+  async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
+    const mgmtToken = await this.getManagementToken();
 
-  // Remove existing roles
-  const userRoles = await this.getAuth0UserRoles(auth0Id);
-  const rollIDsToRemove = userRoles.map((r) => r.id);
-  if (rollIDsToRemove.length > 0) {
-    await firstValueFrom(
-      this.http.delete(
-        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
-        {
-          headers: {
-            Authorization: `Bearer ${mgmtToken}`,
-            'Content-Type': 'application/json',
+    // Remove existing roles
+    const userRoles = await this.getAuth0UserRoles(auth0Id);
+    const rollIDsToRemove = userRoles.map((r) => r.id);
+    if (rollIDsToRemove.length > 0) {
+      await firstValueFrom(
+        this.http.delete(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
+          {
+            headers: {
+              Authorization: `Bearer ${mgmtToken}`,
+              'Content-Type': 'application/json',
+            },
+            data: { roles: rollIDsToRemove },
           },
-          data: { roles: rollIDsToRemove },
-        },
-      ),
-    );
-  }
+        ),
+      );
+    }
 
-  // Find IDs of desired roles
-  const allRoles = await this.getAuth0Roles();
-  const rollIDsToAdd: string[] = [];
-  for (const roleName of roles) {
-    const found = allRoles.find((r) => r.name === roleName);
-    if (found) rollIDsToAdd.push(found.id);
-  }
+    // Find IDs of desired roles
+    const allRoles = await this.getAuth0Roles();
+    const rollIDsToAdd: string[] = [];
+    for (const roleName of roles) {
+      const found = allRoles.find((r) => r.name === roleName);
+      if (found) rollIDsToAdd.push(found.id);
+    }
 
-  if (rollIDsToAdd.length > 0) {
-    await firstValueFrom(
-      this.http.post(
-        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
-        { roles: rollIDsToAdd },
-        {
-          headers: {
-            Authorization: `Bearer ${mgmtToken}`,
-            'Content-Type': 'application/json',
+    if (rollIDsToAdd.length > 0) {
+      await firstValueFrom(
+        this.http.post(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
+          { roles: rollIDsToAdd },
+          {
+            headers: {
+              Authorization: `Bearer ${mgmtToken}`,
+              'Content-Type': 'application/json',
+            },
           },
-        },
-      ),
-    );
+        ),
+      );
+    }
   }
-}
 
-  private async verifyPassword(email: string, password: string): Promise<boolean> {
+  private async verifyPassword(
+    email: string,
+    password: string,
+  ): Promise<boolean> {
     try {
       await firstValueFrom(
         this.http.post(`https://${this.DOMAIN}/oauth/token`, {
@@ -466,9 +468,9 @@ async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
     if (!valid) {
       throw new UnauthorizedException('Current password is incorrect');
     }
-  
+
     const mgmtToken = await this.getManagementToken();
-  
+
     try {
       await firstValueFrom(
         this.http.patch(
@@ -482,7 +484,7 @@ async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
       console.error('Change password error:', e.response?.data ?? e.message);
       throw new InternalServerErrorException('Failed to change password');
     }
-  
+
     return { message: 'Password updated successfully' };
   }
 
@@ -491,7 +493,7 @@ async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
     data: { name?: string; department?: Department },
   ): Promise<void> {
     const mgmtToken = await this.getManagementToken();
-  
+
     try {
       await firstValueFrom(
         this.http.patch(
@@ -507,8 +509,13 @@ async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
       );
     } catch (err: unknown) {
       const e = err as AxiosErrorShape;
-      console.error('Update Auth0 profile error:', e.response?.data ?? e.message);
-      throw new InternalServerErrorException('Failed to sync profile with Auth0');
+      console.error(
+        'Update Auth0 profile error:',
+        e.response?.data ?? e.message,
+      );
+      throw new InternalServerErrorException(
+        'Failed to sync profile with Auth0',
+      );
     }
   }
 
@@ -522,7 +529,7 @@ async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
       ),
     );
   }
-  
+
   async unblockUser(auth0Id: string): Promise<void> {
     const mgmtToken = await this.getManagementToken();
     await firstValueFrom(
@@ -533,5 +540,4 @@ async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
       ),
     );
   }
-
 }

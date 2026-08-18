@@ -68,10 +68,7 @@ export class UsersController {
   @Patch(':id/role')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  async updateRole(
-    @Param('id') id: string,
-    @Body() dto: UpdateRoleDto,
-  ) {
+  async updateRole(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
     const user = await this.usersService.findById(id);
     await this.authService.updateAuth0UserRole(user.auth0Id, [dto.role]);
     return this.usersService.updateRole(id, dto.role);
@@ -90,12 +87,9 @@ export class UsersController {
   @Patch(':id/active')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  async updateActive(
-    @Param('id') id: string,
-    @Body() dto: UpdateActiveDto,
-  ) {
+  async updateActive(@Param('id') id: string, @Body() dto: UpdateActiveDto) {
     const user = await this.usersService.findById(id);
-  
+
     if (dto.isActive) {
       await this.authService.unblockUser(user.auth0Id);
       await this.usersService.activate(id);
@@ -103,7 +97,7 @@ export class UsersController {
       await this.authService.blockUser(user.auth0Id);
       await this.usersService.deactivate(id);
     }
-  
+
     return { message: dto.isActive ? 'User activated' : 'User deactivated' };
   }
 }
