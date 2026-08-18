@@ -19,7 +19,10 @@ import { APP_GUARD, Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 //import { OtpModule } from './otp/otp.module';
+import { WebhookModule } from './webhook/webhook.module';
+import { WavesModule } from './waves/waves.module';
 
 @Module({
   imports: [
@@ -29,6 +32,8 @@ import { WebsocketModule } from './websocket/websocket.module';
     ReportModule,
     XpModule,
     EducationModule,
+    AnalyticsModule,
+    WavesModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {
@@ -79,8 +84,18 @@ import { WebsocketModule } from './websocket/websocket.module';
           port: Number(process.env.ANALYTICS_TCP_PORT ?? 4005),
         },
       },
+      {
+        name: 'WAVES_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.WAVES_HOST ?? 'waves_app',
+          port: Number(process.env.WAVES_TCP_PORT ?? 4008),
+        }
+      }
     ]),
     WebsocketModule,
+    WebhookModule,
+    WavesModule,
   ],
   controllers: [AppController],
   providers: [

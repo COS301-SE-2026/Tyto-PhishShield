@@ -63,6 +63,32 @@
             "ConnectionParameters": {
                 "passfile": "/var/lib/pgadmin/.pgpass"
             }
+        },
+
+        "analytics-db": {
+            "Name": "Analytics Database",
+            "Group": "Servers",
+            "Host": "analytics_db",
+            "Port": 5432,
+            "MaintenanceDB": "analytics_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
+        },
+
+        "waves-db": {
+            "Name": "Waves Database",
+            "Group": "Servers",
+            "Host": "waves_db",
+            "Port": 5432,
+            "MaintenanceDB": "waves_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
         }
     }
 }

@@ -23,32 +23,36 @@ import {
   Get,
   Param,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { EmailsDto } from '../dto/emails.dto';
-import { Emails } from '../entities/emails.entity';
+import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
 import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
 import { SendSingleEmailDto } from '../dto/send-single-email.dto';
+import { DeleteResult } from 'typeorm';
 
 @Controller('emails')
 export class EmailController {
   constructor(private readonly sendMailService: EmailService) {}
 
   @Post()
-  async createEmail(@Body() createEmailDto: EmailsDto): Promise<Emails> {
+  async createEmail(
+    @Body() createEmailDto: EmailsDto,
+  ): Promise<EmailTemplateEntity> {
     return this.sendMailService.createEmail(createEmailDto);
   }
 
   @Get()
-  async getAllEmails(): Promise<Emails[]> {
+  async getAllEmails(): Promise<EmailTemplateEntity[]> {
     return this.sendMailService.getAllEmails();
   }
 
   @Get(':referenceNumber')
   async getEmailByReference(
     @Param('referenceNumber') referenceNumber: string,
-  ): Promise<Emails> {
+  ): Promise<EmailTemplateEntity> {
     return this.sendMailService.getEmailByReference(referenceNumber);
   }
 
@@ -56,20 +60,26 @@ export class EmailController {
   async updateEmail(
     @Param('referenceNumber') referenceNumber: string,
     @Body() updateEmailDto: Partial<EmailsDto>,
-  ): Promise<Emails> {
+  ): Promise<EmailTemplateEntity> {
     return this.sendMailService.updateEmail(referenceNumber, updateEmailDto);
+  }
+
+  @Delete(':referenceNumber')
+  async deleteEmail(
+    @Param('referenceNumber') referenceNumber: string,
+  ): Promise<DeleteResult> {
+    return this.sendMailService.deleteEmail(referenceNumber);
   }
 
   @Post(':referenceNumber/send-single')
   @HttpCode(HttpStatus.OK)
   async sendEmail(
-    @Param('referenceNumber') emailReferenceNumber: string, //using reference number in parameter
+    @Param('referenceNumber') emailReferenceNumber: string,
     @Body() sendSingleEmailDto: SendSingleEmailDto,
   ): Promise<MailingPostReturnDto> {
     const result = await this.sendMailService.sendEmail(
       emailReferenceNumber,
-      // sendSingleEmailDto.auth0Id,
-      sendSingleEmailDto.recipient,
+      sendSingleEmailDto.auth0Id,
     );
 
     return new MailingPostReturnDto({
@@ -87,7 +97,7 @@ export class EmailController {
   ): Promise<MailingPostReturnDto> {
     const result = await this.sendMailService.scheduleSendEmail(
       referenceNumber,
-      scheduledSingleEmailDto.recipient,
+      scheduledSingleEmailDto.auth0Id,
       scheduledSingleEmailDto.scheduledAt,
     );
 

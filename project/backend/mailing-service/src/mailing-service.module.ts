@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Emails } from './entities/emails.entity';
+import { EmailTemplateEntity } from './entities/email-template.entity';
+import { UserEntity } from './entities/user.entity';
 import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
 import { BatchEmailModule } from './batch-email/batch-email.module';
 import { mailingRabbitMQModule } from './rabbitmq.module';
+import { AccountsModule } from './accounts/accounts.module';
 
 @Module({
   imports: [
@@ -24,14 +26,16 @@ import { mailingRabbitMQModule } from './rabbitmq.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('MAILING_DB_NAME'),
         synchronize: configService.get<string>('DB_SYNC', 'true') === 'true',
-        entities: [Emails],
+        entities: [EmailTemplateEntity, UserEntity],
         autoLoadEntities: true,
       }),
     }),
-    TypeOrmModule.forFeature([Emails]),
+    TypeOrmModule.forFeature([EmailTemplateEntity]),
+    TypeOrmModule.forFeature([UserEntity]),
     mailingRabbitMQModule,
     EmailModule,
     BatchEmailModule,
+    AccountsModule,
   ],
   controllers: [MailingServiceController],
 })
