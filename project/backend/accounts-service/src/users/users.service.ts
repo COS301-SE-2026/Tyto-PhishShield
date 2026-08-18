@@ -95,8 +95,19 @@ export class UsersService {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
+    if (data.email !== undefined) user.email = data.email;
     if (data.department !== undefined) user.department = data.department;
-    return this.repo.save(user);
+
+    const saved = await this.repo.save(user);
+    this.event.publishUserUpdatedEvent({
+      id: saved.id,
+      auth0Id: saved.auth0Id,
+      name: saved.name,
+      email: saved.email,
+      department: saved.department,
+    }).catch((err) => console.error('Failed to publish user.updated event', err));
+
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
