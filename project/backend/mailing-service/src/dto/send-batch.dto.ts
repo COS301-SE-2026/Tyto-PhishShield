@@ -1,18 +1,18 @@
 import {
-  IsArray,
-  ArrayMinSize,
   ArrayMaxSize,
-  IsNotEmpty,
-  IsDate,
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
+  IsDate,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { EmailDifficulty } from '../entities/email-template.entity';
+import { Type } from 'class-transformer';
 
-export class SendBatchRandomDto {
+export class SendBatchDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
@@ -40,4 +40,8 @@ export class SendBatchRandomDto {
   @IsString()
   @IsNotEmpty()
   waveName: string;
+
+  @IsString()
+  @IsOptional()
+  referenceNumber: string;
 }
