@@ -427,4 +427,24 @@ export class AuthService {
       },
     });
   }
+
+  private async verifyPassword(email: string, password: string): Promise<boolean> {
+    try {
+      await firstValueFrom(
+        this.http.post(`https://${this.DOMAIN}/oauth/token`, {
+          grant_type: 'password',
+          username: email,
+          password,
+          audience: this.config.get<string>('AUTH0_AUDIENCE'),
+          scope: 'openid profile email',
+          client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
+          client_secret: this.config.get<string>('AUTH0_CLIENT_SECRET'),
+          connection: 'Username-Password-Authentication',
+        }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
