@@ -146,4 +146,25 @@ export class OtpService {
 
     return true;
   }
+
+  async generateDeviceToken(email: string, userAgent: string, ipCreated: string): Promise<string> {
+    const deviceToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.hash('sha256', deviceToken);
+    const user = await this.authService.getAuth0UserByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('User not registered');
+    }
+
+    const verifiedDevice = this.deviceRepo.create({
+      userId: user.user_id,
+      tokenHash: hashedToken,
+      userAgent: userAgent,
+      ipCreated: ipCreated,
+      lastUsedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+    });
+    await this.deviceRepo.save(verifiedDevice);
+
+    return deviceToken;
+  }
 }
