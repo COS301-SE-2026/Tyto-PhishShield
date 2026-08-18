@@ -498,15 +498,24 @@ services:
     environment:
       - PORT=${WAVES_SERVICE_PORT}
       - TCP_PORT=${WAVES_TCP_PORT}
-      - DB_HOST=${WAVES_DB_CONTAINER}
-      - WAVES_DB_PORT=${INTERNAL_DB_PORT}
+      - WAVES_DB_CONTAINER=${WAVES_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - WAVES_DB_NAME=${WAVES_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
 
     ports:
       - "${WAVES_SERVICE_PORT}:${WAVES_SERVICE_PORT}"
 
     depends_on:
       waves_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src
