@@ -38,6 +38,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
 import { ExtendedVerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserSyncService } from '../users/user-sync.service';
 
 interface Auth0TokenResponse {
@@ -446,5 +447,35 @@ export class AuthService {
     } catch {
       return false;
     }
+  }
+
+  async changePassword(
+    auth0Id: string,
+    email: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    // Verify current password
+    const valid = await this.verifyPassword(email, dto.currentPassword);
+    if (!valid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+  
+    const mgmtToken = await this.getManagementToken();
+  
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          { password: dto.newPassword },
+          { headers: { Authorization: `Bearer ${mgmtToken}` } },
+        ),
+      );
+    } catch (err: unknown) {
+      const e = err as AxiosErrorShape;
+      console.error('Change password error:', e.response?.data ?? e.message);
+      throw new InternalServerErrorException('Failed to change password');
+    }
+  
+    return { message: 'Password updated successfully' };
   }
 }
