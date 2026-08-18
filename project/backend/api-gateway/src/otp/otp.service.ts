@@ -12,16 +12,15 @@
  */
 
 import {
-  forwardRef,
-  Inject,
   Injectable,
   InternalServerErrorException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'node:crypto';
 import { Resend } from 'resend';
-import { AuthService } from '../auth/auth.service';
+import { ProxyService } from '../proxy/proxy.service';
+import { ExtendedVerifyOtpDto } from '../dto/verify-otp.dto';
+import { logger } from '../logger/logger.service';
 
 interface AxiosErrorShape {
   response?: { status: number; data?: unknown };
@@ -38,14 +37,18 @@ interface OTP {
 export class OtpService {
   private readonly resend: Resend;
   private OTPs: OTP[];
+  private readonly accountsServiceUrl;
 
   constructor(
     private readonly config: ConfigService,
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService,
+    private readonly proxy: ProxyService,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
     this.OTPs = [];
+    this.accountsServiceUrl = this.config.get<string>(
+      'ACCOUNTS_SERVICE_URL',
+      'http://localhost:3002',
+    );
   }
 
   async generateAndSend(email: string): Promise<void> {
@@ -82,18 +85,33 @@ export class OtpService {
   }
 
   async verify(
-    email: string,
-    code: string,
-    userAgent: string,
-    ipCreated: string,
+    verifyOtp: ExtendedVerifyOtpDto, token: string
   ): Promise<{ valid: boolean; deviceToken: string }> {
-    const otp = this.OTPs.find((otp) => otp.email === email);
+    const otp = this.OTPs.find((otp) => otp.email === verifyOtp.email);
 
     if (!otp) return { valid: false, deviceToken: '' };
-    if (new Date() > otp.expiresAt || otp.code !== code)
+    if (new Date() > otp.expiresAt || otp.code !== verifyOtp.code)
       return { valid: false, deviceToken: '' };
 
-    //TODO: Call accounts to create a deviceToken
+    let deviceToken = '';
+    try {
+      const res = await this.proxy.forward(
+        {
+          url: `${this.accountsServiceUrl}/api/auth/device/generate`,
+          method: 'POST',
+          data: {
+            email: verifyOtp.email,
+            userAgent: verifyOtp.userAgent,
+            ipCreated: verifyOtp.ip,
+          },
+          headers: { Authorization: token },
+        }
+      ) as string;
+      deviceToken = res;
+    } catch (err: any) {
+      logger.warn('unable to generate device token', err);
+    }
+
     // const updatedOTPs = this.OTPs.filter((otp) => otp.email !== email);
     // this.OTPs = updatedOTPs;
 
@@ -115,32 +133,5 @@ export class OtpService {
     // await this.deviceRepo.save(verifiedDevice);
 
     return { valid: true, deviceToken };
-  }
-
-  async verifyDevice(email: string, deviceToken: string): Promise<boolean> {
-    //TODO Send a request to accounts to verify device
-    // const user = await this.authService.getAuth0UserByEmail(email);
-
-    // if (!user) {
-    //   throw new UnauthorizedException('User not registered');
-    // }
-
-    // const hashedToken = crypto.hash('sha256', deviceToken);
-    // const trustedDevice = await this.deviceRepo.findOne({
-    //   where: {
-    //     tokenHash: hashedToken,
-    //     userId: user.user_id,
-    //   },
-    // });
-
-    // if (!trustedDevice) return false;
-
-    // trustedDevice.lastUsedAt = new Date();
-
-    // if (new Date() > trustedDevice.expiresAt) return false;
-
-    // await this.deviceRepo.update(trustedDevice.id, trustedDevice);
-
-    return true;
   }
 }
