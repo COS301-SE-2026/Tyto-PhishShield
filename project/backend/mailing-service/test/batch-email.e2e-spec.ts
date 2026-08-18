@@ -106,6 +106,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
+        waveName: 'Batch E2E same-email shared-time wave',
       })
       .expect(200)
       .expect((res) => {
@@ -129,6 +130,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
+        waveName: 'Batch E2E same-email random-time wave',
       })
       .expect(200)
       .expect((res) => {
@@ -168,6 +170,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
@@ -191,6 +194,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
