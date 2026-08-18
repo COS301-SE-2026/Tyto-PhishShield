@@ -25,8 +25,8 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SendBatchDto } from '../dto/send-batch.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
 
-@ApiTags('Batch Emails')
-@Controller('batch-emails')
+@ApiTags('Wave Batch')
+@Controller('wave-batch')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class BatchEmailController {
