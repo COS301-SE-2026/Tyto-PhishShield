@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Sidebar } from './sidebar';
 import { ThemeToggle } from '../ui';
 import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
+import { fetchSecurityScore } from '../../services/security-score';
 import { Menu, Bell, ChevronRight, CircleHelp} from 'lucide-react';
 
 interface AppLayoutProps {
@@ -12,14 +13,22 @@ interface AppLayoutProps {
   title: string;
   subtitle?: string;
   breadcrumbs?: { label: string; path?: string }[];
-  securityScore?: number;
 }
 
 export function AppLayout({
-  children, activePath, onNavigate, title, subtitle, breadcrumbs, securityScore = 72, }: AppLayoutProps) {
+  children, activePath, onNavigate, title, subtitle, breadcrumbs, }: AppLayoutProps) {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [securityScore, setSecurityScore] = useState(0);
+  useEffect(() => {
+    if (!user?.auth0Id) return;
+    let cancelled = false;
+    fetchSecurityScore(user.auth0Id)
+      .then(score => { if (!cancelled) setSecurityScore(score); })
+      .catch(() => { if (!cancelled) setSecurityScore(0); });
+    return () => { cancelled = true; };
+  }, [user?.auth0Id]);
   const initials = (() => {
     if (user?.name) {
       const parts = user.name.trim().split(/\s+/);
