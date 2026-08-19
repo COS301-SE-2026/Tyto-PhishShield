@@ -33,7 +33,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles, GatewayRole } from '../../auth/decorators/roles.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Batch Emails')
 @Controller('batch-emails')

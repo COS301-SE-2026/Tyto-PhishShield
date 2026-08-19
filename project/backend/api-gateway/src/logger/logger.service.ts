@@ -31,19 +31,19 @@ if (!isTestOrCi) {
   );
   exceptionTransports.push(
     new winston.transports.DailyRotateFile({
-          dirname: logDir,
-          filename: 'exceptions-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          maxFiles: '14d',
-        }),
+      dirname: logDir,
+      filename: 'exceptions-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      maxFiles: '14d',
+    }),
   );
   rejectionTransports.push(
     new winston.transports.DailyRotateFile({
-          dirname: logDir,
-          filename: 'rejections-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          maxFiles: '14d',
-        }),
+      dirname: logDir,
+      filename: 'rejections-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      maxFiles: '14d',
+    }),
   );
 }
 

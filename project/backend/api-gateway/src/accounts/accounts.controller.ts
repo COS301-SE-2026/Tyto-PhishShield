@@ -26,7 +26,7 @@ import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
 import { RouteResolver } from '../proxy/proxy.routes';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles, GatewayRole } from '../auth/decorators/roles.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -183,7 +183,14 @@ export class AccountsController {
         email: { type: 'string', example: 'newemail@example.com' },
         department: {
           type: 'string',
-          enum: ['IT & Security', 'Finance', 'Human Resources', 'Legal & Compliance', 'Operations', 'Executive'],
+          enum: [
+            'IT & Security',
+            'Finance',
+            'Human Resources',
+            'Legal & Compliance',
+            'Operations',
+            'Executive',
+          ],
           example: 'IT & Security',
         },
       },

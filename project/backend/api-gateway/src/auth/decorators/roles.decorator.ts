@@ -1,4 +1,4 @@
-import { SetMetadata } from "@nestjs/common";
+import { SetMetadata } from '@nestjs/common';
 
 export type GatewayRole = 'admin' | 'analyst' | 'user';
 

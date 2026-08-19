@@ -37,7 +37,7 @@ import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { EmailsDto } from '../dto/emails.dto';
 import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles, GatewayRole } from '../../auth/decorators/roles.decorator';
+import { Roles} from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Emails')
 @Controller('emails')
