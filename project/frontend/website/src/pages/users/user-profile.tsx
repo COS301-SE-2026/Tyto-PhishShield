@@ -90,7 +90,7 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
   const xpPct = Math.min((profileUser.xp / xpTarget) * 100, 100);
   if (!isOwnProfile && loadingUser) {
     return (
-      <AppLayout activePath={activePath} onNavigate={onNavigate} title="Loading…" securityScore={72}>
+      <AppLayout activePath={activePath} onNavigate={onNavigate} title="Loading…">
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
           Loading user profile.
         </div>
@@ -106,7 +106,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
         { label: 'Users', path: '/users' },
         { label: profileUser.name },
       ]}
-      securityScore={72}
     >
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 16, alignItems: 'start' }}>
         {/* Profile card */}

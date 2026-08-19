@@ -266,8 +266,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Users"
-      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}
-      securityScore={72}>
+      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 220px' }}>
           <Input
