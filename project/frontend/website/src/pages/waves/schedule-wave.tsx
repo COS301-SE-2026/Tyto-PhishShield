@@ -8,13 +8,18 @@ import {
   type EmailDifficulty,
 } from "../../services/send-batch-email";
 import { getUsers, type User } from "../../services/user";
+import {
+  getEmailTemplate,
+  getEmailTemplates,
+  type EmailTemplate,
+} from "../../services/email-template";
 
 interface ScheduleWaveProps {
   readonly onNavigate: (path: string) => void;
   readonly activePath: string;
 }
 
-type EmailDistribution = "same" | "different";
+type EmailDistribution = "same" | "different" | "specific";
 
 interface WaveForm {
   waveName: string;
@@ -30,11 +35,13 @@ interface FormErrors {
   recipients?: string;
   scheduledFrom?: string;
   scheduledTo?: string;
+  referenceNumber?: string;
 }
 
 const DISTRIBUTION_OPTIONS = [
-  { value: "same", label: "Same email for all recipients" },
+  { value: "same", label: "Same random email for all recipients" },
   { value: "different", label: "Recipients will receive different emails" },
+  { value: "specific", label: "Same specific email for all recipients" },
 ];
 
 const DIFFICULTY_OPTIONS = [
@@ -66,6 +73,14 @@ export function ScheduleWave({
   const [userSearch, setUserSearch] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [userLoading, setUserLoading] = useState(true);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [referenceInput, setReferenceInput] = useState("");
+  const [selectedReference, setSelectedReference] = useState("");
+  const [selectedEmail, setSelectedEmail] = useState<EmailTemplate | null>(
+    null,
+  );
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
 
   const fetchUsers = useCallback(async () => {
     setUserLoading(true);
@@ -89,10 +104,6 @@ export function ScheduleWave({
     }
   }, [addToast]);
 
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
-
   const departments = useMemo(
     () =>
     [...new Set(
@@ -100,6 +111,140 @@ export function ScheduleWave({
     )].sort(),
     [users],
   );
+
+  const templateOptions = useMemo(
+    () => [
+      {
+        value: "",
+        label: "Please select an available email template",
+      },
+      ...emailTemplates.map((template) => ({
+        value: template.referenceNumber,
+        label: `${template.referenceNumber} — ${template.subject}`,
+      })),
+    ],
+    [emailTemplates],
+  );
+
+  const fetchEmailTemplates = useCallback(async () => {
+    setTemplatesLoading(true);
+
+    try {
+      const availableTemplates = await getEmailTemplates();
+
+      setEmailTemplates(availableTemplates);
+    } catch (error) {
+      console.error(error);
+
+      addToast({
+        type: "error",
+        title: "Could not load email templates",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Available email templates could not be loaded.",
+      });
+    } finally {
+      setTemplatesLoading(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => {//call both on page load
+    void fetchEmailTemplates();
+    void fetchUsers();
+  }, [fetchEmailTemplates, fetchUsers]);
+
+  const handleTemplateSelection = (referenceNumber: string) => {
+    setSelectedReference(referenceNumber);
+    setReferenceInput(referenceNumber);
+
+    setErrors((previous) => ({
+      ...previous,
+      referenceNumber: undefined,
+    }));
+
+    if (!referenceNumber) {
+      setSelectedEmail(null);
+      return;
+    }
+
+    const template = emailTemplates.find(
+      (emailTemplate) => emailTemplate.referenceNumber === referenceNumber,
+    );
+
+    if (!template) {
+      setSelectedEmail(null);
+      return;
+    }
+
+    setSelectedEmail(template);
+  };
+
+  const handleReferenceLookup = async () => {
+    const cleanedReference = referenceInput.trim().toUpperCase();
+
+    if (!cleanedReference) {
+      setErrors((previous) => ({
+        ...previous,
+        referenceNumber: "Enter a reference number.",
+      }));
+
+      return;
+    }
+
+    setTemplateLoading(true);
+
+    try {
+      const template = await getEmailTemplate(cleanedReference);
+
+      setSelectedEmail(template);
+      setSelectedReference(template.referenceNumber);
+      setReferenceInput(template.referenceNumber);
+
+      setErrors((previous) => ({
+        ...previous,
+        referenceNumber: undefined,
+      }));
+
+      if (
+        !emailTemplates.some(
+          (emailTemplate) =>
+            emailTemplate.referenceNumber === template.referenceNumber,
+        )
+      ) {
+        setEmailTemplates((previous) => [...previous, template]);
+      }
+
+      addToast({
+        type: "success",
+        title: "Email template found",
+        message: `${template.referenceNumber} is ready to use.`,
+      });
+    } catch (error) {
+      console.error(error);
+
+      setSelectedEmail(null);
+      setSelectedReference("");
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : `No template was found for ${cleanedReference}.`;
+
+      setErrors((previous) => ({
+        ...previous,
+        referenceNumber: message,
+      }));
+
+      addToast({
+        type: "error",
+        title: "Email template not found",
+        message,
+      });
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
 
   const filteredUsers = useMemo(() => {
     const search = userSearch.trim().toLowerCase();
@@ -195,6 +340,10 @@ export function ScheduleWave({
       nextErrors.scheduledTo = "Schedule-to date required";
     }
 
+    if (form.emailDistribution === 'specific' && !selectedEmail){
+      nextErrors.referenceNumber = 'Select or find an email template.';
+    }
+
     const scheduledTo = form.scheduledTo ? new Date(form.scheduledTo) : null;
     const scheduledFrom = form.scheduledFrom
       ? new Date(form.scheduledFrom)
@@ -240,18 +389,28 @@ export function ScheduleWave({
 
       const scheduledTo = new Date(form.scheduledTo).toISOString();
 
-      const sendBatch =
-        form.emailDistribution === "same"
-          ? sendBatchRandomSameEmail
-          : sendBatchRandomDifferentEmail;
+      let response;
 
-      const response = await sendBatch(
-        selectedAuth0Ids,
-        form.difficulty,
-        scheduledFrom,
-        scheduledTo,
-        form.randomisedTimes,
-      );
+      if (form.emailDistribution === 'different') {
+        response = await sendBatchRandomDifferentEmail(
+          selectedAuth0Ids,
+          form.difficulty,
+          scheduledFrom,
+          scheduledTo,
+          form.randomisedTimes,
+          form.waveName.trim(),
+        );
+      }else {
+        response = await sendBatchRandomSameEmail(
+          selectedAuth0Ids,
+          form.difficulty,
+          scheduledFrom,
+          scheduledTo,
+          form.randomisedTimes,
+          form.waveName.trim(),
+          form.emailDistribution === 'specific' ? selectedEmail?.referenceNumber: undefined,
+        );
+      }
 
       addToast({
         type: "success",
@@ -380,8 +539,120 @@ export function ScheduleWave({
                 onChange={(event) =>
                   setField("difficulty", event.target.value as EmailDifficulty)
                 }
+                disabled={form.emailDistribution === 'specific'}
               />
             </div>
+
+            {form.emailDistribution === 'specific' && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                  padding: 16,
+                  background: 'var(--bg-hover)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                }}
+              >
+                <div>
+                  <label style={labelStyle}>
+                    Email Template{' '}
+                    <span style={{ color: 'var(--color-danger)'}}>
+                      *
+                    </span>
+                  </label>
+
+                  <p style={supportingTextStyle}>
+                    Select an existing email template or find one using its reference number.
+                  </p>
+                </div>
+
+                <Select
+                  label='Available email templates'
+                  value={selectedReference}
+                  options={templateOptions}
+                  onChange={(event) => handleTemplateSelection(event.target.value)}
+                  disabled={templatesLoading || templateLoading}
+                />
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  loading={templatesLoading}
+                  disabled={templatesLoading}
+                  onClick={() => void fetchEmailTemplates()}
+                  style={{ alignSelf: 'flex-start'}}
+                >
+                  Refresh Templates
+                </Button>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(220px, 1fr) auto',
+                    gap: 12,
+                    alignItems: 'end'
+                  }}
+                >
+                  <Input
+                    label="Find by reference number"
+                    value={referenceInput}
+                    error={errors.referenceNumber}
+                    onChange={(event) => {
+                      setReferenceInput(event.target.value.toUpperCase());
+                      setErrors((previous) => ({
+                        ...previous,
+                        referenceNumber: undefined,
+                      }));
+                    }}
+                  />
+
+                  <Button
+                    variant="ghost"
+                    loading={templateLoading}
+                    disabled={templateLoading || !referenceInput.trim()}
+                    onClick={() => void handleReferenceLookup()}
+                  >
+                    Find Template
+                  </Button>
+                </div>
+
+                {selectedEmail && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)'
+                    }}
+                  >
+                    <div>
+                      {selectedEmail.referenceNumber} - {selectedEmail.subject}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontSize: 11,
+                        color:'var(--text-secondary)',
+                      }}
+                    >
+                      {selectedEmail.alias ? `${selectedEmail.alias} <${selectedEmail.sender}>` : selectedEmail.sender}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontSize: 11,
+                        color: 'var(--text-muted)',
+                      }}
+                    >
+                      Difficulty: {selectedEmail.difficulty}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <label style={labelStyle}>
