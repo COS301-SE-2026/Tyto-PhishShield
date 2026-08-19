@@ -7,6 +7,8 @@ import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, getPeriodRang
 
 interface AnalyticsProps { onNavigate: (path: string) => void; activePath: string; }
 
+const PERIOD_LABEL: Record<Period, string> = { '7d': 'last 7 days', '30d': 'last 30 days', '90d': 'last 90 days' };
+
 function ComingSoon({ label }: { readonly label: string }) {
   return (
     <div style={{ padding: '24px 8px', textAlign: 'center' }}>
@@ -66,6 +68,29 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Analytics"
       subtitle="Organisation-wide security metrics" securityScore={72}>
 
+      {/* Period selector — scopes the KPI row (except Training Completion, which is all-time) and the chart below */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        flexWrap: 'wrap', gap: 10, marginBottom: 16,
+        padding: '10px 14px', borderRadius: 8,
+        background: 'var(--color-primary-light)', border: '1px solid var(--border)',
+      }}>
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+          Showing stats and activity for the{' '}
+          <strong style={{ color: 'var(--text-primary)' }}>{PERIOD_LABEL[period]}</strong>
+        </p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['7d','30d','90d'] as const).map(p => (
+            <button key={p} type="button" onClick={() => setPeriod(p)} style={{
+              padding: '4px 12px', borderRadius: 6, border: '1.5px solid var(--border)', cursor: 'pointer',
+              fontSize: 11, fontWeight: 600, fontFamily: 'Inter, system-ui, sans-serif',
+              background: period === p ? 'var(--color-primary)' : 'var(--bg-card)',
+              color: period === p ? '#fff' : 'var(--text-secondary)',
+            }}>{p}</button>
+          ))}
+        </div>
+      </div>
+
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 20 }}>
         <Card style={{ padding: '16px 18px' }}>
@@ -99,9 +124,11 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>Coming soon</span>
         </Card>
         <Card style={{ padding: '16px 18px' }}>
-          <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Training Completion</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Training Completion</p>
+            <Badge variant="neutral">All-time</Badge>
+          </div>
           <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : `${summary?.trainingCompletionRate ?? 0}%`}</span>
-          <p style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>All-time</p>
         </Card>
       </div>
 
@@ -109,16 +136,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       <Card style={{ padding: '20px 22px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Activity Over Time</h2>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {(['7d','30d','90d'] as const).map(p => (
-              <button key={p} type="button" onClick={() => setPeriod(p)} style={{
-                padding: '4px 12px', borderRadius: 6, border: '1.5px solid var(--border)', cursor: 'pointer',
-                fontSize: 11, fontWeight: 600, fontFamily: 'Inter, system-ui, sans-serif',
-                background: period === p ? 'var(--color-primary)' : 'var(--bg-hover)',
-                color: period === p ? '#fff' : 'var(--text-secondary)',
-              }}>{p}</button>
-            ))}
-          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{PERIOD_LABEL[period]}</span>
         </div>
         {!loading && series && series.length === 0 ? (
           <ComingSoon label="No activity recorded in this period yet." />
@@ -161,7 +179,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
         <Card style={{ padding: '20px 22px' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Detection Rate by Department</h2>
-          <ComingSoon label="Department breakdown isn't available yet — analytics-service doesn't capture department data on events." />
+          <ComingSoon label="Department breakdown isn't available yet: analytics-service doesn't capture department data on events." />
         </Card>
 
         <Card style={{ padding: '20px 22px' }}>
@@ -192,7 +210,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Phishing Wave Performance Summary</h2>
         </div>
-        <ComingSoon label="Per-wave analytics need a Wave entity upstream in mailing-service before this table can populate — tracked as Phase 2." />
+        <ComingSoon label="Per-wave analytics need a Wave entity in mailing-service before this table can populate (tracked as Phase 2)" />
       </Card>
     </AppLayout>
   );
