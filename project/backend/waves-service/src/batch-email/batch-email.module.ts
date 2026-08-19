@@ -1,5 +1,5 @@
 /**
- * Service: mailing-service
+ * Service: waves-service
  *
  * Declares and wires together the components for batch email operations.
  * Imports EmailModule to access EmailService, registers BatchEmailController
@@ -9,7 +9,6 @@
 import { Module } from '@nestjs/common';
 import { BatchEmailController } from './batch-email.controller';
 import { BatchEmailService } from './batch-email.service';
-import { EmailModule } from '../email/email.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { mailingRabbitMQModule } from '../rabbitmq.module';
@@ -18,10 +17,9 @@ import { WaveModule } from '../wave/wave.module';
 
 @Module({
   imports: [
-    EmailModule,
-    WaveModule,
     TypeOrmModule.forFeature([EmailTemplateEntity, UserEntity]),
     mailingRabbitMQModule,
+    WaveModule,
   ],
   controllers: [BatchEmailController],
   providers: [BatchEmailService],

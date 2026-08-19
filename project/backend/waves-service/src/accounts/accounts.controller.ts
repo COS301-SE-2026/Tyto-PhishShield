@@ -1,5 +1,5 @@
 /**
- * Service: mailing-service
+ * Service: waves-service
  *
  * Handles incoming RabbitMQ events for account (user) operations.
  *
@@ -19,7 +19,7 @@ export class AccountsController {
   @RabbitSubscribe({
     exchange: 'accounts-event-exchange',
     routingKey: 'user.created',
-    queue: 'mailing-event-exchange',
+    queue: 'waves-accounts-queue',
   })
   async createUser(user: User): Promise<void> {
     await this.accountsService.createUser(user);

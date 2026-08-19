@@ -23,6 +23,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
@@ -32,15 +33,22 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiTags,
+  PartialType,
+  ApiExtraModels,
 } from '@nestjs/swagger';
 import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { EmailsDto } from '../dto/emails.dto';
+import { SendSingleEmailDto } from '../dto/send-single-email.dto';
+import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
+
+class UpdateEmailDto extends PartialType(EmailsDto) {}
 
 @ApiTags('Emails')
 @Controller('emails')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@ApiExtraModels(SendSingleEmailDto, ScheduleSingleEmailDto)
 export class EmailController {
   private readonly mailingServiceUrl: string;
 
@@ -56,6 +64,21 @@ export class EmailController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new email' })
+  @ApiBody({
+    type: EmailsDto,
+    examples: {
+      default: {
+        summary: 'New phishing email template, alias is optional',
+        value: {
+          sender: 'example@example.com',
+          alias: ' Example',
+          subject: 'This is the subject',
+          content: 'Here is the example content',
+          difficulty: 'medium',
+        },
+      },
+    },
+  })
   createEmail(@Body() body: EmailsDto) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails`,
@@ -86,6 +109,21 @@ export class EmailController {
   @Patch(':referenceNumber')
   @ApiOperation({ summary: 'Update an existing email' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
+  @ApiBody({
+    type: UpdateEmailDto,
+    examples: {
+      default: {
+        summary: 'You only have to include the fields that change',
+        value: {
+          sender: 'Updated sender',
+          alias: 'Updated alias',
+          subject: 'Updated subject',
+          content: 'Updated content',
+          difficulty: 'easy',
+        },
+      },
+    },
+  })
   updateEmail(
     @Param('referenceNumber') referenceNumber: string,
     @Body() body: Partial<EmailsDto>,
@@ -97,19 +135,37 @@ export class EmailController {
     });
   }
 
+  @Delete(':referenceNumber')
+  @ApiOperation({ summary: 'Deletes email template' })
+  @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
+  deleteEmail(@Param('refereceNumber') referenceNumber: string) {
+    return this.proxy.forward({
+      url: `${this.mailingServiceUrl}/emails/${referenceNumber}`,
+      method: 'DELETE',
+    });
+  }
+
   @Post(':referenceNumber/send-single')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Dispatch the email with Resend' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
-  @ApiBody({ schema: { example: { auth0Id: 'auth0|example' } } })
+  @ApiBody({
+    type: SendSingleEmailDto,
+    examples: {
+      default: {
+        summary: 'Send immediately',
+        value: { auth0Id: 'auth0|1' },
+      },
+    },
+  })
   sendEmail(
     @Param('referenceNumber') referenceNumber: string,
-    @Body('auth0Id') auth0Id: string,
+    @Body() body: SendSingleEmailDto,
   ) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}/send-single`,
       method: 'POST',
-      data: { auth0Id },
+      data: body,
     });
   }
 
@@ -118,22 +174,25 @@ export class EmailController {
   @ApiOperation({ summary: 'Schedule the email via Resend' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   @ApiBody({
-    schema: {
-      example: {
-        auth0Id: 'auth0|example',
-        scheduledAt: '2026-05-25T14:30:00.000Z',
+    type: ScheduleSingleEmailDto,
+    examples: {
+      default: {
+        summary: 'Schedule for a future date',
+        value: {
+          auth0Id: 'auth0|1',
+          scheduledAt: '2026-05-25T14:30:00.000Z',
+        },
       },
     },
   })
   scheduleSendEmail(
     @Param('referenceNumber') referenceNumber: string,
-    @Body('auth0Id') auth0Id: string,
-    @Body('scheduledAt') scheduledAt: string,
+    @Body() body: ScheduleSingleEmailDto,
   ) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}/schedule-send-single`,
       method: 'POST',
-      data: { auth0Id, scheduledAt },
+      data: body,
     });
   }
 }

@@ -1,3 +1,5 @@
+// sendEmail & scheduleSendEmail might get removed in the future.
+
 /**
  * Service: mailing-service
  *
@@ -22,7 +24,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { UserEntity } from '../entities/user.entity';
 import { Resend } from 'resend';
@@ -127,6 +129,30 @@ export class EmailService {
     } catch (error) {
       this.logger.error('Failed to update email data', error);
       throw new InternalServerErrorException('Failed to update email data');
+    }
+  }
+
+  async deleteEmail(referenceNumber: string): Promise<DeleteResult> {
+    try {
+      const entry = await this.emailTemplateRepository.delete({
+        referenceNumber: referenceNumber,
+      });
+
+      if (entry.affected === 0) {
+        throw new NotFoundException(
+          `Email template with referenceNumber: ${referenceNumber} not found`,
+        );
+      }
+
+      return entry;
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete email with reference number: ${referenceNumber}`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        `Failed to delete email with reference number: ${referenceNumber}`,
+      );
     }
   }
 

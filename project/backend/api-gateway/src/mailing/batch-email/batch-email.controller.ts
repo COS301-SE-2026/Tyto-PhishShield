@@ -1,37 +1,37 @@
 /**
  * Service: api-gateway
  *
- * Proxies incoming HTTP requests for batch email operations to the mailing-service.
+ * Proxies incoming HTTP requests for batch email operations to the waves-service.
  * Validates JWT authentication and forwards each request via ProxyService.
  *
  * Functions:
- * - {@link BatchEmailController#sendBatchWithReference} - Forwards a request to send one email template to a list of recipients immediately.
- * - {@link BatchEmailController#sendBatchRandomSameEmail} - Forwards a request to send one randomly selected email to all recipients.
- * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Forwards a request to send a different randomly selected email to each recipient.
+ * - {@link BatchEmailController#sendBatchRandom} - Forwards a request to send one randomly selected or chosen email (by difficulty) to all recipients.
+ * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Forwards a request to send a different randomly selected email (by difficulty) to each recipient.
  */
 
 import {
-  Controller,
-  Post,
-  Param,
   Body,
+  Controller,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
 import {
   ApiOperation,
-  ApiParam,
   ApiBearerAuth,
   ApiBody,
   ApiTags,
+  ApiParam,
 } from '@nestjs/swagger';
 import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
+import { SendBatchDto } from '../dto/send-batch.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 
 @ApiTags('Batch Emails')
 @Controller('batch-emails')
@@ -57,7 +57,7 @@ export class BatchEmailController {
   })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   @ApiBody({
-    schema: { example: { auth0Id: ['auth0|example1', 'auth0|example2'] } },
+    schema: { example: { recipients: ['a@example.com', 'b@example.com'] } },
   })
   sendBatchWithReference(
     @Param('referenceNumber') referenceNumber: string,
@@ -73,20 +73,27 @@ export class BatchEmailController {
   @Post('send-batch-random-same-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Send one randomly selected email template to all recipients',
+    summary:
+      'Send one random / chosen email to all recipients. referenceNumber and randomisedTimes are optional',
   })
   @ApiBody({
-    schema: {
-      example: {
-        auth0Id: ['auth0|example1', 'auth0|example2'],
-        difficulty: 'medium',
-        scheduledFrom: '2026-06-24T10:00:00.000Z',
-        scheduledTo: '2026-06-24T12:00:00.000Z',
-        randomisedTimes: true,
+    type: SendBatchDto,
+    examples: {
+      default: {
+        summary: 'Same email to a batch of recipients',
+        value: {
+          auth0Id: ['auth0|1', 'auth0|2'],
+          difficulty: 'medium',
+          scheduledFrom: '2026-09-01T08:00:00.000Z',
+          scheduledTo: '2026-09-05T17:00:00.000Z',
+          randomisedTimes: true,
+          waveName: 'Finance Phishing Wave',
+          referenceNumber: 'PHISH-001',
+        },
       },
     },
   })
-  sendBatchRandomSameEmail(@Body() body: SendBatchRandomDto) {
+  sendBatchRandom(@Body() body: SendBatchDto) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/batch-emails/send-batch-random-same-email`,
       method: 'POST',
@@ -98,16 +105,21 @@ export class BatchEmailController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
-      'Send a different randomly selected email template to each recipient',
+      'Send a different randomly selected email to each recipient. randomisedTimes is optional',
   })
   @ApiBody({
-    schema: {
-      example: {
-        auth0Id: ['auth0|example1', 'auth0|example2'],
-        difficulty: 'medium',
-        scheduledFrom: '2026-06-24T10:00:00.000Z',
-        scheduledTo: '2026-06-24T12:00:00.000Z',
-        randomisedTimes: true,
+    type: SendBatchRandomDto,
+    examples: {
+      default: {
+        summary: 'Different email per recipient',
+        value: {
+          auth0Id: ['auth0|1', 'auth0|2'],
+          difficulty: 'medium',
+          scheduledFrom: '2026-09-01T08:00:00.000Z',
+          scheduledTo: '2026-09-05T17:00:00.000Z',
+          randomisedTimes: true,
+          waveName: 'Finance Phishing Wave',
+        },
       },
     },
   })

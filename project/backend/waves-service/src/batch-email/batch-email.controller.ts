@@ -1,5 +1,5 @@
 /**
- * Service: mailing-service
+ * Service: waves-service
  *
  * Handles incoming HTTP requests for batch email operations.
  * Exposes REST endpoints for sending a single email template to multiple
@@ -11,40 +11,15 @@
  * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Sends a different randomly selected email (by difficulty) to each recipient.
  */
 
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { BatchEmailService } from './batch-email.service';
 import { BatchPostReturnDto } from '../dto/batch-post-return.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
 import { SendBatchDto } from '../dto/send-batch.dto';
-import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 
 @Controller('batch-emails')
 export class BatchEmailController {
   constructor(private readonly batchEmailService: BatchEmailService) {}
-
-  @Post(':referenceNumber/send-batch-with-reference')
-  @HttpCode(HttpStatus.OK)
-  async sendBatchWithReference(
-    @Param('referenceNumber') referenceNumber: string,
-    @Body() sendBatchEmail: SendBatchEmailDto,
-  ): Promise<BatchPostReturnDto> {
-    const result = await this.batchEmailService.sendBatchWithReference(
-      referenceNumber,
-      sendBatchEmail.auth0Id,
-    );
-
-    return new BatchPostReturnDto({
-      success: result.success,
-      message: result.message,
-    });
-  }
 
   @Post('send-batch-random-same-email')
   @HttpCode(HttpStatus.OK)

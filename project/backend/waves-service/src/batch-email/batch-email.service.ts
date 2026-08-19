@@ -23,14 +23,10 @@ import { WaveService } from '../wave/wave.service';
 
 const MAILING_EVENT_EXCHANGE = 'mailing-event-exchange';
 
-// To find variables marked as {{_}}
-const VARIABLE_PATTERN = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
-
 @Injectable()
 export class BatchEmailService {
   private readonly resend: Resend;
   private readonly logger = new Logger(BatchEmailService.name);
-  private readonly businessName: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -43,27 +39,6 @@ export class BatchEmailService {
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
-    this.businessName = this.configService.get<string>('BUSINESS_NAME');
-  }
-
-  async sendBatchWithReference(
-    referenceNumber: string,
-    auth0Ids: string[],
-  ): Promise<BatchSendResultDto> {
-    const now = new Date();
-
-    const dispatches: BatchRecipientDto[] = auth0Ids.map((auth0Id) => ({
-      auth0Id,
-      referenceNumber: referenceNumber,
-      scheduledAt: now,
-    }));
-
-    await this.sendEmails(dispatches, `reference ${referenceNumber}`);
-
-    return {
-      success: true,
-      message: `Successfully dispatched ${dispatches.length} email(s) with reference ${referenceNumber}.`,
-    };
   }
 
   async sendBatchRandomSameEmail(
@@ -215,39 +190,6 @@ export class BatchEmailService {
       randomisedTimes: boolean;
     },
   ): Promise<BatchSendResultDto> {
-    const { emailsIds } = await this.sendEmails(dispatches, details);
-
-    try {
-      await this.waveService.saveWave({
-        waveName: waveInfo.waveName,
-        scheduledFrom: waveInfo.scheduledFrom,
-        scheduledTo: waveInfo.scheduledTo,
-        sameEmail: waveInfo.sameEmail,
-        randomisedTimes: waveInfo.randomisedTimes,
-        recipients: dispatches.map((dispatch, index) => ({
-          auth0Id: dispatch.auth0Id,
-          referenceNumber: dispatch.referenceNumber,
-          emailId: emailsIds[index],
-          scheduledAt: dispatch.scheduledAt,
-        })),
-      });
-    } catch (error) {
-      this.logger.error(
-        `Failed to save wave record "${waveInfo.waveName}" after send`,
-        error,
-      );
-    }
-
-    return {
-      success: true,
-      message: `${dispatches.length} email(s) dispatched for ${details}.`,
-    };
-  }
-
-  private async sendEmails(
-    dispatches: BatchRecipientDto[],
-    details: string,
-  ): Promise<{ emailsIds: string[] }> {
     const referenceNumbers = [
       ...new Set(dispatches.map((dispatch) => dispatch.referenceNumber)),
     ];
@@ -284,12 +226,35 @@ export class BatchEmailService {
     const routing = dispatches.every((dispatch) =>
       this.isImmediate(dispatch.scheduledAt),
     )
-      ? 'mailing.batch_send'
-      : 'mailing.batch_schedule';
+      ? 'waves.batch_send'
+      : 'waves.batch_schedule';
 
     await this.publishBatchDispatchEvent(routing, dispatches, emailsIds);
+    try {
+      await this.waveService.saveWave({
+        waveName: waveInfo.waveName,
+        scheduledFrom: waveInfo.scheduledFrom,
+        scheduledTo: waveInfo.scheduledTo,
+        sameEmail: waveInfo.sameEmail,
+        randomisedTimes: waveInfo.randomisedTimes,
+        recipients: dispatches.map((dispatch, index) => ({
+          auth0Id: dispatch.auth0Id,
+          referenceNumber: dispatch.referenceNumber,
+          emailId: emailsIds[index],
+          scheduledAt: dispatch.scheduledAt,
+        })),
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to save wave record "${waveInfo.waveName}" after send`,
+        error,
+      );
+    }
 
-    return { emailsIds };
+    return {
+      success: true,
+      message: `${dispatches.length} email(s) dispatched for ${details}.`,
+    };
   }
 
   private async fetchEmailsByReferenceNumbers(
@@ -380,16 +345,14 @@ export class BatchEmailService {
         );
       }
 
-      const { subject, content } = this.formatEmailContent(email, user);
-
       const item: ResendBatchItemDto = {
         from: this.formatFromAddress(email),
         to: [user.email],
-        subject,
-        html: content,
+        subject: email.subject,
+        html: email.content,
       };
 
-      // Add scheduledAt field if the scheduledAt time is outside the 5-min time.
+      // Add scheduledAt field if the scheduledAt time is inside the 5-min time.
       if (!this.isImmediate(dispatch.scheduledAt)) {
         item.scheduledAt = dispatch.scheduledAt.toISOString();
       }
@@ -403,112 +366,6 @@ export class BatchEmailService {
       throw new InternalServerErrorException(error);
     }
   }
-
-  private formatEmailContent(
-    email: EmailTemplateEntity,
-    user: UserEntity,
-  ): { subject: string; content: string } {
-    if (email.difficulty === EmailDifficulty.EASY) {
-      return { subject: email.subject, content: email.content };
-    }
-
-    let subject: string;
-    let content: string;
-
-    if (email.difficulty === EmailDifficulty.MEDIUM) {
-      subject = this.replaceMediumVariables(email.subject, user);
-      content = this.replaceMediumVariables(email.content, user);
-    } else if (email.difficulty === EmailDifficulty.HARD) {
-      subject = this.replaceHardVariables(email.subject, user);
-      content = this.replaceHardVariables(email.content, user);
-    } else {
-      subject = email.subject;
-      content = email.content;
-    }
-
-    this.checkForExtraVariables(email.referenceNumber, subject, content);
-
-    return { subject, content };
-  }
-
-  private replaceMediumVariables(text: string, user: UserEntity): string {
-    if (!text) {
-      return text;
-    }
-
-    let returning = text;
-
-    if (user.name) {
-      returning = returning.replace(/{{\s*name\s*}}/g, user.name);
-    }
-
-    if (user.department) {
-      returning = returning.replace(/{{\s*department\s*}}/g, user.department);
-    }
-
-    if (this.businessName) {
-      returning = returning.replace(
-        /{{\s*business_name\s*}}/g,
-        this.businessName,
-      );
-    }
-
-    return returning;
-  }
-
-  private replaceHardVariables(text: string, user: UserEntity): string {
-    if (!text) {
-      return text;
-    }
-
-    let returning = text;
-
-    if (user.name) {
-      returning = returning.replace(/{{\s*name\s*}}/g, user.name);
-    }
-
-    if (user.department) {
-      returning = returning.replace(/{{\s*department\s*}}/g, user.department);
-    }
-
-    if (this.businessName) {
-      returning = returning.replace(
-        /{{\s*business_name\s*}}/g,
-        this.businessName,
-      );
-    }
-
-    return returning;
-  }
-
-  private checkForExtraVariables(
-    referenceNumber: string,
-    subject: string,
-    content: string,
-  ): void {
-    const extraVariables = new Set<string>();
-
-    for (const text of [subject, content]) {
-      VARIABLE_PATTERN.lastIndex = 0;
-
-      let match: RegExpExecArray | null;
-
-      while ((match = VARIABLE_PATTERN.exec(text)) !== null) {
-        extraVariables.add(match[1]);
-      }
-    }
-
-    if (extraVariables.size > 0) {
-      const variableList = [...extraVariables].join(', ');
-      this.logger.error(
-        `Template "${referenceNumber}" has extra variable(s): ${variableList}`,
-      );
-      throw new InternalServerErrorException(
-        `Template "${referenceNumber}" contains extra variable(s): ${variableList}`,
-      );
-    }
-  }
-
   private async sendResendBatch(
     payload: ResendBatchItemDto[],
   ): Promise<string[]> {
