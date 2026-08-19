@@ -16,7 +16,7 @@ export function Reports({ onNavigate, activePath }: ReportsProps) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Reports"
-      subtitle="Download and schedule security reports" securityScore={72}>
+      subtitle="Download and schedule security reports">
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
         <Button onClick={() => addToast({ type: 'info', title: 'Report generation', message: 'Custom report builder coming in Demo 3.' })} icon={

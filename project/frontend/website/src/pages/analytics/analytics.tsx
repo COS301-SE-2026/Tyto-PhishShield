@@ -18,7 +18,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Analytics"
-      subtitle="Organisation-wide security metrics" securityScore={72}>
+      subtitle="Organisation-wide security metrics">
 
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, marginBottom: 20 }}>
