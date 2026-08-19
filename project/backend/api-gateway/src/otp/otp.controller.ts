@@ -2,7 +2,7 @@
  * Controller: OtpController
  *
  * Manages one‑time password generation, email delivery, verification,
- * and trusted device storage api access points. Only authenticated 
+ * and trusted device storage api access points. Only authenticated
  * users can request for OTPs.
  * See {@link OtpService} for more details.
  *
@@ -10,7 +10,6 @@
  * - {@link OtpController#verifyOtp} – checks the OTP, removes it, creates a verified device token
  * - {@link OtpController#resendOtp} – resends a new OTP and emails it to the user
  */
-
 
 import {
   Controller,
@@ -38,12 +37,12 @@ interface AuthenticatedRequest extends Request {
 @UseGuards(JwtAuthGuard)
 @Controller('auth/otp')
 export class OtpController {
-  constructor(
-    private readonly otpService: OtpService
-  ) {}
+  constructor(private readonly otpService: OtpService) {}
 
   @Post('verify-otp')
-  @ApiOperation({ summary: 'verfies otp that was sent to a specific email address' })
+  @ApiOperation({
+    summary: 'verfies otp that was sent to a specific email address',
+  })
   @ApiBearerAuth()
   @ApiBody({
     schema: {
@@ -51,7 +50,7 @@ export class OtpController {
       required: ['email', 'code'],
       properties: {
         email: { type: 'string', example: 'test@example.com' },
-        code: { type: 'string', example: '0123456' }
+        code: { type: 'string', example: '0123456' },
       },
     },
   })
@@ -67,8 +66,10 @@ export class OtpController {
       userAgent: req.header('user-agent') ?? '',
       ip: req.ip,
     };
-    const { valid, deviceToken } =
-      await this.otpService.verify(extendedDto, req.headers['authorization'] ?? '');
+    const { valid, deviceToken } = await this.otpService.verify(
+      extendedDto,
+      req.headers['authorization'] ?? '',
+    );
     res.cookie('device_token', deviceToken, {
       httpOnly: true,
       secure: true,

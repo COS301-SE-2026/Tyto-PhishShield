@@ -14,6 +14,6 @@ import { OtpModule } from '../otp/otp.module';
 @Module({
   imports: [ProxyModule, AuthModule, HttpModule, OtpModule],
   controllers: [AccountsController],
-  providers: [AccountsService]
+  providers: [AccountsService],
 })
 export class AccountsModule {}

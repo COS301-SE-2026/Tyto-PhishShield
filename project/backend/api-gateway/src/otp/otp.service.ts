@@ -10,10 +10,7 @@
  * - {@link OtpService#verify} – checks the OTP, removes it, creates a verified device token
  */
 
-import {
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'node:crypto';
 import { Resend } from 'resend';
@@ -88,7 +85,8 @@ export class OtpService {
   }
 
   async verify(
-    verifyOtp: ExtendedVerifyOtpDto, token: string
+    verifyOtp: ExtendedVerifyOtpDto,
+    token: string,
   ): Promise<{ valid: boolean; deviceToken: string }> {
     //Find otp in list
     const otp = this.OTPs.find((otp) => otp.email === verifyOtp.email);
@@ -101,8 +99,10 @@ export class OtpService {
     }
     if (otp.code !== verifyOtp.code) {
       otp.attempts += 1;
-      const newOtps = this.OTPs.map(
-        otpItem => otpItem.email === otp.email ? {...otpItem,  attempts: otp.attempts} : otpItem
+      const newOtps = this.OTPs.map((otpItem) =>
+        otpItem.email === otp.email
+          ? { ...otpItem, attempts: otp.attempts }
+          : otpItem,
       );
       this.OTPs = newOtps;
       return { valid: false, deviceToken: '' };
@@ -113,18 +113,16 @@ export class OtpService {
     //Ask accounts to generate a device token and return the token
     let deviceToken = '';
     try {
-      const res = await this.proxy.forward(
-        {
-          url: `${this.accountsServiceUrl}/api/auth/device/generate`,
-          method: 'POST',
-          data: {
-            email: verifyOtp.email,
-            userAgent: verifyOtp.userAgent,
-            ipCreated: verifyOtp.ip,
-          },
-          headers: { Authorization: token },
-        }
-      ) as string;
+      const res: string = await this.proxy.forward({
+        url: `${this.accountsServiceUrl}/api/auth/device/generate`,
+        method: 'POST',
+        data: {
+          email: verifyOtp.email,
+          userAgent: verifyOtp.userAgent,
+          ipCreated: verifyOtp.ip,
+        },
+        headers: { Authorization: token },
+      });
       deviceToken = res;
     } catch (err: unknown) {
       logger.warn('unable to generate device token', err);
@@ -134,7 +132,7 @@ export class OtpService {
   }
 
   private removeOtp(email: string) {
-    const newOtps = this.OTPs.filter(otpItem => otpItem.email !== email);
+    const newOtps = this.OTPs.filter((otpItem) => otpItem.email !== email);
     this.OTPs = newOtps;
   }
 }

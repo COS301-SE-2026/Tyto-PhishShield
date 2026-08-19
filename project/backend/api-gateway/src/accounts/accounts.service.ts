@@ -12,16 +12,18 @@
  * - {@link AccountsService#verifyDevice} – checks the device token, if verified then no otp will be sent
  */
 
-
-import { Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { ProxyService } from "../proxy/proxy.service";
-import { LoginDto } from "../dto/login.dto";
-import { firstValueFrom } from "rxjs";
-import { HttpService } from "@nestjs/axios";
-import { OtpService } from "../otp/otp.service";
-import { logger } from "../logger/logger.service";
-import { error } from "winston";
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ProxyService } from '../proxy/proxy.service';
+import { LoginDto } from '../dto/login.dto';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { OtpService } from '../otp/otp.service';
+import { logger } from '../logger/logger.service';
 
 interface Auth0UserResponse {
   user_id: string;
@@ -97,16 +99,13 @@ export class AccountsService {
 
     //check if user account is active in accounts service
     try {
-      const valid = await this.proxy.forward(
-        {
-          url: `${this.accountsServiceUrl}/api/auth/is-active`,
-          method: 'GET',
-          data: {
-            authID: user.user_id
-          },
-          
-        }
-      ) as boolean;
+      const valid = await this.proxy.forward({
+        url: `${this.accountsServiceUrl}/api/auth/is-active`,
+        method: 'GET',
+        data: {
+          authID: user.user_id,
+        },
+      });
       if (!valid) {
         throw new UnauthorizedException(
           'Account is deactivated. Please contact support.',
@@ -147,7 +146,11 @@ export class AccountsService {
           requiresOTP = true;
         } else {
           if (
-            !(await this.verifyDevice(dto.email, dto.deviceToken, data.access_token))
+            !(await this.verifyDevice(
+              dto.email,
+              dto.deviceToken,
+              data.access_token,
+            ))
           ) {
             await this.otpService.generateAndSend(dto.email);
             requiresOTP = true;
@@ -164,30 +167,29 @@ export class AccountsService {
       const axiosErr = err as AxiosErrorShape;
       if (axiosErr.response?.status == 500) {
         logger.error('Server error at login: ', err);
-        throw axiosErr;
+        throw err;
       }
-      logger.error(
-        'Login error:',
-        axiosErr.response?.data ?? axiosErr.message,
-      );
+      logger.error('Login error:', axiosErr.response?.data ?? axiosErr.message);
       throw new UnauthorizedException('Invalid email or password');
     }
   }
 
   //Sends a request to accounts to verify device token
-  private async verifyDevice(email: string, deviceToken: string, token: string): Promise<boolean> {
+  private async verifyDevice(
+    email: string,
+    deviceToken: string,
+    token: string,
+  ): Promise<boolean> {
     try {
-      const valid = await this.proxy.forward(
-        {
-          url: `${this.accountsServiceUrl}/api/auth/device/verify`,
-          method: 'POST',
-          data: {
-            email: email,
-            deviceToken: deviceToken,
-          },
-          headers: { Authorization: token },
-        }
-      ) as boolean;
+      const valid: boolean = await this.proxy.forward({
+        url: `${this.accountsServiceUrl}/api/auth/device/verify`,
+        method: 'POST',
+        data: {
+          email: email,
+          deviceToken: deviceToken,
+        },
+        headers: { Authorization: token },
+      });
       return valid;
     } catch {
       return false;

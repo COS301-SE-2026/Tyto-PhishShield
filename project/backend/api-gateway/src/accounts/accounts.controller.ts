@@ -46,7 +46,7 @@ export class AccountsController {
     private readonly proxy: ProxyService,
     private readonly routes: RouteResolver,
     private readonly config: ConfigService,
-    private readonly accountsService: AccountsService
+    private readonly accountsService: AccountsService,
   ) {
     this.accountsServiceUrl = this.config.get<string>(
       'ACCOUNTS_SERVICE_URL',
@@ -91,7 +91,10 @@ export class AccountsController {
   @Public()
   @Post('auth/verify-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Verify OTP for email verification (note: deprecated)', deprecated: true })
+  @ApiOperation({
+    summary: 'Verify OTP for email verification (note: deprecated)',
+    deprecated: true,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -111,7 +114,10 @@ export class AccountsController {
   @Public()
   @Post('auth/resend-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Resend OTP for email verification (note: deprecated)', deprecated: true })
+  @ApiOperation({
+    summary: 'Resend OTP for email verification (note: deprecated)',
+    deprecated: true,
+  })
   @ApiBody({
     schema: {
       type: 'object',
