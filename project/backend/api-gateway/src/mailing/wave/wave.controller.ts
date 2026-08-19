@@ -39,13 +39,13 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class WaveController {
-  private readonly wavesServiceUrl: string;
+  private readonly mailingServiceUrl: string;
 
   constructor(
     private readonly proxy: ProxyService,
     private readonly config: ConfigService,
   ) {
-    this.wavesServiceUrl = this.config.get<string>(
+    this.mailingServiceUrl = this.config.get<string>(
       'MAILING_SERVICE_URL',
       'http://localhost:3003',
     );
@@ -55,7 +55,7 @@ export class WaveController {
   @ApiOperation({ summary: 'Retrieve all wave names' })
   getAllNames() {
     return this.proxy.forward({
-      url: `${this.wavesServiceUrl}/wave/names`,
+      url: `${this.mailingServiceUrl}/wave/names`,
       method: 'GET',
     });
   }
@@ -67,7 +67,7 @@ export class WaveController {
   })
   getWavesMinimum() {
     return this.proxy.forward({
-      url: `${this.wavesServiceUrl}/wave/minimum`,
+      url: `${this.mailingServiceUrl}/wave/minimum`,
       method: 'GET',
     });
   }
@@ -81,7 +81,7 @@ export class WaveController {
   })
   getWavesWithAuth0Id(@Param('auth0Id') auth0Id: string) {
     return this.proxy.forward({
-      url: `${this.wavesServiceUrl}/wave/user/${auth0Id}`,
+      url: `${this.mailingServiceUrl}/wave/user/${auth0Id}`,
       method: 'GET',
     });
   }
@@ -90,7 +90,7 @@ export class WaveController {
   @ApiOperation({ summary: 'Retrieve all waves' })
   getWaves() {
     return this.proxy.forward({
-      url: `${this.wavesServiceUrl}/wave`,
+      url: `${this.mailingServiceUrl}/wave`,
       method: 'GET',
     });
   }
@@ -104,7 +104,7 @@ export class WaveController {
   })
   getWaveWithId(@Param('id', ParseUUIDPipe) id: string) {
     return this.proxy.forward({
-      url: `${this.wavesServiceUrl}/wave/${id}`,
+      url: `${this.mailingServiceUrl}/wave/${id}`,
       method: 'GET',
     });
   }
@@ -119,7 +119,7 @@ export class WaveController {
   })
   deleteWave(@Param('id', ParseUUIDPipe) id: string) {
     return this.proxy.forward({
-      url: `${this.wavesServiceUrl}/wave/${id}`,
+      url: `${this.mailingServiceUrl}/wave/${id}`,
       method: 'DELETE',
     });
   }
