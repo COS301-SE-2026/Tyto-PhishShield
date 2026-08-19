@@ -260,7 +260,6 @@ export function SendEmailTest({ onNavigate, activePath }: SendEmailTestProps) {
       onNavigate={onNavigate}
       title="Send Email Test"
       subtitle="Test frontend to API gateway email sending"
-      securityScore={72}
     >
       <Card style={{ padding: 24, maxWidth: 520 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
