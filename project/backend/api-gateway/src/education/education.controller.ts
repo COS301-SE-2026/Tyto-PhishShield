@@ -13,6 +13,8 @@ import { Request } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles, GatewayRole } from '../auth/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -41,6 +43,8 @@ export class EducationController {
   }
 
   @Post('questions')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Add a question (admin)' })
   @ApiBody({
     schema: {
@@ -70,6 +74,8 @@ export class EducationController {
   }
 
   @Get('questions')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'List all questions (admin)' })
   findAllQuestions(@Req() req: AuthenticatedRequest) {
     return this.proxy.forward({
