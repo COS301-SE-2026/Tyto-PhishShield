@@ -1,7 +1,13 @@
 import type { LoginDto, RegisterDto, LoginResponse, RegisterResponse, AuthenticatedUser,
 } from '../types';
 
-export const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? '').replace(/\/+$/, '') + '/api';
+function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end--;
+  return value.slice(0, end);
+}
+
+export const API_BASE = stripTrailingSlashes(import.meta.env.VITE_API_GATEWAY_URL ?? '') + '/api';
 
 export function getToken(): string | null {
   return localStorage.getItem('access_token');
