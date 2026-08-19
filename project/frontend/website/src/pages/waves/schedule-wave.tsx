@@ -810,7 +810,7 @@ export function ScheduleWave({
               }}
             >
               <Input
-                label="Shedule from"
+                label="Schedule from"
                 type="datetime-local"
                 required
                 value={form.scheduledFrom}
@@ -821,7 +821,7 @@ export function ScheduleWave({
               />
 
               <Input
-                label="Shedule to"
+                label="Schedule to"
                 type="datetime-local"
                 required
                 value={form.scheduledTo}
