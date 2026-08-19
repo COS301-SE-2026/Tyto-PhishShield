@@ -389,7 +389,7 @@ export class BatchEmailService {
         html: content,
       };
 
-      // Add scheduledAt field if the scheduledAt time is inside the 5-min time.
+      // Add scheduledAt field if the scheduledAt time is outside the 5-min time.
       if (!this.isImmediate(dispatch.scheduledAt)) {
         item.scheduledAt = dispatch.scheduledAt.toISOString();
       }
