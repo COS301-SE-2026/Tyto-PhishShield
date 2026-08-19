@@ -138,7 +138,7 @@ export class EmailController {
   @Delete(':referenceNumber')
   @ApiOperation({ summary: 'Deletes email template' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
-  deleteEmail(@Param('refereceNumber') referenceNumber: string) {
+  deleteEmail(@Param('referenceNumber') referenceNumber: string) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}`,
       method: 'DELETE',
