@@ -1,7 +1,7 @@
 import type { LoginDto, RegisterDto, LoginResponse, RegisterResponse, AuthenticatedUser,
 } from '../types';
 
-export const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? '') + '/api';
+export const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? '').replace(/\/+$/, '') + '/api';
 
 export function getToken(): string | null {
   return localStorage.getItem('access_token');
