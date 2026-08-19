@@ -524,12 +524,21 @@ export function ScheduleWave({
                 label="Email distribution"
                 value={form.emailDistribution}
                 options={DISTRIBUTION_OPTIONS}
-                onChange={(event) =>
-                  setField(
-                    "emailDistribution",
-                    event.target.value as EmailDistribution,
-                  )
-                }
+                onChange={(event) => {
+                  const value = event.target.value as EmailDistribution;
+                  setField("emailDistribution", value);
+
+                  if (value !== "specific") {
+                    setSelectedEmail(null);
+                    setSelectedReference("");
+                    setReferenceInput("");
+
+                    setErrors((previous) => ({
+                      ...previous,
+                      referenceNumber: undefined,
+                    }));
+                  }
+                }}
               />
 
               <Select
