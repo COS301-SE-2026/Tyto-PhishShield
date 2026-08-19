@@ -10,6 +10,8 @@ import { Request } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles, GatewayRole } from '../auth/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -50,6 +52,8 @@ export class AnalyticsController {
   }
 
   @Get('reports')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiOperation({ summary: 'Report statistcs within optional date range' })
   @ApiQuery({ name: 'from', required: false })
   @ApiQuery({ name: 'to', required: false })
@@ -67,6 +71,8 @@ export class AnalyticsController {
   }
 
   @Get('mailing')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiOperation({ summary: 'Mailing statistcs within optional date range' })
   @ApiQuery({ name: 'from', required: false })
   @ApiQuery({ name: 'to', required: false })
@@ -84,6 +90,8 @@ export class AnalyticsController {
   }
 
   @Get('timeseries')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiOperation({ summary: 'Time series data for charts' })
   @ApiQuery({ name: 'from', required: false })
   @ApiQuery({ name: 'to', required: false })
@@ -101,6 +109,8 @@ export class AnalyticsController {
   }
 
   @Get('leaderboard')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiOperation({ summary: 'Top users by XP' })
   @ApiQuery({ name: 'limit', required: false })
   getLeaderboard(
@@ -116,6 +126,8 @@ export class AnalyticsController {
   }
 
   @Get('users/:auth0Id')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiOperation({ summary: 'Per-user analytics' })
   getUserStats(
     @Req() req: AuthenticatedRequest,
