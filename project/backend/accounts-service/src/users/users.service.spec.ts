@@ -45,7 +45,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repo },
-        { provide: EventProducerService, useValue: { publishUserCreatedEvent: jest.fn().mockResolvedValue(undefined) } },//remember to check with Josua about this one.
+        { provide: EventProducerService, useValue: { publishUserCreatedEvent: jest.fn().mockResolvedValue(undefined), publishUserUpdatedEvent: jest.fn().mockResolvedValue(undefined),} },//remember to check with Josua about this one.
       ],
     }).compile();
 

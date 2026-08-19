@@ -188,6 +188,11 @@ export class AccountsController {
       properties: {
         name: { type: 'string', example: 'New Name' },
         email: { type: 'string', example: 'newemail@example.com' },
+        department: {
+          type: 'string',
+          enum: ['IT & Security', 'Finance', 'Human Resources', 'Legal & Compliance', 'Operations', 'Executive'],
+          example: 'IT & Security',
+        },
       },
     },
   })
@@ -290,6 +295,53 @@ export class AccountsController {
     return this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/users/${id}`,
       method: 'DELETE',
+      headers: authHeader(req),
+    });
+  }
+
+  @Patch('auth/password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['currentPassword', 'newPassword'],
+      properties: {
+        currentPassword: { type: 'string', example: 'OldPass123!' },
+        newPassword: { type: 'string', example: 'NewPass123!' },
+      },
+    },
+  })
+  changePassword(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/password`,
+      method: 'PATCH',
+      data: body,
+      headers: authHeader(req),
+    });
+  }
+
+  @Patch('users/:id/active')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Activate or deactivate a user (admin only)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['isActive'],
+      properties: { isActive: { type: 'boolean' } },
+    },
+  })
+  updateActive(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/users/${id}/active`,
+      method: 'PATCH',
+      data: body,
       headers: authHeader(req),
     });
   }
