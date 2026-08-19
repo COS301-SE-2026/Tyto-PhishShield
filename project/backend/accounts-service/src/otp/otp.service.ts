@@ -1,6 +1,6 @@
 /**
  * NB this file is deprecated!!!!!!!!!
- * 
+ *
  * Service: OtpService
  *
  * Manages one‑time password generation, email delivery, verification,
@@ -149,7 +149,11 @@ export class OtpService {
     return true;
   }
 
-  async generateDeviceToken(email: string, userAgent: string, ipCreated: string): Promise<string> {
+  async generateDeviceToken(
+    email: string,
+    userAgent: string,
+    ipCreated: string,
+  ): Promise<string> {
     const deviceToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.hash('sha256', deviceToken);
     const user = await this.authService.getAuth0UserByEmail(email);

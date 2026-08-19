@@ -77,7 +77,6 @@ export class AuthService {
   private cachedMgmtToken: string | null = null;
   private mgmtTokenExpiry: number = 0;
   private readonly DOMAIN: string;
-  
 
   constructor(
     private readonly config: ConfigService,
@@ -434,9 +433,7 @@ export class AuthService {
         auth0Id: auth0User.user_id,
         email: auth0User.email,
         name: auth0User.name,
-        role:
-          (await this.getAuth0UserRoles(auth0ID))[0]?.name ??
-          UserRole.USER,
+        role: (await this.getAuth0UserRoles(auth0ID))[0]?.name ?? UserRole.USER,
         isVerified: false,
       };
       void this.userSyncService.syncAuth0User(createDbUser);

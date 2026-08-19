@@ -149,7 +149,7 @@ export class AuthController {
 
   @Get('is-active')
   @HttpCode(200)
-  isActive(@Body() body: {authID: string}) {
+  isActive(@Body() body: { authID: string }) {
     return this.authService.isActive(body.authID);
   }
 }
