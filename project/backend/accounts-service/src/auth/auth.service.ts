@@ -335,8 +335,8 @@ export class AuthService {
   async getAuth0UserByAuth0Id(auth0ID: string): Promise<Auth0UserResponse> {
     const mgmtToken = await this.getManagementToken();
     const { data } = await firstValueFrom(
-      this.http.get<Auth0UserResponse[]>(
-        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0ID)}`,
+      this.http.get<Auth0UserResponse>(
+        `https://${this.DOMAIN}/api/v2/users/${auth0ID}`,
         {
           headers: {
             Authorization: `Bearer ${mgmtToken}`,
@@ -345,7 +345,7 @@ export class AuthService {
         },
       ),
     );
-    return data[0];
+    return data;
   }
 
   async getAuth0Roles(): Promise<Auth0Roles[]> {
