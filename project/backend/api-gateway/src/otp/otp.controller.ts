@@ -1,3 +1,17 @@
+/**
+ * Controller: OtpController
+ *
+ * Manages one‑time password generation, email delivery, verification,
+ * and trusted device storage api access points. Only authenticated 
+ * users can request for OTPs.
+ * See {@link OtpService} for more details.
+ *
+ * Public methods:
+ * - {@link OtpController#verifyOtp} – checks the OTP, removes it, creates a verified device token
+ * - {@link OtpController#resendOtp} – resends a new OTP and emails it to the user
+ */
+
+
 import {
   Controller,
   Post,
@@ -9,7 +23,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { OtpService } from './otp.service';
 import { ExtendedVerifyOtpDto, VerifyOtpDto } from '../dto/verify-otp.dto';
 import { ResendOtpDto } from '../dto/resend-otp.dto';
@@ -21,6 +35,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 @ApiTags('OTP')
+@UseGuards(JwtAuthGuard)
 @Controller('auth/otp')
 export class OtpController {
   constructor(
@@ -28,7 +43,18 @@ export class OtpController {
   ) {}
 
   @Post('verify-otp')
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'verfies otp that was sent to a specific email address' })
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'code'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+        code: { type: 'string', example: '0123456' }
+      },
+    },
+  })
   @HttpCode(200)
   async verifyOtp(
     @Req() req: AuthenticatedRequest,
@@ -54,6 +80,17 @@ export class OtpController {
   }
 
   @Post('resend-otp')
+  @ApiOperation({ summary: 'Resend OTP for email verification' })
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+      },
+    },
+  })
   @HttpCode(200)
   resendOtp(@Body() dto: ResendOtpDto) {
     return this.otpService.generateAndSend(dto.email);

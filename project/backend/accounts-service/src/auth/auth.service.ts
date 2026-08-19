@@ -148,14 +148,13 @@ export class AuthService {
       role: UserRole.USER,
     });
 
-    await this.otpService.generateAndSend(dto.email);
-
     return {
       message:
         'Registration successful. Please verify your email with the OTP sent to you.',
     };
   }
 
+  //Deprecated
   async login(dto: LoginDto): Promise<{
     access_token: string;
     expires_in: number;
@@ -229,6 +228,7 @@ export class AuthService {
     }
   }
 
+  //Deprecated
   async verifyOtp(
     dto: ExtendedVerifyOtpDto,
   ): Promise<{ message: string; deviceToken: string }> {
@@ -250,6 +250,7 @@ export class AuthService {
     };
   }
 
+  //Deprecated
   async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user)

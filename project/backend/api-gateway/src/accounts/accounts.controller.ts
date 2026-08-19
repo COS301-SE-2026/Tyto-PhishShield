@@ -91,7 +91,7 @@ export class AccountsController {
   @Public()
   @Post('auth/verify-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Verify OTP for email verification' })
+  @ApiOperation({ summary: 'Verify OTP for email verification (note: deprecated)', deprecated: true })
   @ApiBody({
     schema: {
       type: 'object',
@@ -111,7 +111,7 @@ export class AccountsController {
   @Public()
   @Post('auth/resend-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Resend OTP for email verification' })
+  @ApiOperation({ summary: 'Resend OTP for email verification (note: deprecated)', deprecated: true })
   @ApiBody({
     schema: {
       type: 'object',
@@ -142,15 +142,9 @@ export class AccountsController {
     },
   })
   login(@Body() body: LoginDto) {
-    // const route = this.routes.resolve(req.originalUrl);
-    // req.url = req.url.replace(route.apiRoute, '');
-    // this.proxy.beterForward(req, res, route.targetService);
-    // if (res.statusCode === 401 || res.statusCode === 200) {
-
-    //   return res;
-    // } else { //If some other error happend with accounts try login directly from api-gateway
-      return this.accountsService.login(body);
-    // }
+    //Login now happens in the api gateway.
+    //none functional checks happen in the accounts service.
+    return this.accountsService.login(body);
   }
 
   @Post('auth/logout')

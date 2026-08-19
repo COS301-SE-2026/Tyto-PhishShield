@@ -1,3 +1,18 @@
+/**
+ * Service: AccountsService
+ *
+ * Manages account login and device verification in api-gateway.
+ * Sends non-important details to accounts microservice.
+ * These details are active or deactive account. (mainly to mark accounts for when they are away)
+ * also device tokens (if a token cannot be generated or verified user will just need to enter an otp)
+ *
+ * Public methods:
+ * - {@link AccountsService#login} – logs user in use auth0 and then uses otp service to send an otp
+ * Private methodes:
+ * - {@link AccountsService#verifyDevice} – checks the device token, if verified then no otp will be sent
+ */
+
+
 import { Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ProxyService } from "../proxy/proxy.service";
@@ -59,6 +74,7 @@ export class AccountsService {
     expires_in: number;
     requiresOTP: boolean;
   }> {
+    // check if user has verified thier email in auth0
     let user: Auth0UserResponse;
     try {
       const data = await this.getAuth0UserByEmail(dto.email);
@@ -79,6 +95,7 @@ export class AccountsService {
       }
     }
 
+    //check if user account is active in accounts service
     try {
       const valid = await this.proxy.forward(
         {
@@ -102,6 +119,8 @@ export class AccountsService {
         logger.warn('unable to see if account is active or not', err);
       }
     }
+
+    //Actual login request with auth0
     try {
       logger.info('Sending login request to auth0', dto.email);
       const { data } = await firstValueFrom(
@@ -120,6 +139,7 @@ export class AccountsService {
         ),
       );
       logger.info('User ' + dto.email + ' has attempted to log in');
+      //Check if use needs to send an otp
       let requiresOTP: boolean = false;
       if (dto.sendOTP) {
         if (!dto.deviceToken) {
@@ -154,8 +174,8 @@ export class AccountsService {
     }
   }
 
+  //Sends a request to accounts to verify device token
   private async verifyDevice(email: string, deviceToken: string, token: string): Promise<boolean> {
-    //TODO Send a request to accounts to verify device
     try {
       const valid = await this.proxy.forward(
         {
@@ -172,27 +192,6 @@ export class AccountsService {
     } catch {
       return false;
     }
-    // const user = await this.authService.getAuth0UserByEmail(email);
-
-    // if (!user) {
-    //   throw new UnauthorizedException('User not registered');
-    // }
-
-    // const hashedToken = crypto.hash('sha256', deviceToken);
-    // const trustedDevice = await this.deviceRepo.findOne({
-    //   where: {
-    //     tokenHash: hashedToken,
-    //     userId: user.user_id,
-    //   },
-    // });
-
-    // if (!trustedDevice) return false;
-
-    // trustedDevice.lastUsedAt = new Date();
-
-    // if (new Date() > trustedDevice.expiresAt) return false;
-
-    // await this.deviceRepo.update(trustedDevice.id, trustedDevice);
   }
 
   private async getAuth0UserByEmail(email: string): Promise<Auth0UserResponse> {

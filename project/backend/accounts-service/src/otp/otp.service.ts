@@ -1,4 +1,6 @@
 /**
+ * NB this file is deprecated!!!!!!!!!
+ * 
  * Service: OtpService
  *
  * Manages one‑time password generation, email delivery, verification,

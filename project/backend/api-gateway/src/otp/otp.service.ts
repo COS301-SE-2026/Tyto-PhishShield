@@ -8,7 +8,6 @@
  * Public methods:
  * - {@link OtpService#generateAndSend} – creates an OTP and emails it to the user
  * - {@link OtpService#verify} – checks the OTP, removes it, creates a verified device token
- * - {@link OtpService#verifyDevice} – checks if the device token is still valid
  */
 
 import {
@@ -64,6 +63,7 @@ export class OtpService {
     await this.sendOtpEmail(email, code);
   }
 
+  //Method to actually send the OTP email
   private async sendOtpEmail(email: string, code: string): Promise<boolean> {
     try {
       await this.resend.emails.send({
@@ -90,8 +90,10 @@ export class OtpService {
   async verify(
     verifyOtp: ExtendedVerifyOtpDto, token: string
   ): Promise<{ valid: boolean; deviceToken: string }> {
+    //Find otp in list
     const otp = this.OTPs.find((otp) => otp.email === verifyOtp.email);
 
+    //Check if otp exists or is valid or has reached max attempts
     if (!otp) return { valid: false, deviceToken: '' };
     if (new Date() > otp.expiresAt || otp.attempts > 5) {
       this.removeOtp(otp.email);
@@ -107,6 +109,8 @@ export class OtpService {
     }
     this.removeOtp(otp.email);
 
+    //At this point the OTP is valid
+    //Ask accounts to generate a device token and return the token
     let deviceToken = '';
     try {
       const res = await this.proxy.forward(
@@ -125,26 +129,6 @@ export class OtpService {
     } catch (err: unknown) {
       logger.warn('unable to generate device token', err);
     }
-
-    // const updatedOTPs = this.OTPs.filter((otp) => otp.email !== email);
-    // this.OTPs = updatedOTPs;
-
-    // const deviceToken = crypto.randomBytes(32).toString('hex');
-    // const hashedToken = crypto.hash('sha256', deviceToken);
-    // const user = await this.authService.getAuth0UserByEmail(email);
-    // if (!user) {
-    //   throw new UnauthorizedException('User not registered');
-    // }
-
-    // const verifiedDevice = this.deviceRepo.create({
-    //   userId: user.user_id,
-    //   tokenHash: hashedToken,
-    //   userAgent: userAgent,
-    //   ipCreated: ipCreated,
-    //   lastUsedAt: new Date(),
-    //   expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-    // });
-    // await this.deviceRepo.save(verifiedDevice);
 
     return { valid: true, deviceToken };
   }
