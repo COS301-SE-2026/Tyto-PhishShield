@@ -614,7 +614,7 @@ services:
       context: ../../
       dockerfile: project/frontend/website/Dockerfile
       args:
-        VITE_API_GATEWAY_URL: "https://localhost/"
+        VITE_API_GATEWAY_URL: "https://localhost"
         VITE_BASE_PATH: "/"
     restart: on-failure
     container_name: website
