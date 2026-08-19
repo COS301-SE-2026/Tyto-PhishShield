@@ -198,7 +198,6 @@ export function CreateEmail({
             label: 'Create Email Template',
             },
         ]}
-        securityScore={72}
         >
         <div style={{ maxWidth: 760 }}>
             {!createdTemplate ? (
