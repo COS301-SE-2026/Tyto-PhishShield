@@ -53,6 +53,8 @@ export class BatchEmailController {
   }
 
   @Post(':referenceNumber/send-batch-with-reference')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send one email template to many recipients immediately',
@@ -73,6 +75,8 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-same-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send one randomly selected email template to all recipients',
@@ -97,6 +101,8 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-different-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
