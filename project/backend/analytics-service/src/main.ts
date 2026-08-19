@@ -15,7 +15,7 @@ async function bootstrap() {
       port: Number(process.env.TCP_PORT ?? 3000),
     },
   });
-
+  app.setGlobalPrefix('api');
   await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3000);
   console.log('analytics service listening on port: ' + process.env.PORT);
