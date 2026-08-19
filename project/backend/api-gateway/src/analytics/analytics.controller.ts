@@ -39,7 +39,9 @@ export class AnalyticsController {
     );
   }
 
-  @Get('Overview')
+  @Get('overview')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiOperation({
     summary: 'Top-level stats for the admin dashboard',
   })
