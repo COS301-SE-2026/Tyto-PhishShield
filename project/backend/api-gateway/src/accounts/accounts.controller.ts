@@ -141,7 +141,7 @@ export class AccountsController {
       },
     },
   })
-  login(@Req() req: Request, @Res() res: Response) {
+  login(@Body() body: LoginDto) {
     // const route = this.routes.resolve(req.originalUrl);
     // req.url = req.url.replace(route.apiRoute, '');
     // this.proxy.beterForward(req, res, route.targetService);
@@ -149,7 +149,6 @@ export class AccountsController {
 
     //   return res;
     // } else { //If some other error happend with accounts try login directly from api-gateway
-      const body: LoginDto = req.body.json as LoginDto;
       return this.accountsService.login(body);
     // }
   }

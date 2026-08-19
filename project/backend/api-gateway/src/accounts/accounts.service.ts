@@ -6,6 +6,7 @@ import { firstValueFrom } from "rxjs";
 import { HttpService } from "@nestjs/axios";
 import { OtpService } from "../otp/otp.service";
 import { logger } from "../logger/logger.service";
+import { error } from "winston";
 
 interface Auth0UserResponse {
   user_id: string;
@@ -95,14 +96,14 @@ export class AccountsService {
         );
       }
     } catch (err: unknown) {
-      if (!(err instanceof UnauthorizedException)) {
-        logger.warn('unable to see if account is active or not', err);
-      } else {
+      if (err instanceof UnauthorizedException) {
         throw err;
+      } else {
+        logger.warn('unable to see if account is active or not', err);
       }
     }
-
     try {
+      logger.info('Sending login request to auth0', dto.email);
       const { data } = await firstValueFrom(
         this.http.post<Auth0LoginResponse>(
           `https://${this.DOMAIN}/oauth/token`,
@@ -118,7 +119,7 @@ export class AccountsService {
           },
         ),
       );
-
+      logger.info('User ' + dto.email + ' has attempted to log in');
       let requiresOTP: boolean = false;
       if (dto.sendOTP) {
         if (!dto.deviceToken) {
@@ -141,7 +142,11 @@ export class AccountsService {
       };
     } catch (err: unknown) {
       const axiosErr = err as AxiosErrorShape;
-      console.error(
+      if (axiosErr.response?.status == 500) {
+        logger.error('Server error at login: ', err);
+        throw axiosErr;
+      }
+      logger.error(
         'Login error:',
         axiosErr.response?.data ?? axiosErr.message,
       );

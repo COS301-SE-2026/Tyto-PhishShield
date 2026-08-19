@@ -31,6 +31,7 @@ interface OTP {
   email: string;
   code: string;
   expiresAt: Date;
+  attempts: number;
 }
 
 @Injectable()
@@ -53,10 +54,12 @@ export class OtpService {
 
   async generateAndSend(email: string): Promise<void> {
     const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+    this.removeOtp(email);
     this.OTPs.push({
       email,
       code,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      attempts: 0,
     });
     await this.sendOtpEmail(email, code);
   }
@@ -90,8 +93,19 @@ export class OtpService {
     const otp = this.OTPs.find((otp) => otp.email === verifyOtp.email);
 
     if (!otp) return { valid: false, deviceToken: '' };
-    if (new Date() > otp.expiresAt || otp.code !== verifyOtp.code)
+    if (new Date() > otp.expiresAt || otp.attempts > 5) {
+      this.removeOtp(otp.email);
       return { valid: false, deviceToken: '' };
+    }
+    if (otp.code !== verifyOtp.code) {
+      otp.attempts += 1;
+      const newOtps = this.OTPs.map(
+        otpItem => otpItem.email === otp.email ? {...otpItem,  attempts: otp.attempts} : otpItem
+      );
+      this.OTPs = newOtps;
+      return { valid: false, deviceToken: '' };
+    }
+    this.removeOtp(otp.email);
 
     let deviceToken = '';
     try {
@@ -108,7 +122,7 @@ export class OtpService {
         }
       ) as string;
       deviceToken = res;
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn('unable to generate device token', err);
     }
 
@@ -133,5 +147,10 @@ export class OtpService {
     // await this.deviceRepo.save(verifiedDevice);
 
     return { valid: true, deviceToken };
+  }
+
+  private removeOtp(email: string) {
+    const newOtps = this.OTPs.filter(otpItem => otpItem.email !== email);
+    this.OTPs = newOtps;
   }
 }
