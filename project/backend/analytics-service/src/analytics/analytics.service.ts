@@ -305,4 +305,51 @@ export class AnalyticsService {
     const newCampaign = this.campaignRepo.create(campaign);
     return this.campaignRepo.save(newCampaign);
   }
+
+  async getSummary(periodDays = 30) {
+    const now = new Date();
+    const currentStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
+    const previousStart = new Date(currentStart.getTime() - periodDays * 24 * 60 * 60 * 1000);
+  
+    const current = await this.getPeriodStats(currentStart, now);
+    const previous = await this.getPeriodStats(previousStart, currentStart);
+  
+    const delta = (curr: number, prev: number) => prev === 0 ? 0 : ((curr - prev) / prev) * 100;
+  
+    return {
+      detectionRate: { value: current.detectionRate, delta: delta(current.detectionRate, previous.detectionRate) },
+      clickRate: { value: current.clickRate, delta: delta(current.clickRate, previous.clickRate) },
+      totalSimulations: { value: current.totalEmailsSent, delta: delta(current.totalEmailsSent, previous.totalEmailsSent) },
+      atRiskUsers: { value: current.atRiskUsers, delta: delta(current.atRiskUsers, previous.atRiskUsers) },
+      trainingCompletion: { value: current.trainingCompletionRate, delta: delta(current.trainingCompletionRate, previous.trainingCompletionRate) },
+    };
+  }
+
+  private async getPeriodStats(start: Date, end: Date) {
+    const [
+      totalEmailsSent,
+      totalReports,
+      confirmedPhishing,
+      falsePositives,
+      totalClicks,
+      educationAssigned,
+      educationCompleted,
+    ] = await Promise.all([
+      this.repo.count({ where: { eventType: In([AnalyticsEventType.EMAIL_SENT, AnalyticsEventType.EMAIL_BATCH_SENT]), occurredAt: Between(start, end) } }),
+      this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_SUBMITTED, occurredAt: Between(start, end) } }),
+      this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_CONFIRMED, occurredAt: Between(start, end) } }),
+      this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE, occurredAt: Between(start, end) } }),
+      this.clickRepo.count({ where: { clickedAt: Between(start, end) } }),
+      this.repo.count({ where: { eventType: AnalyticsEventType.EDUCATION_ASSIGNED, occurredAt: Between(start, end) } }),
+      this.repo.count({ where: { eventType: AnalyticsEventType.EDUCATION_COMPLETED, occurredAt: Between(start, end) } }),
+    ]);
+  
+    const detectionRate = totalReports > 0 ? (confirmedPhishing / totalReports) * 100 : 0;
+    const clickRate = totalEmailsSent > 0 ? (totalClicks / totalEmailsSent) * 100 : 0;
+    // At-risk users: you need per-user click rates, which we don't compute here. Placeholder 0.
+    const atRiskUsers = 0;
+    const trainingCompletionRate = educationAssigned > 0 ? (educationCompleted / educationAssigned) * 100 : 0;
+  
+    return { totalEmailsSent, detectionRate, clickRate, atRiskUsers, trainingCompletionRate };
+  }
 }
