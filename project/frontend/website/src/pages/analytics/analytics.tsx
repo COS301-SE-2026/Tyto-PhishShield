@@ -66,7 +66,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Analytics"
-      subtitle="Organisation-wide security metrics" securityScore={72}>
+      subtitle="Organisation-wide security metrics">
 
       {/* Period selector — scopes the KPI row (except Training Completion, which is all-time) and the chart below */}
       <div style={{

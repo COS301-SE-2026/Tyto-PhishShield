@@ -278,7 +278,6 @@ export function ScheduleWave({
           label: "Schedule Wave",
         },
       ]}
-      securityScore={72}
     >
       <div
         style={{

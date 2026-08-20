@@ -387,7 +387,6 @@ export function Dashboard({ onNavigate, activePath }: DashboardProps) {
         onNavigate={onNavigate}
         title="Dashboard"
         subtitle={today}
-        securityScore={72}
       >
         {isAdminOrAnalyst
           ? <AdminDashboard onNavigate={onNavigate} onNewWave={() => setNewWaveOpen(true)} />

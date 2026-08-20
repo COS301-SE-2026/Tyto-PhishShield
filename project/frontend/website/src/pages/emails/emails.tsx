@@ -9,8 +9,7 @@ interface EmailsProps {
 export function Emails({ onNavigate, activePath }: EmailsProps) {
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Emails"
-      subtitle="Create, send, and manage phishing simulation emails"
-      securityScore={72}>
+      subtitle="Create, send, and manage phishing simulation emails">
       <Card style={{ padding: '48px 24px', textAlign: 'center' }}>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
           Email creation and sending is moving here from Phishing Waves. Coming soon!

@@ -146,7 +146,7 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     }, [departmentGroups, sizeFilter, departmentRankMode, search]);
 
     return(
-        <AppLayout activePath={activePath} onNavigate={onNavigate} title='Leaderboard' securityScore={72}> 
+        <AppLayout activePath={activePath} onNavigate={onNavigate} title='Leaderboard'> 
             <main style={{ background: 'var(--bg-page)', minHeight: '100%', padding: 24 }}>
                 <section style={{width: '100%'}}>
                     <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
