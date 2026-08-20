@@ -191,8 +191,8 @@ export function CreateEmail({
         subtitle="Create a reusable phishing email for phishing waves"
         breadcrumbs={[
             {
-            label: 'Phishing Waves',
-            path: '/waves',
+            label: 'Emails',
+            path: '/emails',
             },
             {
             label: 'Create Email Template',
@@ -338,7 +338,7 @@ export function CreateEmail({
                 >
                 <Button
                     variant="ghost"
-                    onClick={() => onNavigate('/waves')}
+                    onClick={() => onNavigate('/emails/templates')}
                     style={{
                         minWidth: 72,
                         paddingLeft: 16,
@@ -565,14 +565,14 @@ export function CreateEmail({
                 >
                 <Button
                     variant="ghost"
-                    onClick={() => onNavigate('/waves')}
+                    onClick={() => onNavigate('/emails/templates')}
                     style={{
                         minWidth: 72,
                         paddingLeft: 16,
                         paddingRight: 16,
                     }}
                 >
-                    Return to Phishing Waves
+                    Manage Templates
                 </Button>
 
                 <div
