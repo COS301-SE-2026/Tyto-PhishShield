@@ -266,19 +266,32 @@ describe('EducationService', () => {
       expect(amqpConnection.publish).toHaveBeenCalled();
     });
 
-    it('marks assignment as FAILED when score is below threshold', async () => {
-      dto.answers = [0, 1]; // both wrong
-      const result = await service.submitAnswers(auth0Id, dto);
-      expect(result.passed).toBe(false);
-      expect(result.xpAwarded).toBe(0);
-      expect(assignmentRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: AssignmentStatus.FAILED,
-          xpAwarded: 0,
-        }),
-      );
-      expect(amqpConnection.publish).not.toHaveBeenCalled();
-    });
+it('marks assignment as FAILED when score is below threshold', async () => {
+  dto.answers = [0, 1]; // both wrong
+  const result = await service.submitAnswers(auth0Id, dto);
+
+  expect(result.passed).toBe(false);
+  expect(result.xpAwarded).toBe(0);
+
+  expect(assignmentRepo.save).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: AssignmentStatus.FAILED,
+      xpAwarded: 0,
+    }),
+  );
+
+  // education.completed is published even when failed
+  expect(amqpConnection.publish).toHaveBeenCalledTimes(1);
+  expect(amqpConnection.publish).toHaveBeenCalledWith(
+    'education-event-exchange',
+    'education.completed',
+    {
+      auth0Id: 'auth0|123',
+      assignmentId: 'a1',
+      passed: false,
+    },
+  );
+});
 
     it('throws NotFoundException when no pending assignment exists', async () => {
       assignmentRepo.findOne.mockResolvedValue(null);

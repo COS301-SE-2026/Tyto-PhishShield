@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, type ReactNode } from 'react';
+import { Eye, EyeOff, X, Moon, Sun, } from 'lucide-react';
 
 // Button
 
@@ -146,15 +147,9 @@ export function PasswordInput(props: PasswordInputProps) {
           aria-label={show ? 'Hide password' : 'Show password'}
         >
           {show ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
-            </svg>
+            <EyeOff size={16} aria-hidden='true' />
           ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+            <Eye size={16} aria-hidden='true' />
           )}
         </button>
       }
@@ -281,8 +276,9 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 440 }: Moda
               background: 'none', border: 'none', color: 'var(--text-muted)',
               cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex',
             }}
+            aria-label='Close'
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <X size={18} aria-hidden='true' />
           </button>
         </div>
         {children}
@@ -335,17 +331,9 @@ export function ThemeToggle({ theme, onToggle }: { theme: 'light' | 'dark'; onTo
       }}
     >
       {theme === 'light' ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
+        <Moon size={16} aria-hidden='true' />
       ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="12" cy="12" r="5"/>
-          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
+        <Sun size={16} aria-hidden='true' />
       )}
     </button>
   );
@@ -424,8 +412,8 @@ export function ToastContainer({ toasts, onRemove }: {
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{t.title}</div>
             {t.message && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{t.message}</div>}
           </div>
-          <button onClick={() => onRemove(t.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button onClick={() => onRemove(t.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }} aria-label='Dismiss notification'>
+            <X size={14} aria-hidden='true' />
           </button>
         </div>
       ))}

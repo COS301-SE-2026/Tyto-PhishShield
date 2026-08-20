@@ -23,6 +23,7 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/microservices": "^11.1.24",
     "@nestjs/typeorm": "^11.0.1",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",

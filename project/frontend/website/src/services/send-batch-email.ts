@@ -12,7 +12,7 @@ export interface BatchEmailResponse{
 export type EmailDifficulty = 'easy' | 'medium' | 'hard';
 
 interface RandomBatchRequest {
-  recipients: string[];
+  auth0Id: string[];
   difficulty: EmailDifficulty;
   scheduledFrom: string;
   scheduledTo: string;
@@ -47,7 +47,7 @@ async function postBatchEmail(
   return data as BatchEmailResponse;
 }
 
-export async function sendBatchWithReference(referenceNumber: string, recipients: string[],): Promise<BatchEmailResponse> {
+export async function sendBatchWithReference(referenceNumber: string, auth0Ids: string[],): Promise<BatchEmailResponse> {
   const token = localStorage.getItem('access_token');
 
   const response = await fetch(
@@ -59,7 +59,7 @@ export async function sendBatchWithReference(referenceNumber: string, recipients
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        recipients,
+        auth0Id: auth0Ids,
       })
     }
   );
@@ -74,14 +74,14 @@ export async function sendBatchWithReference(referenceNumber: string, recipients
 }
 
 export async function sendBatchRandomSameEmail(
-    recipients: string[], 
+    auth0Ids: string[], 
     difficulty: EmailDifficulty, 
     scheduledFrom: string, 
     scheduledTo: string, 
     randomisedTimes: boolean,
 ): Promise<BatchEmailResponse> {
   const request: RandomBatchRequest = {
-    recipients,
+    auth0Id: auth0Ids,
     difficulty,
     scheduledFrom,
     scheduledTo,
@@ -96,14 +96,14 @@ export async function sendBatchRandomSameEmail(
 }
 
 export async function sendBatchRandomDifferentEmail(
-    recipients: string[], 
+    auth0Ids: string[], 
     difficulty: EmailDifficulty, 
     scheduledFrom: string, 
     scheduledTo: string, 
     randomisedTimes: boolean,
 ): Promise<BatchEmailResponse> {
   const request: RandomBatchRequest = {
-    recipients,
+    auth0Id: auth0Ids,
     difficulty,
     scheduledFrom,
     scheduledTo,

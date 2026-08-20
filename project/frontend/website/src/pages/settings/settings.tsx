@@ -3,39 +3,18 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button, Input, PasswordInput } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
+import { useAccessibility } from '../../context/accessibility-context';
 import { useToast } from '../../context/toast-context';
+import { User, Lock, Palette, Accessibility, Bell, Sun, Moon } from 'lucide-react';
 
 interface SettingsProps { onNavigate: (path: string) => void; activePath: string; }
 
 type SettingsTab = 'profile' | 'security' | 'appearance' | 'accessibility' | 'notifications';
 
-const Icons = {
-  Profile: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-  ),
-  Security: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-  ),
-  Appearance: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
-  ),
-  Accessibility: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-  ),
-  Notifications: () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-  ),
-  Sun: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-  ),
-  Moon: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  )
-};
-
 export function Settings({ onNavigate, activePath }: SettingsProps) {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { fontSize, setFontSize, highContrast, setHighContrast, reduceMotion, setReduceMotion, enhancedFocus, setEnhancedFocus, } = useAccessibility();
   const { addToast } = useToast();
 
   const [tab, setTab] = useState<SettingsTab>('profile');
@@ -51,12 +30,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
   const [confirmPw, setConfirmPw] = useState('');
   const [pwError, setPwError] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
-
-  // Accessibility
-  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xl'>('normal');
-  const [highContrast, setHighContrast] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [screenReader, setScreenReader] = useState(false);
 
   // Notifications 
   const [notifTraining, setNotifTraining] = useState(true);
@@ -83,11 +56,11 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
   };
 
   const TABS: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'profile',       label: 'Profile',       icon: <Icons.Profile /> },
-    { id: 'security',      label: 'Security',      icon: <Icons.Security /> },
-    { id: 'appearance',    label: 'Appearance',    icon: <Icons.Appearance /> },
-    { id: 'accessibility', label: 'Accessibility', icon: <Icons.Accessibility /> },
-    { id: 'notifications', label: 'Notifications', icon: <Icons.Notifications /> },
+    { id: 'profile',       label: 'Profile',       icon: <User size={16} /> },
+    { id: 'security',      label: 'Security',      icon: <Lock size={16} /> },
+    { id: 'appearance',    label: 'Appearance',    icon: <Palette size={16} /> },
+    { id: 'accessibility', label: 'Accessibility', icon: <Accessibility size={16} /> },
+    { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
   ];
 
   const Toggle = ({ value, onChange, label, desc }: { value: boolean; onChange: (v: boolean) => void; label: string; desc?: string }) => (
@@ -157,8 +130,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   style={{ 
                     alignSelf: 'flex-start',
                     minWidth: 80,
-                    paddingLeft: 16,
-                    paddingRight: 16,
                     }}>
                   Save Changes
                 </Button>
@@ -179,8 +150,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   style={{ 
                     alignSelf: 'flex-start',
                     minWidth: 80,
-                    paddingLeft: 16,
-                    paddingRight: 16, 
                   }}>
                   Update Password
                 </Button>
@@ -192,8 +161,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   style={{
                     alignSelf: 'flex-start',
                     minWidth: 80,
-                    paddingLeft: 16,
-                    paddingRight: 16, 
                   }}>
                   Sign out all devices
                 </Button>
@@ -209,8 +176,8 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>Theme</label>
                 <div style={{ display: 'flex', gap: 12 }}>
                   {([
-                      ['light', <Icons.Sun key="light-icon" />],
-                      ['dark', <Icons.Moon key="dark-icon" />],
+                      ['light', <Sun key="light-icon" size={20}/>],
+                      ['dark', <Moon key="dark-icon" size={20}/>],
                     ] as const).map(([t, icon]) => (
                     <button key={t} onClick={() => setTheme(t)} style={{
                       flex: 1, padding: '16px', borderRadius: 12, cursor: 'pointer',
@@ -242,7 +209,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 10, fontFamily: 'Inter, system-ui, sans-serif' }}>Text size</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {([['normal','A', 14], ['large','A', 17], ['xl','A', 20]] as const).map(([s, lbl, sz]) => (
-                    <button key={s} onClick={() => { setFontSize(s); document.documentElement.style.fontSize = sz + 'px'; }} style={{
+                    <button key={s} type="button" onClick={() => setFontSize(s)} style={{
                       flex: 1, padding: '10px', borderRadius: 8, cursor: 'pointer',
                       border: `1.5px solid ${fontSize === s ? 'var(--color-primary)' : 'var(--border)'}`,
                       background: fontSize === s ? 'var(--color-primary-light)' : 'var(--bg-hover)',
@@ -262,10 +229,9 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
               <Toggle value={reduceMotion} onChange={setReduceMotion}
                 label="Reduce motion"
                 desc="Minimises animations and transitions throughout the interface." />
-              <Toggle value={screenReader} onChange={setScreenReader}
-                label="Screen reader optimised"
-                desc="Enhances ARIA labels and keyboard navigation for screen reader users." />
-
+              <Toggle value={enhancedFocus} onChange={setEnhancedFocus}
+                label="Enhanced keyboard focus indicators"
+                desc="Makes the focus outline bolder and higher-contrast when navigating by keyboard." />
               <div style={{ marginTop: 16, padding: '12px 14px', background: 'var(--color-primary-light)', borderRadius: 8, border: '1px solid var(--color-primary-mid)' }}>
                 <p style={{ fontSize: 12, color: 'var(--color-primary)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.5 }}>
                   PhishShield targets WCAG 2.1 Level AA compliance. If you experience accessibility issues, please contact <a href="mailto:admin@tyto.co.za" style={{ fontWeight: 600 }}>admin@tyto.co.za</a>.
@@ -293,8 +259,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                   marginTop: 20, 
                   alignSelf: 'flex-start',
                   minWidth: 80,
-                  paddingLeft: 16,
-                  paddingRight: 16, 
                 }}>
                 Save Preferences
               </Button>

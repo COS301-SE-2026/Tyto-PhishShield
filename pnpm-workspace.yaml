@@ -1,5 +1,6 @@
 packages:
   - 'project/**'
+injectWorkspacePackages: true
 allowBuilds:
   '@nestjs/core': true
   '@scarf/scarf': true
