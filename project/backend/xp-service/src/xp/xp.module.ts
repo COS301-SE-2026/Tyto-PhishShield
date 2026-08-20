@@ -16,6 +16,10 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
           name: 'xp-event-exchange',
           type: 'topic',
         },
+        {
+          name: 'mailing-event-exchange',
+          type: 'topic',
+        },
       ],
       enableControllerDiscovery: true,
       connectionInitOptions: {

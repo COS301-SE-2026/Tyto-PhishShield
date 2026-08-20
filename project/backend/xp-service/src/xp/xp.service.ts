@@ -20,12 +20,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { XpEntity } from '../entities/xp.entity';
+import { XpEntity, XpReason } from '../entities/xp.entity';
 import { UserEntity } from '../entities/user.entity';
 import { GiveXpDto } from '../dto/give-xp.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { XpResponseDto } from '../dto/xp-response.dto';
 import { NetXpResponseDto } from '../dto/net-xp-response.dto';
+import { EmailDetailsEntity } from '../entities/email-details.entity';
+import { ConfigService } from '@nestjs/config';
+import { MailingBatchEventDto } from '../dto/mailing-batch-event.dto';
 
 @Injectable()
 export class XpService {
@@ -36,6 +39,9 @@ export class XpService {
     private readonly xpRepository: Repository<XpEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(EmailDetailsEntity)
+    private readonly emailDetailsRepository: Repository<EmailDetailsEntity>,
+    private readonly configService: ConfigService,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
@@ -76,6 +82,113 @@ export class XpService {
     } catch (error) {
       this.logger.error(`Failed to award XP to user ${dto.auth0Id}`, error);
       throw new InternalServerErrorException('Failed to award XP');
+    }
+  }
+
+  async createEmailDetails(event: MailingBatchEventDto): Promise<void> {
+    if (!event?.entries?.length) {
+      return;
+    }
+
+    for (const entry of event.entries) {
+      try {
+        const existingEntry = await this.emailDetailsRepository.findOneBy({
+          token: entry.token,
+        });
+
+        if (existingEntry) {
+          this.logger.warn(
+            `Mailing Event already exists: ${entry.token}, entry will be skipped`,
+          );
+          continue;
+        }
+
+        const createdEntry = this.emailDetailsRepository.create({
+          token: entry.token,
+          auth0Id: entry.auth0Id,
+          referenceNumber: entry.referenceNumber,
+          emailId: entry.emailId,
+          scheduledAt: new Date(entry.scheduledAt),
+        });
+
+        await this.emailDetailsRepository.save(createdEntry);
+      } catch (error) {
+        this.logger.error(
+          `Failed to save event entry from mailing batch service to the xp email_details table: ${entry.token}`,
+          error,
+        );
+      }
+    }
+    this.logger.log(
+      `Successfully saved event from mailing batch service to the xp email_details table`,
+    );
+  }
+
+  async linkClicked(token: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const details_entry = await this.emailDetailsRepository.findOneBy({
+      token,
+    });
+
+    if (!details_entry) {
+      this.logger.warn(`Token from link clicked not found: ${token}`);
+      throw new NotFoundException('Token not found');
+    }
+
+    if (details_entry.clicked) {
+      return {
+        success: true,
+        message: `Link with token: ${token}, was already clicked`,
+      };
+    }
+
+    const user = await this.userRepository.findOneBy({
+      auth0Id: details_entry.auth0Id,
+    });
+
+    if (!user) {
+      this.logger.warn(`User not found for auth0Id: ${details_entry.auth0Id}`);
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      const xp_entry = this.xpRepository.create({
+        userId: user.id,
+        amount: -40,
+        reason: XpReason.COMPROMISED,
+      });
+
+      const saved = await this.xpRepository.save(xp_entry);
+
+      details_entry.clicked = true;
+      await this.emailDetailsRepository.save(details_entry);
+
+      this.logger.log(
+        `Reduced XP of user ${user.auth0Id} by ${saved.amount} for compromised link: ${token}`,
+      );
+
+      try {
+        await this.amqpConnection.publish('xp-event-exchange', 'xp.given', {
+          auth0Id: user.auth0Id,
+          amount: saved.amount,
+          reason: XpReason.COMPROMISED,
+        });
+      } catch (publishError) {
+        this.logger.error(
+          `Failed to publish xp.given event for user ${user.auth0Id}`,
+          publishError,
+        );
+      }
+
+      return {
+        success: true,
+        message: `Link with token: ${token} was successfully marked as clicked and XP was deducted`,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to reduce XP for user ${user.auth0Id}`, error);
+      throw new InternalServerErrorException('Failed to reduce XP');
     }
   }
 
