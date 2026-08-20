@@ -4,7 +4,7 @@ import { Card, Badge, Button } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import type { Wave, WaveStatus } from '../../types';
-import { MailPlus, Send, CalendarPlus } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
 
 interface WavesProps {
   readonly onNavigate: (path: string) => void;
@@ -65,18 +65,6 @@ export function Waves({ onNavigate, activePath }: WavesProps) {
         </div>
         {isAdmin && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-            <Button variant="ghost" onClick={() => onNavigate('/waves/create-email')} icon={
-              <MailPlus size={13} aria-hidden='true'/>
-            }
-            style={{ minWidth: 72 }}>
-              Create Email
-            </Button>
-            <Button variant="ghost" onClick={() => onNavigate('/waves/send-email')} icon={
-              <Send size={13} aria-hidden='true'/>
-            }
-            style={{ minWidth: 72 }}>
-              Send Existing Email
-            </Button>
             <Button onClick={() => onNavigate('/waves/schedule')} icon={
               <CalendarPlus size={13} aria-hidden='true'/>
             }
