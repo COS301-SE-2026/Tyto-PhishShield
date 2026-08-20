@@ -5,6 +5,10 @@ import {
   AnalyticsEvent,
   AnalyticsEventType,
 } from './entities/analytics-event.entity';
+import { AnalyticsUser } from './entities/analytics-user.entity';
+import { Campaign } from './entities/campaign.entity';
+import { ClickEvent } from './entities/click-event.entity';
+import { SimulationSend } from './entities/simulation-send.entity';
 
 interface RecordEventInput {
   eventType: AnalyticsEventType;
@@ -16,8 +20,11 @@ interface RecordEventInput {
 @Injectable()
 export class AnalyticsService {
   constructor(
-    @InjectRepository(AnalyticsEvent)
-    private readonly repo: Repository<AnalyticsEvent>,
+    @InjectRepository(AnalyticsEvent) private readonly repo: Repository<AnalyticsEvent>,
+    @InjectRepository(AnalyticsUser) private readonly userRepo: Repository<AnalyticsUser>,
+    @InjectRepository(Campaign) private readonly campaignRepo: Repository<Campaign>,
+    @InjectRepository(ClickEvent) private readonly clickRepo: Repository<ClickEvent>,
+    @InjectRepository(SimulationSend) private readonly sendRepo: Repository<SimulationSend>,
   ) {}
 
   //just store whatever comes in, we can figure out the queries later.
