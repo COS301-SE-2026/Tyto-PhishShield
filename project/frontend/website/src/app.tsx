@@ -1,6 +1,5 @@
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { ProtectedRoute, PublicOnlyRoute } from './components/routing/protected-route';
-import { SendEmailTest } from './pages/send-email-test/send-email-test';
 import { Home } from './pages/home';
 import { Login } from './pages/auth/login';
 import { Register } from './pages/auth/register';
@@ -37,7 +36,6 @@ function App() {
       <Route path="/training" element={ <ProtectedRoute><Training onNavigate={handleNavigate} activePath="/training" /></ProtectedRoute> } />
       <Route path="/users/profile" element={ <ProtectedRoute><UserProfile onNavigate={handleNavigate} activePath="/users/profile" /></ProtectedRoute> } />
       <Route path="/settings" element={ <ProtectedRoute><Settings onNavigate={handleNavigate} activePath="/settings" /></ProtectedRoute> } />
-      <Route path="/send-email-test" element={ <ProtectedRoute minRole="admin"><SendEmailTest onNavigate={handleNavigate} activePath="/send-email-test" /></ProtectedRoute> } />
       <Route path="/analytics" element={ <ProtectedRoute minRole="analyst"><Analytics onNavigate={handleNavigate} activePath="/analytics" /></ProtectedRoute> } />
       <Route path="/analytics/reports" element={ <ProtectedRoute minRole="analyst"><Reports onNavigate={handleNavigate} activePath="/analytics/reports" /></ProtectedRoute> } />
       <Route path="/waves" element={ <ProtectedRoute minRole="analyst"><Waves onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
