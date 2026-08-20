@@ -27,8 +27,8 @@ export function Reports({ onNavigate, activePath }: ReportsProps) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {REPORTS.map((r, i) => (
-          <Card key={i} style={{ padding: '16px 20px' }}>
+        {REPORTS.map((r) => (
+          <Card key={r.title} style={{ padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>{r.title}</div>

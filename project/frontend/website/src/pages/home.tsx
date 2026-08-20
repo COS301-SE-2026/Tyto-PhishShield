@@ -334,7 +334,7 @@ export function Home({ onNavigate }: HomeProps) {
             { val: '3.2×', lbl: 'Faster response' },
             { val: '<500ms', lbl: 'Feedback latency' },
           ].map((s, i, arr) => (
-            <div key={i} style={{
+            <div key={s.lbl} style={{
               padding: '0 48px', textAlign: 'center',
               borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
             }}>
@@ -416,7 +416,7 @@ export function Home({ onNavigate }: HomeProps) {
             { n: '2', title: 'Employee receives email', desc: 'AI-generated phishing email lands in Outlook. Employee clicks or reports via add-in.' },
             { n: '3', title: 'Instant teachable moment', desc: 'Immediate feedback highlights specific warning signs. XP awarded for correct reporting.' },
           ].map((s, i, arr) => (
-            <div key={i} style={{
+            <div key={s.n} style={{
               flex: 1, minWidth: 200, padding: '0 32px', textAlign: 'center',
               borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none',
             }}>

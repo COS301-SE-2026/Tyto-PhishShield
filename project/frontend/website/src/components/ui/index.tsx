@@ -363,6 +363,7 @@ export function OtpInput({ value, onChange, length = 5 }: {
     <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
       {Array.from({ length }).map((_, i) => (
         <input
+        // eslint-disable-next-line react-x/no-array-index-key -- fixed-length digit slots, never reordered
           key={i}
           ref={el => { refs.current[i] = el; }}
           type="text" inputMode="numeric" maxLength={1}

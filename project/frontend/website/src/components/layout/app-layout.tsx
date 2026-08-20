@@ -77,7 +77,7 @@ export function AppLayout({
               {breadcrumbs && breadcrumbs.length > 0 ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
                   {breadcrumbs.map((b, i) => (
-                    <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span key={b.path ?? b.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {i > 0 && (
                         <ChevronRight size={18} color='var(--text-muted)' aria-hidden='true'/>
                       )}

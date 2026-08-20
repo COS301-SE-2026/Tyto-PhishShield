@@ -476,7 +476,7 @@ export function UserTraining({
 
                             return(
                               <button
-                                key={`${question.id}-${optionIndex}`}
+                                key={`${question.id}-${option}`}
                                 type="button"
                                 style={{
                                   ...optionButtonStyle,
