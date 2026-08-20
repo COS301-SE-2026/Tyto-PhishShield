@@ -23,6 +23,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 //import { OtpModule } from './otp/otp.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { WavesModule } from './waves/waves.module';
+import { LlmModule } from './llm/llm.module';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { WavesModule } from './waves/waves.module';
     WebsocketModule,
     WebhookModule,
     WavesModule,
+    LlmModule,
   ],
   controllers: [AppController],
   providers: [
