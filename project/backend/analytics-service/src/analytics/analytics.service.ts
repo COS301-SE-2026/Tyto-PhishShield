@@ -275,4 +275,34 @@ export class AnalyticsService {
       };
     return {};
   }
+
+  async upsertUser(user: {
+    auth0Id: string;
+    email?: string;
+    name?: string;
+    department?: string;
+    role?: string;
+  }) {
+    const existing = await this.userRepo.findOne({ where: { auth0Id: user.auth0Id } });
+    if (existing) {
+      Object.assign(existing, user);
+      return this.userRepo.save(existing);
+    }
+    const newUser = this.userRepo.create(user);
+    return this.userRepo.save(newUser);
+  }
+  
+  async deleteUser(auth0Id: string) {
+    await this.userRepo.delete({ auth0Id });
+  }
+
+  async upsertCampaign(campaign: Partial<Campaign>) {
+    const existing = await this.campaignRepo.findOne({ where: { id: campaign.id } });
+    if (existing) {
+      Object.assign(existing, campaign);
+      return this.campaignRepo.save(existing);
+    }
+    const newCampaign = this.campaignRepo.create(campaign);
+    return this.campaignRepo.save(newCampaign);
+  }
 }
