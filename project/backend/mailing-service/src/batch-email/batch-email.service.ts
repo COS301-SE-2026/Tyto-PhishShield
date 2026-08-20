@@ -31,6 +31,7 @@ export class BatchEmailService {
   private readonly resend: Resend;
   private readonly logger = new Logger(BatchEmailService.name);
   private readonly businessName: string;
+  private readonly trackingLink: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -44,6 +45,7 @@ export class BatchEmailService {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
     this.businessName = this.configService.get<string>('BUSINESS_NAME');
+    this.trackingLink = this.configService.get<string>('TRACKING_LINK');
   }
 
   async sendBatchWithReference(
@@ -267,13 +269,16 @@ export class BatchEmailService {
       recipients.map((recipient) => [recipient.auth0Id, recipient]),
     );
 
-    const payload = dispatches.map((dispatch) =>
+    const built = dispatches.map((dispatch) =>
       this.buildResendItem(
         dispatch,
         emailsByReference.get(dispatch.referenceNumber),
         recipientMap.get(dispatch.auth0Id),
       ),
     );
+
+    const payload = built.map((item) => item.dto);
+    const tokens = built.map((item) => item.token);
 
     const emailsIds = await this.sendResendBatch(payload);
 
@@ -287,7 +292,12 @@ export class BatchEmailService {
       ? 'mailing.batch_send'
       : 'mailing.batch_schedule';
 
-    await this.publishBatchDispatchEvent(routing, dispatches, emailsIds);
+    await this.publishBatchDispatchEvent(
+      routing,
+      dispatches,
+      emailsIds,
+      tokens,
+    );
 
     return { emailsIds };
   }
@@ -323,12 +333,14 @@ export class BatchEmailService {
     routingKey: string,
     dispatches: BatchRecipientDto[],
     emailIds: string[],
+    tokens: string[],
   ): Promise<void> {
     const entries = dispatches.map((dispatch, index) => ({
       auth0Id: dispatch.auth0Id,
       referenceNumber: dispatch.referenceNumber,
       scheduledAt: dispatch.scheduledAt.toISOString(),
       emailId: emailIds[index],
+      token: tokens[index],
     }));
 
     this.logger.log(
@@ -372,7 +384,7 @@ export class BatchEmailService {
     dispatch: BatchRecipientDto,
     email: EmailTemplateEntity,
     user?: UserEntity,
-  ): ResendBatchItemDto {
+  ): { dto: ResendBatchItemDto; token: string } {
     try {
       if (!user) {
         throw new NotFoundException(
@@ -380,7 +392,7 @@ export class BatchEmailService {
         );
       }
 
-      const { subject, content } = this.formatEmailContent(email, user);
+      const { subject, content, token } = this.formatEmailContent(email, user);
 
       const item: ResendBatchItemDto = {
         from: this.formatFromAddress(email),
@@ -394,7 +406,7 @@ export class BatchEmailService {
         item.scheduledAt = dispatch.scheduledAt.toISOString();
       }
 
-      return item;
+      return { dto: item, token };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -407,28 +419,38 @@ export class BatchEmailService {
   private formatEmailContent(
     email: EmailTemplateEntity,
     user: UserEntity,
-  ): { subject: string; content: string } {
-    if (email.difficulty === EmailDifficulty.EASY) {
-      return { subject: email.subject, content: email.content };
-    }
-
-    let subject: string;
-    let content: string;
+  ): { subject: string; content: string; token: string } {
+    let subject: string = email.subject;
+    let content_text: string = email.content;
 
     if (email.difficulty === EmailDifficulty.MEDIUM) {
       subject = this.replaceMediumVariables(email.subject, user);
-      content = this.replaceMediumVariables(email.content, user);
+      content_text = this.replaceMediumVariables(email.content, user);
     } else if (email.difficulty === EmailDifficulty.HARD) {
       subject = this.replaceHardVariables(email.subject, user);
-      content = this.replaceHardVariables(email.content, user);
-    } else {
-      subject = email.subject;
-      content = email.content;
+      content_text = this.replaceHardVariables(email.content, user);
     }
+
+    const { content, token } = this.replaceTrackingLinkVariables(content_text);
 
     this.checkForExtraVariables(email.referenceNumber, subject, content);
 
-    return { subject, content };
+    return { subject, content, token };
+  }
+
+  private replaceTrackingLinkVariables(content: string): {
+    content: string;
+    token: string;
+  } {
+    let returning = content;
+
+    const trackingToken = crypto.randomBytes(6).toString('hex').toUpperCase();
+    returning = returning.replace(
+      /{{\s*tracking_link\s*}}/g,
+      this.trackingLink + `/${trackingToken}`,
+    );
+
+    return { content: returning, token: trackingToken };
   }
 
   private replaceMediumVariables(text: string, user: UserEntity): string {
