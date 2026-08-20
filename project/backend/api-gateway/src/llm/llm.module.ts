@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { LlmController } from './llm.controller';
-import { ProxyService } from '../proxy/proxy.service';
 import { AuthModule } from '../auth/auth.module';
+import { ProxyModule } from '../proxy/proxy.module';
 
 @Module({
   controllers: [LlmController],
-  imports: [ProxyService, AuthModule]
+  imports: [ProxyModule, AuthModule]
 })
 export class LlmModule {}

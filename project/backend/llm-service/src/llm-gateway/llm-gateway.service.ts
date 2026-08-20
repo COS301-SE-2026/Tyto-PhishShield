@@ -13,8 +13,7 @@ export class LlmGatewayService {
     }
 
     async basicChat(chat: ChatDto): Promise<OkLlmGatewayResponse> {
-        const body: LlmGatewayRequestBody = { ...chat, free_models_only: true, n: 1};
-
+        const body: LlmGatewayRequestBody = { ...chat, n: 1};
         const response = await fetch(`${this.llmGatewayUrl}/chat/completions`, {
             method: 'POST',
             headers: {

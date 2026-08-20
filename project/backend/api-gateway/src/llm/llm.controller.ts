@@ -15,6 +15,8 @@ function authHeader(req: Request): Record<string, string> {
 @ApiBearerAuth()
 export class LlmController {
   private readonly llmServiceUrl: string;
+  private readonly llmProvider: string;
+
   constructor(
     private readonly proxyService: ProxyService,
     private readonly config: ConfigService,
@@ -22,6 +24,10 @@ export class LlmController {
     this.llmServiceUrl = this.config.get<string>(
       'LLM_SERVICE_URL',
       'http://localhost:3008',
+    );
+    this.llmProvider = this.config.get<string>(
+      'LLM_PROVIDER',
+      'google-ai-studio/gemini-3.1-flash-lite',
     );
   }
 
@@ -42,11 +48,11 @@ export class LlmController {
   })
   generateEmail(@Req() req: Request, @Body() body: {topic: string}) {
     const augmentedBody = {
-      model: '',
+      model: this.llmProvider,
       messages: [{
         role: 'user',
         content: `
-          Generate a convincing email body based on the topic below where any variables listed below are just printed as \${{variable name}}. 
+          Generate a convincing email html body based on the topic below where any variables listed below are just printed as \${{variable name}}. 
           Variables: 
             Reciever's name
             Sender's name
@@ -57,7 +63,7 @@ export class LlmController {
     }
     return this.proxyService.forward({
       method: 'POST',
-      url: `${this.llmServiceUrl}/api/chat`,
+      url: `${this.llmServiceUrl}/api/llm-gateway/chat`,
       headers: authHeader(req),
       data: augmentedBody
     });
