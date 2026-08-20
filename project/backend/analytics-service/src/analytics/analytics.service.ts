@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual, In } from 'typeorm';
 import {
@@ -304,6 +304,50 @@ export class AnalyticsService {
     }
     const newCampaign = this.campaignRepo.create(campaign);
     return this.campaignRepo.save(newCampaign);
+  }
+
+  async recordSimulationSend(input: {
+    emailId: string;
+    referenceNumber: string;
+    auth0Id?: string;
+    campaignId?: string;
+    sentAt?: Date;
+  }): Promise<void> {
+    const existing = await this.sendRepo.findOne({
+      where: { emailId: input.emailId },
+    });
+  
+    if (existing) {
+      // Already recorded, maybe update some fields if necessary
+      if (input.auth0Id !== undefined) existing.auth0Id = input.auth0Id;
+      if (input.campaignId !== undefined) existing.campaignId = input.campaignId;
+      if (input.referenceNumber !== undefined) existing.referenceNumber = input.referenceNumber;
+      if (input.sentAt !== undefined) existing.sentAt = input.sentAt;
+      await this.sendRepo.save(existing);
+      return;
+    }
+  
+    const send = this.sendRepo.create(input);
+    await this.sendRepo.save(send);
+  }
+  
+  async recordClickFromEmailId(emailId: string): Promise<void> {
+    const send = await this.sendRepo.findOne({
+      where: { emailId },
+    });
+  
+    if (!send) {
+      this.logger.warn(`Click received for unknown emailId: ${emailId}`);
+      return;
+    }
+  
+    const click = this.clickRepo.create({
+      referenceNumber: send.referenceNumber,
+      auth0Id: send.auth0Id,
+      campaignId: send.campaignId,
+    });
+  
+    await this.clickRepo.save(click);
   }
 
   async getSummary(periodDays = 30) {
