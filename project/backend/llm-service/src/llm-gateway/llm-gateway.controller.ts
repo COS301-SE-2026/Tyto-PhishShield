@@ -1,9 +1,13 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Post } from '@nestjs/common';
 import { LlmGatewayService } from './llm-gateway.service';
+import type { ChatDto } from '../dto/llm-gateway.dto';
 
 @Controller('llm-gateway')
 export class LlmGatewayController {
   constructor(private readonly llmGatewayService: LlmGatewayService) {}
 
-  
+  @Post('chat')
+  chat(request: ChatDto) {
+    return this.llmGatewayService.basicChat(request);
+  }
 }

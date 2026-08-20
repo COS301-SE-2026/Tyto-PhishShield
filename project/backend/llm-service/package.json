@@ -21,9 +21,10 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
-    "@nestjs/microservices": "^11.1.24",
-    "@nestjs/mapped-types": "*",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/mapped-types": "*",
+    "@nestjs/microservices": "^11.1.24",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.1",
     "pg": "^8.20.0",
