@@ -552,6 +552,8 @@ services:
       - TCP_PORT=${LLM_TCP_PORT}
       - DB_HOST=${LLM_DB_CONTAINER}
       - LLM_DB_PORT=${INTERNAL_DB_PORT}
+      - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
+      - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:

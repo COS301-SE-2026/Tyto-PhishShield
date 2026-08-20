@@ -661,6 +661,9 @@ importers:
       '@nestjs/core':
         specifier: ^11.0.1
         version: 11.1.21(@nestjs/common@11.1.21(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/microservices@11.1.24)(@nestjs/platform-express@11.1.21)(@nestjs/websockets@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/mapped-types':
+        specifier: '*'
+        version: 2.1.1(@nestjs/common@11.1.21(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)
       '@nestjs/microservices':
         specifier: ^11.1.24
         version: 11.1.24(@grpc/grpc-js@1.14.3)(@nestjs/common@11.1.21(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.21)(@nestjs/websockets@11.1.28)(amqp-connection-manager@5.0.0(amqplib@2.0.1))(amqplib@2.0.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
