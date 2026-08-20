@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, Between, MoreThanOrEqual, LessThanOrEqual, In } from 'typeorm';
 import {
   AnalyticsEvent,
   AnalyticsEventType,
@@ -400,5 +400,63 @@ export class AnalyticsService {
     }));
   }
 
+  async getByDepartment(periodDays = 30) {
+    const start = new Date(Date.now() - periodDays * 86400000);
+    const users = await this.userRepo.find();
+    const reports = await this.repo.find({
+      where: { occurredAt: MoreThanOrEqual(start), eventType: In([AnalyticsEventType.REPORT_SUBMITTED, AnalyticsEventType.REPORT_CONFIRMED]) },
+    });
+    const authToDept = new Map(users.map(u => [u.auth0Id, u.department]));
+    const deptMap = new Map<string, { sent: number; reported: number; confirmed: number }>();
+    for (const u of users) {
+      if (u.department && !deptMap.has(u.department)) deptMap.set(u.department, { sent: 0, reported: 0, confirmed: 0 });
+    }
+    for (const e of reports) {
+      const dept = e.auth0Id ? authToDept.get(e.auth0Id) : undefined;
+      if (!dept) continue;
+      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0 });
+      const b = deptMap.get(dept)!;
+      if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) b.reported++;
+      if (e.eventType === AnalyticsEventType.REPORT_CONFIRMED) b.confirmed++;
+    }
+    // For sent, we need to know which user received emails; currently our events don't have auth0Id for single sends.
+    // We'll return sent:0 for now or later modify mailing events.
+    return Array.from(deptMap.entries()).map(([department, d]) => ({
+      department,
+      sent: d.sent,
+      reported: d.reported,
+      detectionRate: d.reported > 0 ? (d.confirmed / d.reported) * 100 : 0,
+      clickRate: 0,
+    }));
+  }
+  
+  async getAtRiskUsers(periodDays = 30, limit = 10) {
+    // Requires per-user click/send ratios. We'll implement a basic version using click events and assuming we can map clicks to users.
+    const start = new Date(Date.now() - periodDays * 86400000);
+    const clicks = await this.clickRepo.find({ where: { clickedAt: MoreThanOrEqual(start) } });
+    const userClicks = new Map<string, number>();
+    for (const c of clicks) {
+      if (c.auth0Id) userClicks.set(c.auth0Id, (userClicks.get(c.auth0Id) ?? 0) + 1);
+    }
+    const users = await this.userRepo.find();
+    const result = [];
+    for (const [auth0Id, count] of userClicks.entries()) {
+      const user = users.find(u => u.auth0Id === auth0Id);
+      if (!user) continue;
+      // We don't have per-user send counts; assume a threshold of 1 click to be at-risk
+      result.push({
+        auth0Id,
+        name: user.name,
+        department: user.department,
+        clickRate: 100, // placeholder
+        riskLevel: 'high',
+      });
+    }
+    return result.slice(0, limit);
+  }
+  
+  async getCampaigns() {
+    return this.campaignRepo.find({ order: { startDate: 'DESC' } });
+  }
   
 }
