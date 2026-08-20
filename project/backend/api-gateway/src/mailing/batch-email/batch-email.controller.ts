@@ -32,6 +32,8 @@ import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Batch Emails')
 @Controller('batch-emails')
@@ -51,6 +53,8 @@ export class BatchEmailController {
   }
 
   @Post(':referenceNumber/send-batch-with-reference')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send one email template to many recipients immediately',
@@ -71,6 +75,8 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-same-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send one randomly selected email template to all recipients',
@@ -95,6 +101,8 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-different-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
