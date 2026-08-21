@@ -1,3 +1,5 @@
+// sendEmail & scheduleSendEmail might get removed in the future.
+
 /**
  * Service: mailing-service
  *
@@ -23,6 +25,7 @@ import {
   Get,
   Param,
   Patch,
+  Delete,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { EmailsDto } from '../dto/emails.dto';
@@ -30,6 +33,7 @@ import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
 import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
 import { SendSingleEmailDto } from '../dto/send-single-email.dto';
+import { DeleteResult } from 'typeorm';
 
 @Controller('emails')
 export class EmailController {
@@ -60,6 +64,13 @@ export class EmailController {
     @Body() updateEmailDto: Partial<EmailsDto>,
   ): Promise<EmailTemplateEntity> {
     return this.sendMailService.updateEmail(referenceNumber, updateEmailDto);
+  }
+
+  @Delete(':referenceNumber')
+  async deleteEmail(
+    @Param('referenceNumber') referenceNumber: string,
+  ): Promise<DeleteResult> {
+    return this.sendMailService.deleteEmail(referenceNumber);
   }
 
   @Post(':referenceNumber/send-single')

@@ -14,13 +14,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
-import { EmailDifficulty } from '../src/entities/email-template.entity';
+import {
+  EmailDifficulty,
+  EmailTemplateEntity,
+} from '../src/entities/email-template.entity';
 import { UserEntity } from '../src/entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { WaveEntity } from '../src/entities/wave.entity';
 const TEST_SENDER = `test@${process.env.DOMAIN}`;
 const TEST_RECIPIENT_EMAIL = process.env.RESEND_EMAIL_DELIVERED;
-const TEST_RECIPIENTS = [TEST_RECIPIENT_EMAIL, TEST_RECIPIENT_EMAIL, TEST_RECIPIENT_EMAIL];
+const TEST_RECIPIENTS = [
+  TEST_RECIPIENT_EMAIL,
+  TEST_RECIPIENT_EMAIL,
+  TEST_RECIPIENT_EMAIL,
+];
 const TEST_AUTH0_IDS = [
   'auth0|batch-e2e-1',
   'auth0|batch-e2e-2',
@@ -31,6 +39,8 @@ describe('BatchEmail service integration tests', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
   let userRepository: Repository<UserEntity>;
+  let waveRepository: Repository<WaveEntity>;
+  let emailTemplateRepository: Repository<EmailTemplateEntity>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -38,15 +48,24 @@ describe('BatchEmail service integration tests', () => {
     }).compile();
 
     userRepository = moduleFixture.get<Repository<UserEntity>>(
-    getRepositoryToken(UserEntity),
-  );
-  await userRepository.save(
-  TEST_AUTH0_IDS.map((auth0Id) => ({
-    auth0Id,
-    name: 'Batch E2E Test User',
-    email: TEST_RECIPIENT_EMAIL,
-  })),
-);
+      getRepositoryToken(UserEntity),
+    );
+
+    waveRepository = moduleFixture.get<Repository<WaveEntity>>(
+      getRepositoryToken(WaveEntity),
+    );
+
+    emailTemplateRepository = moduleFixture.get<
+      Repository<EmailTemplateEntity>
+    >(getRepositoryToken(EmailTemplateEntity));
+
+    await userRepository.save(
+      TEST_AUTH0_IDS.map((auth0Id) => ({
+        auth0Id,
+        name: 'Batch E2E Test User',
+        email: TEST_RECIPIENT_EMAIL,
+      })),
+    );
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -62,16 +81,19 @@ describe('BatchEmail service integration tests', () => {
     });
 
     if (res.status !== 201 && res.status !== 200) {
-  throw new Error(
-    `Failed to seed email template: ${res.status} ${JSON.stringify(res.body)}`,
-  );
-}
+      throw new Error(
+        `Failed to seed email template: ${res.status} ${JSON.stringify(res.body)}`,
+      );
+    }
 
     testReferenceNumber = res.body.referenceNumber;
   }, 30000);
 
   afterAll(async () => {
+
+    await waveRepository.delete({ waveName: 'Wave Name' });
     await userRepository.delete({ auth0Id: In(TEST_AUTH0_IDS) });
+    await emailTemplateRepository.delete({ sender: TEST_SENDER });
     await app.close();
   });
 
@@ -106,6 +128,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
@@ -129,6 +152,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
@@ -168,6 +192,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
@@ -191,6 +216,7 @@ describe('BatchEmail service integration tests', () => {
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {

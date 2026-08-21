@@ -82,6 +82,14 @@ import { WebhookModule } from './webhook/webhook.module';
           port: Number(process.env.ANALYTICS_TCP_PORT ?? 4005),
         },
       },
+      {
+        name: 'WAVES_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.WAVES_HOST ?? 'waves_app',
+          port: Number(process.env.WAVES_TCP_PORT ?? 4008),
+        },
+      },
     ]),
     WebsocketModule,
     WebhookModule,

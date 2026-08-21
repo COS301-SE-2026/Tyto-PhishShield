@@ -1,6 +1,5 @@
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { ProtectedRoute, PublicOnlyRoute } from './components/routing/protected-route';
-import { SendEmailTest } from './pages/send-email-test/send-email-test';
 import { Home } from './pages/home';
 import { Login } from './pages/auth/login';
 import { Register } from './pages/auth/register';
@@ -10,9 +9,11 @@ import { Reports } from './pages/analytics/reports';
 import { Training } from './pages/training/training';
 import { Waves } from './pages/waves/waves';
 import { Emails } from './pages/emails/emails';
+import { ManageEmailTemplates } from "./pages/emails/manage-email-templates";
 import { ScheduleWave } from './pages/waves/schedule-wave';
-import { CreateEmail } from './pages/waves/create-email';
+import { CreateEmail } from './pages/emails/create-email';
 import { SendEmail } from './pages/waves/send-existing-email';
+import { GenerateEmail } from './pages/emails/generate-email';
 import { Users } from './pages/users/users';
 import { UserProfile } from './pages/users/user-profile';
 import { Settings } from './pages/settings/settings';
@@ -36,13 +37,14 @@ function App() {
       <Route path="/training" element={ <ProtectedRoute><Training onNavigate={handleNavigate} activePath="/training" /></ProtectedRoute> } />
       <Route path="/users/profile" element={ <ProtectedRoute><UserProfile onNavigate={handleNavigate} activePath="/users/profile" /></ProtectedRoute> } />
       <Route path="/settings" element={ <ProtectedRoute><Settings onNavigate={handleNavigate} activePath="/settings" /></ProtectedRoute> } />
-      <Route path="/send-email-test" element={ <ProtectedRoute minRole="admin"><SendEmailTest onNavigate={handleNavigate} activePath="/send-email-test" /></ProtectedRoute> } />
       <Route path="/analytics" element={ <ProtectedRoute minRole="analyst"><Analytics onNavigate={handleNavigate} activePath="/analytics" /></ProtectedRoute> } />
       <Route path="/analytics/reports" element={ <ProtectedRoute minRole="analyst"><Reports onNavigate={handleNavigate} activePath="/analytics/reports" /></ProtectedRoute> } />
       <Route path="/waves" element={ <ProtectedRoute minRole="analyst"><Waves onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
+      <Route path="/emails/templates" element={ <ProtectedRoute minRole="analyst"><ManageEmailTemplates onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/emails" element={ <ProtectedRoute minRole="analyst"><Emails onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/waves/schedule" element={ <ProtectedRoute minRole="admin"><ScheduleWave onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
-      <Route path="/waves/create-email" element={ <ProtectedRoute minRole="admin"><CreateEmail onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
+      <Route path="/emails/generate" element={ <ProtectedRoute minRole="admin"><GenerateEmail onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
+      <Route path="/emails/create-email" element={ <ProtectedRoute minRole="admin"><CreateEmail onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/waves/send-email" element={ <ProtectedRoute minRole="admin"><SendEmail onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
       <Route path="/users" element={ <ProtectedRoute minRole="analyst"><Users onNavigate={handleNavigate} activePath="/users" /></ProtectedRoute> } />
       <Route path="/users/:id" element={ <ProtectedRoute minRole="analyst"><UserProfileById onNavigate={handleNavigate} /></ProtectedRoute> } />

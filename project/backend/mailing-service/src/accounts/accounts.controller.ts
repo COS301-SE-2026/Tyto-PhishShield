@@ -19,7 +19,7 @@ export class AccountsController {
   @RabbitSubscribe({
     exchange: 'accounts-event-exchange',
     routingKey: 'user.created',
-    queue: 'xp-accounts-queue',
+    queue: 'mailing-event-exchange',
   })
   async createUser(user: User): Promise<void> {
     await this.accountsService.createUser(user);
