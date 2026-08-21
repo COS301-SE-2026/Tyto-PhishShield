@@ -42,23 +42,27 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    const { from, to } = getPeriodRange(period);
-    Promise.all([
-      fetchAnalyticsSummary(period),
-      fetchTimeSeries(from, to),
-      fetchLeaderboard(5),
-    ])
-      .then(([summaryData, seriesData, leaderboardData]) => {
+    const loadAnalytics = async (): Promise<void> => {
+      setLoading(true);
+      const { from, to } = getPeriodRange(period);
+      try {
+        const [summaryData, seriesData, leaderboardData] = await Promise.all([
+          fetchAnalyticsSummary(period),
+          fetchTimeSeries(from, to),
+          fetchLeaderboard(5),
+        ]);
         if (cancelled) return;
         setSummary(summaryData);
         setSeries(seriesData);
         setTopReporters(leaderboardData);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) addToast({ type: 'error', title: 'Analytics failed to load', message: 'Unable to fetch analytics data.' });
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void loadAnalytics();
     return () => { cancelled = true; };
   }, [period, addToast]);
 
@@ -138,7 +142,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Activity Over Time</h2>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{PERIOD_LABEL[period]}</span>
         </div>
-        {!loading && series && series.length === 0 ? (
+        {!loading && series?.length === 0 ? (
           <ComingSoon label="No activity recorded in this period yet." />
         ) : (
           <svg viewBox="0 0 700 160" style={{ width: '100%', height: 160 }}>
@@ -184,7 +188,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
 
         <Card style={{ padding: '20px 22px' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Top Reporters</h2>
-          {!loading && topReporters && topReporters.length === 0 && (
+          {!loading && topReporters?.length === 0 && (
             <ComingSoon label="No confirmed reports yet." />
           )}
           {topReporters?.map((u, i) => (
