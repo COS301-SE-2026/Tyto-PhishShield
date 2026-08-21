@@ -280,7 +280,6 @@ export function ManageEmailTemplates({
                     label: 'Manage Templates',
                 },
             ]}
-            securityScore={72}
         >
             <div
                 style={{
