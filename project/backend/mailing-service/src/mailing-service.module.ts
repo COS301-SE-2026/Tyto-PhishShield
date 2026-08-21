@@ -7,6 +7,7 @@ import { EmailModule } from './email/email.module';
 import { MailingServiceController } from './mailing-service.controller';
 import { BatchEmailModule } from './batch-email/batch-email.module';
 import { mailingRabbitMQModule } from './rabbitmq.module';
+import { AccountsModule } from './accounts/accounts.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { mailingRabbitMQModule } from './rabbitmq.module';
     mailingRabbitMQModule,
     EmailModule,
     BatchEmailModule,
+    AccountsModule,
   ],
   controllers: [MailingServiceController],
 })
