@@ -13,10 +13,12 @@
   },
   "dependencies": {
     "eslint-plugin-react-x": "^5.7.5",
+    "lucide-react": "^1.28.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.15.1",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "@tailwindcss/postcss": "^4.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -335,8 +335,8 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
       subtitle="Send a saved email to one or more recipients"
       breadcrumbs={[
         {
-          label: "Campaigns",
-          path: "/campaigns",
+          label: "Phishing Waves",
+          path: "/waves",
         },
         {
           label: "Send Existing Email",
@@ -559,7 +559,7 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
           >
             <Button
               variant="ghost"
-              onClick={() => onNavigate("/campaigns")}
+              onClick={() => onNavigate("/waves")}
               style={{
                 minWidth: 72,
                 paddingLeft: 16,

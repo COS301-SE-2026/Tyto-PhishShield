@@ -27,6 +27,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GiveXpDto } from './dto/give-xp.dto';
 import { Public } from '../auth/public.decorator';
 import { TokenDto } from './dto/token.dto';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('XP')
 @Controller('xp')
@@ -46,6 +48,8 @@ export class XpController {
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Award XP to a user' })
   @ApiBody({ type: GiveXpDto })
   giveXp(@Body() body: GiveXpDto) {

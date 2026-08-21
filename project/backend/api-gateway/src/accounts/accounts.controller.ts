@@ -25,6 +25,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
 import { RouteResolver } from '../proxy/proxy.routes';
+import { AccountsService } from './accounts.service';
+import { LoginDto } from '../dto/login.dto';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -44,6 +48,7 @@ export class AccountsController {
     private readonly proxy: ProxyService,
     private readonly routes: RouteResolver,
     private readonly config: ConfigService,
+    private readonly accountsService: AccountsService,
   ) {
     this.accountsServiceUrl = this.config.get<string>(
       'ACCOUNTS_SERVICE_URL',
@@ -88,7 +93,10 @@ export class AccountsController {
   @Public()
   @Post('auth/verify-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Verify OTP for email verification' })
+  @ApiOperation({
+    summary: 'Verify OTP for email verification (note: deprecated)',
+    deprecated: true,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -108,7 +116,10 @@ export class AccountsController {
   @Public()
   @Post('auth/resend-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Resend OTP for email verification' })
+  @ApiOperation({
+    summary: 'Resend OTP for email verification (note: deprecated)',
+    deprecated: true,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -138,10 +149,10 @@ export class AccountsController {
       },
     },
   })
-  login(@Req() req: Request, @Res() res: Response) {
-    const route = this.routes.resolve(req.originalUrl);
-    req.url = req.url.replace(route.apiRoute, '');
-    return this.proxy.beterForward(req, res, route.targetService);
+  login(@Body() body: LoginDto) {
+    //Login now happens in the api gateway.
+    //none functional checks happen in the accounts service.
+    return this.accountsService.login(body);
   }
 
   @Post('auth/logout')
@@ -179,6 +190,18 @@ export class AccountsController {
       properties: {
         name: { type: 'string', example: 'New Name' },
         email: { type: 'string', example: 'newemail@example.com' },
+        department: {
+          type: 'string',
+          enum: [
+            'IT & Security',
+            'Finance',
+            'Human Resources',
+            'Legal & Compliance',
+            'Operations',
+            'Executive',
+          ],
+          example: 'IT & Security',
+        },
       },
     },
   })
@@ -223,7 +246,8 @@ export class AccountsController {
   }
 
   @Get('users')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users (admin/analyst only)' })
   findAll(@Req() req: AuthenticatedRequest) {
@@ -247,7 +271,8 @@ export class AccountsController {
   }
 
   @Patch('users/:id/role')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a user role (admin only)' })
   @ApiBody({
@@ -273,7 +298,8 @@ export class AccountsController {
   }
 
   @Delete('users/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiBearerAuth()
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a user (admin only)' })
@@ -281,6 +307,54 @@ export class AccountsController {
     return this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/users/${id}`,
       method: 'DELETE',
+      headers: authHeader(req),
+    });
+  }
+
+  @Patch('auth/password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['currentPassword', 'newPassword'],
+      properties: {
+        currentPassword: { type: 'string', example: 'OldPass123!' },
+        newPassword: { type: 'string', example: 'NewPass123!' },
+      },
+    },
+  })
+  changePassword(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/password`,
+      method: 'PATCH',
+      data: body,
+      headers: authHeader(req),
+    });
+  }
+
+  @Patch('users/:id/active')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Activate or deactivate a user (admin only)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['isActive'],
+      properties: { isActive: { type: 'boolean' } },
+    },
+  })
+  updateActive(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/users/${id}/active`,
+      method: 'PATCH',
+      data: body,
       headers: authHeader(req),
     });
   }

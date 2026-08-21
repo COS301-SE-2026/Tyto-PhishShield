@@ -50,7 +50,7 @@ export const authApi = {
   },
 
   verifyOtp: async (email: string, code: string): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/accounts/auth/verify-otp`, {
+    const res = await fetch(`${API_BASE}/auth/otp/verify-otp`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export const authApi = {
   },
 
   resendOtp: async (email: string): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/accounts/auth/resend-otp`, {
+    const res = await fetch(`${API_BASE}/auth/otp/resend-otp`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -82,6 +82,16 @@ export const authApi = {
       body: JSON.stringify({ email }),
     });
     if (res.status === 404) return { message: 'Reset email sent (stub)' };
+    return parseResponse<{ message: string }>(res);
+  },
+  
+  contactSales: async (dto: { companyName: string; workEmail: string; message?: string }): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/company/contact-sales`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) throw new Error('Could not send message, please try again');
     return parseResponse<{ message: string }>(res);
   },
 };
