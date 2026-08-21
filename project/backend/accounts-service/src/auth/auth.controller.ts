@@ -59,6 +59,7 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  //Deprecated
   @Post('login')
   @HttpCode(200)
   login(@Req() req: Request, @Body() dto: LoginDto) {
@@ -115,6 +116,7 @@ export class AuthController {
     };
   }
 
+  //Deprecated
   @Post('verify-otp')
   @HttpCode(200)
   async verifyOtp(
@@ -139,12 +141,19 @@ export class AuthController {
     return { message };
   }
 
+  //Deprecated
   @Post('resend-otp')
   @HttpCode(200)
   resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendOtp(dto);
   }
 
+  @Get('is-active')
+  @HttpCode(200)
+  isActive(@Body() body: { authID: string }) {
+    return this.authService.isActive(body.authID);
+  }
+  
   @Patch('password')
   @UseGuards(JwtAuthGuard)
   async changePassword(
