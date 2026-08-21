@@ -1,5 +1,6 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
+import { FilePenLine, Sparkles, Send, CalendarClock, LucideIcon } from 'lucide-react'
 
 interface EmailsProps {
   readonly onNavigate: (path: string) => void;
@@ -10,6 +11,7 @@ interface EmailActionCardProps {
   title: string;
   description: string;
   buttonLabel: string;
+  icon: LucideIcon;
   onClick: () => void;
 }
 
@@ -17,6 +19,7 @@ function EmailActionCard({
   title,
   description,
   buttonLabel,
+  icon: Icon,
   onClick,
 }: EmailActionCardProps) {
   return(
@@ -25,10 +28,15 @@ function EmailActionCard({
         display: 'flex',
         flexDirection: 'column',
         padding: 24,
-        gap: 12,
-        minHeight:240,
+        gap: 16,
+        minHeight:260,
       }}
     >
+      <Icon
+        size={42}
+        strokeWidth={1.5}
+        style={{ color: 'var(--color-primary)'}}
+      />
       <div style={{flex:1}}>
         <h2
           style={{
@@ -81,6 +89,7 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           title='Manage Email Templates'
           description='Create new phishing email templates, or edit and delete existing templates.'
           buttonLabel='Manage Templates'
+          icon={FilePenLine}
           onClick={() => onNavigate('/emails/templates')}
         />
 
@@ -88,6 +97,7 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           title='Generate Email Templates'
           description='Generate new phishing email templates using the LLM.'
           buttonLabel='Generate Templates'
+          icon={Sparkles}
           onClick={() => onNavigate('/emails/generate')}
         />
 
@@ -95,6 +105,7 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           title='Send Existing Email'
           description='Select an existing email template and send it to specific users.'
           buttonLabel='Send Email'
+          icon={Send}
           onClick={() => onNavigate('/waves/send-email')}
         />
 
@@ -102,6 +113,7 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           title='Schedule a Phishing Wave'
           description='Schedule phishing emails for multiple recipients over a selected period.'
           buttonLabel='Schedule Wave'
+          icon={CalendarClock}
           onClick={() => onNavigate('/waves/schedule')}
         />
       </div>  
