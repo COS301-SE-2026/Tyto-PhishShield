@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
+import { Optional } from '@nestjs/common';
 
 export class MailingBatchEntryDto {
   @IsString()
@@ -20,6 +21,10 @@ export class MailingBatchEntryDto {
   @IsString()
   @IsNotEmpty()
   token: string;
+
+  @IsString()
+  @Optional()
+  waveId?: string;
 }
 
 export class MailingBatchEventDto {

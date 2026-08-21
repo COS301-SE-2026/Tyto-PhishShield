@@ -27,6 +27,9 @@ export class EmailDetailsEntity {
   @Column({ type: 'timestamptz' })
   scheduledAt: Date;
 
+  @Column({ nullable: true })
+  waveId: string | null;
+
   @Column({ default: false })
   clicked: boolean;
 

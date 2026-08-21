@@ -103,12 +103,24 @@ export class XpService {
           continue;
         }
 
+        const user = await this.userRepository.findOneBy({
+          auth0Id: entry.auth0Id,
+        });
+
+        if (!user) {
+          this.logger.warn(
+            `User with auth0Id: ${entry.auth0Id} is not in users table, entry will be skipped`,
+          );
+          continue;
+        }
+
         const createdEntry = this.emailDetailsRepository.create({
           token: entry.token,
           auth0Id: entry.auth0Id,
           referenceNumber: entry.referenceNumber,
           emailId: entry.emailId,
           scheduledAt: new Date(entry.scheduledAt),
+          waveId: entry.waveId ?? null,
         });
 
         await this.emailDetailsRepository.save(createdEntry);

@@ -29,6 +29,7 @@ import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { XpResponseDto } from '../dto/xp-response.dto';
 import { NetXpResponseDto } from '../dto/net-xp-response.dto';
 import { MailingBatchEventDto } from '../dto/mailing-batch-event.dto';
+import { TokenDto } from '../dto/token.dto';
 
 @Controller('xp')
 export class XpController {
@@ -69,9 +70,9 @@ export class XpController {
 
   @Post('link-clicked')
   async linkClicked(
-    @Body() token: string,
+    @Body() tokenDto: TokenDto,
   ): Promise<{ success: boolean; message: string }> {
-    return this.xpService.linkClicked(token);
+    return this.xpService.linkClicked(tokenDto.token);
   }
 
   @Get()
