@@ -36,6 +36,8 @@ import {
 import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { EmailsDto } from '../dto/emails.dto';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Emails')
 @Controller('emails')
@@ -55,6 +57,8 @@ export class EmailController {
   }
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Create a new email' })
   createEmail(@Body() body: EmailsDto) {
     return this.proxy.forward({
@@ -65,6 +69,8 @@ export class EmailController {
   }
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Retrieve all generated emails' })
   getAllEmails() {
     return this.proxy.forward({
@@ -74,6 +80,8 @@ export class EmailController {
   }
 
   @Get(':referenceNumber')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Get a specific email by its reference number' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   getEmailByReference(@Param('referenceNumber') referenceNumber: string) {
@@ -84,6 +92,8 @@ export class EmailController {
   }
 
   @Patch(':referenceNumber')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Update an existing email' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   updateEmail(
@@ -98,6 +108,8 @@ export class EmailController {
   }
 
   @Post(':referenceNumber/send-single')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Dispatch the email with Resend' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
@@ -114,6 +126,8 @@ export class EmailController {
   }
 
   @Post(':referenceNumber/schedule-send-single')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Schedule the email via Resend' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })

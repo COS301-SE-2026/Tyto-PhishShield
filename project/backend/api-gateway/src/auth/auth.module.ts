@@ -6,10 +6,11 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
-  providers: [JwtStrategy],
-  exports: [JwtStrategy],
+  providers: [JwtStrategy, RolesGuard],
+  exports: [JwtStrategy, RolesGuard],
 })
 export class AuthModule {}
