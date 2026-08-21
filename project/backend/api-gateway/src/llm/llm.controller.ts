@@ -3,6 +3,8 @@ import { ProxyService } from '../proxy/proxy.service';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 function authHeader(req: Request): Record<string, string> {
   const token = req.headers['authorization'] as string | undefined;
@@ -11,7 +13,7 @@ function authHeader(req: Request): Record<string, string> {
 
 @ApiTags('LLM')
 @Controller('llm')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class LlmController {
   private readonly llmServiceUrl: string;
@@ -33,6 +35,7 @@ export class LlmController {
 
   //Note this is just a basic enpoint
   @Post('generate-email')
+  @Roles('admin')
   @ApiOperation({ summary: 'generate an email body with a certain topic' })
   @ApiBody({
     schema: {
