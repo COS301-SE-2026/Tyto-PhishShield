@@ -6,6 +6,6 @@ import { ProxyModule } from '../proxy/proxy.module';
 
 @Module({
   controllers: [WaveController, BatchEmailController],
-  imports: [ConfigModule, ProxyModule]
+  imports: [ConfigModule, ProxyModule],
 })
 export class WavesModule {}

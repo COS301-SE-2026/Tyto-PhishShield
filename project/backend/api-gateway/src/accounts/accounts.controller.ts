@@ -181,7 +181,14 @@ export class AccountsController {
         email: { type: 'string', example: 'newemail@example.com' },
         department: {
           type: 'string',
-          enum: ['IT & Security', 'Finance', 'Human Resources', 'Legal & Compliance', 'Operations', 'Executive'],
+          enum: [
+            'IT & Security',
+            'Finance',
+            'Human Resources',
+            'Legal & Compliance',
+            'Operations',
+            'Executive',
+          ],
           example: 'IT & Security',
         },
       },

@@ -5,6 +5,6 @@ import { ProxyModule } from '../proxy/proxy.module';
 
 @Module({
   controllers: [LlmController],
-  imports: [ProxyModule, AuthModule]
+  imports: [ProxyModule, AuthModule],
 })
 export class LlmModule {}

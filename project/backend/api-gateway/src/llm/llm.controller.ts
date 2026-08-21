@@ -5,8 +5,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
 
 function authHeader(req: Request): Record<string, string> {
-  const token = req.headers['authorization'];
-  return token ? { Authorization: token } : {};
+  const token = req.headers['authorization'] as string | undefined;
+  return token ? { authorization: token } : {};
 }
 
 @ApiTags('LLM')
@@ -46,12 +46,13 @@ export class LlmController {
       },
     },
   })
-  generateEmail(@Req() req: Request, @Body() body: {topic: string}) {
+  generateEmail(@Req() req: Request, @Body() body: { topic: string }) {
     const augmentedBody = {
       model: this.llmProvider,
-      messages: [{
-        role: 'user',
-        content: `
+      messages: [
+        {
+          role: 'user',
+          content: `
           Generate a convincing email html body based on the topic below where any variables listed below are just printed as \${{variable name}}. 
           Variables: 
             Reciever's name
@@ -59,13 +60,14 @@ export class LlmController {
           Topic:
             ${body.topic}
         `,
-      }]
-    }
+        },
+      ],
+    };
     return this.proxyService.forward({
       method: 'POST',
       url: `${this.llmServiceUrl}/api/llm-gateway/chat`,
       headers: authHeader(req),
-      data: augmentedBody
+      data: augmentedBody,
     });
   }
 }

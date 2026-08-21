@@ -91,8 +91,8 @@ import { LlmModule } from './llm/llm.module';
         options: {
           host: process.env.WAVES_HOST ?? 'waves_app',
           port: Number(process.env.WAVES_TCP_PORT ?? 4008),
-        }
-      }
+        },
+      },
     ]),
     WebsocketModule,
     WebhookModule,
