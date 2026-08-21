@@ -25,6 +25,7 @@ import {
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GiveXpDto } from './dto/give-xp.dto';
+import { Public } from '../auth/public.decorator';
 
 @ApiTags('XP')
 @Controller('xp')
@@ -93,6 +94,22 @@ export class XpController {
     return this.proxy.forward({
       url: `${this.xpServiceUrl}/xp/${auth0Id}/net`,
       method: 'GET',
+    });
+  }
+
+  @Public()
+  @Post('link-clicked')
+  @ApiOperation({ summary: 'Marks link as clicked and deducts xp from user' })
+  @ApiBody({
+    schema: { example: { token: 'ABC123' } },
+  })
+  linkClicked(
+    @Body() token: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.proxy.forward({
+      url: `${this.xpServiceUrl}/xp/link-clicked`,
+      method: 'POST',
+      data: token,
     });
   }
 }
