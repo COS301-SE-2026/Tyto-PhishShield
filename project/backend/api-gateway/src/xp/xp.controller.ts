@@ -26,6 +26,7 @@ import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GiveXpDto } from './dto/give-xp.dto';
 import { Public } from '../auth/public.decorator';
+import { TokenDto } from './dto/token.dto';
 
 @ApiTags('XP')
 @Controller('xp')
@@ -104,12 +105,12 @@ export class XpController {
     schema: { example: { token: 'ABC123' } },
   })
   linkClicked(
-    @Body() token: string,
+    @Body() tokenDto: TokenDto,
   ): Promise<{ success: boolean; message: string }> {
     return this.proxy.forward({
       url: `${this.xpServiceUrl}/xp/link-clicked`,
       method: 'POST',
-      data: token,
+      data: tokenDto,
     });
   }
 }
