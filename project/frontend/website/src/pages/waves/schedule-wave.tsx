@@ -108,7 +108,7 @@ export function ScheduleWave({
     () =>
     [...new Set(
       users.map((user) => user.department).filter((department): department is string => Boolean(department))
-    )].sort(),
+    )].sort((a, b) => a.localeCompare(b)),
     [users],
   );
 
@@ -765,6 +765,7 @@ export function ScheduleWave({
                     filteredUsers.map((user) => (
                       <label
                         key={user.auth0Id}
+                        aria-label={`Select ${user.name}`}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -776,6 +777,7 @@ export function ScheduleWave({
                       >
                         <input
                           type="checkbox"
+                          aria-label={`Select ${user.name}`}
                           checked={selectedAuth0Ids.includes(user.auth0Id)}
                           onChange={() => toggleUserSelection(user.auth0Id)}
                         />

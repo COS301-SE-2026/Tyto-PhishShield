@@ -176,7 +176,7 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
     () =>
     [...new Set(
       users.map((user) => user.department).filter((department): department is string => Boolean(department))
-    )].sort(),
+    )].sort((a, b) => a.localeCompare(b)),
     [users],
   );
 
@@ -626,6 +626,7 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
                       filteredUsers.map((user) => (
                         <label
                           key={user.auth0Id}
+                          aria-label={`Select ${user.name}`}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
