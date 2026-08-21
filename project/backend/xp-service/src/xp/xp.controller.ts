@@ -60,7 +60,15 @@ export class XpController {
     queue: 'xp-email-details-queue',
   })
   async eventCreateEmailDetails(event: MailingBatchEventDto): Promise<void> {
-    await this.xpService.createEmailDetails(event);
+    try {
+      await this.xpService.createEmailDetails(event);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(`Dropping mailing event: ${error.message}`);
+        return;
+      }
+      throw error;
+    }
   }
 
   @Post()
