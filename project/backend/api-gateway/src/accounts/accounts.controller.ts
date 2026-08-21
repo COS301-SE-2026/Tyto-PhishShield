@@ -25,6 +25,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
 import { RouteResolver } from '../proxy/proxy.routes';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -235,7 +237,8 @@ export class AccountsController {
   }
 
   @Get('users')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users (admin/analyst only)' })
   findAll(@Req() req: AuthenticatedRequest) {
@@ -259,7 +262,8 @@ export class AccountsController {
   }
 
   @Patch('users/:id/role')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a user role (admin only)' })
   @ApiBody({
@@ -285,7 +289,8 @@ export class AccountsController {
   }
 
   @Delete('users/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiBearerAuth()
   @HttpCode(204)
   @ApiOperation({ summary: 'Delete a user (admin only)' })
@@ -321,7 +326,8 @@ export class AccountsController {
   }
 
   @Patch('users/:id/active')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Activate or deactivate a user (admin only)' })
   @ApiBody({

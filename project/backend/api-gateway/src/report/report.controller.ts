@@ -16,6 +16,8 @@ import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles} from '../auth/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -86,7 +88,8 @@ export class ReportController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all reports (admin/analyst)' })
   findAll(@Req() req: AuthenticatedRequest) {
@@ -122,7 +125,8 @@ export class ReportController {
   }
 
   @Patch(':id/status')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update report status (admin/analyst)' })
   @ApiBody({
