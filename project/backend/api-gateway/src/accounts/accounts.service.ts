@@ -41,6 +41,7 @@ interface Auth0TokenResponse {
 interface Auth0LoginResponse {
   access_token: string;
   expires_in: number;
+  token_type?: string;
 }
 
 interface AxiosErrorShape {
