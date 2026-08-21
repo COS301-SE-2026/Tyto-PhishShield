@@ -1,3 +1,18 @@
+/**
+ * Service: llm-service
+ *
+ * LLM-Gateway:
+ * Proxies requests to an external LLM-Gateway which manages which LLMs are used and applies rate limiting.
+ * 
+ * Requires:
+ * env variables:
+ * LLM_GATEWAY_KEY
+ * LLM_GATEWAY_URL
+ *
+ * Functions:
+ * - {@link LlmGatewayService#basicChat} - Basic function which just handles sending a basic content chat message to the LLM gateway.
+ */
+
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {

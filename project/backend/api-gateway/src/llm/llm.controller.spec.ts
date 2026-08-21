@@ -50,12 +50,13 @@ describe('LlmController', () => {
       messages: [{
         role: 'user',
         content: `
-          Generate a convincing email html body based on the topic below where any variables listed below are just printed as \${{variable name}}. 
+          Generate a convincing email html body with just the <div> body part (without the subject) based on the topic below where any variables listed below are just printed as \${variable name}. 
           Variables: 
             Reciever's name
             Sender's name
           Topic:
             ${mockBody.topic}
+          Also do not include \\n characters. Do use some inline css styling. For any element class names use single quotes (').
         `,
       }]
     }
