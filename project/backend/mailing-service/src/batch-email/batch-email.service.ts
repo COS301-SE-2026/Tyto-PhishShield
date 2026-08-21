@@ -60,7 +60,17 @@ export class BatchEmailService {
       scheduledAt: now,
     }));
 
-    await this.sendEmails(dispatches, `reference ${referenceNumber}`);
+    const { emailsIds, tokens } = await this.sendEmails(
+      dispatches,
+      `reference ${referenceNumber}`,
+    );
+
+    await this.publishBatchDispatchEvent(
+      this.routingKey(dispatches),
+      dispatches,
+      emailsIds,
+      tokens,
+    );
 
     return {
       success: true,
@@ -217,10 +227,12 @@ export class BatchEmailService {
       randomisedTimes: boolean;
     },
   ): Promise<BatchSendResultDto> {
-    const { emailsIds } = await this.sendEmails(dispatches, details);
+    const { emailsIds, tokens } = await this.sendEmails(dispatches, details);
+
+    let waveId: string | undefined;
 
     try {
-      await this.waveService.saveWave({
+      const wave = await this.waveService.saveWave({
         waveName: waveInfo.waveName,
         scheduledFrom: waveInfo.scheduledFrom,
         scheduledTo: waveInfo.scheduledTo,
@@ -233,12 +245,21 @@ export class BatchEmailService {
           scheduledAt: dispatch.scheduledAt,
         })),
       });
+      waveId = wave.id;
     } catch (error) {
       this.logger.error(
         `Failed to save wave record "${waveInfo.waveName}" after send`,
         error,
       );
     }
+
+    await this.publishBatchDispatchEvent(
+      this.routingKey(dispatches),
+      dispatches,
+      emailsIds,
+      tokens,
+      waveId,
+    );
 
     return {
       success: true,
@@ -249,7 +270,7 @@ export class BatchEmailService {
   private async sendEmails(
     dispatches: BatchRecipientDto[],
     details: string,
-  ): Promise<{ emailsIds: string[] }> {
+  ): Promise<{ emailsIds: string[]; tokens: string[] }> {
     const referenceNumbers = [
       ...new Set(dispatches.map((dispatch) => dispatch.referenceNumber)),
     ];
@@ -286,20 +307,15 @@ export class BatchEmailService {
       `Dispatched batch of ${dispatches.length} email(s) for ${details}`,
     );
 
-    const routing = dispatches.every((dispatch) =>
+    return { emailsIds, tokens };
+  }
+
+  private routingKey(dispatches: BatchRecipientDto[]): string {
+    return dispatches.every((dispatch) =>
       this.isImmediate(dispatch.scheduledAt),
     )
       ? 'mailing.batch_send'
       : 'mailing.batch_schedule';
-
-    await this.publishBatchDispatchEvent(
-      routing,
-      dispatches,
-      emailsIds,
-      tokens,
-    );
-
-    return { emailsIds };
   }
 
   private async fetchEmailsByReferenceNumbers(
@@ -334,6 +350,7 @@ export class BatchEmailService {
     dispatches: BatchRecipientDto[],
     emailIds: string[],
     tokens: string[],
+    waveId?: string,
   ): Promise<void> {
     const entries = dispatches.map((dispatch, index) => ({
       auth0Id: dispatch.auth0Id,
@@ -341,6 +358,7 @@ export class BatchEmailService {
       scheduledAt: dispatch.scheduledAt.toISOString(),
       emailId: emailIds[index],
       token: tokens[index],
+      ...(waveId ? { waveId } : {}),
     }));
 
     this.logger.log(
