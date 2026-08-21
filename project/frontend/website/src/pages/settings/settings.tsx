@@ -87,7 +87,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
   );
 
   return (
-    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Settings" securityScore={72}>
+    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Settings">
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,3fr)', gap: 20, alignItems: 'start' }}>
 
         {/* Tab nav */}

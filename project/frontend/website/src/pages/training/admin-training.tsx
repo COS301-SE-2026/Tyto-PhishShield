@@ -231,7 +231,6 @@ export function AdminTraining({
             onNavigate={onNavigate}
             title="Training"
             subtitle="Add questions and view question bank"
-            securityScore={72}
         >
             <div style={pageStyle}>
                 <Card style={cardStyle}>

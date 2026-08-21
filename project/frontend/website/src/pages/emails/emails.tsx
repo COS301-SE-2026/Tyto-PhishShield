@@ -76,7 +76,6 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Emails"
       subtitle="Create, send, and manage phishing simulation emails"
-      securityScore={72}
     >
       <div
         style={{

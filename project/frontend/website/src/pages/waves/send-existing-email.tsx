@@ -393,7 +393,6 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
           label: "Send Existing Email",
         },
       ]}
-      securityScore={72}
     >
       <div
         style={{

@@ -25,7 +25,6 @@ export function GenerateEmail({
           label: 'Generate Template',
         },
       ]}
-      securityScore={72}
     >
       <Card
         style={{

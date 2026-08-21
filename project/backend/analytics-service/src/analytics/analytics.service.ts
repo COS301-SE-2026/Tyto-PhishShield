@@ -155,8 +155,22 @@ export class AnalyticsService {
       falsePositive: falsePos,
       totalXp,
       educationCompleted: eduDone,
+      securityScore: this.calculateSecurityScore(totalXp, reports, confirmed),
     };
   }
+
+  private static readonly XP_MAX_SCORE = 500;
+
+  private calculateSecurityScore(
+    totalXp: number,
+    reports: number,
+    confirmed: number,
+  ): number {
+    const xpScore = Math.max(0,Math.min(100, (totalXp / AnalyticsService.XP_MAX_SCORE) * 100),);
+    const detectionScore = reports > 0 ? (confirmed / reports) * 100 : 50;
+    return Math.round(0.5 * xpScore + 0.5 * detectionScore);
+  }
+
   //time series data, this will be used for graphs and charts.
   async getTimeSeries(
     from: string,
