@@ -49,7 +49,7 @@ function fetchUserStats(auth0Id: string): Promise<UserStatsResponse> {
 export async function fetchDepartmentOptions(): Promise<string[]> {
   const users = await fetchAllUsers();
   const departments = new Set(users.map(u => u.department).filter((d): d is string => !!d));
-  return Array.from(departments).sort();
+  return Array.from(departments).sort((a, b) => a.localeCompare(b));
 }
 
 export interface OrganisationReport {

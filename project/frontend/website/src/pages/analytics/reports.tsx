@@ -8,7 +8,7 @@ import { fetchAllUsers, fetchDepartmentOptions, fetchOrganisationReport, fetchUs
 import { exportReportToPdf } from './reports-pdf';
 import type { Period } from './analytics.service';
 
-interface ReportsProps { onNavigate: (path: string) => void; activePath: string; }
+interface ReportsProps { readonly onNavigate: (path: string) => void; readonly  activePath: string; }
 
 type ReportType = GeneratedReport['type'];
 
@@ -28,7 +28,7 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
 const thStyle: CSSProperties = { padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' };
 const tdStyle: CSSProperties = { padding: '11px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' };
 
-function ReportTable({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
+function ReportTable({ head, rows }: { readonly head: string[]; readonly rows: ReactNode[][] }) {
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -55,11 +55,11 @@ function ReportTable({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
   );
 }
 
-function SectionTitle({ children }: { children: ReactNode }) {
+function SectionTitle({ children }: { readonly children: ReactNode }) {
   return <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', padding: '14px 20px', borderBottom: '1px solid var(--border)', fontFamily: 'Inter, system-ui, sans-serif' }}>{children}</h2>;
 }
 
-function GeneratedReportView({ report }: { report: GeneratedReport }) {
+function GeneratedReportView({ report }: { readonly report: GeneratedReport }) {
   if (report.type === 'organisation') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -172,6 +172,50 @@ function GeneratedReportView({ report }: { report: GeneratedReport }) {
   );
 }
 
+interface OptionsState {
+  readonly users: AccountUser[] | null;
+  readonly waves: Wave[] | null;
+  readonly departments: string[] | null;
+}
+
+interface OptionsUpdate {
+  users?: AccountUser[];
+  waves?: Wave[];
+  departments?: string[];
+}
+
+async function loadMissingOptions(reportType: ReportType, state: OptionsState): Promise<OptionsUpdate | null> {
+  if (reportType === 'user' && !state.users) return { users: await fetchAllUsers() };
+  if (reportType === 'wave' && !state.waves) return { waves: await getWaves() };
+  if (reportType === 'department' && !state.departments) return { departments: await fetchDepartmentOptions() };
+  return null;
+}
+
+interface ReportTargets {
+  readonly period: Period;
+  readonly userId: string;
+  readonly waveId: string;
+  readonly department: string;
+}
+
+function generateReport(reportType: ReportType, targets: ReportTargets): Promise<GeneratedReport> {
+  switch (reportType) {
+    case 'organisation': return fetchOrganisationReport(targets.period);
+    case 'user': return fetchUserReport(targets.userId);
+    case 'wave': return fetchWaveReport(targets.waveId);
+    case 'department': return fetchDepartmentReport(targets.department);
+  }
+}
+
+function hasRequiredTarget(reportType: ReportType, targets: ReportTargets): boolean {
+  switch (reportType) {
+    case 'organisation': return true;
+    case 'user': return !!targets.userId;
+    case 'wave': return !!targets.waveId;
+    case 'department': return !!targets.department;
+  }
+}
+
 export function Reports({ onNavigate, activePath }: ReportsProps) {
   const { addToast } = useToast();
   const [reportType, setReportType] = useState<ReportType>('organisation');
@@ -195,16 +239,11 @@ export function Reports({ onNavigate, activePath }: ReportsProps) {
     const loadOptions = async (): Promise<void> => {
       setLoadingOptions(true);
       try {
-        if (reportType === 'user' && !users) {
-          const data = await fetchAllUsers();
-          if (!cancelled) setUsers(data);
-        } else if (reportType === 'wave' && !waves) {
-          const data = await getWaves();
-          if (!cancelled) setWaves(data);
-        } else if (reportType === 'department' && !departments) {
-          const data = await fetchDepartmentOptions();
-          if (!cancelled) setDepartments(data);
-        }
+        const update = await loadMissingOptions(reportType, { users, waves, departments });
+        if (cancelled || !update) return;
+        if (update.users) setUsers(update.users);
+        if (update.waves) setWaves(update.waves);
+        if (update.departments) setDepartments(update.departments);
       } catch {
         if (!cancelled) addToast({ type: 'error', title: 'Could not load options', message: 'Please try again.' });
       } finally {
@@ -216,16 +255,12 @@ export function Reports({ onNavigate, activePath }: ReportsProps) {
     return () => { cancelled = true; };
   }, [reportType, users, waves, departments, addToast]);
 
+  const targets: ReportTargets = { period, userId: selectedUserId, waveId: selectedWaveId, department: selectedDepartment };
+
   const handleGenerate = async (): Promise<void> => {
     setGenerating(true);
     try {
-      const generated = await (
-        reportType === 'organisation' ? fetchOrganisationReport(period)
-        : reportType === 'user' ? fetchUserReport(selectedUserId)
-        : reportType === 'wave' ? fetchWaveReport(selectedWaveId)
-        : fetchDepartmentReport(selectedDepartment)
-      );
-      setReport(generated);
+      setReport(await generateReport(reportType, targets));
     } catch (err) {
       addToast({ type: 'error', title: 'Could not generate report', message: err instanceof Error ? err.message : 'Please try again.' });
     } finally {
@@ -233,11 +268,7 @@ export function Reports({ onNavigate, activePath }: ReportsProps) {
     }
   };
 
-  const canGenerate =
-    reportType === 'organisation' ? true
-    : reportType === 'user' ? !!selectedUserId
-    : reportType === 'wave' ? !!selectedWaveId
-    : !!selectedDepartment;
+  const canGenerate = hasRequiredTarget(reportType, targets);
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Reports"
