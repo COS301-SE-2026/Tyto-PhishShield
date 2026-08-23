@@ -509,28 +509,45 @@ export class AnalyticsService {
     }));
   }
   
-  async getAtRiskUsers(periodDays = 30, limit = 10) {
-    // Requires per-user click/send ratios. We'll implement a basic version using click events and assuming we can map clicks to users.
-    const start = new Date(Date.now() - periodDays * 86400000);
-    const clicks = await this.clickRepo.find({ where: { clickedAt: MoreThanOrEqual(start) } });
+  async getAtRiskUsers(periodDays = 30, limit = 10, startOverride?: Date, endOverride?: Date) {
+    const end = endOverride ?? new Date();
+    const start = startOverride ?? new Date(end.getTime() - periodDays * 86400000);
+
+    const sends = await this.sendRepo.find({ where: { sentAt: Between(start, end) } });
+    const clicks = await this.clickRepo.find({ where: { clickedAt: Between(start, end) } });
+
+    const userSends = new Map<string, number>();
     const userClicks = new Map<string, number>();
+
+    for (const s of sends) {
+      if (s.auth0Id) userSends.set(s.auth0Id, (userSends.get(s.auth0Id) ?? 0) + 1);
+    }
     for (const c of clicks) {
       if (c.auth0Id) userClicks.set(c.auth0Id, (userClicks.get(c.auth0Id) ?? 0) + 1);
     }
+
     const users = await this.userRepo.find();
     const result = [];
-    for (const [auth0Id, count] of userClicks.entries()) {
+
+    for (const [auth0Id, clickCount] of userClicks.entries()) {
+      const sentCount = userSends.get(auth0Id) ?? 0;
+      if (sentCount === 0) continue;
+
+      const clickRate = (clickCount / sentCount) * 100;
+      if (clickRate < 30) continue;
+
       const user = users.find(u => u.auth0Id === auth0Id);
       if (!user) continue;
-      // We don't have per-user send counts; assume a threshold of 1 click to be at-risk
+
       result.push({
         auth0Id,
         name: user.name,
         department: user.department,
-        clickRate: 100, // placeholder
-        riskLevel: 'high',
+        clickRate: Math.round(clickRate),
+        riskLevel: clickRate > 60 ? 'high' : 'medium',
       });
     }
+
     return result.slice(0, limit);
   }
   
