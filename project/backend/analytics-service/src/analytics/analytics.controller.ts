@@ -147,6 +147,16 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SCHEDULED,
       payload: payload as unknown as Record<string, unknown>,
     });
+
+    if (payload.emailId && payload.referenceNumber) {
+      await this.analyticsService.recordSimulationSend({
+        emailId: payload.emailId,
+        referenceNumber: payload.referenceNumber,
+        auth0Id: payload.auth0Id,
+        campaignId: payload.campaignId,
+        sentAt: payload.scheduledAt ? new Date(payload.scheduledAt) : new Date(),
+      });
+    }
   }
 
   @RabbitSubscribe({
@@ -157,9 +167,20 @@ export class AnalyticsController {
   async onBatchEmailSent(payload: MailingPayload) {
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
-      //just store the count for now, not the whole array
       payload: { count: payload.entries?.length ?? 0 },
     });
+
+    for (const entry of payload.entries ?? []) {
+      if (entry.emailId && entry.referenceNumber) {
+        await this.analyticsService.recordSimulationSend({
+          emailId: entry.emailId,
+          referenceNumber: entry.referenceNumber,
+          auth0Id: entry.auth0Id,
+          campaignId: entry.campaignId,
+          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
+        });
+      }
+    }
   }
 
   @RabbitSubscribe({
@@ -172,6 +193,66 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SCHEDULED,
       payload: { count: payload.entries?.length ?? 0, batch: true },
     });
+
+    for (const entry of payload.entries ?? []) {
+      if (entry.emailId && entry.referenceNumber) {
+        await this.analyticsService.recordSimulationSend({
+          emailId: entry.emailId,
+          referenceNumber: entry.referenceNumber,
+          auth0Id: entry.auth0Id,
+          campaignId: entry.campaignId,
+          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
+        });
+      }
+    }
+  }
+
+  @RabbitSubscribe({
+    exchange: 'mailing-event-exchange',
+    routingKey: 'waves.batch_send',
+    queue: 'analytics-waves-batch-send-queue',
+  })
+  async onWaveBatchSend(payload: MailingPayload) {
+    await this.analyticsService.recordEvent({
+      eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+      payload: { count: payload.entries?.length ?? 0 },
+    });
+  
+    for (const entry of payload.entries ?? []) {
+      if (entry.emailId && entry.referenceNumber) {
+        await this.analyticsService.recordSimulationSend({
+          emailId: entry.emailId,
+          referenceNumber: entry.referenceNumber,
+          auth0Id: entry.auth0Id,
+          campaignId: entry.campaignId,
+          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
+        });
+      }
+    }
+  }
+  
+  @RabbitSubscribe({
+    exchange: 'mailing-event-exchange',
+    routingKey: 'waves.batch_schedule',
+    queue: 'analytics-waves-batch-schedule-queue',
+  })
+  async onWaveBatchScheduled(payload: MailingPayload) {
+    await this.analyticsService.recordEvent({
+      eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+      payload: { count: payload.entries?.length ?? 0, batch: true },
+    });
+  
+    for (const entry of payload.entries ?? []) {
+      if (entry.emailId && entry.referenceNumber) {
+        await this.analyticsService.recordSimulationSend({
+          emailId: entry.emailId,
+          referenceNumber: entry.referenceNumber,
+          auth0Id: entry.auth0Id,
+          campaignId: entry.campaignId,
+          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
+        });
+      }
+    }
   }
 
   @RabbitSubscribe({ exchange: 'accounts-event-exchange', routingKey: 'user.created', queue: 'analytics-user-created-queue' })
