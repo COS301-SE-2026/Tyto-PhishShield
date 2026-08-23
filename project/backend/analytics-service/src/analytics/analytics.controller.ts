@@ -279,6 +279,51 @@ export class AnalyticsController {
     return this.analyticsService.getUserStats(auth0Id);
   }
 
+  @Get('summary')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  getSummary(@Query('period') period?: string) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    return this.analyticsService.getSummary(days);
+  }
+  
+  @Get('detection-rate-over-time')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  getDetectionRateOverTime(@Query('period') period?: string) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    return this.analyticsService.getDetectionRateOverTime(days);
+  }
+  
+  @Get('by-department')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  getByDepartment(@Query('period') period?: string) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    return this.analyticsService.getByDepartment(days);
+  }
+  
+  @Get('at-risk-users')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  getAtRiskUsers(@Query('period') period?: string, @Query('limit') limit?: string) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    const lim = limit ? parseInt(limit, 10) : 10;
+    return this.analyticsService.getAtRiskUsers(days, lim);
+  }
+  
+  @Get('campaigns')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  getCampaigns() {
+    return this.analyticsService.getCampaigns();
+  }
+
   @MessagePattern('analytics.getOverview')
   getOverviewTcp() {
     return this.analyticsService.getOverview();
