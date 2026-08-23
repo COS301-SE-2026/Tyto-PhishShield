@@ -148,4 +148,71 @@ export class AnalyticsController {
     const sp = new URLSearchParams(defined as [string, string][]);
     return `?${sp.toString()}`;
   }
+
+  @Get('summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
+  @ApiBearerAuth()
+  getSummary(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
+    const qs = period ? `?period=${period}` : '';
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/summary${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+  
+  @Get('detection-rate-over-time')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
+  @ApiBearerAuth()
+  getDetectionRateOverTime(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
+    const qs = period ? `?period=${period}` : '';
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/detection-rate-over-time${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+  
+  @Get('by-department')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
+  @ApiBearerAuth()
+  getByDepartment(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
+    const qs = period ? `?period=${period}` : '';
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/by-department${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+  
+  @Get('at-risk-users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
+  @ApiBearerAuth()
+  getAtRiskUsers(@Req() req: AuthenticatedRequest, @Query('period') period?: string, @Query('limit') limit?: string) {
+    const params = new URLSearchParams();
+    if (period) params.set('period', period);
+    if (limit) params.set('limit', limit);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/at-risk-users${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+  
+  @Get('campaigns')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
+  @ApiBearerAuth()
+  getCampaigns(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/campaigns`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
 }
