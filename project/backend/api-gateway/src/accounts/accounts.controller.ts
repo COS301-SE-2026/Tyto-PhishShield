@@ -25,6 +25,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
 import { RouteResolver } from '../proxy/proxy.routes';
+import { AccountsService } from './accounts.service';
+import { LoginDto } from '../dto/login.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
@@ -46,6 +48,7 @@ export class AccountsController {
     private readonly proxy: ProxyService,
     private readonly routes: RouteResolver,
     private readonly config: ConfigService,
+    private readonly accountsService: AccountsService,
   ) {
     this.accountsServiceUrl = this.config.get<string>(
       'ACCOUNTS_SERVICE_URL',
@@ -90,7 +93,10 @@ export class AccountsController {
   @Public()
   @Post('auth/verify-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Verify OTP for email verification' })
+  @ApiOperation({
+    summary: 'Verify OTP for email verification (note: deprecated)',
+    deprecated: true,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -110,7 +116,10 @@ export class AccountsController {
   @Public()
   @Post('auth/resend-otp')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Resend OTP for email verification' })
+  @ApiOperation({
+    summary: 'Resend OTP for email verification (note: deprecated)',
+    deprecated: true,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -140,10 +149,10 @@ export class AccountsController {
       },
     },
   })
-  login(@Req() req: Request, @Res() res: Response) {
-    const route = this.routes.resolve(req.originalUrl);
-    req.url = req.url.replace(route.apiRoute, '');
-    return this.proxy.beterForward(req, res, route.targetService);
+  login(@Body() body: LoginDto) {
+    //Login now happens in the api gateway.
+    //none functional checks happen in the accounts service.
+    return this.accountsService.login(body);
   }
 
   @Post('auth/logout')

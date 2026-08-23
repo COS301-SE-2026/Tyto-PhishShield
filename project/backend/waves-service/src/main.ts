@@ -18,7 +18,7 @@ async function bootstrap() {
       transport: Transport.RMQ,
       options: {
         urls: [process.env.RABBITMQ_URL],
-        queue: 'waves.queue',
+        queue: 'waves-service.queue',
         queueOptions: {
           durable: true,
         },
