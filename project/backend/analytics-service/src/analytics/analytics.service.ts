@@ -448,30 +448,64 @@ export class AnalyticsService {
   async getByDepartment(periodDays = 30) {
     const start = new Date(Date.now() - periodDays * 86400000);
     const users = await this.userRepo.find();
-    const reports = await this.repo.find({
-      where: { occurredAt: MoreThanOrEqual(start), eventType: In([AnalyticsEventType.REPORT_SUBMITTED, AnalyticsEventType.REPORT_CONFIRMED]) },
-    });
     const authToDept = new Map(users.map(u => [u.auth0Id, u.department]));
-    const deptMap = new Map<string, { sent: number; reported: number; confirmed: number }>();
+
+    const reports = await this.repo.find({
+      where: {
+        occurredAt: MoreThanOrEqual(start),
+        eventType: In([AnalyticsEventType.REPORT_SUBMITTED, AnalyticsEventType.REPORT_CONFIRMED]),
+      },
+    });
+
+    const sends = await this.sendRepo.find({
+      where: { sentAt: MoreThanOrEqual(start) },
+    });
+
+    const clicks = await this.clickRepo.find({
+      where: { clickedAt: MoreThanOrEqual(start) },
+    });
+
+    const deptMap = new Map<string, { sent: number; reported: number; confirmed: number; clicked: number }>();
+
+    // Initialize
     for (const u of users) {
-      if (u.department && !deptMap.has(u.department)) deptMap.set(u.department, { sent: 0, reported: 0, confirmed: 0 });
+      if (u.department && !deptMap.has(u.department)) {
+        deptMap.set(u.department, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
+      }
     }
+
+    // sends
+    for (const s of sends) {
+      const dept = s.auth0Id ? authToDept.get(s.auth0Id) : undefined;
+      if (!dept) continue;
+      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
+      deptMap.get(dept)!.sent++;
+    }
+
+    // reports
     for (const e of reports) {
       const dept = e.auth0Id ? authToDept.get(e.auth0Id) : undefined;
       if (!dept) continue;
-      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0 });
+      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
       const b = deptMap.get(dept)!;
       if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) b.reported++;
       if (e.eventType === AnalyticsEventType.REPORT_CONFIRMED) b.confirmed++;
     }
-    // For sent, we need to know which user received emails; currently our events don't have auth0Id for single sends.
-    // We'll return sent:0 for now or later modify mailing events.
+
+    // clicks
+    for (const c of clicks) {
+      const dept = c.auth0Id ? authToDept.get(c.auth0Id) : undefined;
+      if (!dept) continue;
+      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
+      deptMap.get(dept)!.clicked++;
+    }
+
     return Array.from(deptMap.entries()).map(([department, d]) => ({
       department,
       sent: d.sent,
       reported: d.reported,
       detectionRate: d.reported > 0 ? (d.confirmed / d.reported) * 100 : 0,
-      clickRate: 0,
+      clickRate: d.sent > 0 ? (d.clicked / d.sent) * 100 : 0,
     }));
   }
   
