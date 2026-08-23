@@ -33,10 +33,20 @@ interface EducationPayload {
 }
 
 interface MailingPayload {
-  referenceNumber?: string;
-  recipient?: string;
-  scheduledAt?: string;
-  entries?: { referenceNumber: string; recipient: string }[];
+    referenceNumber?: string;
+    recipient?: string;
+    scheduledAt?: string;
+    emailId?: string;
+    auth0Id?: string;
+    campaignId?: string;
+    entries?: {
+      referenceNumber: string;
+      recipient?: string;
+      scheduledAt: string;
+      emailId?: string;
+      auth0Id?: string;
+      campaignId?: string;
+    }[];
 }
 
 @ApiTags('Analytics')
@@ -116,6 +126,15 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SENT,
       payload: payload as unknown as Record<string, unknown>,
     });
+      if (payload.emailId && payload.referenceNumber) {
+        await this.analyticsService.recordSimulationSend({
+          emailId: payload.emailId,
+          referenceNumber: payload.referenceNumber,
+          auth0Id: payload.auth0Id,
+          campaignId: payload.campaignId,
+          sentAt: payload.scheduledAt ? new Date(payload.scheduledAt) : new Date(),
+        });
+      }
   }
 
   @RabbitSubscribe({
