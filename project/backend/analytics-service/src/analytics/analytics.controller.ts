@@ -182,6 +182,46 @@ export class AnalyticsController {
     await this.analyticsService.deleteUser(payload.auth0Id);
   }
 
+  @RabbitSubscribe({ exchange: 'waves-event-exchange', routingKey: 'wave.created', queue: 'analytics-wave-created-queue' })
+  async onWaveCreated(payload: any) {
+    await this.analyticsService.upsertCampaign({
+      id: payload.id,
+      name: payload.name,
+      status: payload.status,
+      targetDepartments: payload.targetDepartments,
+      startDate: payload.startDate ? new Date(payload.startDate) : undefined,
+      endDate: payload.endDate ? new Date(payload.endDate) : undefined,
+      createdBy: payload.createdBy,
+    });
+  }
+
+  @RabbitSubscribe({ exchange: 'waves-event-exchange', routingKey: 'wave.updated', queue: 'analytics-wave-updated-queue' })
+  async onWaveUpdated(payload: any) {
+    await this.analyticsService.upsertCampaign({
+      id: payload.id,
+      name: payload.name,
+      status: payload.status,
+      targetDepartments: payload.targetDepartments,
+      startDate: payload.startDate ? new Date(payload.startDate) : undefined,
+      endDate: payload.endDate ? new Date(payload.endDate) : undefined,
+      createdBy: payload.createdBy,
+    });
+  }
+
+    @RabbitSubscribe({ exchange: 'waves-event-exchange', routingKey: 'wave.completed', queue: 'analytics-wave-completed-queue' })
+  async onWaveCompleted(payload: any) {
+    await this.analyticsService.upsertCampaign({
+      id: payload.id,
+      name: payload.name,
+      status: payload.status,
+      targetDepartments: payload.targetDepartments,
+      startDate: payload.startDate ? new Date(payload.startDate) : undefined,
+      endDate: payload.endDate ? new Date(payload.endDate) : undefined,
+      createdBy: payload.createdBy,
+    });
+  }
+  // wave.updated, wave.completed similar
+
   @Get('overview')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
