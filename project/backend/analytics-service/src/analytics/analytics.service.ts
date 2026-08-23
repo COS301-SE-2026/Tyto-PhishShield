@@ -19,6 +19,7 @@ interface RecordEventInput {
 
 @Injectable()
 export class AnalyticsService {
+  private readonly logger = new Logger(AnalyticsService.name);
   constructor(
     @InjectRepository(AnalyticsEvent) private readonly repo: Repository<AnalyticsEvent>,
     @InjectRepository(AnalyticsUser) private readonly userRepo: Repository<AnalyticsUser>,
