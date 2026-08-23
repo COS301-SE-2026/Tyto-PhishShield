@@ -353,19 +353,22 @@ export class AnalyticsService {
 
   async getSummary(periodDays = 30) {
     const now = new Date();
-    const currentStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000);
-    const previousStart = new Date(currentStart.getTime() - periodDays * 24 * 60 * 60 * 1000);
-  
+    const currentStart = new Date(now.getTime() - periodDays * 86400000);
+    const previousStart = new Date(currentStart.getTime() - periodDays * 86400000);
+
     const current = await this.getPeriodStats(currentStart, now);
     const previous = await this.getPeriodStats(previousStart, currentStart);
-  
+
+    const currentAtRisk = await this.getAtRiskUsers(periodDays, 1000, currentStart, now);
+    const previousAtRisk = await this.getAtRiskUsers(periodDays, 1000, previousStart, currentStart);
+
     const delta = (curr: number, prev: number) => prev === 0 ? 0 : ((curr - prev) / prev) * 100;
-  
+
     return {
       detectionRate: { value: current.detectionRate, delta: delta(current.detectionRate, previous.detectionRate) },
       clickRate: { value: current.clickRate, delta: delta(current.clickRate, previous.clickRate) },
       totalSimulations: { value: current.totalEmailsSent, delta: delta(current.totalEmailsSent, previous.totalEmailsSent) },
-      atRiskUsers: { value: current.atRiskUsers, delta: delta(current.atRiskUsers, previous.atRiskUsers) },
+      atRiskUsers: { value: currentAtRisk.length, delta: delta(currentAtRisk.length, previousAtRisk.length) },
       trainingCompletion: { value: current.trainingCompletionRate, delta: delta(current.trainingCompletionRate, previous.trainingCompletionRate) },
     };
   }
