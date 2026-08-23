@@ -155,6 +155,33 @@ export class AnalyticsController {
     });
   }
 
+  @RabbitSubscribe({ exchange: 'accounts-event-exchange', routingKey: 'user.created', queue: 'analytics-user-created-queue' })
+  async onUserCreated(payload: any) {
+    await this.analyticsService.upsertUser({
+      auth0Id: payload.auth0Id,
+      email: payload.email,
+      name: payload.name,
+      department: payload.department,
+      role: payload.role,
+    });
+  }
+  
+  @RabbitSubscribe({ exchange: 'accounts-event-exchange', routingKey: 'user.updated', queue: 'analytics-user-updated-queue' })
+  async onUserUpdated(payload: any) {
+    await this.analyticsService.upsertUser({
+      auth0Id: payload.auth0Id,
+      email: payload.email,
+      name: payload.name,
+      department: payload.department,
+      role: payload.role,
+    });
+  }
+  
+  @RabbitSubscribe({ exchange: 'accounts-event-exchange', routingKey: 'user.deleted', queue: 'analytics-user-deleted-queue' })
+  async onUserDeleted(payload: any) {
+    await this.analyticsService.deleteUser(payload.auth0Id);
+  }
+
   @Get('overview')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
