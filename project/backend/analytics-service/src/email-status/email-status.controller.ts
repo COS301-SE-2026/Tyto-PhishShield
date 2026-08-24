@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { EmailStatusService } from './email-status.service';
 import { EmailStatusEntity } from './entities/email-status.entity';
 import { StatusCreateDto } from '../dto/status-create.dto';
-import { AnalyticsService } from 'src/analytics/analytics.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { EmailStatusEnum } from './entities/email-status.entity';
 
 @Controller('email-status')

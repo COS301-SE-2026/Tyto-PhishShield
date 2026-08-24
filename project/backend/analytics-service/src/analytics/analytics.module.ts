@@ -12,7 +12,13 @@ import { SimulationSend } from './entities/simulation-send.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AnalyticsEvent, AnalyticsUser, Campaign, ClickEvent, SimulationSend,]),
+    TypeOrmModule.forFeature([
+      AnalyticsEvent,
+      AnalyticsUser,
+      Campaign,
+      ClickEvent,
+      SimulationSend,
+    ]),
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -24,8 +30,8 @@ import { SimulationSend } from './entities/simulation-send.entity';
           { name: 'education-event-exchange', type: 'topic' },
           { name: 'mailing-event-exchange', type: 'topic' },
           { name: 'accounts-event-exchange', type: 'topic' },
-          { name: 'waves-event-exchange', type: 'topic' },  
-          { name: 'click-event-exchange', type: 'topic' }
+          { name: 'waves-event-exchange', type: 'topic' },
+          { name: 'click-event-exchange', type: 'topic' },
         ],
         enableControllerDiscovery: true,
         connectionInitOptions: { wait: false },
@@ -34,5 +40,6 @@ import { SimulationSend } from './entities/simulation-send.entity';
   ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
+  exports: [AnalyticsService],
 })
 export class AnalyticsModule {}

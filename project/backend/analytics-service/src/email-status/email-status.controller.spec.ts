@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailStatusController } from './email-status.controller';
 import { EmailStatusService } from './email-status.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 import {
   EmailStatusEntity,
   EmailStatusEnum,
@@ -8,11 +9,16 @@ import {
 
 describe('EmailStatusController', () => {
   let controller: EmailStatusController;
+  let analyticsService: jest.Mocked<AnalyticsService>;
 
   const mockEmailStatusService = {
     createStatus: jest.fn(),
     getStatus: jest.fn(),
     deleteStatus: jest.fn(),
+  };
+
+  const mockAnalyticsService = {
+    recordClickFromEmailId: jest.fn(),
   };
 
   const mockEmailStatus = {
@@ -24,6 +30,8 @@ describe('EmailStatusController', () => {
   } as EmailStatusEntity;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmailStatusController],
       providers: [
@@ -31,10 +39,15 @@ describe('EmailStatusController', () => {
           provide: EmailStatusService,
           useValue: mockEmailStatusService,
         },
+        {
+          provide: AnalyticsService,
+          useValue: mockAnalyticsService,
+        },
       ],
     }).compile();
 
     controller = module.get<EmailStatusController>(EmailStatusController);
+    analyticsService = module.get(AnalyticsService);
   });
 
   afterEach(() => {
@@ -49,11 +62,35 @@ describe('EmailStatusController', () => {
     it('should call service.createStatus', async () => {
       mockEmailStatusService.createStatus.mockResolvedValue(mockEmailStatus);
 
-      const result = await controller.createStatus(mockEmailStatus);
+      const result = await controller.createStatus(mockEmailStatus as any);
       expect(mockEmailStatusService.createStatus).toHaveBeenCalledWith(
         mockEmailStatus,
       );
       expect(result).toEqual(mockEmailStatus);
+    });
+
+    it('should record click when status is CLICKED', async () => {
+      const clickedStatus = {
+        ...mockEmailStatus,
+        status: EmailStatusEnum.CLICKED,
+      };
+
+      mockEmailStatusService.createStatus.mockResolvedValue(clickedStatus);
+      analyticsService.recordClickFromEmailId.mockResolvedValue(undefined);
+
+      await controller.createStatus(clickedStatus as any);
+
+      expect(analyticsService.recordClickFromEmailId).toHaveBeenCalledWith(
+        clickedStatus.emailId,
+      );
+    });
+
+    it('should NOT record click for non-click statuses', async () => {
+      mockEmailStatusService.createStatus.mockResolvedValue(mockEmailStatus);
+
+      await controller.createStatus(mockEmailStatus as any);
+
+      expect(analyticsService.recordClickFromEmailId).not.toHaveBeenCalled();
     });
   });
 

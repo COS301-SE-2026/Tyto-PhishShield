@@ -33,20 +33,38 @@ interface EducationPayload {
 }
 
 interface MailingPayload {
-    referenceNumber?: string;
+  referenceNumber?: string;
+  recipient?: string;
+  scheduledAt?: string;
+  emailId?: string;
+  auth0Id?: string;
+  campaignId?: string;
+  entries?: {
+    referenceNumber: string;
     recipient?: string;
-    scheduledAt?: string;
+    scheduledAt: string;
     emailId?: string;
     auth0Id?: string;
-    campaignId?: string;
-    entries?: {
-      referenceNumber: string;
-      recipient?: string;
-      scheduledAt: string;
-      emailId?: string;
-      auth0Id?: string;
-      waveId?: string;
-    }[];
+    waveId?: string;
+  }[];
+}
+
+interface AccountUserPayload {
+  auth0Id: string;
+  email?: string;
+  name?: string;
+  department?: string;
+  role?: string;
+}
+
+interface WavePayload {
+  id: string;
+  name?: string;
+  status?: string;
+  targetDepartments?: string[];
+  startDate?: string;
+  endDate?: string;
+  createdBy?: string;
 }
 
 @ApiTags('Analytics')
@@ -71,7 +89,7 @@ export class AnalyticsController {
 
   @RabbitSubscribe({
     exchange: 'xp-event-exchange',
-    routingKey: ['xp.give','xp.given'],
+    routingKey: ['xp.give', 'xp.given'],
     queue: 'analytics-xp-queue',
   })
   async onXpGiven(payload: XpPayload) {
@@ -130,15 +148,17 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SENT,
       payload: payload as unknown as Record<string, unknown>,
     });
-      if (payload.emailId && payload.referenceNumber) {
-        await this.analyticsService.recordSimulationSend({
-          emailId: payload.emailId,
-          referenceNumber: payload.referenceNumber,
-          auth0Id: payload.auth0Id,
-          campaignId: payload.campaignId,
-          sentAt: payload.scheduledAt ? new Date(payload.scheduledAt) : new Date(),
-        });
-      }
+    if (payload.emailId && payload.referenceNumber) {
+      await this.analyticsService.recordSimulationSend({
+        emailId: payload.emailId,
+        referenceNumber: payload.referenceNumber,
+        auth0Id: payload.auth0Id,
+        campaignId: payload.campaignId,
+        sentAt: payload.scheduledAt
+          ? new Date(payload.scheduledAt)
+          : new Date(),
+      });
+    }
   }
 
   @RabbitSubscribe({
@@ -158,7 +178,9 @@ export class AnalyticsController {
         referenceNumber: payload.referenceNumber,
         auth0Id: payload.auth0Id,
         campaignId: payload.campaignId,
-        sentAt: payload.scheduledAt ? new Date(payload.scheduledAt) : new Date(),
+        sentAt: payload.scheduledAt
+          ? new Date(payload.scheduledAt)
+          : new Date(),
       });
     }
   }
@@ -221,7 +243,7 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
       payload: { count: payload.entries?.length ?? 0 },
     });
-  
+
     for (const entry of payload.entries ?? []) {
       if (entry.emailId && entry.referenceNumber) {
         await this.analyticsService.recordSimulationSend({
@@ -234,7 +256,7 @@ export class AnalyticsController {
       }
     }
   }
-  
+
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
     routingKey: 'waves.batch_schedule',
@@ -245,7 +267,7 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SCHEDULED,
       payload: { count: payload.entries?.length ?? 0, batch: true },
     });
-  
+
     for (const entry of payload.entries ?? []) {
       if (entry.emailId && entry.referenceNumber) {
         await this.analyticsService.recordSimulationSend({
@@ -259,8 +281,12 @@ export class AnalyticsController {
     }
   }
 
-  @RabbitSubscribe({ exchange: 'accounts-event-exchange', routingKey: 'user.created', queue: 'analytics-user-created-queue' })
-  async onUserCreated(payload: any) {
+  @RabbitSubscribe({
+    exchange: 'accounts-event-exchange',
+    routingKey: 'user.created',
+    queue: 'analytics-user-created-queue',
+  })
+  async onUserCreated(payload: AccountUserPayload) {
     await this.analyticsService.upsertUser({
       auth0Id: payload.auth0Id,
       email: payload.email,
@@ -269,9 +295,13 @@ export class AnalyticsController {
       role: payload.role,
     });
   }
-  
-  @RabbitSubscribe({ exchange: 'accounts-event-exchange', routingKey: 'user.updated', queue: 'analytics-user-updated-queue' })
-  async onUserUpdated(payload: any) {
+
+  @RabbitSubscribe({
+    exchange: 'accounts-event-exchange',
+    routingKey: 'user.updated',
+    queue: 'analytics-user-updated-queue',
+  })
+  async onUserUpdated(payload: AccountUserPayload) {
     await this.analyticsService.upsertUser({
       auth0Id: payload.auth0Id,
       email: payload.email,
@@ -280,14 +310,22 @@ export class AnalyticsController {
       role: payload.role,
     });
   }
-  
-  @RabbitSubscribe({ exchange: 'accounts-event-exchange', routingKey: 'user.deleted', queue: 'analytics-user-deleted-queue' })
-  async onUserDeleted(payload: any) {
+
+  @RabbitSubscribe({
+    exchange: 'accounts-event-exchange',
+    routingKey: 'user.deleted',
+    queue: 'analytics-user-deleted-queue',
+  })
+  async onUserDeleted(payload: AccountUserPayload) {
     await this.analyticsService.deleteUser(payload.auth0Id);
   }
 
-  @RabbitSubscribe({ exchange: 'waves-event-exchange', routingKey: 'wave.created', queue: 'analytics-wave-created-queue' })
-  async onWaveCreated(payload: any) {
+  @RabbitSubscribe({
+    exchange: 'waves-event-exchange',
+    routingKey: 'wave.created',
+    queue: 'analytics-wave-created-queue',
+  })
+  async onWaveCreated(payload: WavePayload) {
     await this.analyticsService.upsertCampaign({
       id: payload.id,
       name: payload.name,
@@ -299,8 +337,12 @@ export class AnalyticsController {
     });
   }
 
-  @RabbitSubscribe({ exchange: 'waves-event-exchange', routingKey: 'wave.updated', queue: 'analytics-wave-updated-queue' })
-  async onWaveUpdated(payload: any) {
+  @RabbitSubscribe({
+    exchange: 'waves-event-exchange',
+    routingKey: 'wave.updated',
+    queue: 'analytics-wave-updated-queue',
+  })
+  async onWaveUpdated(payload: WavePayload) {
     await this.analyticsService.upsertCampaign({
       id: payload.id,
       name: payload.name,
@@ -312,8 +354,12 @@ export class AnalyticsController {
     });
   }
 
-    @RabbitSubscribe({ exchange: 'waves-event-exchange', routingKey: 'wave.completed', queue: 'analytics-wave-completed-queue' })
-  async onWaveCompleted(payload: any) {
+  @RabbitSubscribe({
+    exchange: 'waves-event-exchange',
+    routingKey: 'wave.completed',
+    queue: 'analytics-wave-completed-queue',
+  })
+  async onWaveCompleted(payload: WavePayload) {
     await this.analyticsService.upsertCampaign({
       id: payload.id,
       name: payload.name,
@@ -391,7 +437,7 @@ export class AnalyticsController {
     const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
     return this.analyticsService.getSummary(days);
   }
-  
+
   @Get('detection-rate-over-time')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -400,7 +446,7 @@ export class AnalyticsController {
     const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
     return this.analyticsService.getDetectionRateOverTime(days);
   }
-  
+
   @Get('by-department')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -409,18 +455,21 @@ export class AnalyticsController {
     const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
     return this.analyticsService.getByDepartment(days);
   }
-  
+
   @Get('at-risk-users')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiQuery({ name: 'period', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  getAtRiskUsers(@Query('period') period?: string, @Query('limit') limit?: string) {
+  getAtRiskUsers(
+    @Query('period') period?: string,
+    @Query('limit') limit?: string,
+  ) {
     const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
     const lim = limit ? parseInt(limit, 10) : 10;
     return this.analyticsService.getAtRiskUsers(days, lim);
   }
-  
+
   @Get('campaigns')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

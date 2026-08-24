@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual, In } from 'typeorm';
+import {
+  Repository,
+  Between,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  In,
+  QueryFailedError,
+} from 'typeorm';
 import {
   AnalyticsEvent,
   AnalyticsEventType,
@@ -17,15 +24,28 @@ interface RecordEventInput {
   payload?: Record<string, unknown>;
 }
 
+export interface AtRiskUser {
+  auth0Id: string;
+  name?: string;
+  department?: string;
+  clickRate: number;
+  riskLevel: 'high' | 'medium';
+}
+
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
   constructor(
-    @InjectRepository(AnalyticsEvent) private readonly repo: Repository<AnalyticsEvent>,
-    @InjectRepository(AnalyticsUser) private readonly userRepo: Repository<AnalyticsUser>,
-    @InjectRepository(Campaign) private readonly campaignRepo: Repository<Campaign>,
-    @InjectRepository(ClickEvent) private readonly clickRepo: Repository<ClickEvent>,
-    @InjectRepository(SimulationSend) private readonly sendRepo: Repository<SimulationSend>,
+    @InjectRepository(AnalyticsEvent)
+    private readonly repo: Repository<AnalyticsEvent>,
+    @InjectRepository(AnalyticsUser)
+    private readonly userRepo: Repository<AnalyticsUser>,
+    @InjectRepository(Campaign)
+    private readonly campaignRepo: Repository<Campaign>,
+    @InjectRepository(ClickEvent)
+    private readonly clickRepo: Repository<ClickEvent>,
+    @InjectRepository(SimulationSend)
+    private readonly sendRepo: Repository<SimulationSend>,
   ) {}
 
   //just store whatever comes in, we can figure out the queries later.
@@ -285,29 +305,37 @@ export class AnalyticsService {
     role?: string;
   }) {
     try {
-      const existing = await this.userRepo.findOne({ where: { auth0Id: user.auth0Id } });
+      const existing = await this.userRepo.findOne({
+        where: { auth0Id: user.auth0Id },
+      });
       if (existing) {
         Object.assign(existing, user);
         return await this.userRepo.save(existing);
       }
       const newUser = this.userRepo.create(user);
       return await this.userRepo.save(newUser);
-    } catch (err: any) {
-      // Duplicate key (23505) means another event already created it — ignore
-      if (err?.code === '23505') {
-        this.logger.warn(`Duplicate user event for ${user.auth0Id}, ignoring`);
-        return;
+    } catch (err: unknown) {
+      if (err instanceof QueryFailedError) {
+        const driverError = err.driverError as { code?: string } | undefined;
+        if (driverError?.code === '23505') {
+          this.logger.warn(
+            `Duplicate user event for ${user.auth0Id}, ignoring`,
+          );
+          return;
+        }
       }
       throw err;
     }
   }
-  
+
   async deleteUser(auth0Id: string) {
     await this.userRepo.delete({ auth0Id });
   }
 
   async upsertCampaign(campaign: Partial<Campaign>) {
-    const existing = await this.campaignRepo.findOne({ where: { id: campaign.id } });
+    const existing = await this.campaignRepo.findOne({
+      where: { id: campaign.id },
+    });
     if (existing) {
       Object.assign(existing, campaign);
       return this.campaignRepo.save(existing);
@@ -326,59 +354,92 @@ export class AnalyticsService {
     const existing = await this.sendRepo.findOne({
       where: { emailId: input.emailId },
     });
-  
+
     if (existing) {
       // Already recorded, maybe update some fields if necessary
       if (input.auth0Id !== undefined) existing.auth0Id = input.auth0Id;
-      if (input.campaignId !== undefined) existing.campaignId = input.campaignId;
-      if (input.referenceNumber !== undefined) existing.referenceNumber = input.referenceNumber;
+      if (input.campaignId !== undefined)
+        existing.campaignId = input.campaignId;
+      if (input.referenceNumber !== undefined)
+        existing.referenceNumber = input.referenceNumber;
       if (input.sentAt !== undefined) existing.sentAt = input.sentAt;
       await this.sendRepo.save(existing);
       return;
     }
-  
+
     const send = this.sendRepo.create(input);
     await this.sendRepo.save(send);
   }
-  
+
   async recordClickFromEmailId(emailId: string): Promise<void> {
     const send = await this.sendRepo.findOne({
       where: { emailId },
     });
-  
+
     if (!send) {
       this.logger.warn(`Click received for unknown emailId: ${emailId}`);
       return;
     }
-  
+
     const click = this.clickRepo.create({
       referenceNumber: send.referenceNumber,
       auth0Id: send.auth0Id,
       campaignId: send.campaignId,
     });
-  
+
     await this.clickRepo.save(click);
   }
 
   async getSummary(periodDays = 30) {
     const now = new Date();
     const currentStart = new Date(now.getTime() - periodDays * 86400000);
-    const previousStart = new Date(currentStart.getTime() - periodDays * 86400000);
+    const previousStart = new Date(
+      currentStart.getTime() - periodDays * 86400000,
+    );
 
     const current = await this.getPeriodStats(currentStart, now);
     const previous = await this.getPeriodStats(previousStart, currentStart);
 
-    const currentAtRisk = await this.getAtRiskUsers(periodDays, 1000, currentStart, now);
-    const previousAtRisk = await this.getAtRiskUsers(periodDays, 1000, previousStart, currentStart);
+    const currentAtRisk = await this.getAtRiskUsers(
+      periodDays,
+      1000,
+      currentStart,
+      now,
+    );
+    const previousAtRisk = await this.getAtRiskUsers(
+      periodDays,
+      1000,
+      previousStart,
+      currentStart,
+    );
 
-    const delta = (curr: number, prev: number) => prev === 0 ? 0 : ((curr - prev) / prev) * 100;
+    const delta = (curr: number, prev: number) =>
+      prev === 0 ? 0 : ((curr - prev) / prev) * 100;
 
     return {
-      detectionRate: { value: current.detectionRate, delta: delta(current.detectionRate, previous.detectionRate) },
-      clickRate: { value: current.clickRate, delta: delta(current.clickRate, previous.clickRate) },
-      totalSimulations: { value: current.totalEmailsSent, delta: delta(current.totalEmailsSent, previous.totalEmailsSent) },
-      atRiskUsers: { value: currentAtRisk.length, delta: delta(currentAtRisk.length, previousAtRisk.length) },
-      trainingCompletion: { value: current.trainingCompletionRate, delta: delta(current.trainingCompletionRate, previous.trainingCompletionRate) },
+      detectionRate: {
+        value: current.detectionRate,
+        delta: delta(current.detectionRate, previous.detectionRate),
+      },
+      clickRate: {
+        value: current.clickRate,
+        delta: delta(current.clickRate, previous.clickRate),
+      },
+      totalSimulations: {
+        value: current.totalEmailsSent,
+        delta: delta(current.totalEmailsSent, previous.totalEmailsSent),
+      },
+      atRiskUsers: {
+        value: currentAtRisk.length,
+        delta: delta(currentAtRisk.length, previousAtRisk.length),
+      },
+      trainingCompletion: {
+        value: current.trainingCompletionRate,
+        delta: delta(
+          current.trainingCompletionRate,
+          previous.trainingCompletionRate,
+        ),
+      },
     };
   }
 
@@ -387,27 +448,64 @@ export class AnalyticsService {
       totalEmailsSent,
       totalReports,
       confirmedPhishing,
-      falsePositives,
       totalClicks,
       educationAssigned,
       educationCompleted,
     ] = await Promise.all([
-      this.repo.count({ where: { eventType: In([AnalyticsEventType.EMAIL_SENT, AnalyticsEventType.EMAIL_BATCH_SENT]), occurredAt: Between(start, end) } }),
-      this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_SUBMITTED, occurredAt: Between(start, end) } }),
-      this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_CONFIRMED, occurredAt: Between(start, end) } }),
-      this.repo.count({ where: { eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE, occurredAt: Between(start, end) } }),
+      this.repo.count({
+        where: {
+          eventType: In([
+            AnalyticsEventType.EMAIL_SENT,
+            AnalyticsEventType.EMAIL_BATCH_SENT,
+          ]),
+          occurredAt: Between(start, end),
+        },
+      }),
+      this.repo.count({
+        where: {
+          eventType: AnalyticsEventType.REPORT_SUBMITTED,
+          occurredAt: Between(start, end),
+        },
+      }),
+      this.repo.count({
+        where: {
+          eventType: AnalyticsEventType.REPORT_CONFIRMED,
+          occurredAt: Between(start, end),
+        },
+      }),
       this.clickRepo.count({ where: { clickedAt: Between(start, end) } }),
-      this.repo.count({ where: { eventType: AnalyticsEventType.EDUCATION_ASSIGNED, occurredAt: Between(start, end) } }),
-      this.repo.count({ where: { eventType: AnalyticsEventType.EDUCATION_COMPLETED, occurredAt: Between(start, end) } }),
+      this.repo.count({
+        where: {
+          eventType: AnalyticsEventType.EDUCATION_ASSIGNED,
+          occurredAt: Between(start, end),
+        },
+      }),
+      this.repo.count({
+        where: {
+          eventType: AnalyticsEventType.EDUCATION_COMPLETED,
+          occurredAt: Between(start, end),
+        },
+      }),
     ]);
-  
-    const detectionRate = totalReports > 0 ? (confirmedPhishing / totalReports) * 100 : 0;
-    const clickRate = totalEmailsSent > 0 ? (totalClicks / totalEmailsSent) * 100 : 0;
+
+    const detectionRate =
+      totalReports > 0 ? (confirmedPhishing / totalReports) * 100 : 0;
+    const clickRate =
+      totalEmailsSent > 0 ? (totalClicks / totalEmailsSent) * 100 : 0;
     // At-risk users: you need per-user click rates, which we don't compute here. Placeholder 0.
     const atRiskUsers = 0;
-    const trainingCompletionRate = educationAssigned > 0 ? (educationCompleted / educationAssigned) * 100 : 0;
-  
-    return { totalEmailsSent, detectionRate, clickRate, atRiskUsers, trainingCompletionRate };
+    const trainingCompletionRate =
+      educationAssigned > 0
+        ? (educationCompleted / educationAssigned) * 100
+        : 0;
+
+    return {
+      totalEmailsSent,
+      detectionRate,
+      clickRate,
+      atRiskUsers,
+      trainingCompletionRate,
+    };
   }
 
   async getDetectionRateOverTime(periodDays = 30) {
@@ -415,23 +513,36 @@ export class AnalyticsService {
     const reports = await this.repo.find({
       where: {
         occurredAt: MoreThanOrEqual(start),
-        eventType: In([AnalyticsEventType.REPORT_SUBMITTED, AnalyticsEventType.REPORT_CONFIRMED]),
+        eventType: In([
+          AnalyticsEventType.REPORT_SUBMITTED,
+          AnalyticsEventType.REPORT_CONFIRMED,
+        ]),
       },
       order: { occurredAt: 'ASC' },
     });
-    const sends = await this.sendRepo.find({ where: { sentAt: MoreThanOrEqual(start) } });
-    const clicks = await this.clickRepo.find({ where: { clickedAt: MoreThanOrEqual(start) } });
+    const sends = await this.sendRepo.find({
+      where: { sentAt: MoreThanOrEqual(start) },
+    });
+    const clicks = await this.clickRepo.find({
+      where: { clickedAt: MoreThanOrEqual(start) },
+    });
 
-    const byDay = new Map<string, { reports: number; confirmed: number; sent: number; clicks: number }>();
+    const byDay = new Map<
+      string,
+      { reports: number; confirmed: number; sent: number; clicks: number }
+    >();
     for (let i = 0; i < periodDays; i++) {
-      const day = new Date(start.getTime() + i * 86400000).toISOString().split('T')[0];
+      const day = new Date(start.getTime() + i * 86400000)
+        .toISOString()
+        .split('T')[0];
       byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
     }
 
     for (const e of reports) {
       const day = e.occurredAt.toISOString().split('T')[0];
-      if (!byDay.has(day)) byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
-      const b = byDay.get(day)!;
+      if (!byDay.has(day))
+        byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
+      const b = byDay.get(day);
       if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) b.reports++;
       if (e.eventType === AnalyticsEventType.REPORT_CONFIRMED) b.confirmed++;
     }
@@ -439,19 +550,22 @@ export class AnalyticsService {
     for (const s of sends) {
       if (!s.sentAt) continue;
       const day = s.sentAt.toISOString().split('T')[0];
-      if (!byDay.has(day)) byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
-      byDay.get(day)!.sent++;
+      if (!byDay.has(day))
+        byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
+      byDay.get(day).sent++;
     }
 
     for (const c of clicks) {
       const day = c.clickedAt.toISOString().split('T')[0];
-      if (!byDay.has(day)) byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
-      byDay.get(day)!.clicks++;
+      if (!byDay.has(day))
+        byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
+      byDay.get(day).clicks++;
     }
 
     return Array.from(byDay.entries()).map(([date, data]) => ({
       date,
-      detectionRate: data.reports > 0 ? (data.confirmed / data.reports) * 100 : 0,
+      detectionRate:
+        data.reports > 0 ? (data.confirmed / data.reports) * 100 : 0,
       clickRate: data.sent > 0 ? (data.clicks / data.sent) * 100 : 0,
     }));
   }
@@ -459,12 +573,15 @@ export class AnalyticsService {
   async getByDepartment(periodDays = 30) {
     const start = new Date(Date.now() - periodDays * 86400000);
     const users = await this.userRepo.find();
-    const authToDept = new Map(users.map(u => [u.auth0Id, u.department]));
+    const authToDept = new Map(users.map((u) => [u.auth0Id, u.department]));
 
     const reports = await this.repo.find({
       where: {
         occurredAt: MoreThanOrEqual(start),
-        eventType: In([AnalyticsEventType.REPORT_SUBMITTED, AnalyticsEventType.REPORT_CONFIRMED]),
+        eventType: In([
+          AnalyticsEventType.REPORT_SUBMITTED,
+          AnalyticsEventType.REPORT_CONFIRMED,
+        ]),
       },
     });
 
@@ -476,12 +593,20 @@ export class AnalyticsService {
       where: { clickedAt: MoreThanOrEqual(start) },
     });
 
-    const deptMap = new Map<string, { sent: number; reported: number; confirmed: number; clicked: number }>();
+    const deptMap = new Map<
+      string,
+      { sent: number; reported: number; confirmed: number; clicked: number }
+    >();
 
     // Initialize
     for (const u of users) {
       if (u.department && !deptMap.has(u.department)) {
-        deptMap.set(u.department, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
+        deptMap.set(u.department, {
+          sent: 0,
+          reported: 0,
+          confirmed: 0,
+          clicked: 0,
+        });
       }
     }
 
@@ -489,16 +614,18 @@ export class AnalyticsService {
     for (const s of sends) {
       const dept = s.auth0Id ? authToDept.get(s.auth0Id) : undefined;
       if (!dept) continue;
-      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
-      deptMap.get(dept)!.sent++;
+      if (!deptMap.has(dept))
+        deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
+      deptMap.get(dept).sent++;
     }
 
     // reports
     for (const e of reports) {
       const dept = e.auth0Id ? authToDept.get(e.auth0Id) : undefined;
       if (!dept) continue;
-      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
-      const b = deptMap.get(dept)!;
+      if (!deptMap.has(dept))
+        deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
+      const b = deptMap.get(dept);
       if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) b.reported++;
       if (e.eventType === AnalyticsEventType.REPORT_CONFIRMED) b.confirmed++;
     }
@@ -507,8 +634,9 @@ export class AnalyticsService {
     for (const c of clicks) {
       const dept = c.auth0Id ? authToDept.get(c.auth0Id) : undefined;
       if (!dept) continue;
-      if (!deptMap.has(dept)) deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
-      deptMap.get(dept)!.clicked++;
+      if (!deptMap.has(dept))
+        deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
+      deptMap.get(dept).clicked++;
     }
 
     return Array.from(deptMap.entries()).map(([department, d]) => ({
@@ -519,26 +647,38 @@ export class AnalyticsService {
       clickRate: d.sent > 0 ? (d.clicked / d.sent) * 100 : 0,
     }));
   }
-  
-  async getAtRiskUsers(periodDays = 30, limit = 10, startOverride?: Date, endOverride?: Date) {
-    const end = endOverride ?? new Date();
-    const start = startOverride ?? new Date(end.getTime() - periodDays * 86400000);
 
-    const sends = await this.sendRepo.find({ where: { sentAt: Between(start, end) } });
-    const clicks = await this.clickRepo.find({ where: { clickedAt: Between(start, end) } });
+  async getAtRiskUsers(
+    periodDays = 30,
+    limit = 10,
+    startOverride?: Date,
+    endOverride?: Date,
+  ): Promise<AtRiskUser[]> {
+    const end = endOverride ?? new Date();
+    const start =
+      startOverride ?? new Date(end.getTime() - periodDays * 86400000);
+
+    const sends = await this.sendRepo.find({
+      where: { sentAt: Between(start, end) },
+    });
+    const clicks = await this.clickRepo.find({
+      where: { clickedAt: Between(start, end) },
+    });
 
     const userSends = new Map<string, number>();
     const userClicks = new Map<string, number>();
 
     for (const s of sends) {
-      if (s.auth0Id) userSends.set(s.auth0Id, (userSends.get(s.auth0Id) ?? 0) + 1);
+      if (s.auth0Id)
+        userSends.set(s.auth0Id, (userSends.get(s.auth0Id) ?? 0) + 1);
     }
     for (const c of clicks) {
-      if (c.auth0Id) userClicks.set(c.auth0Id, (userClicks.get(c.auth0Id) ?? 0) + 1);
+      if (c.auth0Id)
+        userClicks.set(c.auth0Id, (userClicks.get(c.auth0Id) ?? 0) + 1);
     }
 
     const users = await this.userRepo.find();
-    const result = [];
+    const result: AtRiskUser[] = [];
 
     for (const [auth0Id, clickCount] of userClicks.entries()) {
       const sentCount = userSends.get(auth0Id) ?? 0;
@@ -547,7 +687,7 @@ export class AnalyticsService {
       const clickRate = (clickCount / sentCount) * 100;
       if (clickRate < 30) continue;
 
-      const user = users.find(u => u.auth0Id === auth0Id);
+      const user = users.find((u) => u.auth0Id === auth0Id);
       if (!user) continue;
 
       result.push({
@@ -561,17 +701,27 @@ export class AnalyticsService {
 
     return result.slice(0, limit);
   }
-  
+
   async getCampaigns() {
-    return this.campaignRepo.find({ order: { startDate: 'DESC' } });
+    const campaigns = await this.campaignRepo.find({
+      order: { startDate: 'DESC' },
+    });
+
+    const now = new Date();
+
+    return campaigns.map((campaign) => {
+      if (campaign.endDate && campaign.endDate < now) {
+        return { ...campaign, status: 'completed' };
+      }
+      return campaign;
+    });
   }
 
   async recordClickFromAuth0Id(auth0Id: string): Promise<void> {
-  const click = this.clickRepo.create({
-    referenceNumber: 'unknown', // no emailId available, use placeholder
-    auth0Id,
-  });
-  await this.clickRepo.save(click);
-}
-  
+    const click = this.clickRepo.create({
+      referenceNumber: 'unknown', // no emailId available, use placeholder
+      auth0Id,
+    });
+    await this.clickRepo.save(click);
+  }
 }
