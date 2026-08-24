@@ -28,6 +28,8 @@ import { XpEntity } from '../entities/xp.entity';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { XpResponseDto } from '../dto/xp-response.dto';
 import { NetXpResponseDto } from '../dto/net-xp-response.dto';
+import { MailingBatchEventDto } from '../dto/mailing-batch-event.dto';
+import { TokenDto } from '../dto/token.dto';
 
 @Controller('xp')
 export class XpController {
@@ -52,9 +54,33 @@ export class XpController {
     }
   }
 
+  @RabbitSubscribe({
+    exchange: 'mailing-event-exchange',
+    routingKey: ['mailing.batch_send', 'mailing.batch_schedule'],
+    queue: 'xp-email-details-queue',
+  })
+  async eventCreateEmailDetails(event: MailingBatchEventDto): Promise<void> {
+    try {
+      await this.xpService.createEmailDetails(event);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(`Dropping mailing event: ${error.message}`);
+        return;
+      }
+      throw error;
+    }
+  }
+
   @Post()
   async giveXp(@Body() dto: GiveXpDto): Promise<XpEntity> {
     return this.xpService.giveXp(dto);
+  }
+
+  @Post('link-clicked')
+  async linkClicked(
+    @Body() tokenDto: TokenDto,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.xpService.linkClicked(tokenDto.token);
   }
 
   @Get()

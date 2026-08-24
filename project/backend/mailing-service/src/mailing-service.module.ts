@@ -8,6 +8,9 @@ import { MailingServiceController } from './mailing-service.controller';
 import { BatchEmailModule } from './batch-email/batch-email.module';
 import { mailingRabbitMQModule } from './rabbitmq.module';
 import { AccountsModule } from './accounts/accounts.module';
+import { WaveEntity } from './entities/wave.entity';
+import { WaveRecipientEntity } from './entities/wave-recipient.entity';
+import { WaveModule } from './wave/wave.module';
 
 @Module({
   imports: [
@@ -26,16 +29,24 @@ import { AccountsModule } from './accounts/accounts.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('MAILING_DB_NAME'),
         synchronize: configService.get<string>('DB_SYNC', 'true') === 'true',
-        entities: [EmailTemplateEntity, UserEntity],
+        entities: [
+          EmailTemplateEntity,
+          UserEntity,
+          WaveEntity,
+          WaveRecipientEntity,
+        ],
         autoLoadEntities: true,
       }),
     }),
     TypeOrmModule.forFeature([EmailTemplateEntity]),
     TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([WaveEntity]),
+    TypeOrmModule.forFeature([WaveRecipientEntity]),
     mailingRabbitMQModule,
     EmailModule,
     BatchEmailModule,
     AccountsModule,
+    WaveModule,
   ],
   controllers: [MailingServiceController],
 })

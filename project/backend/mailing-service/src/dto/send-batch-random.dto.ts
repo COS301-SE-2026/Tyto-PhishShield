@@ -36,4 +36,8 @@ export class SendBatchRandomDto {
   @IsBoolean()
   @IsOptional()
   randomisedTimes: boolean = true;
+
+  @IsString()
+  @IsNotEmpty()
+  waveName: string;
 }
