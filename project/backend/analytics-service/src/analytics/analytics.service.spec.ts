@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /**
  * @file Unit tests for AnalyticsService.
  *
@@ -417,7 +412,7 @@ describe('AnalyticsService', () => {
     });
   });
 
-    // ============ New methods ============
+  // ============ New methods ============
   describe('upsertUser', () => {
     it('creates a new user if not found', async () => {
       const user = {
@@ -702,8 +697,8 @@ describe('AnalyticsService', () => {
 
       const day = result.find((r) => r.date === '2026-08-01');
       expect(day).toBeDefined();
-      expect(day!.detectionRate).toBe(100);
-      expect(day!.clickRate).toBe(100);
+      expect(day.detectionRate).toBe(100);
+      expect(day.clickRate).toBe(100);
     });
   });
 

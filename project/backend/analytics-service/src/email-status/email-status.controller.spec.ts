@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailStatusController } from './email-status.controller';
 import { EmailStatusService } from './email-status.service';
@@ -62,7 +63,7 @@ describe('EmailStatusController', () => {
     it('should call service.createStatus', async () => {
       mockEmailStatusService.createStatus.mockResolvedValue(mockEmailStatus);
 
-      const result = await controller.createStatus(mockEmailStatus as any);
+      const result = await controller.createStatus(mockEmailStatus);
       expect(mockEmailStatusService.createStatus).toHaveBeenCalledWith(
         mockEmailStatus,
       );
@@ -78,7 +79,7 @@ describe('EmailStatusController', () => {
       mockEmailStatusService.createStatus.mockResolvedValue(clickedStatus);
       analyticsService.recordClickFromEmailId.mockResolvedValue(undefined);
 
-      await controller.createStatus(clickedStatus as any);
+      await controller.createStatus(clickedStatus);
 
       expect(analyticsService.recordClickFromEmailId).toHaveBeenCalledWith(
         clickedStatus.emailId,
@@ -88,7 +89,7 @@ describe('EmailStatusController', () => {
     it('should NOT record click for non-click statuses', async () => {
       mockEmailStatusService.createStatus.mockResolvedValue(mockEmailStatus);
 
-      await controller.createStatus(mockEmailStatus as any);
+      await controller.createStatus(mockEmailStatus);
 
       expect(analyticsService.recordClickFromEmailId).not.toHaveBeenCalled();
     });

@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /**
  * @file Unit tests for AnalyticsController.
  *
@@ -126,9 +121,7 @@ describe('AnalyticsController', () => {
 
       await controller.onXpGiven(payload);
 
-      expect(service.recordClickFromAuth0Id).toHaveBeenCalledWith(
-        'auth0|123',
-      );
+      expect(service.recordClickFromAuth0Id).toHaveBeenCalledWith('auth0|123');
       expect(service.recordEvent).toHaveBeenCalledTimes(1);
     });
 
@@ -445,7 +438,9 @@ describe('AnalyticsController', () => {
 
   describe('new HTTP endpoints', () => {
     it('getSummary returns service result with parsed period', async () => {
-      service.getSummary.mockResolvedValue({ detectionRate: { value: 10 } } as any);
+      service.getSummary.mockResolvedValue({
+        detectionRate: { value: 10 },
+      } as any);
       const result = await controller.getSummary('7d');
       expect(service.getSummary).toHaveBeenCalledWith(7);
       expect(result).toEqual({ detectionRate: { value: 10 } });
