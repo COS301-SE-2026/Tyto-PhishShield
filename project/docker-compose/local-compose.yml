@@ -572,60 +572,6 @@ services:
     volumes:
       - ./src:/app/src
   
-  waves_db:
-    image: postgres:15-alpine
-    restart: always
-    container_name: ${WAVES_DB_CONTAINER}
-
-    environment:
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${WAVES_DB_NAME}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ${WAVES_DB_NAME}"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-
-    volumes:
-      - waves_pgdata:/var/lib/postgresql/data
-
-    ports:
-      - "${WAVES_DB_PORT}:${INTERNAL_DB_PORT}"
-      
-# Main service app container
-  waves_app:
-    build:
-      context: ../../
-      dockerfile: project/backend/waves-service/Dockerfile
-
-    container_name: ${WAVES_APP_CONTAINER}
-    environment:
-      - PORT=${WAVES_SERVICE_PORT}
-      - TCP_PORT=${WAVES_TCP_PORT}
-      - WAVES_DB_CONTAINER=${WAVES_DB_CONTAINER}
-      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - WAVES_DB_NAME=${WAVES_DB_NAME}
-      - DB_SYNC=${DB_SYNC}
-      - RESEND_API_KEY=${RESEND_API_KEY}
-      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
-      - RESEND_EMAIL=${RESEND_EMAIL}
-
-    ports:
-      - "${WAVES_SERVICE_PORT}:${WAVES_SERVICE_PORT}"
-
-    depends_on:
-      waves_db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    volumes:
-      - ./src:/app/src
-  
   # builds the website using the website's dockerfile
   website:
     build:
@@ -724,7 +670,6 @@ volumes:
   education_pgdata:
   analytics_pgdata:
   llm_pgdata:
-  waves_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local
