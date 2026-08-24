@@ -22,7 +22,9 @@ step 2: Create the service - `nest new <service-name> -p pnpm` <br>
 enter the service folder `cd <service-name>` <br>
 ensure there are no git folders in the service (this can mess up the git repository a bit)
 
-(optional step): to add postgress modules - `pnpm add @nestjs/typeorm typeorm pg`
+(optional step): to add postgress modules - `pnpm add @nestjs/typeorm typeorm pg`<br>
+(optional step): to add rabbitMQ modules - `pnpm add @golevelup/nestjs-rabbitmq amqplib`<br>
+(optional step): to add microservice modules - `pnpm add @nestjs/microservices`<br>
 
 step 3: update `src/main.ts`:
 ```Typescript
@@ -108,7 +110,7 @@ USER appuser
 CMD ["node", "dist/main.js"]
 ```
 
-Step 5: update .env (the main env to update should be in `root/docker-compose/.env`)
+Step 5: update .env (the main env to update should be in `root/docker-compose/.env.local`)
 ```yml
 # add the following
 
@@ -149,6 +151,15 @@ Step 6: update the compose `local-compose.yml`:
     volumes:
       - <service>_pgdata:/var/lib/postgresql/data
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
     ports:
       # Left side must be unique
       - "${<service>_DB_PORT}:${INTERNAL_DB_PORT}"
@@ -171,6 +182,12 @@ Step 6: update the compose `local-compose.yml`:
     ports:
       # Left side must be unique
       - "${<service-name>_PORT}:${<service-name>_PORT}"
+      
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
 
     depends_on:
       <service>_db:
