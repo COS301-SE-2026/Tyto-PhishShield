@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmailStatusModule } from './email-status/email-status.module';
+import { AnalyticsEvent } from './analytics/entities/analytics-event.entity';
+import { AnalyticsUser } from './analytics/entities/analytics-user.entity';
+import { Campaign } from './analytics/entities/campaign.entity';
+import { ClickEvent } from './analytics/entities/click-event.entity';
+import { SimulationSend } from './analytics/entities/simulation-send.entity';
 import { EmailStatusEntity } from './email-status/entities/email-status.entity';
 
 @Module({
@@ -22,7 +26,14 @@ import { EmailStatusEntity } from './email-status/entities/email-status.entity';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [AnalyticsEvent, EmailStatusEntity],
+        entities: [
+        AnalyticsEvent,
+        AnalyticsUser,
+        Campaign,
+        ClickEvent,
+        SimulationSend,
+        EmailStatusEntity,
+      ],
         synchronize: true,
       }),
     }),

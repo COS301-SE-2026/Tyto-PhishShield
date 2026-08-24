@@ -284,13 +284,22 @@ export class AnalyticsService {
     department?: string;
     role?: string;
   }) {
-    const existing = await this.userRepo.findOne({ where: { auth0Id: user.auth0Id } });
-    if (existing) {
-      Object.assign(existing, user);
-      return this.userRepo.save(existing);
+    try {
+      const existing = await this.userRepo.findOne({ where: { auth0Id: user.auth0Id } });
+      if (existing) {
+        Object.assign(existing, user);
+        return await this.userRepo.save(existing);
+      }
+      const newUser = this.userRepo.create(user);
+      return await this.userRepo.save(newUser);
+    } catch (err: any) {
+      // Duplicate key (23505) means another event already created it — ignore
+      if (err?.code === '23505') {
+        this.logger.warn(`Duplicate user event for ${user.auth0Id}, ignoring`);
+        return;
+      }
+      throw err;
     }
-    const newUser = this.userRepo.create(user);
-    return this.userRepo.save(newUser);
   }
   
   async deleteUser(auth0Id: string) {
