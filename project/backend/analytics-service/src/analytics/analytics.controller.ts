@@ -45,7 +45,7 @@ interface MailingPayload {
       scheduledAt: string;
       emailId?: string;
       auth0Id?: string;
-      campaignId?: string;
+      waveId?: string;
     }[];
 }
 
@@ -71,7 +71,7 @@ export class AnalyticsController {
 
   @RabbitSubscribe({
     exchange: 'xp-event-exchange',
-    routingKey: 'xp.give',
+    routingKey: ['xp.give','xp.given'],
     queue: 'analytics-xp-queue',
   })
   async onXpGiven(payload: XpPayload) {
@@ -83,12 +83,16 @@ export class AnalyticsController {
 
     // Whenever XP is given for a phishing report, we report that report as confirmed.
     //This is a bit of a hack - better to listen to dedicated report.confirmend event.
-    if (payload.reason && payload.reason.includes('phishing')) {
+    const reason = (payload.reason ?? '').toLowerCase();
+    if (reason.includes('phishing')) {
       await this.analyticsService.recordEvent({
         eventType: AnalyticsEventType.REPORT_CONFIRMED,
         auth0Id: payload.auth0Id,
         payload: payload as unknown as Record<string, unknown>,
       });
+    }
+    if (reason.includes('compromised')) {
+      await this.analyticsService.recordClickFromAuth0Id(payload.auth0Id);
     }
   }
 
@@ -176,7 +180,7 @@ export class AnalyticsController {
           emailId: entry.emailId,
           referenceNumber: entry.referenceNumber,
           auth0Id: entry.auth0Id,
-          campaignId: entry.campaignId,
+          campaignId: entry.waveId,
           sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
         });
       }
@@ -200,7 +204,7 @@ export class AnalyticsController {
           emailId: entry.emailId,
           referenceNumber: entry.referenceNumber,
           auth0Id: entry.auth0Id,
-          campaignId: entry.campaignId,
+          campaignId: entry.waveId,
           sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
         });
       }
@@ -224,7 +228,7 @@ export class AnalyticsController {
           emailId: entry.emailId,
           referenceNumber: entry.referenceNumber,
           auth0Id: entry.auth0Id,
-          campaignId: entry.campaignId,
+          campaignId: entry.waveId,
           sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
         });
       }
@@ -248,7 +252,7 @@ export class AnalyticsController {
           emailId: entry.emailId,
           referenceNumber: entry.referenceNumber,
           auth0Id: entry.auth0Id,
-          campaignId: entry.campaignId,
+          campaignId: entry.waveId,
           sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
         });
       }

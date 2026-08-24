@@ -565,5 +565,13 @@ export class AnalyticsService {
   async getCampaigns() {
     return this.campaignRepo.find({ order: { startDate: 'DESC' } });
   }
+
+  async recordClickFromAuth0Id(auth0Id: string): Promise<void> {
+  const click = this.clickRepo.create({
+    referenceNumber: 'unknown', // no emailId available, use placeholder
+    auth0Id,
+  });
+  await this.clickRepo.save(click);
+}
   
 }
