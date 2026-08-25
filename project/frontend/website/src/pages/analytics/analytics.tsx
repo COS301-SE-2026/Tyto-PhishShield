@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge } from '../../components/ui';
+import { Card, Badge, ComingSoon } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
 import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, getPeriodRange,
   type Period, type AnalyticsSummary, type TimeSeriesPoint, type LeaderboardEntry, } from './analytics.service';
@@ -8,16 +8,6 @@ import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, getPeriodRang
 interface AnalyticsProps { onNavigate: (path: string) => void; activePath: string; }
 
 const PERIOD_LABEL: Record<Period, string> = { '7d': 'last 7 days', '30d': 'last 30 days', '90d': 'last 90 days' };
-
-function ComingSoon({ label }: { readonly label: string }) {
-  return (
-    <div style={{ padding: '24px 8px', textAlign: 'center' }}>
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.6 }}>
-        {label}
-      </p>
-    </div>
-  );
-}
 
 function buildLinePath(values: number[], width: number, height: number, max: number): string {
   if (values.length === 0) return '';
