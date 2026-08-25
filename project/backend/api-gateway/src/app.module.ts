@@ -20,10 +20,11 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { AnalyticsModule } from './analytics/analytics.module';
-//import { OtpModule } from './otp/otp.module';
+import { OtpModule } from './otp/otp.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { WavesModule } from './waves/waves.module';
 import { LlmModule } from './llm/llm.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { LlmModule } from './llm/llm.module';
     XpModule,
     EducationModule,
     AnalyticsModule,
-    WavesModule,
+    OtpModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {
@@ -74,7 +75,7 @@ import { LlmModule } from './llm/llm.module';
         transport: Transport.TCP,
         options: {
           host: process.env.EDUCATION_HOST ?? 'education_app',
-          port: Number(process.env.EDUCATION_TCP_PORT ?? 4004),
+          port: Number(process.env.EDUCATION_TCP_PORT ?? 4005),
         },
       },
       {
@@ -82,15 +83,23 @@ import { LlmModule } from './llm/llm.module';
         transport: Transport.TCP,
         options: {
           host: process.env.ANALYTICS_HOST ?? 'analytics_app',
-          port: Number(process.env.ANALYTICS_TCP_PORT ?? 4005),
+          port: Number(process.env.ANALYTICS_TCP_PORT ?? 4006),
         },
       },
       {
-        name: 'WAVES_SERVICE',
+        name: 'LLM_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: process.env.WAVES_HOST ?? 'waves_app',
-          port: Number(process.env.WAVES_TCP_PORT ?? 4008),
+          host: process.env.LLM_HOST ?? 'llm_app',
+          port: Number(process.env.LLM_TCP_PORT ?? 4007),
+        },
+      },
+      {
+        name: 'COMPANY_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.COMPANY_HOST ?? 'company_app',
+          port: Number(process.env.COMPANY_TCP_PORT ?? 4008),
         },
       },
     ]),
@@ -98,6 +107,7 @@ import { LlmModule } from './llm/llm.module';
     WebhookModule,
     WavesModule,
     LlmModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [

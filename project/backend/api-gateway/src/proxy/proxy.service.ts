@@ -15,6 +15,7 @@ import httpProxy from 'http-proxy';
 import { logger } from '../logger/logger.service';
 import type { Request, Response } from 'express';
 import { ClientRequest } from 'http';
+import { RouteResolver } from './proxy.routes';
 
 interface ForwardOptions {
   url: string;
@@ -90,7 +91,7 @@ export class ProxyService {
     timeout: 30000,
   });
 
-  constructor(private readonly http: HttpService) {
+  constructor(private readonly http: HttpService, private readonly router: RouteResolver) {
     this.proxy.on('error', () => {
       throw new InternalServerErrorException(
         'Could not reach downstream service',
@@ -116,8 +117,10 @@ export class ProxyService {
     logger.info(req.method + ',' + req.url);
   }
 
-  beterForward(req: Request, res: Response, url: string) {
-    this.proxy.web(req, res, { target: url });
+  beterForward(req: Request, res: Response) {
+    const route = this.router.resolve(req.originalUrl);
+    req.url = req.url.replace(route.apiRoute, '');
+    this.proxy.web(req, res, { target: route.targetService });
   }
 
   async forward<T>(options: ForwardOptions): Promise<T> {
