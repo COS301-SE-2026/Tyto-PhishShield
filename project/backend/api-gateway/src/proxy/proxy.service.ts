@@ -7,6 +7,8 @@ import {
   Injectable,
   HttpException,
   InternalServerErrorException,
+  Inject,
+  OnModuleInit,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -16,6 +18,7 @@ import { logger } from '../logger/logger.service';
 import type { Request, Response } from 'express';
 import { ClientRequest } from 'http';
 import { RouteResolver } from './proxy.routes';
+import { ClientProxy } from '@nestjs/microservices';
 
 interface ForwardOptions {
   url: string;
@@ -83,7 +86,7 @@ interface DownstreamErrorShape {
 // }
 
 @Injectable()
-export class ProxyService {
+export class ProxyService implements OnModuleInit {
   private readonly proxy = httpProxy.createProxyServer({
     xfwd: true,
     changeOrigin: false,
@@ -91,7 +94,18 @@ export class ProxyService {
     timeout: 30000,
   });
 
-  constructor(private readonly http: HttpService, private readonly router: RouteResolver) {
+  constructor(
+    private readonly http: HttpService, 
+    private readonly router: RouteResolver,
+    @Inject('ACCOUNTS_SERVICE') public readonly accountsClient: ClientProxy,
+    @Inject('MAILING_SERVICE') public readonly mailingClient: ClientProxy,
+    @Inject('XP_SERVICE') public readonly xpClient: ClientProxy,
+    @Inject('REPORT_SERVICE') public readonly reportClient: ClientProxy,
+    @Inject('EDUCATION_SERVICE') public readonly educationClient: ClientProxy,
+    @Inject('ANALYTICS_SERVICE') public readonly analyticsClient: ClientProxy,
+    @Inject('LLM_SERVICE') public readonly llmClient: ClientProxy,
+    @Inject('COMPANY_SERVICE') public readonly companyClient: ClientProxy,
+  ) {
     this.proxy.on('error', () => {
       throw new InternalServerErrorException(
         'Could not reach downstream service',
@@ -103,6 +117,31 @@ export class ProxyService {
     this.proxy.on('proxyRes', (proxyRes, req) => {
       logger.info(String(proxyRes.statusCode) + ',' + req.url);
     });
+  }
+
+  async onModuleInit() {
+    await this.connectService(this.accountsClient, 'Accounts');
+    await this.connectService(this.mailingClient, 'Mailing');
+    await this.connectService(this.xpClient, 'XP');
+    await this.connectService(this.reportClient, 'Report');
+    await this.connectService(this.educationClient, 'Education');
+    await this.connectService(this.analyticsClient, 'Analytics');
+    await this.connectService(this.llmClient, 'llm');
+    await this.connectService(this.companyClient, 'company');
+  }
+
+  private async connectService(client: ClientProxy, serviceName: string) {
+    try {
+      await client.connect();
+    } catch (err) {
+      logger.warn(serviceName + ' TCP connection unavailable: ', err);
+      setTimeout(() => void this.connectService(client, serviceName), 10000);
+    }
+  }
+
+  async sendTcpMessage(client: ClientProxy, message: string, data: any = undefined): Promise<any> {
+    logger.info('Sending TCP message: ' + message);
+    return firstValueFrom(client.send(message, data));
   }
 
   private handleProxy(proxyReq: ClientRequest, req: Request) {

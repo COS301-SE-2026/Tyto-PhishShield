@@ -63,7 +63,7 @@ export class CompanyController {
     })
     @ApiBearerAuth()
     fetchAllImports() {
-
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'imports.get');
     }
 
     @Get('imports/:importId')
@@ -72,8 +72,8 @@ export class CompanyController {
     })
     @ApiBearerAuth()
     @ApiParam({ name: 'importId', type: 'string', example: 'IMPORT-001' })
-    fetchImport(@Param('importId') importId: string,) {
-
+    fetchImport(@Param('importId') importId: string) {
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'imports.get', importId);
     }
 
     @Get('employees')
@@ -82,7 +82,7 @@ export class CompanyController {
     })
     @ApiBearerAuth()
     fetchAllEmployees() {
-
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get');
     }
 
     @Get('employees/:employeeId')
@@ -92,7 +92,7 @@ export class CompanyController {
     @ApiBearerAuth()
     @ApiParam({ name: 'employeeId', type: 'string', example: 'u-001' })
     fetchEmployee(@Param('employeeId') employeeId: string,) {
-
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get', employeeId);
     }
 
     @Patch('employees/:employeeId')
@@ -119,7 +119,7 @@ export class CompanyController {
       }
     })
     updateEmplooyee(@Param('employeeId') employeeId: string, @Body() employeeDto: any) {
-
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.update', {employeeId: employeeId, newEmployeeData: employeeDto});
     }
 
     @Delete('employees/:employeeId')
@@ -129,7 +129,7 @@ export class CompanyController {
     @ApiBearerAuth()
     @ApiParam({ name: 'employeeId', type: 'string', example: 'u-001' })
     deleteEmployee(@Param('employeeId') employeeId: string,) {
-
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.delete', employeeId);
     }
 
     @Get('fields')
@@ -138,6 +138,6 @@ export class CompanyController {
     })
     @ApiBearerAuth()
     fetchFields() {
-
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'company.fields');
     }
 }
