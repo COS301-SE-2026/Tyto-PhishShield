@@ -1,29 +1,56 @@
 # Software Architecture Specification
 
 ## Introduction
-The system consists of three parts namely: The client side, the microservices and the event system.<br>
-The first level of the architecture is that we use a Client-Server architecture where the clients will communicate to the servers through the API gateway. Everything after the API gateway will form the server side of the architecture.<br>
-Going in deeper on the server side, to handle communication between microservices we use event driven messaging by using the event system. On the client side, clients will use a request response model to communicate with the API gateway. The API gateway will also use request response communication with the microservices. The primary communication protocol that will be used across the system will be HTTP. We may use Remote Procedure Calls (RPC) if it is seen that some services require a response back from the event system.<br>
+The Software Architecture Specification (SAS) document creates a formal guide to satisfy the Software Requirments Specification (SRS) document. 
 
-## Architecture Diagram
-![Architecture Diagram](<../images/Architecture Diagram.png>)
+- The architectural requirments section covers the high-level structure of the system.
+- The Technology requirements section outlines the technologies used to implement the system.
+- The api-service contracts defines the contracts used to communicate between frontend and backend systems.
+- The deployment section covers how the system is deployed.
 
 ## Architectural Requirements
 
 ### Architecture Patterns
-As already alluded to, there are two main architecture patterns being used. Microservices is used to handle each business goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate business logic and create a modular and scalable platform. An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistent with one another.<br>
-Thus in using these two architectural patterns the system essentially uses event driven microservices as its official architectural pattern.
+The Tyto-PhishShield system consists of three parts namely: The client side, the microservices and the event system.<br>
+#### Client-Server
+The first level of the architecture is that we use a Client-Server architecture where the clients will communicate to the servers through the API gateway. On the client side, clients will use a request response model to communicate with the API gateway. Everything after the API gateway will form the server side of the architecture. 
+
+Responsibilbity:<br>
+API gateway is responsible for receiving client requests, authenticating clients and doing roll-based authentication control. The API gateway then routes user traffic to the correct microservice to handle user business logic.
+#### Microservices
+Microservices is used to handle each business goal of the system. The API gateway handles routing and dividing of user requests to the correct service in order to isolate business logic and create a modular and scalable platform. The API gateway will use a request response model for communicating with the Microservices. Each Microservice has its own database and handles its own methodes for communicating with the api-gateway and over the event queues.
+
+Responsibilbity:<br>
+Each microservice is self contained and receives requests from the API gateway. The microservice will handle business logic based on its definition and will also handle it's own transactions with its own database. A microservice may also send an event with data attached (a message) to the event system if other business logic needs to be accomplished but is not within the scope of the microservice.
+#### Event Driven Pattern
+An Event Driven pattern is used in the event system to handle communication between services. Some services are publishers while others are subscribers, some may be both as well. In this way services can be kept independent of one another and eventually still be consistent with one another.
+
+Responsiblity:<br>
+The event system contains multiple event queues in which an event being processed by the system can attach messages to a given queue and send out the messages to the correct microservice which is subscribed to a specific queue. 
+
+Thus in using these architectural patterns the system essentially uses Event Driven Microservices as its official architectural pattern.
+
+### Architecture Diagram
+![Architecture Diagram](<../images/Architecture Diagram.png>)
 
 ### Design Patterns
 Analyzing the system on a design level we can point out the usage of a few design patterns:<br>
+#### Facade
 Firstly the API gateway acts as a facade, creating an interface through which the rest of the system can be used. This improves maintainability since we make use of one entry point through which requests enter into the system which is easier to maintain than having multiple entry points.<br>
-Then the event driven system acts as a mediator for the services. The event driven system can have multiple event exchanges through which services can receive different types of event messages and handle some system logic on the backend. This improves flexibility allowing system logic to be handled independently by separate services.
+
+#### Mediator
+The Event Driven System acts as a mediator for the services. The Event Driven System can have multiple event exchanges through which services can receive and send different types of event messages and handle some system logic on the backend. This improves flexibility allowing system logic to be handled independently by separate services.
+
+#### Publish Subscribe
+Microservices each handle their own methods of communication. The only dependency is to know on which express queue they can recieve their data that they may be interested in. In this way the Microservices form a publish subscribe pattern where some services are subscribers and others are publishers and some are both just on different express queues.
 
 ### Constraints 
  1. The system must run on a single server.
  2. Any technologies used should be free and open source.
  3. POPIA & GDPR compliance required.
- 4. Build native Outlook Add-in (Office JS API) 
+ 4. Build native Outlook Add-in (Office JS API).
+ 5. API authenticates all enpoints before anything reaches the services.
+ 6. Each Microservice's database is its own and may not be accessed by another.
 
 ### Quality Requirements based off of [NFR](./Software_Requirements_Specification.md#non-functional-requirements)
 
@@ -142,32 +169,30 @@ Then the event driven system acts as a mediator for the services. The event driv
 	- Deployed on a single server using docker
 	- Compatible on screen resolutions from 1280px to 1920px+
 
-### Architectural Responsibility
-API gateway is responsible for receiving client requests, authenticating clients and doing roll-based authentication control. The API gateway then routes user traffic to the correct microservice to handle user business logic.<br>
-Each microservice is self contained and receives requests from the API gateway. The microservice will handle business logic based on its definition and will also handle it's own transactions with its own database. A microservice may also send an event with data attached (a message) to the event system if other business logic needs to be accomplished but is not within the scope of the microservice.<br>
-The event system contains multiple event queues in which an event being processed by the system can attach messages to a given queue and send out the messages to the correct microservice which is subscribed to a specific queue. 
+## Technology Requirements
 
-### Technology Requirements
-#### React + Tailwind CSS
+### React + Tailwind CSS
 Making use of react and tailwind CSS with proper UI design from our frontend developers we can comply with the WCAG 2.1 AA accessibility.
 
-#### NestJS
+### NestJS
 Using NestJS we can build a proper api-gateway, and microservices which will be able to scale well and perform well, thus meeting the requirements for flexibility and performance.
 
-#### PostgreSQL
+### PostgreSQL
 Using PostegreSQL helps keep data persistent for our services and also performs well satisfying our performance requirements.
 
-#### Jest, Vitest and Supertest
+### Jest, Vitest and Supertest
 Using these testing packages we can build tests to ensure our system is functionally suitable.
 
-#### Socket.IO, RabbitMQ
+### Socket.IO, RabbitMQ
 These technologies help drive the event driven aspect of our system maintaining live updates for the frontend as well as allowing background processing to take place between requests.
 
-#### Caddy
+### Caddy
 Caddy helps reverse proxy requests coming to our server to the correct endpoints (frontend website or addin and backend api-gateway). Caddy can also be used as a load balancer.
 
-#### Docker
+### Docker
 Docker containerizes the system in separate containers making our system portable and compatible.
+
+## API Service Contracts
 
 ## Deployment
 
