@@ -16,8 +16,8 @@ export class AppController {
     return 'ok';
   }
 
-  @MessagePattern('fields')
-  fields(): any {
+  @MessagePattern('company.fields')
+  fields() {
     return 'Returns the fields avaliable in the database';
   }
 }

@@ -2,41 +2,43 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UseGuards 
 import { ProxyService } from '../proxy/proxy.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiSchema } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiProperty, ApiResponse, ApiSchema } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { IsOptional, IsString } from 'class-validator';
 
 class uploadDataDto { 
   @ApiProperty({
       type: 'string',
       format: 'binary',
-      description: 'The binary file to upload',
+      description: 'The binary csv file to upload',
   })
   file: any;
 
   @ApiProperty({
-      type: 'object',
-      
-      required: ['employeeId', 'email'],
-      properties: {
-        emplyeeId: {type: 'string', example: 'file-employee-id-field-name', description: 'Field in your csv file for employee ids'},
-        email: { type: 'string', example: 'file-email-field-name', description: 'Field in your csv file for emails' },
-        firstName: { type: 'string', example: 'first-name-field' },
-        lastName: { type: 'string', example: 'last-name-field' },
-        department: { type: 'string', example: 'department-field' },
-        jobTitle: { type: 'string', example: 'job-title-field' },
-        managerEmail: { type: 'string', example: 'manager-email-field' },
-        MangerId: { type: 'string', example: 'manager-id-field' },
-        employeeStatus: { type: 'string', example: 'employee-status-field' },
-        externalId: { type: 'string', example: 'HR-system-id-field' },
-      },
+       type: 'string',
+    description:
+      'Optional JSON mapping of system fields to CSV column names. If omitted, matching column names will be used automatically.',
+    example: JSON.stringify({
+      employeeId: 'Employee-Number Field',
+      email: 'Work-Email Field',
+      firstName: 'First-Name Field',
+      lastName: 'Surname Field',
+      department: 'Department Field',
+      jobTitle: 'Job-Title Field',
+      managerEmail: 'Manager-Email Field',
+      managerId: 'Manager-ID Field',
+      employeeStatus: 'Employment-Status Field',
+      externalId: 'HR-Employee-ID Field',
+    }),
   })
-  mapping: any;
+  @IsOptional()
+  @IsString()
+  mapping?: string;
 }
 
 @Controller('company')
 @UseGuards(JwtAuthGuard)
-@Roles('admin')
 export class CompanyController {
     private readonly companyServiceUrl: string;
 
@@ -49,15 +51,18 @@ export class CompanyController {
 
     @Post('import')
     @ApiBearerAuth()
+    @Roles('admin')
     @ApiOperation({
         summary: 'Imports company employee data to the system',
     })
     @ApiBody({ type: uploadDataDto })
+    @ApiConsumes('multipart/form-data')
     importEmplyeeData(@Req() req: Request, @Res() res: Response) {
       return this.proxy.beterForward(req, res);
     }
 
     @Get('imports')
+    @Roles('admin')
     @ApiOperation({
       summary: 'Fetches imports data from service'
     })
@@ -72,6 +77,7 @@ export class CompanyController {
     })
     @ApiBearerAuth()
     @ApiParam({ name: 'importId', type: 'string', example: 'IMPORT-001' })
+    @Roles('admin')
     fetchImport(@Param('importId') importId: string) {
       return this.proxy.sendTcpMessage(this.proxy.companyClient, 'imports.get', importId);
     }
@@ -81,6 +87,7 @@ export class CompanyController {
       summary: 'Fetches employees data from service'
     })
     @ApiBearerAuth()
+    @Roles('admin')
     fetchAllEmployees() {
       return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get');
     }
@@ -91,7 +98,8 @@ export class CompanyController {
     })
     @ApiBearerAuth()
     @ApiParam({ name: 'employeeId', type: 'string', example: 'u-001' })
-    fetchEmployee(@Param('employeeId') employeeId: string,) {
+    @Roles('admin')
+    fetchEmployee(@Param('employeeId') employeeId: string) {
       return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get', employeeId);
     }
 
@@ -118,8 +126,9 @@ export class CompanyController {
         }
       }
     })
+    @Roles('admin')
     updateEmplooyee(@Param('employeeId') employeeId: string, @Body() employeeDto: any) {
-      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.update', {employeeId: employeeId, newEmployeeData: employeeDto});
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employee.update', {employeeId: employeeId, newEmployeeData: employeeDto});
     }
 
     @Delete('employees/:employeeId')
@@ -128,8 +137,9 @@ export class CompanyController {
     })
     @ApiBearerAuth()
     @ApiParam({ name: 'employeeId', type: 'string', example: 'u-001' })
+    @Roles('admin')
     deleteEmployee(@Param('employeeId') employeeId: string,) {
-      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.delete', employeeId);
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employee.delete', employeeId);
     }
 
     @Get('fields')
@@ -137,6 +147,7 @@ export class CompanyController {
       summary: 'Fetches the fields avaliable in the company service database'
     })
     @ApiBearerAuth()
+    @Roles('admin')
     fetchFields() {
       return this.proxy.sendTcpMessage(this.proxy.companyClient, 'company.fields');
     }

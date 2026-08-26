@@ -139,7 +139,7 @@ export class ProxyService implements OnModuleInit {
     }
   }
 
-  async sendTcpMessage(client: ClientProxy, message: string, data: any = undefined): Promise<any> {
+  async sendTcpMessage(client: ClientProxy, message: string, data: any = {}): Promise<any> {
     logger.info('Sending TCP message: ' + message);
     return firstValueFrom(client.send(message, data));
   }
@@ -148,7 +148,7 @@ export class ProxyService implements OnModuleInit {
     proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] ?? '');
     if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
       const body = JSON.stringify(req.body);
-      proxyReq.setHeader('Content-Type', 'application/json');
+      proxyReq.setHeader('Content-Type', req.headers['content-type'] || 'application/json');
       proxyReq.setHeader('Content-Length', Buffer.byteLength(body));
       proxyReq.write(body);
     }

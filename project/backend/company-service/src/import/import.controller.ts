@@ -13,8 +13,13 @@ export class ImportController {
     return this.importService.create(createImportDto);
   }
 
-  @MessagePattern('import.get')
-  find(@Payload() importId: string | undefined) {
-    return (importId) ? this.importService.findOne(importId) : this.importService.findAll();
+  @MessagePattern('imports.get')
+  findAll() {
+    return this.importService.findAll();
+  }
+
+  @MessagePattern('imports.get')
+  findOne(@Payload() importId: string) {
+    return this.importService.findOne(importId);
   }
 }

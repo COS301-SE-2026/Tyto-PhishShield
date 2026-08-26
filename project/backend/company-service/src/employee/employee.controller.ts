@@ -1,7 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EmployeeService } from './employee.service';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 @Controller()
@@ -9,8 +8,13 @@ export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
   @MessagePattern('employees.get')
-  findAll(@Payload() employeeId: string | undefined) {
-    return (employeeId) ? this.employeeService.findOne(employeeId) : this.employeeService.findAll();
+  findAll() {
+    return this.employeeService.findAll();
+  }
+
+  @MessagePattern('employees.get')
+  findOne(@Payload() employeeId: string) {
+    return this.employeeService.findOne(employeeId)
   }
 
   @MessagePattern('employee.update')
