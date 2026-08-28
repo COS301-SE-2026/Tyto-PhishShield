@@ -17,9 +17,11 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <AccessibilityProvider>
           <AuthProvider>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
+            <NotificationProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </NotificationProvider>
           </AuthProvider>
         </AccessibilityProvider>
       </ThemeProvider>
