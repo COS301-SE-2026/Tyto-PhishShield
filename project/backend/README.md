@@ -68,6 +68,25 @@ async function bootstrap() {
 bootstrap();
 ```
 
+Optional Add DB configuration to app.module.ts at the imports section:
+```Typescript
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get<string>('DB_HOST', 'localhost'),
+        port: config.get<number>('DB_PORT', 5432),
+        username: config.get('DB_USERNAME'),
+        password: config.get('DB_PASSWORD'),
+        database: config.get('DB_NAME'),
+        entities: [/* any entities in the service */],
+        synchronize: true,
+      }),
+    }),
+```
+
 Step 4: add docker file `Dockerfile`
 ```Dockerfile
 FROM ghcr.io/pnpm/pnpm:11.1.1@sha256:18bcf6373f2ca9b74f13d939951f02b4514ec10a6f548fec8cfe28eb02cc4b4f AS build
@@ -180,7 +199,10 @@ Step 6: update the compose `local-compose.yml`:
       - PORT=${<service-name>_PORT}
       - TCP_PORT=${<service>_TCP_PORT}
       - DB_HOST=${<service>_DB_CONTAINER}
-      - <service>_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${<service>_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:

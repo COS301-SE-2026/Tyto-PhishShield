@@ -1,1 +1,37 @@
-export class Employee {}
+import { Column, CreateDateColumn, Entity, ForeignKey, Index, PrimaryColumn } from "typeorm";
+import { Import } from "../../import/entities/import.entity";
+
+@Entity('employee-entity')
+export class Employee {
+    @PrimaryColumn({unique: true, nullable: false})
+    employeeId!: string;
+
+    @Index()
+    @Column()
+    email!: string;
+
+    @Column({nullable: true})
+    firstName?: string;
+
+    @Column({nullable: true})
+    lastName?: string;
+
+    @Column({nullable: true})
+    department?: string;
+
+    @Column({nullable: true})
+    jobTitle?: string;
+
+    @Index()
+    @Column({nullable: true})
+    managerId?: string;
+
+    @Column({nullable: true})
+    employeeStatus?: string;
+
+    @Column({nullable: true})
+    externalId?: string;
+
+    @CreateDateColumn()
+    dateImported!: Date;
+}
