@@ -90,6 +90,9 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
 -	**OFR 6.1**: The system autonomously gathers publicly available user or company data (e.g. LinkedIn profiles or company websites) for phishing simulation generation. 
 -    **OFR 6.2**: The system will generate personalised phishing attacks using AI without requiring manual admin input. 
 -    **OFR 6.3**: The system shall allow admins to enable or disable autonomous red team mode for campaigns.
+-    **OFR 6.4**: The system will gather company data from the company communication platforms with the company's authorization.
+-    **OFR 6.5**: The system will generate a graph showing how employees in a company are connected with one another. 
+note that wow factor 1 is the option we will be working towards for demo 4 the other wow factors will most likely not be implemented but we keep them for now incase we do decide to implement them.
 
 **OFR7**: Battle Royale **(Wow Factor 2)**
 -	**OFR 7.1**: The system shall support organization-wide time-limited phishing simulation events. 
@@ -107,6 +110,7 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
  -   **OFR 9.2**: The system will let the user take a test to learn how to detect phishing content.
  -   **OFR 9.3**: The system will allow the user to earn XP points based on how well the user did in the test.
  -   **OFR 9.4**: The system will allow admins to create or generate educational material with the LLM.
+
 ## Non-Functional Requirements
 **NFR 1**: Security
 -	**NFR 1.1**: The system shall authenticate and authorize all protected API requests using Role-Based Access Control (RBAC) enforced at the API gateway layer with server-side validation on 100% of protected endpoints.
@@ -169,6 +173,8 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **UC-14**   | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
 | **UC-15**   | Admin can create educational material.                         | As an admin, I want to be able to create educational material for users manually or automatically with the AI engine.                                                                        |
 | **UC-16**   | Admin can manage user states.                                  | As an admin, I want to be able to activate or deactivate user accounts to manage user access to the system.                                                                                  |
+| **UC-17**   | Admin can import company data.                                 | As an admin, I want to be able to add the company data, such as employee information to the system.                                                                                  |
+| **UC-18**   | Admin can update employee information.                                 | As an admin, I want to be able to update employee information on the system.                                                                                  |
 
 ## Use Case Diagrams
 
