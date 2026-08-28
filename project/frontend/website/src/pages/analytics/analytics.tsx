@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, ComingSoon } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
-import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, getPeriodRange,
-  type Period, type AnalyticsSummary, type TimeSeriesPoint, type LeaderboardEntry, } from './analytics.service';
+import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, fetchByDepartment, fetchAtRiskUsers, fetchCampaigns, getPeriodRange,
+  type Period, type AnalyticsSummary, type TimeSeriesPoint, type LeaderboardEntry, type DepartmentBreakdown, type AtRiskUser, type Campaign, } from './analytics.service';
 
 interface AnalyticsProps { onNavigate: (path: string) => void; activePath: string; }
 
@@ -22,12 +22,23 @@ function buildLinePath(values: number[], width: number, height: number, max: num
     .join(' ');
 }
 
+function DeltaBadge({ delta, suffix = '%' }: { readonly delta: number; readonly suffix?: string }) {
+  return (
+    <span style={{ fontSize: 11, fontWeight: 600, color: delta >= 0 ? 'var(--color-success)' : 'var(--color-danger)', paddingBottom: 3, fontFamily: 'Inter, system-ui, sans-serif' }}>
+      {delta >= 0 ? '+' : ''}{Math.round(delta)}{suffix}
+    </span>
+  );
+}
+
 export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
   const { addToast } = useToast();
   const [period, setPeriod] = useState<Period>('30d');
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [series, setSeries] = useState<TimeSeriesPoint[] | null>(null);
   const [topReporters, setTopReporters] = useState<LeaderboardEntry[] | null>(null);
+  const [departments, setDepartments] = useState<DepartmentBreakdown[] | null>(null);
+  const [atRiskUsers, setAtRiskUsers] = useState<AtRiskUser[] | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,15 +47,21 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       setLoading(true);
       const { from, to } = getPeriodRange(period);
       try {
-        const [summaryData, seriesData, leaderboardData] = await Promise.all([
+        const [summaryData, seriesData, leaderboardData, departmentData, atRiskData, campaignData] = await Promise.all([
           fetchAnalyticsSummary(period),
           fetchTimeSeries(from, to),
           fetchLeaderboard(5),
+          fetchByDepartment(period),
+          fetchAtRiskUsers(period, 5),
+          fetchCampaigns(),
         ]);
         if (cancelled) return;
         setSummary(summaryData);
         setSeries(seriesData);
         setTopReporters(leaderboardData);
+        setDepartments(departmentData);
+        setAtRiskUsers(atRiskData);
+        setCampaigns(campaignData);
       } catch {
         if (!cancelled) addToast({ type: 'error', title: 'Analytics failed to load', message: 'Unable to fetch analytics data.' });
       } finally {
@@ -90,39 +107,37 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <Card style={{ padding: '16px 18px' }}>
           <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Avg Detection Rate</p>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
-            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : `${summary?.detectionRate ?? 0}%`}</span>
-            {!loading && summary && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: summary.detectionRateDelta >= 0 ? 'var(--color-success)' : 'var(--color-danger)', paddingBottom: 3, fontFamily: 'Inter, system-ui, sans-serif' }}>
-                {summary.detectionRateDelta >= 0 ? '+' : ''}{summary.detectionRateDelta}%
-              </span>
-            )}
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : `${Math.round(summary?.detectionRate.value ?? 0)}%`}</span>
+            {!loading && summary && <DeltaBadge delta={summary.detectionRate.delta} />}
           </div>
         </Card>
-        <Card style={{ padding: '16px 18px', opacity: 0.6 }}>
+        <Card style={{ padding: '16px 18px' }}>
           <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Avg Click Rate</p>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>Coming soon</span>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : `${Math.round(summary?.clickRate.value ?? 0)}%`}</span>
+            {!loading && summary && <DeltaBadge delta={summary.clickRate.delta} />}
+          </div>
         </Card>
         <Card style={{ padding: '16px 18px' }}>
           <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Total Simulations</p>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
-            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : (summary?.totalSimulations ?? 0).toLocaleString()}</span>
-            {!loading && summary && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: summary.totalSimulationsDelta >= 0 ? 'var(--color-success)' : 'var(--color-danger)', paddingBottom: 3, fontFamily: 'Inter, system-ui, sans-serif' }}>
-                {summary.totalSimulationsDelta >= 0 ? '+' : ''}{summary.totalSimulationsDelta}
-              </span>
-            )}
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : (summary?.totalSimulations.value ?? 0).toLocaleString()}</span>
+            {!loading && summary && <DeltaBadge delta={summary.totalSimulations.delta} suffix="" />}
           </div>
         </Card>
-        <Card style={{ padding: '16px 18px', opacity: 0.6 }}>
+        <Card style={{ padding: '16px 18px' }}>
           <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>At-Risk Users</p>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>Coming soon</span>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : (summary?.atRiskUsers.value ?? 0).toLocaleString()}</span>
+            {!loading && summary && <DeltaBadge delta={summary.atRiskUsers.delta} suffix="" />}
+          </div>
         </Card>
         <Card style={{ padding: '16px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
             <p style={{ fontSize: 11, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Training Completion</p>
             <Badge variant="neutral">All-time</Badge>
           </div>
-          <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : `${summary?.trainingCompletionRate ?? 0}%`}</span>
+          <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{loading ? '—' : `${Math.round(summary?.trainingCompletion.value ?? 0)}%`}</span>
         </Card>
       </div>
 
@@ -173,7 +188,21 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
         <Card style={{ padding: '20px 22px' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Detection Rate by Department</h2>
-          <ComingSoon label="Department breakdown isn't available yet: analytics-service doesn't capture department data on events." />
+          {!loading && departments?.length === 0 && (
+            <ComingSoon label="No department activity recorded in this period yet." />
+          )}
+          {departments?.map(d => (
+            <div key={d.department} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 0', borderBottom: '1px solid var(--border)',
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.department}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.sent} sent · {d.reported} reported</div>
+              </div>
+              <Badge variant={d.detectionRate >= 50 ? 'success' : 'warning'}>{Math.round(d.detectionRate)}% detection</Badge>
+            </div>
+          ))}
         </Card>
 
         <Card style={{ padding: '20px 22px' }}>
@@ -199,12 +228,68 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         </Card>
       </div>
 
+      {/* At-risk users */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Users Most At Risk</h2>
+        </div>
+        {!loading && atRiskUsers?.length === 0 ? (
+          <ComingSoon label="No users currently meet the at-risk click-rate threshold." />
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-hover)' }}>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>USER</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DEPARTMENT</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>CLICK RATE</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>RISK</th>
+                </tr>
+              </thead>
+              <tbody>
+                {atRiskUsers?.map(u => (
+                  <tr key={u.auth0Id} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.name ?? u.auth0Id}</td>
+                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.department ?? '—'}</td>
+                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.clickRate}%</td>
+                    <td style={{ padding: '10px 16px' }}><Badge variant={u.riskLevel === 'high' ? 'danger' : 'warning'}>{u.riskLevel}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
       {/* Wave performance table */}
       <Card>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Phishing Wave Performance Summary</h2>
         </div>
-        <ComingSoon label="Per-wave analytics need a Wave entity in mailing-service before this table can populate (tracked as Phase 2)" />
+        {campaigns && campaigns.length > 0 ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-hover)' }}>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>WAVE</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>STATUS</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>STARTED</th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map(c => (
+                  <tr key={c.id} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{c.name ?? c.id}</td>
+                    <td style={{ padding: '10px 16px' }}><Badge variant="neutral">{c.status ?? 'unknown'}</Badge></td>
+                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{c.startDate ? new Date(c.startDate).toLocaleDateString('en-ZA') : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <ComingSoon label="No wave activity to summarise yet — waves-service doesn't publish wave events to analytics-service yet, so this table stays empty until that's wired up." />
+        )}
       </Card>
     </AppLayout>
   );
