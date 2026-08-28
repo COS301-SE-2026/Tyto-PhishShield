@@ -35,13 +35,13 @@ export class AppService implements OnModuleInit {
     this.salesEmail = this.config.get<string>('OUR_EMAIL');
   }
 
-  onModuleInit() {
-    this.connectService(this.accountsClient, 'Accounts');
-    this.connectService(this.mailingClient, 'Mailing');
-    this.connectService(this.xpClient, 'XP');
-    this.connectService(this.reportClient, 'Report');
-    this.connectService(this.educationClient, 'Education');
-    this.connectService(this.analyticsClient, 'Analytics');
+  async onModuleInit() {
+    await this.connectService(this.accountsClient, 'Accounts');
+    await this.connectService(this.mailingClient, 'Mailing');
+    await this.connectService(this.xpClient, 'XP');
+    await this.connectService(this.reportClient, 'Report');
+    await this.connectService(this.educationClient, 'Education');
+    await this.connectService(this.analyticsClient, 'Analytics');
   }
 
   private async connectService(client: ClientProxy, serviceName: string) {

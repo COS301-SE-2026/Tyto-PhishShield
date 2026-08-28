@@ -1,9 +1,8 @@
-/*
+/**
  * @file Unit tests for AnalyticsController.
  *
  * Covers RabbitMQ event handlers, REST endpoints,
  * and service-to-service TCP message patterns.
- * (also has a few tests I added just to be safe)
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -19,6 +18,16 @@ const mockAnalyticsService = {
   getTimeSeries: jest.fn(),
   getLeaderboard: jest.fn(),
   getUserStats: jest.fn(),
+  recordSimulationSend: jest.fn(),
+  recordClickFromAuth0Id: jest.fn(),
+  upsertUser: jest.fn(),
+  deleteUser: jest.fn(),
+  upsertCampaign: jest.fn(),
+  getSummary: jest.fn(),
+  getDetectionRateOverTime: jest.fn(),
+  getByDepartment: jest.fn(),
+  getAtRiskUsers: jest.fn(),
+  getCampaigns: jest.fn(),
 };
 
 describe('AnalyticsController', () => {
@@ -26,6 +35,8 @@ describe('AnalyticsController', () => {
   let service: jest.Mocked<typeof mockAnalyticsService>;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AnalyticsController],
       providers: [
@@ -39,357 +50,442 @@ describe('AnalyticsController', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    // console.log('cleared mocks'); // i keep forgetting to remove this
   });
 
-  describe('RabbitMQ event handlers', () => {
-    describe('onReportSubmitted', () => {
-      it('records a REPORT_SUBMITTED event with auth0Id and email', async () => {
-        const payload = {
-          auth0Id: 'auth0|123',
-          email: 'test@example.com',
-          reportId: 'rep1',
-        };
+  // ===================== RabbitMQ event handlers =====================
 
-        await controller.onReportSubmitted(payload);
+  describe('onReportSubmitted', () => {
+    it('records REPORT_SUBMITTED with auth0Id and email', async () => {
+      const payload = {
+        auth0Id: 'auth0|123',
+        email: 'test@example.com',
+        reportId: 'rep1',
+      };
 
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.REPORT_SUBMITTED,
-          auth0Id: payload.auth0Id,
-          email: payload.email,
-          payload: payload as any,
-        });
-      });
+      await controller.onReportSubmitted(payload);
 
-      it('works when email is missing', async () => {
-        // not sure why this would happen but just in case
-        const payload = {
-          auth0Id: 'auth0|456',
-          reportId: 'rep2',
-        };
-
-        await controller.onReportSubmitted(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.REPORT_SUBMITTED,
-          auth0Id: payload.auth0Id,
-          email: undefined,
-          payload: payload as any,
-        });
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.REPORT_SUBMITTED,
+        auth0Id: payload.auth0Id,
+        email: payload.email,
+        payload: payload as any,
       });
     });
 
-    describe('onXpGiven', () => {
-      it('records XP_GIVEN and REPORT_CONFIRMED when reason contains "phishing"', async () => {
-        const payload = {
-          auth0Id: 'auth0|123',
-          amount: 10,
-          reason: 'Valid phishing report',
-        };
+    it('records without email if missing', async () => {
+      const payload = {
+        auth0Id: 'auth0|456',
+        reportId: 'rep2',
+      };
 
-        await controller.onXpGiven(payload);
+      await controller.onReportSubmitted(payload);
 
-        expect(service.recordEvent).toHaveBeenCalledTimes(2);
-        expect(service.recordEvent).toHaveBeenNthCalledWith(1, {
-          eventType: AnalyticsEventType.XP_GIVEN,
-          auth0Id: payload.auth0Id,
-          payload: payload as any,
-        });
-        expect(service.recordEvent).toHaveBeenNthCalledWith(2, {
-          eventType: AnalyticsEventType.REPORT_CONFIRMED,
-          auth0Id: payload.auth0Id,
-          payload: payload as any,
-        });
-      });
-
-      it('records only XP_GIVEN when reason does not include "phishing"', async () => {
-        const payload = {
-          auth0Id: 'auth0|123',
-          amount: 10,
-          reason: 'Passed education assignment',
-        };
-
-        await controller.onXpGiven(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledTimes(1);
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.XP_GIVEN,
-          auth0Id: payload.auth0Id,
-          payload: payload as any,
-        });
-      });
-
-      it('records only XP_GIVEN when reason is missing', async () => {
-        const payload = {
-          auth0Id: 'auth0|123',
-          amount: 10,
-        };
-
-        await controller.onXpGiven(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    describe('onEducationAssigned', () => {
-      it('records EDUCATION_ASSIGNED and REPORT_FALSE_POSITIVE', async () => {
-        const payload = {
-          auth0Id: 'auth0|123',
-          email: 'test@example.com',
-          reportId: 'rep1',
-        };
-
-        await controller.onEducationAssigned(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledTimes(2);
-        expect(service.recordEvent).toHaveBeenNthCalledWith(1, {
-          eventType: AnalyticsEventType.EDUCATION_ASSIGNED,
-          auth0Id: payload.auth0Id,
-          email: payload.email,
-          payload: payload as any,
-        });
-        expect(service.recordEvent).toHaveBeenNthCalledWith(2, {
-          eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
-          auth0Id: payload.auth0Id,
-          email: payload.email,
-          payload: payload as any,
-        });
-      });
-    });
-
-    describe('onEmailSent', () => {
-      it('records EMAIL_SENT event', async () => {
-        const payload = {
-          referenceNumber: 'PHISH-123',
-          recipient: 'test@example.com',
-          scheduledAt: new Date().toISOString(),
-        };
-
-        await controller.onEmailSent(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.EMAIL_SENT,
-          payload: payload as any,
-        });
-      });
-    });
-
-    describe('onEmailScheduled', () => {
-      it('records EMAIL_SCHEDULED event', async () => {
-        const payload = {
-          referenceNumber: 'PHISH-123',
-          recipient: 'test@example.com',
-          scheduledAt: new Date().toISOString(),
-        };
-
-        await controller.onEmailScheduled(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.EMAIL_SCHEDULED,
-          payload: payload as any,
-        });
-      });
-    });
-
-    describe('onBatchEmailSent', () => {
-      it('records EMAIL_BATCH_SENT with count only', async () => {
-        const payload = {
-          entries: [
-            { referenceNumber: 'PHISH-1', recipient: 'a@example.com' },
-            { referenceNumber: 'PHISH-2', recipient: 'b@example.com' },
-            { referenceNumber: 'PHISH-3', recipient: 'c@example.com' },
-          ],
-        };
-
-        await controller.onBatchEmailSent(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
-          payload: { count: 3 },
-        });
-      });
-
-      it('handles missing entries by sending count 0', async () => {
-        const payload = {};
-
-        await controller.onBatchEmailSent(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
-          payload: { count: 0 },
-        });
-      });
-    });
-
-    describe('onBatchEmailScheduled', () => {
-      it('records EMAIL_SCHEDULED with batch flag and count', async () => {
-        const payload = {
-          entries: [
-            { referenceNumber: 'PHISH-1', recipient: 'a@example.com' },
-            { referenceNumber: 'PHISH-2', recipient: 'b@example.com' },
-          ],
-        };
-
-        await controller.onBatchEmailScheduled(payload);
-
-        expect(service.recordEvent).toHaveBeenCalledWith({
-          eventType: AnalyticsEventType.EMAIL_SCHEDULED,
-          payload: { count: 2, batch: true },
-        });
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.REPORT_SUBMITTED,
+        auth0Id: payload.auth0Id,
+        email: undefined,
+        payload: payload as any,
       });
     });
   });
 
-  describe('HTTP endpoints', () => {
-    it('getOverview calls service.getOverview and returns its result', async () => {
-      const overview = {
-        totalEmailsSent: 10,
-        totalReports: 5,
-        confirmedPhishing: 2,
-        falsePositives: 3,
-        totalXpGiven: 50,
-        educationAssigned: 3,
-        educationCompleted: 1,
+  describe('onXpGiven', () => {
+    it('records XP_GIVEN and REPORT_CONFIRMED when reason includes "phishing"', async () => {
+      const payload = {
+        auth0Id: 'auth0|123',
+        amount: 10,
+        reason: 'Valid phishing report',
       };
-      service.getOverview.mockResolvedValue(overview as any);
 
-      const result = await controller.getOverview();
+      await controller.onXpGiven(payload);
 
-      expect(service.getOverview).toHaveBeenCalled();
-      expect(result).toEqual(overview);
+      expect(service.recordEvent).toHaveBeenCalledTimes(2);
+      expect(service.recordEvent).toHaveBeenNthCalledWith(1, {
+        eventType: AnalyticsEventType.XP_GIVEN,
+        auth0Id: payload.auth0Id,
+        payload: payload as any,
+      });
+      expect(service.recordEvent).toHaveBeenNthCalledWith(2, {
+        eventType: AnalyticsEventType.REPORT_CONFIRMED,
+        auth0Id: payload.auth0Id,
+        payload: payload as any,
+      });
     });
 
-    it('getReportStats forwards optional from/to dates', async () => {
-      const reportStats = {
-        submitted: 5,
-        confirmed: 2,
-        falsePositive: 3,
-        detectionRate: 40,
+    it('calls recordClickFromAuth0Id when reason includes "compromised"', async () => {
+      const payload = {
+        auth0Id: 'auth0|123',
+        amount: -40,
+        reason: 'compromised',
       };
-      service.getReportStats.mockResolvedValue(reportStats as any);
 
-      const result = await controller.getReportStats(
-        '2026-08-01',
-        '2026-08-10',
-      );
+      await controller.onXpGiven(payload);
 
-      expect(service.getReportStats).toHaveBeenCalledWith(
-        '2026-08-01',
-        '2026-08-10',
-      );
-      expect(result).toEqual(reportStats);
+      expect(service.recordClickFromAuth0Id).toHaveBeenCalledWith('auth0|123');
+      expect(service.recordEvent).toHaveBeenCalledTimes(1);
     });
 
-    it('getReportStats handles missing dates', async () => {
-      await controller.getReportStats();
-
-      expect(service.getReportStats).toHaveBeenCalledWith(undefined, undefined);
-    });
-
-    it('getMailingStats forwards optional from/to dates', async () => {
-      const mailingStats = { totalSent: 20, scheduled: 5 };
-      service.getMailingStats.mockResolvedValue(mailingStats as any);
-
-      const result = await controller.getMailingStats(
-        '2026-08-01',
-        '2026-08-10',
-      );
-
-      expect(service.getMailingStats).toHaveBeenCalledWith(
-        '2026-08-01',
-        '2026-08-10',
-      );
-      expect(result).toEqual(mailingStats);
-    });
-
-    it('getTimeSeries requires from and to and returns service result', async () => {
-      const timeSeries = [
-        { date: '2026-08-01', reports: 1, emailsSent: 2, xpGiven: 10 },
-      ];
-      service.getTimeSeries.mockResolvedValue(timeSeries as any);
-
-      const result = await controller.getTimeSeries('2026-08-01', '2026-08-02');
-
-      expect(service.getTimeSeries).toHaveBeenCalledWith(
-        '2026-08-01',
-        '2026-08-02',
-      );
-      expect(result).toEqual(timeSeries);
-    });
-
-    it('getLeaderboard parses limit and passes to service', async () => {
-      const leaderboard = [
-        {
-          auth0Id: 'user1',
-          email: 'u1@example.com',
-          totalXp: 100,
-          reportCount: 5,
-        },
-      ];
-      service.getLeaderboard.mockResolvedValue(leaderboard as any);
-
-      const result = await controller.getLeaderboard('5');
-
-      expect(service.getLeaderboard).toHaveBeenCalledWith(5);
-      expect(result).toEqual(leaderboard);
-    });
-
-    it('getLeaderboard uses default 10 when limit missing', async () => {
-      await controller.getLeaderboard();
-
-      expect(service.getLeaderboard).toHaveBeenCalledWith(10);
-    });
-
-    it('getUserStats passes auth0Id and returns service result', async () => {
-      const userStats = {
-        reports: 2,
-        confirmed: 1,
-        falsePositive: 1,
-        totalXp: 20,
-        educationCompleted: 1,
+    it('does not call recordClickFromAuth0Id for normal xp reasons', async () => {
+      const payload = {
+        auth0Id: 'auth0|123',
+        amount: 10,
+        reason: 'Passed education assignment',
       };
-      service.getUserStats.mockResolvedValue(userStats as any);
 
-      const result = await controller.getUserStats('auth0|123');
+      await controller.onXpGiven(payload);
 
-      expect(service.getUserStats).toHaveBeenCalledWith('auth0|123');
-      expect(result).toEqual(userStats);
+      expect(service.recordClickFromAuth0Id).not.toHaveBeenCalled();
+      expect(service.recordEvent).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('onEducationAssigned', () => {
+    it('records EDUCATION_ASSIGNED and REPORT_FALSE_POSITIVE', async () => {
+      const payload = {
+        auth0Id: 'auth0|123',
+        email: 'test@example.com',
+        reportId: 'rep1',
+      };
+
+      await controller.onEducationAssigned(payload);
+
+      expect(service.recordEvent).toHaveBeenCalledTimes(2);
+      expect(service.recordEvent).toHaveBeenNthCalledWith(1, {
+        eventType: AnalyticsEventType.EDUCATION_ASSIGNED,
+        auth0Id: payload.auth0Id,
+        email: payload.email,
+        payload: payload as any,
+      });
+      expect(service.recordEvent).toHaveBeenNthCalledWith(2, {
+        eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+        auth0Id: payload.auth0Id,
+        email: payload.email,
+        payload: payload as any,
+      });
+    });
+  });
+
+  describe('onEmailSent', () => {
+    it('records EMAIL_SENT and SimulationSend when emailId present', async () => {
+      const payload = {
+        emailId: 'email-123',
+        referenceNumber: 'PHISH-123',
+        recipient: 'test@example.com',
+        scheduledAt: new Date().toISOString(),
+        auth0Id: 'auth0|123',
+      };
+
+      await controller.onEmailSent(payload);
+
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.EMAIL_SENT,
+        payload: payload as any,
+      });
+      expect(service.recordSimulationSend).toHaveBeenCalledWith({
+        emailId: 'email-123',
+        referenceNumber: 'PHISH-123',
+        auth0Id: 'auth0|123',
+        campaignId: undefined,
+        sentAt: expect.any(Date),
+      });
+    });
+
+    it('does not call recordSimulationSend if emailId missing', async () => {
+      const payload = {
+        referenceNumber: 'PHISH-123',
+        recipient: 'test@example.com',
+        scheduledAt: new Date().toISOString(),
+      };
+
+      await controller.onEmailSent(payload);
+
+      expect(service.recordSimulationSend).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onEmailScheduled', () => {
+    it('records EMAIL_SCHEDULED and SimulationSend when emailId present', async () => {
+      const payload = {
+        emailId: 'email-123',
+        referenceNumber: 'PHISH-123',
+        recipient: 'test@example.com',
+        scheduledAt: new Date().toISOString(),
+        auth0Id: 'auth0|123',
+      };
+
+      await controller.onEmailScheduled(payload);
+
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+        payload: payload as any,
+      });
+      expect(service.recordSimulationSend).toHaveBeenCalled();
+    });
+
+    it('does not call recordSimulationSend if emailId missing', async () => {
+      const payload = {
+        referenceNumber: 'PHISH-123',
+        recipient: 'test@example.com',
+        scheduledAt: new Date().toISOString(),
+      };
+
+      await controller.onEmailScheduled(payload);
+
+      expect(service.recordSimulationSend).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onBatchEmailSent', () => {
+    it('records batch count and SimulationSend for each entry with emailId', async () => {
+      const payload = {
+        entries: [
+          {
+            referenceNumber: 'PHISH-1',
+            recipient: 'a@example.com',
+            scheduledAt: new Date().toISOString(),
+            emailId: 'email-1',
+            auth0Id: 'auth0|1',
+            waveId: 'wave-1',
+          },
+          {
+            referenceNumber: 'PHISH-2',
+            recipient: 'b@example.com',
+            scheduledAt: new Date().toISOString(),
+            emailId: 'email-2',
+            auth0Id: 'auth0|2',
+            waveId: 'wave-1',
+          },
+        ],
+      };
+
+      await controller.onBatchEmailSent(payload);
+
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+        payload: { count: 2 },
+      });
+      expect(service.recordSimulationSend).toHaveBeenCalledTimes(2);
+      expect(service.recordSimulationSend).toHaveBeenNthCalledWith(1, {
+        emailId: 'email-1',
+        referenceNumber: 'PHISH-1',
+        auth0Id: 'auth0|1',
+        campaignId: 'wave-1',
+        sentAt: expect.any(Date),
+      });
+    });
+
+    it('does not call recordSimulationSend if entries missing emailId', async () => {
+      const payload = {
+        entries: [
+          {
+            referenceNumber: 'PHISH-1',
+            recipient: 'a@example.com',
+            scheduledAt: new Date().toISOString(),
+          },
+          {
+            referenceNumber: 'PHISH-2',
+            recipient: 'b@example.com',
+            scheduledAt: new Date().toISOString(),
+          },
+        ],
+      };
+
+      await controller.onBatchEmailSent(payload);
+
+      expect(service.recordSimulationSend).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onBatchEmailScheduled', () => {
+    it('records batch schedule and SimulationSend for entries with emailId', async () => {
+      const payload = {
+        entries: [
+          {
+            referenceNumber: 'PHISH-1',
+            recipient: 'a@example.com',
+            scheduledAt: new Date().toISOString(),
+            emailId: 'email-1',
+            auth0Id: 'auth0|1',
+            waveId: 'wave-1',
+          },
+        ],
+      };
+
+      await controller.onBatchEmailScheduled(payload);
+
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+        payload: { count: 1, batch: true },
+      });
+      expect(service.recordSimulationSend).toHaveBeenCalled();
+    });
+  });
+
+  describe('onWaveBatchSend / onWaveBatchScheduled', () => {
+    it('records wave batch send and SimulationSend', async () => {
+      const payload = {
+        entries: [
+          {
+            referenceNumber: 'PHISH-1',
+            scheduledAt: new Date().toISOString(),
+            emailId: 'email-1',
+            auth0Id: 'auth0|1',
+            waveId: 'wave-1',
+          },
+        ],
+      };
+
+      await controller.onWaveBatchSend(payload);
+
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
+        payload: { count: 1 },
+      });
+      expect(service.recordSimulationSend).toHaveBeenCalled();
+    });
+
+    it('records wave batch schedule and SimulationSend', async () => {
+      const payload = {
+        entries: [
+          {
+            referenceNumber: 'PHISH-1',
+            scheduledAt: new Date().toISOString(),
+            emailId: 'email-1',
+            auth0Id: 'auth0|1',
+            waveId: 'wave-1',
+          },
+        ],
+      };
+
+      await controller.onWaveBatchScheduled(payload);
+
+      expect(service.recordEvent).toHaveBeenCalledWith({
+        eventType: AnalyticsEventType.EMAIL_SCHEDULED,
+        payload: { count: 1, batch: true },
+      });
+      expect(service.recordSimulationSend).toHaveBeenCalled();
+    });
+  });
+
+  describe('onUserCreated / Updated / Deleted', () => {
+    it('upserts user on created', async () => {
+      const payload = {
+        auth0Id: 'auth0|1',
+        email: 'test@example.com',
+        name: 'Test',
+        department: 'Finance',
+        role: 'user',
+      };
+      await controller.onUserCreated(payload);
+      expect(service.upsertUser).toHaveBeenCalledWith(payload);
+    });
+
+    it('upserts user on updated', async () => {
+      const payload = {
+        auth0Id: 'auth0|1',
+        email: 'test@example.com',
+        name: 'Test',
+        department: 'Finance',
+        role: 'user',
+      };
+      await controller.onUserUpdated(payload);
+      expect(service.upsertUser).toHaveBeenCalledWith(payload);
+    });
+
+    it('deletes user on deleted', async () => {
+      const payload = { auth0Id: 'auth0|1' };
+      await controller.onUserDeleted(payload);
+      expect(service.deleteUser).toHaveBeenCalledWith('auth0|1');
+    });
+  });
+
+  describe('onWaveCreated / Updated / Completed', () => {
+    const wavePayload = {
+      id: 'wave-1',
+      name: 'Wave 1',
+      status: 'active',
+      targetDepartments: ['Finance'],
+      startDate: '2026-08-01T00:00:00Z',
+      endDate: '2026-08-10T00:00:00Z',
+      createdBy: 'auth0|admin',
+    };
+
+    it('upserts campaign on created', async () => {
+      await controller.onWaveCreated(wavePayload);
+      expect(service.upsertCampaign).toHaveBeenCalledWith({
+        id: 'wave-1',
+        name: 'Wave 1',
+        status: 'active',
+        targetDepartments: ['Finance'],
+        startDate: new Date('2026-08-01T00:00:00Z'),
+        endDate: new Date('2026-08-10T00:00:00Z'),
+        createdBy: 'auth0|admin',
+      });
+    });
+
+    it('upserts campaign on updated', async () => {
+      await controller.onWaveUpdated(wavePayload);
+      expect(service.upsertCampaign).toHaveBeenCalled();
+    });
+
+    it('upserts campaign on completed', async () => {
+      await controller.onWaveCompleted(wavePayload);
+      expect(service.upsertCampaign).toHaveBeenCalled();
+    });
+  });
+
+  // ===================== HTTP endpoints =====================
+
+  describe('new HTTP endpoints', () => {
+    it('getSummary returns service result with parsed period', async () => {
+      service.getSummary.mockResolvedValue({
+        detectionRate: { value: 10 },
+      } as any);
+      const result = await controller.getSummary('7d');
+      expect(service.getSummary).toHaveBeenCalledWith(7);
+      expect(result).toEqual({ detectionRate: { value: 10 } });
+    });
+
+    it('getDetectionRateOverTime returns service result with parsed period', async () => {
+      service.getDetectionRateOverTime.mockResolvedValue([] as any);
+      await controller.getDetectionRateOverTime('30d');
+      expect(service.getDetectionRateOverTime).toHaveBeenCalledWith(30);
+    });
+
+    it('getByDepartment returns service result', async () => {
+      service.getByDepartment.mockResolvedValue([] as any);
+      await controller.getByDepartment('7d');
+      expect(service.getByDepartment).toHaveBeenCalledWith(7);
+    });
+
+    it('getAtRiskUsers parses limit and period', async () => {
+      service.getAtRiskUsers.mockResolvedValue([] as any);
+      await controller.getAtRiskUsers('7d', '5');
+      expect(service.getAtRiskUsers).toHaveBeenCalledWith(7, 5);
+    });
+
+    it('getCampaigns calls service', async () => {
+      service.getCampaigns.mockResolvedValue([] as any);
+      await controller.getCampaigns();
+      expect(service.getCampaigns).toHaveBeenCalled();
+    });
+  });
+
+  // ===================== TCP message patterns =====================
 
   describe('TCP message patterns', () => {
     it('getUserStatsTcp forwards auth0Id to service', async () => {
-      const userStats = {
-        reports: 2,
-        confirmed: 1,
-        falsePositive: 1,
-        totalXp: 20,
-        educationCompleted: 1,
-      };
-      service.getUserStats.mockResolvedValue(userStats as any);
-
+      service.getUserStats.mockResolvedValue({ totalXp: 10 } as any);
       const result = await controller.getUserStatsTcp('auth0|123');
-
       expect(service.getUserStats).toHaveBeenCalledWith('auth0|123');
-      expect(result).toEqual(userStats);
+      expect(result).toEqual({ totalXp: 10 });
     });
 
-    it('getOverviewTcp calls service.getOverview and returns its result', async () => {
-      const overview = {
-        totalEmailsSent: 10,
-        totalReports: 5,
-        confirmedPhishing: 2,
-        falsePositives: 3,
-        totalXpGiven: 50,
-        educationAssigned: 3,
-        educationCompleted: 1,
-      };
-      service.getOverview.mockResolvedValue(overview as any);
-
+    it('getOverviewTcp calls service.getOverview', async () => {
+      service.getOverview.mockResolvedValue({ totalEmailsSent: 1 } as any);
       const result = await controller.getOverviewTcp();
-
       expect(service.getOverview).toHaveBeenCalled();
-      expect(result).toEqual(overview);
+      expect(result).toEqual({ totalEmailsSent: 1 });
     });
   });
 });

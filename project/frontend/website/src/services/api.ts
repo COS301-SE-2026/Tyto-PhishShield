@@ -56,7 +56,7 @@ export const authApi = {
   },
 
   verifyOtp: async (email: string, code: string): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/accounts/auth/verify-otp`, {
+    const res = await fetch(`${API_BASE}/auth/otp/verify-otp`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export const authApi = {
   },
 
   resendOtp: async (email: string): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/accounts/auth/resend-otp`, {
+    const res = await fetch(`${API_BASE}/auth/otp/resend-otp`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

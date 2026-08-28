@@ -1,87 +1,99 @@
+/**
+ * Controller: OtpController
+ *
+ * Manages one‑time password generation, email delivery, verification,
+ * and trusted device storage api access points. Only authenticated
+ * users can request for OTPs.
+ * See {@link OtpService} for more details.
+ *
+ * Public methods:
+ * - {@link OtpController#verifyOtp} – checks the OTP, removes it, creates a verified device token
+ * - {@link OtpController#resendOtp} – resends a new OTP and emails it to the user
+ */
+
 import {
   Controller,
   Post,
   Body,
   HttpCode,
-  BadRequestException,
-  Logger,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { OtpService } from './otp.service';
-import { ProxyService } from '../proxy/proxy.service';
+import { ExtendedVerifyOtpDto, VerifyOtpDto } from '../dto/verify-otp.dto';
+import { ResendOtpDto } from '../dto/resend-otp.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+
+interface AuthenticatedRequest extends Request {
+  user: GatewayUser;
+}
 
 @ApiTags('OTP')
+@UseGuards(JwtAuthGuard)
 @Controller('auth/otp')
 export class OtpController {
-  private readonly logger = new Logger(OtpController.name);
+  constructor(private readonly otpService: OtpService) {}
 
-  constructor(
-    private readonly otpService: OtpService,
-    private readonly proxy: ProxyService,
-    private readonly config: ConfigService,
-  ) {}
-
-  @Post('send')
-  @HttpCode(200)
+  @Post('verify-otp')
   @ApiOperation({
-    summary: 'Generate and email a 6-digit OTP to the given address',
+    summary: 'verfies otp that was sent to a specific email address',
   })
-  async sendOtp(@Body() body: { email: string }) {
-    if (!body.email) throw new BadRequestException('email is required');
-
-    const code = this.otpService.generate(body.email);
-    const resendKey = this.config.get<string>('RESEND_API_KEY', '');
-    const fromEmail = this.config.get<string>(
-      'RESEND_EMAIL',
-      'onboarding@resend.dev',
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email', 'code'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+        code: { type: 'string', example: '0123456' },
+      },
+    },
+  })
+  @HttpCode(200)
+  async verifyOtp(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: VerifyOtpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const extendedDto: ExtendedVerifyOtpDto = {
+      email: dto.email,
+      code: dto.code,
+      userAgent: req.header('user-agent') ?? '',
+      ip: req.ip,
+    };
+    const { valid, deviceToken } = await this.otpService.verify(
+      extendedDto,
+      req.headers['authorization'] ?? '',
     );
-    const isDev =
-      this.config.get<string>('NODE_ENV', 'development') !== 'production';
-
-    try {
-      await this.proxy.forward({
-        url: 'https://api.resend.com/emails',
-        method: 'POST',
-        data: {
-          from: `PhishShield <${fromEmail}>`,
-          to: [body.email],
-          subject: 'Your PhishShield verification code',
-          html: `
-            <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px">
-              <h2 style="font-size:20px;margin-bottom:8px">Verify your email</h2>
-              <p style="color:#64748b;margin-bottom:24px">Enter the code below to complete your PhishShield registration.</p>
-              <div style="background:#f1f5f9;border-radius:10px;padding:24px;text-align:center;letter-spacing:10px;font-size:36px;font-weight:700;color:#1e293b">
-                ${code}
-              </div>
-              <p style="color:#94a3b8;font-size:12px;margin-top:20px">This code expires in 10 minutes. If you did not request this, ignore this email.</p>
-            </div>`,
-        },
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      return { message: 'OTP sent' };
-    } catch (err: unknown) {
-      if (!isDev) throw err;
-      // Resend sandbox only allows sending to the verified account email, so we have to log the code for now so the registration could still be completed
-      this.logger.warn(
-        `Resend blocked send to ${body.email} — dev code: ${code}`,
-      );
-      return { message: 'OTP sent (dev)', devCode: code };
-    }
+    res.cookie('device_token', deviceToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 24 * 60 * 60 * 1000,
+    });
+    if (valid) return 'OTP verified!';
+    else throw new UnauthorizedException('Invalid OTP');
   }
 
-  @Post('verify')
+  @Post('resend-otp')
+  @ApiOperation({ summary: 'Resend OTP for email verification' })
+  @ApiBearerAuth()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['email'],
+      properties: {
+        email: { type: 'string', example: 'test@example.com' },
+      },
+    },
+  })
   @HttpCode(200)
-  @ApiOperation({ summary: 'Verify an OTP code for the given email' })
-  verifyOtp(@Body() body: { email: string; code: string }) {
-    if (!body.email || !body.code)
-      throw new BadRequestException('email and code are required');
-    const valid = this.otpService.verify(body.email, body.code);
-    if (!valid)
-      throw new BadRequestException('Invalid or expired verification code');
-    return { message: 'Email verified successfully' };
+  resendOtp(@Body() dto: ResendOtpDto) {
+    return this.otpService.generateAndSend(dto.email);
   }
 }
