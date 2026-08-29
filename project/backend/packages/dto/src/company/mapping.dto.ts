@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from "class-validator";
 
-export class mappingDto {
+export class MappingDto {
     @IsString()
     employeeId!: string;    //'Employee-Number Field',
 

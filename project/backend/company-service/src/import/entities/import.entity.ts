@@ -1,15 +1,12 @@
 import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Employee } from "../../employee/entities/employee.entity";
 import { ImportType } from '../types/import.types';
+import { MappingDto } from "@phishshield/dto";
 
 @Entity('import-entity')
 export class Import {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
-
-    @Index()
-    @Column()
-    authIdImportedBy!: string;
 
     @Index()
     @Column()
@@ -29,7 +26,7 @@ export class Import {
     importType!: ImportType;
 
     @Column({ type: 'jsonb', nullable: true })
-    mapping?: Record<string, string> | null;
+    mapping?: MappingDto | null;
 
     @Column({nullable: true})
     totalRows?: number;

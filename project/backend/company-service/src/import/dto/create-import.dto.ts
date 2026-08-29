@@ -1,12 +1,7 @@
-import { ImportType } from "../types/import.types";
-
+import { IsOptional, IsString } from "class-validator";
 
 export class CreateImportDto {
-    authIdImportedBy!: string;
-    fileName!: string;
-    fileType!: string;
-    fileSize!: number;
-    importType!: ImportType;
-    mapping?: Record<string, string> | null;
-    file!: File;
+    @IsOptional()
+    @IsString()
+    mapping?: string;
 }
