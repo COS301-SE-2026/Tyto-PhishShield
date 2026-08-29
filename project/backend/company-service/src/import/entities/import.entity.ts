@@ -1,12 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Employee } from "../../employee/entities/employee.entity";
-
-enum ImportType {
-    CSV,
-    EXCEL,
-    API,
-    JSON,
-}
+import { ImportType } from '../types/import.types';
 
 @Entity('import-entity')
 export class Import {
