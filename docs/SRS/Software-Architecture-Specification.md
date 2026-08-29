@@ -54,29 +54,122 @@ Microservices each handle their own methods of communication. The only dependenc
 
 ### Quality Requirements based off of [NFR](./Software_Requirements_Specification.md#non-functional-requirements)
 
-**NFR 1 Quality attribute:** Security
-1. Confidentiality: All data in transit is encrypted using TLS 1.3, and all sensitive data at rest is encrypted using AES-256 encryption standards.
-2. Authenticity: All protected requests are authenticated with Role-Based Access Control (RBAC).
+#### NFR 1 Quality attribute: Security
+1. Authenticity: The system shall authenticate and authorize all protected API requests using **Role-Based Access Control (RBAC)** enforced at the API gateway layer with server-side validation on **100% of protected endpoints.**
+2. Confidentiality: The system shall encrypt all data in transit using **TLS 1.3** and encrypt sensitive data at rest using **AES-256 encryption standards.**
 
-**Tactic:** Use RBAC in the API gateway.
+**Tactic:** Use RBAC in the API gateway, use authorization tokens, use encrypted communication paths and encrypt sensitve fields in the databases.
 
 **Pattern:** Centralized API gateway authentication pattern.
 
-**ADR-01** Data encrypted in transit and at rest 
-|**Context**|**Decision**|**Consquences**|
-|---|---|---|
-| Data in transit needs to be encrypted. Sensetive data at rest must also be kept confidential. | Use HTTPS for all requests. | TODO |
-
-**ADR-02** Users authenticated and RBAC for protect endpoints 
+**ADR-01** Users authenticated and RBAC for protect endpoints 
 |**Context**|**Decision**|**Consquences**|
 |---|---|---|
 | Only authenticated users should be able to have access to the system. Users have specific roles and should only have access to what their role is ment to have access to. | Apply RBAC at the API gateway with Auth0. Use Auth0 for all authorization requests. | No RBAC is applied at microservices. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
+
+**ADR-02** Data encrypted in transit and at rest 
+|**Context**|**Decision**|**Consquences**|
+|---|---|---|
+| Data in transit needs to be encrypted. Sensetive data at rest must also be kept confidential. | Use HTTPS for all requests. | Reduces performance. More processing time is used to encrypt and decrypt data. |
 
 **NRF Test:** 
 - Test that only HTTPS requests work. 
 - Test that unautherized users do not have access to the system.
 
- 1. Flexibility: See [NFR 6](./Software_Requirements_Specification.md#non-functional-requirements)
+#### NFR 2 Quality attribute: Performance
+1. The system shall handle XP transactions and leader board updates within **500ms** of user action.
+2. The system shall load “Teachable moment” screens within **1s** of clicking a link on a phishing email.
+3. The system shall display confirmation toasts in the Outlook Add-in feature within **300ms.**
+4. The admin dashboard shall update live analytics and leaderboard data within **2 seconds** of receiving new event data through WebSocket communication.
+
+**Tactic:** Spread the load accross 2 API gateway instances, make use of caching for non-live reads, optimize database indexing.
+
+**Pattern:** Add a load balancer to balance requests between two API gateways. 
+
+**ADR-03** Load balancer for API gateway traffic
+|**Context**|**Decision**|**Consquences**|
+|---|---|---|
+| Many requests for different services need to pass through the API gateway. Response time needs to be optimal according the the measures in the quality attribute. | Add a second API gateway instance and use a load balancer to spread the load. | Increases the complexity of the system and adds a bit of latancy. |
+
+**NRF Test:** 
+- Test system responsiveness with 500 concurent users. 
+- Test that the response time is within 1s.
+
+#### NFR 3 Quality attribute: Portability and Compatibility
+1. The system’s admin dashboard shall support standard desktop resolutions and maintain usability across commonly used screen sizes including **resolutions from 1280px to 1920px+ .** 
+2. The system’s “report phish” button must appear on the **Outlook ribbon on Desktop, Web, and Mobile.**
+3. The platform shall be deployable on **Ubuntu Server environments** using Docker and Docker Compose without requiring platform-specific modifications.
+
+**Tactic:** Use Infrastructure as Code (IaC) and containerisation, use multiplatform design for frontend systems.
+
+**Pattern:** Use docker and docker compose, use tailwind css to handle resolution scaling.
+
+**ADR-04** Containerise all services
+|**Context**|**Decision**|**Consquences**|
+|---|---|---|
+| System should be deployable on any ubuntu server environment. | Create a docker container for each service in the system | Running many containers on a server may use up server resources but limits can be added to ensure the system runs efficiently. |
+
+**NRF Test:** 
+- System is deployable on ubuntu servers.
+- Frontend design scales well on large screens and the report button can be used on multiple devices.
+
+#### NFR 4 Quality attribute: Usability
+1. The system’s “report phish” button must follow the **Microsoft Fluent UI design system.**
+2. The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
+3. The system shall provide **immediate visual feedback** for all critical user actions including reporting phishing emails, completing simulations, and earning XP rewards.
+
+**NRF Test:** 
+- WCAG 2.1 AA accessibility compliance
+
+#### NFR 5 Quality attribute: Reliability and Availability
+1. Availability: The system must have 99.9% uptime.
+2. Recoverability: In the event of an AI provider failure, the system shall automatically switch to the fallback Llama-3 model within 30 seconds.
+
+**Tactic:** Remove single points of failure, log requests, error exception communication, switch service provider.
+
+**Pattern:** Load balancing, log at load balancer, add a LLM gateway.
+
+**ADR-05** LLM gateway
+|**Context**|**Decision**|**Consquences**|
+|---|---|---|
+| Should an external LLM be unavailable the system should still be able to operate and generate emails. | Add an LLM gateway to route requests to available LLMs. | Introduces extra overhead to system and can degrade performance. |
+
+*For load balancing see ADR-03.
+
+**NRF Test:** 
+- Uptime checks should yield >99.9% uptime.
+- LLM service responds to requests even if a model is not working anymore.
+
+#### NFR 6 Quality attribute: Flexibility:
+1. Scalable: The system must be able to scale to handle 500 concurrent users.
+2. Adaptable: Horizontal scaling of the AI Engine, Analytics, and Authentication services independently.
+
+**Tactic:** Spread the load accross multiple independent services.
+
+**Pattern:** Microservices
+
+**ADR-07** Microservices
+|**Context**|**Decision**|**Consquences**|
+|---|---|---|
+| System must be able to scale well and handle 500 concurrent users. | Use microservices to spread requests between many independent services. | Introduces increased complexity to the system. |
+
+
+**NRF Test:** 
+- System still responds under 500 concurent users.
+- Adding more services independently scales easily.
+
+#### NFR 7 Quality attribute: Maintainability
+1. The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
+2. The complete application stack shall be fully containerized using Docker and orchestrated through Docker Compose for deployment handoff.
+3. All backend endpoints shall be documented using OpenAPI 3.0 documentation standards.
+4. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
+5. The system shall achieve a minimum automated backend test coverage of 80%.The system shall achieve a minimum automated backend test coverage of 80%.
+
+**NRF Test:** 
+- CI/CD pipeline tests pass.
+- Code coverage of 80% is reached.
+
+ <!-- 1. Flexibility: See [NFR 6](./Software_Requirements_Specification.md#non-functional-requirements)
 
 	Adaptable:<br>
 	The system should be adaptable so that through out the development of the platform new subsystems can easily be added and updated by swapping out a certain microservice. This can be measured by checking:<br>
@@ -91,13 +184,13 @@ Microservices each handle their own methods of communication. The only dependenc
 
 	Architectural Decision:<br>
 	- Use microservices to suport adaptable  development.
-	- Use a load balancer to balance requests between multiple instances of the api-gateway.
+	- Use a load balancer to balance requests between multiple instances of the api-gateway. -->
 
- 2. Maintainability: See [NFR 7](./Software_Requirements_Specification.md#non-functional-requirements)
+ <!-- 2. Maintainability: See [NFR 7](./Software_Requirements_Specification.md#non-functional-requirements)
 
-	It is important for the system to be maintainable so that through out the development process and during handover it will be possible for anyone to maintain the life time of the system. It is also important that business operation are not disrupted during the life time of the platform.
+	It is important for the system to be maintainable so that through out the development process and during handover it will be possible for anyone to maintain the life time of the system. It is also important that business operation are not disrupted during the life time of the platform. -->
 
- 3. Performance Efficiency: See [NFR 2](./Software_Requirements_Specification.md#non-functional-requirements)
+ <!-- 3. Performance Efficiency: See [NFR 2](./Software_Requirements_Specification.md#non-functional-requirements)
 
 	Performance of the system is important to maintain the live updates of statistics. This can be measured by checking:
 	- the number of requests handled per second
@@ -108,11 +201,11 @@ Microservices each handle their own methods of communication. The only dependenc
 	- handle 500 requests per second
 
 	Architectural Descision:
-	- Make use of caching for non-live reads
-	- Optimize database indexing
-	- Asyncronise backround processing
+	- 
+	- 
+	- Asyncronise backround processing -->
 
- 4. Reliability: See See [NFR 5](./Software_Requirements_Specification.md#non-functional-requirements)
+ <!-- 4. Reliability: See See [NFR 5](./Software_Requirements_Specification.md#non-functional-requirements)
 	
 	The system should be reliable and maintain a high uptime. In any event of a failure with an LLM the system should fallback to another model.
 
@@ -122,25 +215,9 @@ Microservices each handle their own methods of communication. The only dependenc
 
 	Architectural descision:
 	- Make use of a load balancer and spin up multiple instances of the api-gateway. Balance requests between the instances.
-	- Add restart mechanisms to all services.
+	- Add restart mechanisms to all services. -->
 
- <!-- 5. Security See [NFR 1](./Software_Requirements_Specification.md#non-functional-requirements)
-
-	The system must be secure as it will be dealing with personal details, and no unauthorized access should be allowed. The security is checked by:
-	- ensuring all data at rest and in transit are encrypted
-	- preventing injection and CSRF attacks
-
-	Quantification:
-	- RBAC on 100% of protected endpoints.
-	- 100% of data is encrypted in transit using TLS.
-	- 100% of sensitive data at rest is encrypted using AES-256 standers. (Snesitive data is catagorized by POPIA and GDPR)
-	
-	Architectural Decision:
-	- Implementation of AES-256 encryption at
-	rest
-	- TLS 1.3 for secure communication. -->
-
- 6. Auditability:
+ <!-- 6. Auditability:
 
 	The system should be auditable to comply with POPIA and GDPR laws. It also allows any faults to be found and understood. This can be checked by:
 	- error logs, application logs, access logs
@@ -151,23 +228,23 @@ Microservices each handle their own methods of communication. The only dependenc
 	The system must be functionally suitable, meaning the system must be tested for logical errors. All functions and operations must be tested with unit and integration tests. Code coverage should be above 80%. This can be measured by checking:
 	- automation of unit tests on GitHub actions
 	- the build status of the system
-	- the code testing coverage 
+	- the code testing coverage  -->
 
- 8. Interaction capability: See [NFR 4](./Software_Requirements_Specification.md#non-functional-requirements)
+ <!-- 8. Interaction capability: See [NFR 4](./Software_Requirements_Specification.md#non-functional-requirements)
 
 	The system must be usable and easy to interact with. Employees should not need to be trained on how to use the system. The system must be intuitive providing good user experience. This can be measured by checking:
 	- development of wireframes
 	- performance of UI tests
 
 	Quantification:
-	- WCAG 2.1 AA accessibility compliance
+	-  -->
 
-9. Compatibility See [NFR 3](./Software_Requirements_Specification.md#non-functional-requirements)
+<!-- 9. Compatibility See [NFR 3](./Software_Requirements_Specification.md#non-functional-requirements)
 
 	The compatibility of the system is very important so that future integration with HR systems can take place. Using microservices enables the system to be integrated easily due to the separation of concerns.<br>
 	Quantification:
 	- Deployed on a single server using docker
-	- Compatible on screen resolutions from 1280px to 1920px+
+	- Compatible on screen resolutions from 1280px to 1920px+ -->
 
 ## Technology Requirements
 
