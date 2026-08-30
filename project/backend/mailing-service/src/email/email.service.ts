@@ -1,3 +1,5 @@
+// sendEmail & scheduleSendEmail might get removed in the future.
+
 /**
  * Service: mailing-service
  *

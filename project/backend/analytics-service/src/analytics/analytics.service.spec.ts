@@ -3,6 +3,7 @@
  *
  * Covers event recording, overview stats, report/mailing stats,
  * per-user stats, time series aggregation, and the leaderboard.
+ * Also tests user/campaign/click/send synchronization and new aggregate endpoints.
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -12,8 +13,14 @@ import {
   AnalyticsEvent,
   AnalyticsEventType,
 } from './entities/analytics-event.entity';
+import { AnalyticsUser } from './entities/analytics-user.entity';
+import { Campaign } from './entities/campaign.entity';
+import { ClickEvent } from './entities/click-event.entity';
+import { SimulationSend } from './entities/simulation-send.entity';
+import { Logger } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 
-// simple mock repo – all methods are jest.fn()
+// simple mock repos – all methods are jest.fn()
 const mockRepo = {
   create: jest.fn(),
   save: jest.fn(),
@@ -21,26 +28,66 @@ const mockRepo = {
   find: jest.fn(),
 };
 
+const mockUserRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  findOne: jest.fn(),
+  find: jest.fn(),
+  delete: jest.fn(),
+};
+
+const mockCampaignRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  findOne: jest.fn(),
+  find: jest.fn(),
+};
+
+const mockClickRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  count: jest.fn(),
+  find: jest.fn(),
+};
+
+const mockSendRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  findOne: jest.fn(),
+  find: jest.fn(),
+};
+
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
   let repo: jest.Mocked<typeof mockRepo>;
+  let userRepo: jest.Mocked<typeof mockUserRepo>;
+  let campaignRepo: jest.Mocked<typeof mockCampaignRepo>;
+  let clickRepo: jest.Mocked<typeof mockClickRepo>;
+  let sendRepo: jest.Mocked<typeof mockSendRepo>;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AnalyticsService,
         { provide: getRepositoryToken(AnalyticsEvent), useValue: mockRepo },
+        { provide: getRepositoryToken(AnalyticsUser), useValue: mockUserRepo },
+        { provide: getRepositoryToken(Campaign), useValue: mockCampaignRepo },
+        { provide: getRepositoryToken(ClickEvent), useValue: mockClickRepo },
+        { provide: getRepositoryToken(SimulationSend), useValue: mockSendRepo },
       ],
     }).compile();
 
     service = module.get<AnalyticsService>(AnalyticsService);
     repo = module.get(getRepositoryToken(AnalyticsEvent));
+    userRepo = module.get(getRepositoryToken(AnalyticsUser));
+    campaignRepo = module.get(getRepositoryToken(Campaign));
+    clickRepo = module.get(getRepositoryToken(ClickEvent));
+    sendRepo = module.get(getRepositoryToken(SimulationSend));
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
+  // ============ Existing tests (unchanged except mocks) ============
   describe('recordEvent', () => {
     it('creates and saves an event with the given input', async () => {
       const input = {
@@ -362,6 +409,388 @@ describe('AnalyticsService', () => {
       expect(result[0].totalXp).toBe(12); // highest amount last in array? see note below
       // Actually the sort should put highest first, so first should be user11 (amount 12)
       expect(result[0].auth0Id).toBe('user11');
+    });
+  });
+
+  // ============ New methods ============
+  describe('upsertUser', () => {
+    it('creates a new user if not found', async () => {
+      const user = {
+        auth0Id: 'auth0|new',
+        email: 'new@example.com',
+        name: 'New User',
+        department: 'Finance',
+        role: 'user',
+      };
+      userRepo.findOne.mockResolvedValue(null);
+      userRepo.create.mockReturnValue(user as any);
+      userRepo.save.mockResolvedValue(user as any);
+
+      await service.upsertUser(user);
+
+      expect(userRepo.findOne).toHaveBeenCalledWith({
+        where: { auth0Id: user.auth0Id },
+      });
+      expect(userRepo.create).toHaveBeenCalledWith(user);
+      expect(userRepo.save).toHaveBeenCalled();
+    });
+
+    it('updates existing user', async () => {
+      const existing = {
+        auth0Id: 'auth0|1',
+        email: 'old@example.com',
+        name: 'Old Name',
+        department: 'IT',
+        role: 'user',
+      };
+      const update = {
+        auth0Id: 'auth0|1',
+        email: 'new@example.com',
+        name: 'New Name',
+        department: 'Finance',
+        role: 'analyst',
+      };
+      userRepo.findOne.mockResolvedValue(existing as any);
+      userRepo.save.mockResolvedValue({ ...existing, ...update } as any);
+
+      await service.upsertUser(update);
+
+      expect(userRepo.findOne).toHaveBeenCalledWith({
+        where: { auth0Id: update.auth0Id },
+      });
+      expect(userRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'new@example.com' }),
+      );
+    });
+
+    it('ignores duplicate key error (23505)', async () => {
+      const user = {
+        auth0Id: 'auth0|dup',
+        email: 'dup@example.com',
+      };
+      userRepo.findOne.mockResolvedValue(null);
+      userRepo.create.mockReturnValue(user as any);
+      const queryError = new QueryFailedError('', [], { code: '23505' } as any);
+      userRepo.save.mockRejectedValue(queryError);
+
+      await expect(service.upsertUser(user)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('calls repo.delete with auth0Id', async () => {
+      userRepo.delete.mockResolvedValue({ affected: 1 } as any);
+      await service.deleteUser('auth0|123');
+      expect(userRepo.delete).toHaveBeenCalledWith({ auth0Id: 'auth0|123' });
+    });
+  });
+
+  describe('upsertCampaign', () => {
+    it('creates a new campaign if not found', async () => {
+      const campaign = {
+        id: 'wave-1',
+        name: 'Test Wave',
+        status: 'active',
+        startDate: new Date(),
+        endDate: new Date(),
+      };
+      campaignRepo.findOne.mockResolvedValue(null);
+      campaignRepo.create.mockReturnValue(campaign as any);
+      campaignRepo.save.mockResolvedValue(campaign as any);
+
+      await service.upsertCampaign(campaign);
+
+      expect(campaignRepo.findOne).toHaveBeenCalledWith({
+        where: { id: campaign.id },
+      });
+      expect(campaignRepo.save).toHaveBeenCalled();
+    });
+
+    it('updates existing campaign', async () => {
+      const existing = {
+        id: 'wave-1',
+        name: 'Old',
+        status: 'active',
+      };
+      const update = {
+        id: 'wave-1',
+        name: 'New',
+        status: 'completed',
+      };
+      campaignRepo.findOne.mockResolvedValue(existing as any);
+      campaignRepo.save.mockResolvedValue({ ...existing, ...update } as any);
+
+      await service.upsertCampaign(update);
+
+      expect(campaignRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'New' }),
+      );
+    });
+  });
+
+  describe('recordSimulationSend', () => {
+    it('creates new send if not existing', async () => {
+      const input = {
+        emailId: 'email-123',
+        referenceNumber: 'PHISH-ABC',
+        auth0Id: 'auth0|1',
+        campaignId: 'wave-1',
+        sentAt: new Date(),
+      };
+      sendRepo.findOne.mockResolvedValue(null);
+      sendRepo.create.mockReturnValue(input as any);
+      sendRepo.save.mockResolvedValue(input as any);
+
+      await service.recordSimulationSend(input);
+
+      expect(sendRepo.findOne).toHaveBeenCalledWith({
+        where: { emailId: input.emailId },
+      });
+      expect(sendRepo.create).toHaveBeenCalledWith(input);
+    });
+
+    it('updates existing send', async () => {
+      const existing = {
+        emailId: 'email-123',
+        referenceNumber: 'PHISH-ABC',
+        auth0Id: 'auth0|1',
+        campaignId: 'wave-1',
+        sentAt: new Date(),
+      };
+      const update = {
+        emailId: 'email-123',
+        referenceNumber: 'PHISH-ABC',
+        auth0Id: 'auth0|2',
+        campaignId: 'wave-2',
+        sentAt: new Date(),
+      };
+      sendRepo.findOne.mockResolvedValue(existing as any);
+      sendRepo.save.mockResolvedValue({ ...existing, ...update } as any);
+
+      await service.recordSimulationSend(update);
+
+      expect(sendRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ auth0Id: 'auth0|2' }),
+      );
+    });
+  });
+
+  describe('recordClickFromEmailId', () => {
+    it('creates click event when send exists', async () => {
+      const send = {
+        emailId: 'email-123',
+        referenceNumber: 'PHISH-ABC',
+        auth0Id: 'auth0|1',
+        campaignId: 'wave-1',
+      };
+      sendRepo.findOne.mockResolvedValue(send as any);
+      clickRepo.create.mockReturnValue({
+        referenceNumber: send.referenceNumber,
+        auth0Id: send.auth0Id,
+        campaignId: send.campaignId,
+      } as any);
+      clickRepo.save.mockResolvedValue({} as any);
+
+      await service.recordClickFromEmailId('email-123');
+
+      expect(sendRepo.findOne).toHaveBeenCalledWith({
+        where: { emailId: 'email-123' },
+      });
+      expect(clickRepo.create).toHaveBeenCalledWith({
+        referenceNumber: 'PHISH-ABC',
+        auth0Id: 'auth0|1',
+        campaignId: 'wave-1',
+      });
+      expect(clickRepo.save).toHaveBeenCalled();
+    });
+
+    it('logs warning and does nothing when send not found', async () => {
+      sendRepo.findOne.mockResolvedValue(null);
+      const warnSpy = jest
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => {});
+
+      await service.recordClickFromEmailId('unknown-email');
+
+      expect(clickRepo.create).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+  });
+
+  describe('recordClickFromAuth0Id', () => {
+    it('creates click event with placeholder referenceNumber', async () => {
+      clickRepo.create.mockReturnValue({
+        referenceNumber: 'unknown',
+        auth0Id: 'auth0|1',
+      } as any);
+      clickRepo.save.mockResolvedValue({} as any);
+
+      await service.recordClickFromAuth0Id('auth0|1');
+
+      expect(clickRepo.create).toHaveBeenCalledWith({
+        referenceNumber: 'unknown',
+        auth0Id: 'auth0|1',
+      });
+      expect(clickRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('getSummary', () => {
+    it('returns KPI structure with deltas', async () => {
+      // Simplified: mock getPeriodStats and getAtRiskUsers
+      jest
+        .spyOn(service as any, 'getPeriodStats')
+        .mockResolvedValueOnce({
+          totalEmailsSent: 100,
+          detectionRate: 20,
+          clickRate: 5,
+          atRiskUsers: 0,
+          trainingCompletionRate: 50,
+        })
+        .mockResolvedValueOnce({
+          totalEmailsSent: 80,
+          detectionRate: 25,
+          clickRate: 4,
+          atRiskUsers: 0,
+          trainingCompletionRate: 40,
+        });
+
+      jest
+        .spyOn(service as any, 'getAtRiskUsers')
+        .mockResolvedValueOnce([{ auth0Id: 'u1' }])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.getSummary(30);
+
+      expect(result.detectionRate.value).toBe(20);
+      expect(result.detectionRate.delta).toBeCloseTo(-20);
+      expect(result.totalSimulations.value).toBe(100);
+      expect(result.atRiskUsers.value).toBe(1);
+      expect(result.trainingCompletion.value).toBe(50);
+    });
+  });
+
+  describe('getDetectionRateOverTime', () => {
+    it('returns daily buckets with rates', async () => {
+      // Mock repo, sendRepo, clickRepo
+      repo.find.mockResolvedValue([
+        {
+          occurredAt: new Date('2026-08-01T10:00:00Z'),
+          eventType: AnalyticsEventType.REPORT_SUBMITTED,
+        },
+        {
+          occurredAt: new Date('2026-08-01T11:00:00Z'),
+          eventType: AnalyticsEventType.REPORT_CONFIRMED,
+        },
+      ] as any);
+
+      sendRepo.find.mockResolvedValue([
+        { sentAt: new Date('2026-08-01T09:00:00Z') },
+      ] as any);
+
+      clickRepo.find.mockResolvedValue([
+        { clickedAt: new Date('2026-08-01T12:00:00Z') },
+      ] as any);
+
+      const result = await service.getDetectionRateOverTime(1); // 1 day
+
+      const day = result.find((r) => r.date === '2026-08-01');
+      expect(day).toBeDefined();
+      expect(day.detectionRate).toBe(100);
+      expect(day.clickRate).toBe(100);
+    });
+  });
+
+  describe('getByDepartment', () => {
+    it('aggregates by department', async () => {
+      userRepo.find.mockResolvedValue([
+        { auth0Id: 'u1', department: 'Finance' },
+        { auth0Id: 'u2', department: 'IT' },
+      ] as any);
+
+      repo.find.mockResolvedValue([
+        {
+          occurredAt: new Date(),
+          eventType: AnalyticsEventType.REPORT_SUBMITTED,
+          auth0Id: 'u1',
+        },
+        {
+          occurredAt: new Date(),
+          eventType: AnalyticsEventType.REPORT_CONFIRMED,
+          auth0Id: 'u1',
+        },
+      ] as any);
+
+      sendRepo.find.mockResolvedValue([
+        { sentAt: new Date(), auth0Id: 'u1' },
+        { sentAt: new Date(), auth0Id: 'u2' },
+      ] as any);
+
+      clickRepo.find.mockResolvedValue([
+        { clickedAt: new Date(), auth0Id: 'u1' },
+      ] as any);
+
+      const result = await service.getByDepartment(30);
+
+      const finance = result.find((r) => r.department === 'Finance');
+      expect(finance).toBeDefined();
+      expect(finance.detectionRate).toBe(100);
+      expect(finance.clickRate).toBe(100);
+    });
+  });
+
+  describe('getAtRiskUsers', () => {
+    it('returns users above click threshold', async () => {
+      sendRepo.find.mockResolvedValue([
+        { sentAt: new Date(), auth0Id: 'u1' },
+        { sentAt: new Date(), auth0Id: 'u2' },
+      ] as any);
+
+      clickRepo.find.mockResolvedValue([
+        { clickedAt: new Date(), auth0Id: 'u1' },
+        { clickedAt: new Date(), auth0Id: 'u1' },
+      ] as any);
+
+      userRepo.find.mockResolvedValue([
+        { auth0Id: 'u1', name: 'User One', department: 'Finance' },
+        { auth0Id: 'u2', name: 'User Two', department: 'IT' },
+      ] as any);
+
+      const result = await service.getAtRiskUsers(30, 10);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].auth0Id).toBe('u1');
+      expect(result[0].clickRate).toBe(200);
+      expect(result[0].riskLevel).toBe('high');
+    });
+  });
+
+  describe('getCampaigns', () => {
+    it('returns campaigns ordered by startDate desc', async () => {
+      campaignRepo.find.mockResolvedValue([
+        { id: 'wave-1', status: 'active', startDate: new Date('2026-08-01') },
+        { id: 'wave-2', status: 'active', startDate: new Date('2026-07-01') },
+      ] as any);
+
+      const result = await service.getCampaigns();
+
+      expect(campaignRepo.find).toHaveBeenCalledWith({
+        order: { startDate: 'DESC' },
+      });
+      expect(result[0].id).toBe('wave-1');
+    });
+
+    it('marks campaigns as completed if endDate passed', async () => {
+      const now = new Date();
+      const past = new Date(now.getTime() - 1000);
+      campaignRepo.find.mockResolvedValue([
+        { id: 'wave-1', startDate: past, endDate: past, status: 'active' },
+      ] as any);
+
+      const result = await service.getCampaigns();
+
+      expect(result[0].status).toBe('completed');
     });
   });
 });

@@ -20,9 +20,10 @@ import {
   Post,
 } from '@nestjs/common';
 import { BatchEmailService } from './batch-email.service';
-import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { BatchPostReturnDto } from '../dto/batch-post-return.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { SendBatchDto } from '../dto/send-batch.dto';
+import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 
 @Controller('batch-emails')
 export class BatchEmailController {
@@ -48,7 +49,7 @@ export class BatchEmailController {
   @Post('send-batch-random-same-email')
   @HttpCode(HttpStatus.OK)
   async sendBatchRandom(
-    @Body() sendBatchRandom: SendBatchRandomDto,
+    @Body() sendBatchRandom: SendBatchDto,
   ): Promise<BatchPostReturnDto> {
     const result = await this.batchEmailService.sendBatchRandomSameEmail(
       sendBatchRandom.auth0Id,
@@ -56,6 +57,8 @@ export class BatchEmailController {
       sendBatchRandom.scheduledFrom,
       sendBatchRandom.scheduledTo,
       sendBatchRandom.randomisedTimes,
+      sendBatchRandom.waveName,
+      sendBatchRandom.referenceNumber,
     );
 
     return new BatchPostReturnDto({
@@ -75,6 +78,7 @@ export class BatchEmailController {
       sendBatchRandom.scheduledFrom,
       sendBatchRandom.scheduledTo,
       sendBatchRandom.randomisedTimes,
+      sendBatchRandom.waveName,
     );
 
     return new BatchPostReturnDto({
