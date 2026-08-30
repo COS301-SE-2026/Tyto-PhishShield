@@ -57,14 +57,14 @@ interface AccountUserPayload {
   role?: string;
 }
 
-interface WavePayload {
-  id: string;
-  name?: string;
-  status?: string;
-  targetDepartments?: string[];
-  startDate?: string;
-  endDate?: string;
-  createdBy?: string;
+interface WaveEventPayload {
+  waveId: string;
+  waveName?: string;
+  scheduledFrom?: string;
+  scheduledTo?: string;
+  sameEmail?: boolean;
+  randomisedTimes?: boolean;
+  numberOfRecipients?: number;
 }
 
 @ApiTags('Analytics')
@@ -234,54 +234,6 @@ export class AnalyticsController {
   }
 
   @RabbitSubscribe({
-    exchange: 'mailing-event-exchange',
-    routingKey: 'waves.batch_send',
-    queue: 'analytics-waves-batch-send-queue',
-  })
-  async onWaveBatchSend(payload: MailingPayload) {
-    await this.analyticsService.recordEvent({
-      eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
-      payload: { count: payload.entries?.length ?? 0 },
-    });
-
-    for (const entry of payload.entries ?? []) {
-      if (entry.emailId && entry.referenceNumber) {
-        await this.analyticsService.recordSimulationSend({
-          emailId: entry.emailId,
-          referenceNumber: entry.referenceNumber,
-          auth0Id: entry.auth0Id,
-          campaignId: entry.waveId,
-          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
-        });
-      }
-    }
-  }
-
-  @RabbitSubscribe({
-    exchange: 'mailing-event-exchange',
-    routingKey: 'waves.batch_schedule',
-    queue: 'analytics-waves-batch-schedule-queue',
-  })
-  async onWaveBatchScheduled(payload: MailingPayload) {
-    await this.analyticsService.recordEvent({
-      eventType: AnalyticsEventType.EMAIL_SCHEDULED,
-      payload: { count: payload.entries?.length ?? 0, batch: true },
-    });
-
-    for (const entry of payload.entries ?? []) {
-      if (entry.emailId && entry.referenceNumber) {
-        await this.analyticsService.recordSimulationSend({
-          emailId: entry.emailId,
-          referenceNumber: entry.referenceNumber,
-          auth0Id: entry.auth0Id,
-          campaignId: entry.waveId,
-          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
-        });
-      }
-    }
-  }
-
-  @RabbitSubscribe({
     exchange: 'accounts-event-exchange',
     routingKey: 'user.created',
     queue: 'analytics-user-created-queue',
@@ -321,54 +273,31 @@ export class AnalyticsController {
   }
 
   @RabbitSubscribe({
-    exchange: 'waves-event-exchange',
-    routingKey: 'wave.created',
-    queue: 'analytics-wave-created-queue',
+    exchange: 'wave-event-exchange',
+    routingKey: 'wave.create',
+    queue: 'analytics-wave-create-queue',
   })
-  async onWaveCreated(payload: WavePayload) {
+  async onWaveCreate(payload: WaveEventPayload) {
     await this.analyticsService.upsertCampaign({
-      id: payload.id,
-      name: payload.name,
-      status: payload.status,
-      targetDepartments: payload.targetDepartments,
-      startDate: payload.startDate ? new Date(payload.startDate) : undefined,
-      endDate: payload.endDate ? new Date(payload.endDate) : undefined,
-      createdBy: payload.createdBy,
+      id: payload.waveId,
+      name: payload.waveName,
+      status: 'active',
+      targetDepartments: undefined,
+      startDate: payload.scheduledFrom
+        ? new Date(payload.scheduledFrom)
+        : undefined,
+      endDate: payload.scheduledTo ? new Date(payload.scheduledTo) : undefined,
+      createdBy: undefined,
     });
   }
 
   @RabbitSubscribe({
-    exchange: 'waves-event-exchange',
-    routingKey: 'wave.updated',
-    queue: 'analytics-wave-updated-queue',
+    exchange: 'wave-event-exchange',
+    routingKey: 'wave.delete',
+    queue: 'analytics-wave-delete-queue',
   })
-  async onWaveUpdated(payload: WavePayload) {
-    await this.analyticsService.upsertCampaign({
-      id: payload.id,
-      name: payload.name,
-      status: payload.status,
-      targetDepartments: payload.targetDepartments,
-      startDate: payload.startDate ? new Date(payload.startDate) : undefined,
-      endDate: payload.endDate ? new Date(payload.endDate) : undefined,
-      createdBy: payload.createdBy,
-    });
-  }
-
-  @RabbitSubscribe({
-    exchange: 'waves-event-exchange',
-    routingKey: 'wave.completed',
-    queue: 'analytics-wave-completed-queue',
-  })
-  async onWaveCompleted(payload: WavePayload) {
-    await this.analyticsService.upsertCampaign({
-      id: payload.id,
-      name: payload.name,
-      status: payload.status,
-      targetDepartments: payload.targetDepartments,
-      startDate: payload.startDate ? new Date(payload.startDate) : undefined,
-      endDate: payload.endDate ? new Date(payload.endDate) : undefined,
-      createdBy: payload.createdBy,
-    });
+  async onWaveDelete(payload: { waveId: string }) {
+    await this.analyticsService.deleteCampaign(payload.waveId);
   }
   // wave.updated, wave.completed similar
 
