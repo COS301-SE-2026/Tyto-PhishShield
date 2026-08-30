@@ -1,21 +1,5 @@
-export class CreateEmployeeDto {
-    employeeId!: string;
+import { MappingDto } from "@phishshield/dto";
 
-    email!: string;
-
-    firstName?: string;
-
-    lastName?: string;
-
-    department?: string;
-
-    jobTitle?: string;
-
-    managerId?: string;
-
-    employeeStatus?: string;
-
-    externalId?: string;
-
-    dateImported!: Date;
+export class CreateEmployeeDto extends MappingDto {
+    importId?: string;
 }

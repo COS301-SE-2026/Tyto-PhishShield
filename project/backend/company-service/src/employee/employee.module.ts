@@ -10,5 +10,6 @@ import { Employee } from './entities/employee.entity';
   ],
   controllers: [EmployeeController],
   providers: [EmployeeService],
+  exports: [EmployeeService],
 })
 export class EmployeeModule {}

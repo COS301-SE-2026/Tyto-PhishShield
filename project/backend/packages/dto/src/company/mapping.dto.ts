@@ -5,8 +5,7 @@ export class MappingDto {
     employeeId!: string;    //'Employee-Number Field',
 
     @IsString()
-    @IsOptional()
-    email?: string;         //'Work-Email Field',
+    email!: string;         //'Work-Email Field',
 
     @IsString()
     @IsOptional()

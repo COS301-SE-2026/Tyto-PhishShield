@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ForeignKey, Index, PrimaryColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ForeignKey, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
 import { Import } from "../../import/entities/import.entity";
 
 @Entity('employee-entity')
@@ -34,4 +34,10 @@ export class Employee {
 
     @CreateDateColumn()
     dateImported!: Date;
+
+    @ManyToOne(() => Import, (importRecord) => importRecord.employees, {
+        nullable: false,
+    })
+    @JoinColumn({ name: 'import_id' })
+    import?: Import;
 }

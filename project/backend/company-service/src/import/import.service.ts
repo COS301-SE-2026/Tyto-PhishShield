@@ -2,14 +2,15 @@ import { BadRequestException, Injectable, InternalServerErrorException } from '@
 import { CreateImportDto } from './dto/create-import.dto';
 import { UpdateImportDto } from './dto/update-import.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Any, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Import } from './entities/import.entity';
 import * as path from 'path';
 import { ImportType } from './types/import.types';
 import { parse } from 'csv-parse/sync';
 import { MappingDto } from '@phishshield/dto';
+import { CreateEmployeeDto } from '../employee/dto/create-employee.dto';
+import { EmployeeService } from '../employee/employee.service';
 
-class MappedEmployee extends MappingDto {};
 
 @Injectable()
 export class ImportService {
@@ -17,6 +18,7 @@ export class ImportService {
   constructor(
     @InjectRepository(Import)
     private readonly db: Repository<Import>,
+    private readonly employeeService: EmployeeService,
   ) {}
   
   async create(createImportDto: CreateImportDto, file: Express.Multer.File) {
@@ -32,12 +34,13 @@ export class ImportService {
     const mapping = this.parseMap(createImportDto.mapping);
 
     const importType = this.importType(extension);
-
+    let employees: CreateEmployeeDto[];
     switch(importType) {
       case ImportType.CSV: {
-        this.CSVmethod(file, mapping);
+        employees = this.CSVmethod(file, mapping);
         break;
       }
+      default: throw new BadRequestException('Invalid import type');
     }
 
     const newImport = this.db.create(
@@ -51,11 +54,17 @@ export class ImportService {
       }
     );
     await this.db.save(newImport);
+
+    employees.map((employee) => {
+      return { ...employee, importId: newImport.id }
+    })
+    console.log(employees);
+    this.employeeService.addEmployees(employees);
     
     return newImport;
   }
 
-  private CSVmethod(importFile: Express.Multer.File, parsedMap: MappingDto) {
+  private CSVmethod(importFile: Express.Multer.File, parsedMap: MappingDto): CreateEmployeeDto[] {
     const records = this.parseCSVFile(importFile, parsedMap);
     
     const headers = Object.keys(records[0] ?? {});
@@ -66,10 +75,9 @@ export class ImportService {
       }
     }
     
-    const employees: MappedEmployee[] = records.map((row) => this.mapEmployeeRow(row, parsedMap));
+    const employees: CreateEmployeeDto[] = records.map((row) => this.mapEmployeeRow(row, parsedMap));
 
-    //TODO: Call employee service to transform the employee data further
-    console.log(employees);
+    return employees;
   }
 
   findAll() {
@@ -141,6 +149,7 @@ export class ImportService {
   private parseMap(mapping: string | undefined): MappingDto {
     if (!mapping) return {
       employeeId: 'employeeId',
+      email: 'email',
     };
 
     try {
@@ -149,7 +158,7 @@ export class ImportService {
 
       const validMap: MappingDto = {
         employeeId: parsedMap?.employeeId ?? 'employeeId',
-        email: parsedMap?.email,
+        email: parsedMap?.email ??'email',
         firstName: parsedMap?.firstName,
         lastName: parsedMap?.lastName,
         department: parsedMap?.department,
@@ -172,10 +181,10 @@ export class ImportService {
   //   }
   // }
 
-  private mapEmployeeRow(row: Record<string, string>, mapping: MappingDto): MappedEmployee {
+  private mapEmployeeRow(row: Record<string, string>, mapping: MappingDto): CreateEmployeeDto {
     return {
       employeeId: row[mapping.employeeId],
-      email: mapping.email ? row[mapping.email] : undefined,
+      email: row[mapping.email],
       firstName: mapping.firstName ? row[mapping.firstName] : undefined,
       lastName: mapping.lastName ? row[mapping.lastName] : undefined,
       department: mapping.department ? row[mapping.department] : undefined,

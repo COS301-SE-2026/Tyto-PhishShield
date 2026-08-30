@@ -15,9 +15,15 @@ export class EmployeeService {
   {}
 
   async create(createEmployeeDto: CreateEmployeeDto) {
-    const employee = this.db.create(createEmployeeDto);
-    await this.db.save(employee);
-    return employee;
+    try {
+      const validEmployee = this.createValidEmployee(createEmployeeDto);
+      const employee = this.db.create(validEmployee);
+      console.log('Added employee:' + employee)
+      await this.db.save(employee);
+      return employee;
+    } catch {
+      //save in invalid employee table
+    }
   }
 
   findAll() {
@@ -47,4 +53,45 @@ export class EmployeeService {
     }
     return true;
   }
+
+  private createValidEmployee(employee: CreateEmployeeDto): CreateEmployeeDto {
+    if (employee.employeeId === '') {
+      throw Error('empty employee id');
+    }
+    if (employee.email === '') {
+      throw Error('empoty email id');
+    }
+    return employee;
+  }
+
+  addEmployees(employees: CreateEmployeeDto[]) {
+    const mappedEmployees = this.mapEmployeesManagers(employees);
+    for(const employee of mappedEmployees) {
+      this.create(employee);
+    }
+  }
+
+  private mapEmployeesManagers(employees: CreateEmployeeDto[]): CreateEmployeeDto[] {
+    if (employees.length === 0) {
+      return employees;
+    }
+
+    return employees.map((employee) => {
+      let manager: CreateEmployeeDto | undefined;
+      if (employee.managerId) {
+        manager = employees.find((potentialManager) => 
+          potentialManager.employeeId === employee.managerId ||
+          potentialManager.externalId === employee.managerId
+        );      
+      } else if (employee.managerEmail) {
+        manager = employees.find((potentialManager) => potentialManager.email === employee.managerEmail);
+      }
+
+      return {
+        ...employee,
+        managerId: manager?.employeeId,
+      }
+    });
+  }
+
 }
