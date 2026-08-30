@@ -1,7 +1,7 @@
 import { API_BASE, authFetch } from '../../services/api';
 import { getWave, type Wave, type WaveRecipient } from '../../services/wave';
-import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, getPeriodRange,
-  type Period, type AnalyticsSummary, type TimeSeriesPoint, type LeaderboardEntry, } from './analytics.service';
+import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, fetchByDepartment, getPeriodRange,
+  type Period, type AnalyticsSummary, type TimeSeriesPoint, type LeaderboardEntry, type DepartmentBreakdown, } from './analytics.service';
 
 export interface AccountUser {
   id: string;
@@ -88,6 +88,8 @@ export interface DepartmentReport {
   generatedAt: string;
   department: string;
   employees: AccountUser[];
+  /** Null when analytics-service has no activity recorded for this department yet. */
+  stats: DepartmentBreakdown | null;
 }
 
 export type GeneratedReport = OrganisationReport | UserReport | WaveReport | DepartmentReport;
@@ -125,7 +127,8 @@ export async function fetchWaveReport(waveId: string): Promise<WaveReport> {
 }
 
 export async function fetchDepartmentReport(department: string): Promise<DepartmentReport> {
-  const users = await fetchAllUsers();
+  const [users, breakdown] = await Promise.all([fetchAllUsers(), fetchByDepartment('30d')]);
   const employees = users.filter(u => u.department === department);
-  return { type: 'department', generatedAt: new Date().toISOString(), department, employees };
+  const stats = breakdown.find(d => d.department === department) ?? null;
+  return { type: 'department', generatedAt: new Date().toISOString(), department, employees, stats };
 }
