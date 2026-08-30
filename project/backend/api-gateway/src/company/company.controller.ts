@@ -79,7 +79,7 @@ export class CompanyController {
     @ApiParam({ name: 'importId', type: 'string', example: 'IMPORT-001' })
     @Roles('admin')
     fetchImport(@Param('importId') importId: string) {
-      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'imports.get', importId);
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'imports.get.one', importId);
     }
 
     @Get('employees')
@@ -100,7 +100,7 @@ export class CompanyController {
     @ApiParam({ name: 'employeeId', type: 'string', example: 'u-001' })
     @Roles('admin')
     fetchEmployee(@Param('employeeId') employeeId: string) {
-      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get', employeeId);
+      return this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get.one', employeeId);
     }
 
     @Patch('employees/:employeeId')

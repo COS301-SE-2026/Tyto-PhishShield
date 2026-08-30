@@ -26,8 +26,9 @@ export class ImportController {
     return this.importService.findAll();
   }
 
-  @MessagePattern('imports.get')
+  @MessagePattern('imports.get.one')
   findOne(@Payload() importId: string) {
+    if (!importId || importId === '') return this.findAll();
     return this.importService.findOne(importId);
   }
 }

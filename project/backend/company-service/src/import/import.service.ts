@@ -10,6 +10,7 @@ import { parse } from 'csv-parse/sync';
 import { MappingDto } from '@phishshield/dto';
 import { CreateEmployeeDto } from '../employee/dto/create-employee.dto';
 import { EmployeeService } from '../employee/employee.service';
+import { isUUID } from 'class-validator';
 
 
 @Injectable()
@@ -55,11 +56,10 @@ export class ImportService {
     );
     await this.db.save(newImport);
 
-    employees.map((employee) => {
-      return { ...employee, importId: newImport.id }
+    const importEmployees = employees.map((employee) => {
+      return { ...employee, import: newImport }
     })
-    console.log(employees);
-    this.employeeService.addEmployees(employees);
+    this.employeeService.addEmployees(importEmployees);
     
     return newImport;
   }
@@ -80,12 +80,17 @@ export class ImportService {
     return employees;
   }
 
-  findAll() {
-    return this.db.find();
+  async findAll() {
+    return await this.db.find();
   }
 
-  findOne(id: string) {
-    return this.db.findOne({
+  async findOne(id: string) {
+    if (!isUUID(id)) {
+      throw new BadRequestException(
+        'Invalid employee ID',
+      );
+    }
+    return await this.db.findOne({
       where: {
         id: id,
       },

@@ -15,19 +15,18 @@ export class EmployeeService {
   {}
 
   async create(createEmployeeDto: CreateEmployeeDto) {
+    if (!await this.isUnique(createEmployeeDto)) return await this.update(createEmployeeDto.employeeId, createEmployeeDto);
     try {
       const validEmployee = this.createValidEmployee(createEmployeeDto);
       const employee = this.db.create(validEmployee);
-      console.log('Added employee:' + employee)
-      await this.db.save(employee);
-      return employee;
+      return await this.db.save(employee);
     } catch {
       //save in invalid employee table
     }
   }
 
-  findAll() {
-    return this.db.find();
+  async findAll() {
+    return await this.db.find();
   }
 
   async findOne(id: string) {
@@ -38,8 +37,14 @@ export class EmployeeService {
     });
   }
 
-  update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
-    return `This action updates a #${id} employee`;
+  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
+    try {
+      const validEmployee = this.createValidEmployee(updateEmployeeDto);
+      await this.db.update(id, validEmployee);
+    } catch(err) {
+      //save in invalid employee table
+      console.log(err);
+    }
   }
 
   async remove(id: string) {
@@ -47,6 +52,9 @@ export class EmployeeService {
     if (!employee) {
       return false;
     }
+
+    await this.updateSubMembers(id);
+
     const removedEmployee = await this.db.remove(employee);
     if (!removedEmployee) {
       return false;
@@ -54,20 +62,45 @@ export class EmployeeService {
     return true;
   }
 
+  private async isUnique(employee: CreateEmployeeDto): Promise<boolean> {
+    const foundEmployee = await this.findOne(employee.employeeId);
+    return foundEmployee ? true : false;
+  }
+
+  private async updateSubMembers(id: string) {
+    const subMembers = await this.findSubMembers(id);
+    const updatedMembers = subMembers.map((member) => ({
+      ...member,
+      managerId: undefined,
+    }));
+    for (const member of updatedMembers) {
+      this.update(member.employeeId, member);
+    }
+  }
+
+  private async findSubMembers(id: string): Promise<Employee[]> {
+    return await this.db.find({
+      where: {
+        managerId: id,
+      }
+    });
+  }
+
   private createValidEmployee(employee: CreateEmployeeDto): CreateEmployeeDto {
     if (employee.employeeId === '') {
       throw Error('empty employee id');
     }
     if (employee.email === '') {
-      throw Error('empoty email id');
+      throw Error('empty email id');
     }
     return employee;
   }
 
-  addEmployees(employees: CreateEmployeeDto[]) {
+  async addEmployees(employees: CreateEmployeeDto[]) {
     const mappedEmployees = this.mapEmployeesManagers(employees);
+    console.log(mappedEmployees);
     for(const employee of mappedEmployees) {
-      this.create(employee);
+      console.log(await this.create(employee));
     }
   }
 

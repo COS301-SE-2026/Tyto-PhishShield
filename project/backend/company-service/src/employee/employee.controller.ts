@@ -12,14 +12,14 @@ export class EmployeeController {
     return this.employeeService.findAll();
   }
 
-  @MessagePattern('employees.get')
+  @MessagePattern('employees.get.one')
   findOne(@Payload() employeeId: string) {
     return this.employeeService.findOne(employeeId)
   }
 
   @MessagePattern('employee.update')
   update(@Payload() updateEmployeeDto: UpdateEmployeeDto) {
-    return this.employeeService.update(updateEmployeeDto.id, updateEmployeeDto);
+    return this.employeeService.update(updateEmployeeDto.employeeId, updateEmployeeDto);
   }
 
   @MessagePattern('employee.delete')
