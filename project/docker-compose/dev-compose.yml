@@ -428,6 +428,134 @@ services:
           cpus: '1.0'
           memory: '256M'
 
+    llm_db:
+    image: postgres:15-alpine
+    restart: always
+
+    container_name: ${LLM_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${LLM_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${LLM_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    volumes:
+      - llm_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  llm_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/llm-service/Dockerfile
+
+    container_name: ${LLM_APP_CONTAINER}
+    environment:
+      - PORT=${LLM_SERVICE_PORT}
+      - TCP_PORT=${LLM_TCP_PORT}
+      - DB_HOST=${LLM_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${LLM_DB_NAME}
+      - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
+      - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+
+    depends_on:
+      llm_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  company_db:
+    image: postgres:15-alpine
+    restart: always
+
+    container_name: ${COMPANY_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${COMPANY_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${COMPANY_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    volumes:
+      - company_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  company_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/company-service/Dockerfile
+
+    container_name: ${COMPANY_APP_CONTAINER}
+    environment:
+      - PORT=${COMPANY_SERVICE_PORT}
+      - TCP_PORT=${COMPANY_TCP_PORT}
+      - DB_HOST=${COMPANY_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMPANY_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      - "${COMPANY_SERVICE_PORT}:${COMPANY_SERVICE_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+
+    depends_on:
+      company_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
   website:
     image: fiveguys301/website:latest
     restart: on-failure
