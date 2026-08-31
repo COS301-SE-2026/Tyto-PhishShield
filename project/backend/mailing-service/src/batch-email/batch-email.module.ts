@@ -14,10 +14,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { mailingRabbitMQModule } from '../rabbitmq.module';
 import { UserEntity } from '../entities/user.entity';
+import { WaveModule } from '../wave/wave.module';
 
 @Module({
   imports: [
     EmailModule,
+    WaveModule,
     TypeOrmModule.forFeature([EmailTemplateEntity, UserEntity]),
     mailingRabbitMQModule,
   ],

@@ -3,64 +3,42 @@
  *
  * - Exposes utility methods used by the `AppController` for simple responses.
  */
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { HealthServices } from './dto/health-check.dto';
 import { ContactSalesDto } from './dto/contact-sales.dto';
 import { Resend } from 'resend';
 import { firstValueFrom } from 'rxjs';
-import { logger } from './logger/logger.service';
 import { ConfigService } from '@nestjs/config';
+import { ProxyService } from './proxy/proxy.service';
 
 @Injectable()
-export class AppService implements OnModuleInit {
+export class AppService {
   private readonly resend: Resend;
   private readonly salesEmail: string | undefined;
 
   constructor(
-    @Inject('ACCOUNTS_SERVICE') private readonly accountsClient: ClientProxy,
-    @Inject('MAILING_SERVICE') private readonly mailingClient: ClientProxy,
-    @Inject('XP_SERVICE') private readonly xpClient: ClientProxy,
-    @Inject('REPORT_SERVICE') private readonly reportClient: ClientProxy,
-    @Inject('EDUCATION_SERVICE') private readonly educationClient: ClientProxy,
-    @Inject('ANALYTICS_SERVICE') private readonly analyticsClient: ClientProxy,
     private readonly config: ConfigService,
+    private readonly proxy: ProxyService,
   ) {
     this.resend = new Resend(this.config.get<string>('RESEND_API_KEY'));
     this.salesEmail = this.config.get<string>('OUR_EMAIL');
   }
 
-  onModuleInit() {
-    this.connectService(this.accountsClient, 'Accounts');
-    this.connectService(this.mailingClient, 'Mailing');
-    this.connectService(this.xpClient, 'XP');
-    this.connectService(this.reportClient, 'Report');
-    this.connectService(this.educationClient, 'Education');
-    this.connectService(this.analyticsClient, 'Analytics');
-  }
-
-  private async connectService(client: ClientProxy, serviceName: string) {
-    try {
-      await client.connect();
-    } catch (err) {
-      logger.warn(serviceName + ' TCP connection unavailable: ', err);
-      setTimeout(() => void this.connectService(client, serviceName), 10000);
-    }
-  }
-
   async checkMicroServicesHealth(): Promise<HealthServices> {
     const healthServices: HealthServices = {
-      accountsService: await this.checkServiceHealth(this.accountsClient),
-      mailingService: await this.checkServiceHealth(this.mailingClient),
-      xpService: await this.checkServiceHealth(this.xpClient),
-      reportService: await this.checkServiceHealth(this.reportClient),
-      educationService: await this.checkServiceHealth(this.educationClient),
-      analyticsService: await this.checkServiceHealth(this.analyticsClient),
+      accountsService: await this.checkServiceHealth(this.proxy.accountsClient),
+      mailingService: await this.checkServiceHealth(this.proxy.mailingClient),
+      xpService: await this.checkServiceHealth(this.proxy.xpClient),
+      reportService: await this.checkServiceHealth(this.proxy.reportClient),
+      educationService: await this.checkServiceHealth(
+        this.proxy.educationClient,
+      ),
+      analyticsService: await this.checkServiceHealth(
+        this.proxy.analyticsClient,
+      ),
+      llmService: await this.checkServiceHealth(this.proxy.llmClient),
+      companyService: await this.checkServiceHealth(this.proxy.companyClient),
     };
 
     return healthServices;

@@ -1,6 +1,5 @@
 import {
   IsArray,
-  IsString,
   ArrayMinSize,
   ArrayMaxSize,
   IsNotEmpty,
@@ -8,6 +7,7 @@ import {
   IsBoolean,
   IsEnum,
   IsOptional,
+  IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -40,5 +40,9 @@ export class SendBatchRandomDto {
 
   @IsBoolean()
   @IsOptional()
-  randomisedTimes: boolean = true;
+  randomisedTimes?: boolean = true;
+
+  @IsString()
+  @IsNotEmpty()
+  waveName!: string;
 }

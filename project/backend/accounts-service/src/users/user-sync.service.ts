@@ -43,6 +43,12 @@ export class UserSyncService implements OnModuleInit {
 
     this.logger.log('Development mode - syncing auth0 user...');
 
+    const emailConflict = await this.usersService.findByEmail(user.email);
+
+    if (emailConflict) {
+      await this.usersService.remove(emailConflict.id);
+    }
+
     const savedUser = await this.usersService.create(user);
 
     this.logger.log(`Synced user ${savedUser.auth0Id}.`);

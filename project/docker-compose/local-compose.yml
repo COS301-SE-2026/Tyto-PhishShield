@@ -194,20 +194,30 @@ services:
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
       - EDUCATION_SERVICE_URL=http://${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
       - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - LLM_SERVICE_URL=http://${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
+      - COMPANY_SERVICE_URL=http://${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
       - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
       - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
       - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
+      - LLM_HOST=${LLM_APP_CONTAINER}
+      - COMPANY_HOST=${COMPANY_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
       - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
+      - LLM_TCP_PORT=${LLM_TCP_PORT}
+      - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - SERVER_DOMAIN=${SERVER_DOMAIN}
       - OUTLOOK_ADDIN_CORS=
@@ -534,6 +544,15 @@ services:
       retries: 5
       start_period: 30s
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
     volumes:
       - llm_pgdata:/var/lib/postgresql/data
 
@@ -551,59 +570,88 @@ services:
       - PORT=${LLM_SERVICE_PORT}
       - TCP_PORT=${LLM_TCP_PORT}
       - DB_HOST=${LLM_DB_CONTAINER}
-      - LLM_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${LLM_DB_NAME}
+      - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
+      - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
 
     depends_on:
       llm_db:
         condition: service_healthy
     volumes:
       - ./src:/app/src
-  
-  waves_db:
+
+  company_db:
     image: postgres:15-alpine
     restart: always
-    container_name: ${WAVES_DB_CONTAINER}
 
+    container_name: ${COMPANY_DB_CONTAINER}
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${WAVES_DB_NAME}
+      POSTGRES_DB: ${COMPANY_DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ${WAVES_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U user -d ${COMPANY_DB_NAME}"]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
     volumes:
-      - waves_pgdata:/var/lib/postgresql/data
+      - company_pgdata:/var/lib/postgresql/data
 
     ports:
-      - "${WAVES_DB_PORT}:${INTERNAL_DB_PORT}"
+      - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
       
 # Main service app container
-  waves_app:
+  company_app:
     build:
       context: ../../
-      dockerfile: project/backend/waves-service/Dockerfile
+      dockerfile: project/backend/company-service/Dockerfile
 
-    container_name: ${WAVES_APP_CONTAINER}
+    container_name: ${COMPANY_APP_CONTAINER}
     environment:
-      - PORT=${WAVES_SERVICE_PORT}
-      - TCP_PORT=${WAVES_TCP_PORT}
-      - DB_HOST=${WAVES_DB_CONTAINER}
-      - WAVES_DB_PORT=${INTERNAL_DB_PORT}
+      - PORT=${COMPANY_SERVICE_PORT}
+      - TCP_PORT=${COMPANY_TCP_PORT}
+      - DB_HOST=${COMPANY_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMPANY_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
-      - "${WAVES_SERVICE_PORT}:${WAVES_SERVICE_PORT}"
+      - "${COMPANY_SERVICE_PORT}:${COMPANY_SERVICE_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
 
     depends_on:
-      waves_db:
+      company_db:
         condition: service_healthy
     volumes:
       - ./src:/app/src
@@ -706,7 +754,7 @@ volumes:
   education_pgdata:
   analytics_pgdata:
   llm_pgdata:
-  waves_pgdata:
+  company_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local
