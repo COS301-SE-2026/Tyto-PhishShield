@@ -7,6 +7,8 @@ import {
   Param,
   Req,
   UseGuards,
+  NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -38,6 +40,8 @@ interface BatchEmailPayload {
 @ApiTags('Reports')
 @Controller('report')
 export class ReportController {
+  private readonly logger = new Logger(ReportController.name);
+
   constructor(private readonly reportService: ReportService) {}
 
   @RabbitSubscribe({
@@ -46,7 +50,15 @@ export class ReportController {
     queue: 'report-service-email-queue',
   })
   async handleSingleSend(payload: SingleEmailPayload): Promise<void> {
-    await this.reportService.recordSentEmail(payload);
+    try {
+      await this.reportService.recordSentEmail(payload);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(`Dropping mailing.send event: ${error.message}`);
+        return;
+      }
+      throw error;
+    }
   }
 
   @RabbitSubscribe({
@@ -55,7 +67,15 @@ export class ReportController {
     queue: 'report-service-email-queue',
   })
   async handleSingleSchedule(payload: SingleEmailPayload): Promise<void> {
-    await this.reportService.recordSentEmail(payload);
+    try {
+      await this.reportService.recordSentEmail(payload);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(`Dropping mailing.schedule event: ${error.message}`);
+        return;
+      }
+      throw error;
+    }
   }
 
   @RabbitSubscribe({
@@ -64,8 +84,16 @@ export class ReportController {
     queue: 'report-service-batch-email-queue',
   })
   async handleBatchSend(@Payload() payload: BatchEmailPayload): Promise<void> {
-    for (const entry of payload.entries) {
-      await this.reportService.recordSentEmail(entry);
+    try {
+      for (const entry of payload.entries) {
+        await this.reportService.recordSentEmail(entry);
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(`Dropping mailing.batch_send event: ${error.message}`);
+        return;
+      }
+      throw error;
     }
   }
 
@@ -77,8 +105,18 @@ export class ReportController {
   async handleBatchSchedule(
     @Payload() payload: BatchEmailPayload,
   ): Promise<void> {
-    for (const entry of payload.entries) {
-      await this.reportService.recordSentEmail(entry);
+    try {
+      for (const entry of payload.entries) {
+        await this.reportService.recordSentEmail(entry);
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(
+          `Dropping mailing.batch_schedule event: ${error.message}`,
+        );
+        return;
+      }
+      throw error;
     }
   }
 

@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { XpEntity } from './entities/xp.entity';
+import { EmailDetailsEntity } from './entities/email-details.entity';
 
 @Module({
   imports: [
@@ -25,11 +26,11 @@ import { XpEntity } from './entities/xp.entity';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('XP_DB_NAME'),
         synchronize: configService.get<string>('DB_SYNC', 'true') === 'true',
-        entities: [UserEntity, XpEntity],
+        entities: [UserEntity, XpEntity, EmailDetailsEntity],
         autoLoadEntities: true,
       }),
     }),
-    TypeOrmModule.forFeature([UserEntity, XpEntity]),
+    TypeOrmModule.forFeature([UserEntity, XpEntity, EmailDetailsEntity]),
     AccountsModule,
     XpModule,
   ],
