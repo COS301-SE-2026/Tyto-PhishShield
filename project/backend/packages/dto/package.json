@@ -1,0 +1,23 @@
+{
+    "name": "@phishshield/dto",
+    "version": "1.0.0",
+    "private": true,
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "require": "./dist/index.js",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {
+        "class-validator": "^0.15.1"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    }
+}
