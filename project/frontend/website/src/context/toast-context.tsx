@@ -48,12 +48,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             style={{
               padding: 16,
               borderRadius: 8,
-              border: '1px solid',
-              background: toast.type === 'success'
-                      ? 'var(--color-success-light)'
-                      : toast.type === 'error'
-                        ? 'var(--color-danger-light)'
-                        : 'var(--color-warning-light)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)'
             }}
           >
             <div
