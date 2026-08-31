@@ -5,6 +5,6 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   controllers: [CompanyController],
-  imports: [ProxyModule, ConfigModule]
+  imports: [ProxyModule, ConfigModule],
 })
 export class CompanyModule {}

@@ -18,10 +18,10 @@
 
 import { Injectable } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Employee } from './entities/employee.entity';
 import { Repository } from 'typeorm';
+import { EmployeeDto } from '@phishshield/dto';
 
 @Injectable()
 export class EmployeeService {
@@ -54,15 +54,24 @@ export class EmployeeService {
     });
   }
 
-  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
+  async update(id: string, updateEmployeeDto: EmployeeDto) {
     try {
       const validEmployee = this.createValidEmployee(updateEmployeeDto);
       const existingEmployee = await this.findOne(id);
       if (!existingEmployee) {
         throw new Error('Employee not found');
       }
-      Object.assign(existingEmployee, validEmployee);
+      console.log(validEmployee);
+      existingEmployee.email = validEmployee.email;
+      existingEmployee.firstName = validEmployee.firstName;
+      existingEmployee.lastName = validEmployee.lastName;
+      existingEmployee.department = validEmployee.department;
+      existingEmployee.jobTitle = validEmployee.jobTitle;
+      existingEmployee.managerId = validEmployee.managerId;
+      existingEmployee.employeeStatus = validEmployee.employeeStatus;
+      existingEmployee.externalId = validEmployee.externalId;
 
+      console.log(existingEmployee);
       return await this.db.save(existingEmployee);
     } catch (err) {
       //save in invalid employee table
@@ -109,7 +118,9 @@ export class EmployeeService {
     });
   }
 
-  private createValidEmployee(employee: CreateEmployeeDto): CreateEmployeeDto {
+  private createValidEmployee(
+    employee: CreateEmployeeDto | EmployeeDto,
+  ): CreateEmployeeDto | Employee {
     if (employee.employeeId === '') {
       throw Error('empty employee id');
     }

@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EmployeeService } from './employee.service';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { EmployeeDto } from '@phishshield/dto';
 
 @Controller()
 export class EmployeeController {
@@ -18,10 +18,16 @@ export class EmployeeController {
   }
 
   @MessagePattern('employee.update')
-  update(@Payload() updateEmployeeDto: UpdateEmployeeDto) {
+  update(
+    @Payload()
+    updateEmployeeDto: {
+      employeeId: string;
+      newEmployeeData: EmployeeDto;
+    },
+  ) {
     return this.employeeService.update(
       updateEmployeeDto.employeeId,
-      updateEmployeeDto,
+      updateEmployeeDto.newEmployeeData,
     );
   }
 

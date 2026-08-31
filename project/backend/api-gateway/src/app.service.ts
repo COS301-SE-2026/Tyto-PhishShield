@@ -3,18 +3,12 @@
  *
  * - Exposes utility methods used by the `AppController` for simple responses.
  */
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { HealthServices } from './dto/health-check.dto';
 import { ContactSalesDto } from './dto/contact-sales.dto';
 import { Resend } from 'resend';
 import { firstValueFrom } from 'rxjs';
-import { logger } from './logger/logger.service';
 import { ConfigService } from '@nestjs/config';
 import { ProxyService } from './proxy/proxy.service';
 
@@ -37,8 +31,12 @@ export class AppService {
       mailingService: await this.checkServiceHealth(this.proxy.mailingClient),
       xpService: await this.checkServiceHealth(this.proxy.xpClient),
       reportService: await this.checkServiceHealth(this.proxy.reportClient),
-      educationService: await this.checkServiceHealth(this.proxy.educationClient),
-      analyticsService: await this.checkServiceHealth(this.proxy.analyticsClient),
+      educationService: await this.checkServiceHealth(
+        this.proxy.educationClient,
+      ),
+      analyticsService: await this.checkServiceHealth(
+        this.proxy.analyticsClient,
+      ),
       llmService: await this.checkServiceHealth(this.proxy.llmClient),
       companyService: await this.checkServiceHealth(this.proxy.companyClient),
     };

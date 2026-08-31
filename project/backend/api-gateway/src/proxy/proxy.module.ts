@@ -11,7 +11,9 @@ import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
-  imports: [HttpModule, ConfigModule, 
+  imports: [
+    HttpModule,
+    ConfigModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {
