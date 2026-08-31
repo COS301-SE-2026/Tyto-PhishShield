@@ -78,12 +78,12 @@
             }
         },
 
-        "waves-db": {
-            "Name": "Waves Database",
+        "llm-db": {
+            "Name": "LLM Database",
             "Group": "Servers",
-            "Host": "waves_db",
+            "Host": "llm_db",
             "Port": 5432,
-            "MaintenanceDB": "waves_db",
+            "MaintenanceDB": "llm_db",
             "Username": "FiveGuys",
             "SSLMode": "prefer",
             "ConnectionParameters": {
