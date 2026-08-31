@@ -358,6 +358,10 @@ export class AnalyticsService {
     return this.campaignRepo.save(newCampaign);
   }
 
+  async deleteCampaign(campaignId: string): Promise<void> {
+    await this.campaignRepo.delete({ id: campaignId });
+  }
+
   async recordSimulationSend(input: {
     emailId: string;
     referenceNumber: string;

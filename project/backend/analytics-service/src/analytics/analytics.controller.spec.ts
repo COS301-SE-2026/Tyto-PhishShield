@@ -23,6 +23,7 @@ const mockAnalyticsService = {
   upsertUser: jest.fn(),
   deleteUser: jest.fn(),
   upsertCampaign: jest.fn(),
+  deleteCampaign: jest.fn(),
   getSummary: jest.fn(),
   getDetectionRateOverTime: jest.fn(),
   getByDepartment: jest.fn(),
@@ -321,51 +322,6 @@ describe('AnalyticsController', () => {
     });
   });
 
-  describe('onWaveBatchSend / onWaveBatchScheduled', () => {
-    it('records wave batch send and SimulationSend', async () => {
-      const payload = {
-        entries: [
-          {
-            referenceNumber: 'PHISH-1',
-            scheduledAt: new Date().toISOString(),
-            emailId: 'email-1',
-            auth0Id: 'auth0|1',
-            waveId: 'wave-1',
-          },
-        ],
-      };
-
-      await controller.onWaveBatchSend(payload);
-
-      expect(service.recordEvent).toHaveBeenCalledWith({
-        eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
-        payload: { count: 1 },
-      });
-      expect(service.recordSimulationSend).toHaveBeenCalled();
-    });
-
-    it('records wave batch schedule and SimulationSend', async () => {
-      const payload = {
-        entries: [
-          {
-            referenceNumber: 'PHISH-1',
-            scheduledAt: new Date().toISOString(),
-            emailId: 'email-1',
-            auth0Id: 'auth0|1',
-            waveId: 'wave-1',
-          },
-        ],
-      };
-
-      await controller.onWaveBatchScheduled(payload);
-
-      expect(service.recordEvent).toHaveBeenCalledWith({
-        eventType: AnalyticsEventType.EMAIL_SCHEDULED,
-        payload: { count: 1, batch: true },
-      });
-      expect(service.recordSimulationSend).toHaveBeenCalled();
-    });
-  });
 
   describe('onUserCreated / Updated / Deleted', () => {
     it('upserts user on created', async () => {
@@ -399,38 +355,35 @@ describe('AnalyticsController', () => {
     });
   });
 
-  describe('onWaveCreated / Updated / Completed', () => {
+  describe('onWaveCreate / onWaveDelete', () => {
     const wavePayload = {
-      id: 'wave-1',
-      name: 'Wave 1',
-      status: 'active',
-      targetDepartments: ['Finance'],
-      startDate: '2026-08-01T00:00:00Z',
-      endDate: '2026-08-10T00:00:00Z',
-      createdBy: 'auth0|admin',
+      waveId: 'wave-1',
+      waveName: 'Wave 1',
+      scheduledFrom: '2026-08-01T00:00:00Z',
+      scheduledTo: '2026-08-10T00:00:00Z',
+      sameEmail: true,
+      randomisedTimes: false,
+      numberOfRecipients: 2,
     };
 
-    it('upserts campaign on created', async () => {
-      await controller.onWaveCreated(wavePayload);
+    it('upserts campaign on wave.create', async () => {
+      await controller.onWaveCreate(wavePayload);
+
       expect(service.upsertCampaign).toHaveBeenCalledWith({
         id: 'wave-1',
         name: 'Wave 1',
         status: 'active',
-        targetDepartments: ['Finance'],
+        targetDepartments: undefined,
         startDate: new Date('2026-08-01T00:00:00Z'),
         endDate: new Date('2026-08-10T00:00:00Z'),
-        createdBy: 'auth0|admin',
+        createdBy: undefined,
       });
     });
 
-    it('upserts campaign on updated', async () => {
-      await controller.onWaveUpdated(wavePayload);
-      expect(service.upsertCampaign).toHaveBeenCalled();
-    });
+    it('deletes campaign on wave.delete', async () => {
+      await controller.onWaveDelete({ waveId: 'wave-1' });
 
-    it('upserts campaign on completed', async () => {
-      await controller.onWaveCompleted(wavePayload);
-      expect(service.upsertCampaign).toHaveBeenCalled();
+      expect(service.deleteCampaign).toHaveBeenCalledWith('wave-1');
     });
   });
 
