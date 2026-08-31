@@ -17,6 +17,7 @@ import { BatchEmailService } from './batch-email.service';
 import { EmailDifficulty } from '../entities/email-template.entity';
 import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { SendBatchDto } from '../dto/send-batch.dto';
 
 jest.mock('../dto/batch-post-return.dto', () => {
   return {
@@ -93,12 +94,14 @@ describe('BatchEmailController', () => {
   });
 
   describe('sendBatchRandom', () => {
-    const body: SendBatchRandomDto = {
+    const body: SendBatchDto = {
       auth0Id: ['auth0|1', 'auth0|2'],
       difficulty: EmailDifficulty.MEDIUM,
       scheduledFrom,
       scheduledTo,
       randomisedTimes: false,
+      waveName: 'Test wave',
+      referenceNumber: 'PHISH-001',
     };
 
     it('should delegate to sendBatchRandomSameEmail', async () => {
@@ -115,6 +118,8 @@ describe('BatchEmailController', () => {
         body.scheduledFrom,
         body.scheduledTo,
         body.randomisedTimes,
+        body.waveName,
+        body.referenceNumber,
       );
     });
 
@@ -140,6 +145,7 @@ describe('BatchEmailController', () => {
       scheduledFrom,
       scheduledTo,
       randomisedTimes: true,
+      waveName: 'Test wave',
     };
 
     it('should call service.sendBatchRandomDifferentEmail with all DTO fields', async () => {
@@ -156,6 +162,7 @@ describe('BatchEmailController', () => {
         body.scheduledFrom,
         body.scheduledTo,
         body.randomisedTimes,
+        body.waveName,
       );
     });
 
