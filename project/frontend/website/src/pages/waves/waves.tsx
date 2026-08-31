@@ -4,7 +4,7 @@ import { Card, Badge, Button } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import type { Wave, WaveStatus } from '../../types';
-import { MailPlus, Send, CalendarPlus } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
 
 interface WavesProps {
   readonly onNavigate: (path: string) => void;
@@ -46,8 +46,7 @@ export function Waves({ onNavigate, activePath }: WavesProps) {
   const tabs: (WaveStatus | 'all')[] = ['all', 'active', 'scheduled', 'draft', 'complete'];
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Phishing Waves"
-      subtitle={`${MOCK_WAVES.filter(w => w.status === 'active').length} active phishing waves`}
-      securityScore={72}>
+      subtitle={`${MOCK_WAVES.filter(w => w.status === 'active').length} active phishing waves`}>
       {/* Tabs + action */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card)', borderRadius: 10, padding: 4, border: '1px solid var(--border)' }}>
@@ -65,18 +64,6 @@ export function Waves({ onNavigate, activePath }: WavesProps) {
         </div>
         {isAdmin && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap'}}>
-            <Button variant="ghost" onClick={() => onNavigate('/waves/create-email')} icon={
-              <MailPlus size={13} aria-hidden='true'/>
-            }
-            style={{ minWidth: 72 }}>
-              Create Email
-            </Button>
-            <Button variant="ghost" onClick={() => onNavigate('/waves/send-email')} icon={
-              <Send size={13} aria-hidden='true'/>
-            }
-            style={{ minWidth: 72 }}>
-              Send Existing Email
-            </Button>
             <Button onClick={() => onNavigate('/waves/schedule')} icon={
               <CalendarPlus size={13} aria-hidden='true'/>
             }
@@ -173,8 +160,7 @@ export function WaveDetail({ onNavigate, activePath, waveId }: WaveDetailProps) 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate}
       title={wave.name}
-      breadcrumbs={[{ label: 'Phishing Waves', path: '/waves' }, { label: wave.name }]}
-      securityScore={72}>
+      breadcrumbs={[{ label: 'Phishing Waves', path: '/waves' }, { label: wave.name }]}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

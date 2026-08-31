@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
@@ -45,12 +45,16 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
   const [view, setView] = useState<'actions' | 'editRole'>('actions');
   const [selectedRole, setSelectedRole] = useState<UserRole>('user');
   const [saving, setSaving] = useState(false);
+  const [prevOpen, setPrevOpen] = useState(isOpen);
 
-  useEffect(() => {
+  if (isOpen !== prevOpen) {
+    setPrevOpen(isOpen);
     if (isOpen && user) {
       setView('actions');
       setSelectedRole(user.role as UserRole);
-    }}, [isOpen, user]);
+    }
+  }
+
   if (!user) return null;
 
   const handleRoleSave = async () => {
@@ -185,7 +189,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const { addToast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await authFetch(`${API_BASE}/accounts/users`);
@@ -209,8 +213,8 @@ export function Users({ onNavigate, activePath }: UsersProps) {
     } finally {
       setLoading(false);
     }
-  };
-  useEffect(() => { void fetchUsers(); }, []);
+  }, [addToast]);
+  useEffect(() => { void fetchUsers(); }, [fetchUsers]);
   useEffect(() => {
     let cancelled = false;
     let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
@@ -266,8 +270,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Users"
-      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}
-      securityScore={72}>
+      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 220px' }}>
           <Input
