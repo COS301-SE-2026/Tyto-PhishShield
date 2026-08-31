@@ -108,9 +108,7 @@ export class AccountsController {
     },
   })
   verifyOtp(@Req() req: Request, @Res() res: Response) {
-    const route = this.routes.resolve(req.originalUrl);
-    req.url = req.url.replace(route.apiRoute, '');
-    return this.proxy.beterForward(req, res, route.targetService);
+    return this.proxy.beterForward(req, res);
   }
 
   @Public()
@@ -130,9 +128,7 @@ export class AccountsController {
     },
   })
   resendOtp(@Req() req: Request, @Res() res: Response) {
-    const route = this.routes.resolve(req.originalUrl);
-    req.url = req.url.replace(route.apiRoute, '');
-    return this.proxy.beterForward(req, res, route.targetService);
+    return this.proxy.beterForward(req, res);
   }
 
   @Public()

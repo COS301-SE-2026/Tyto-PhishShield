@@ -153,7 +153,10 @@ export class AnalyticsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'analyst')
   @ApiBearerAuth()
-  getSummary(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
+  getSummary(
+    @Req() req: AuthenticatedRequest,
+    @Query('period') period?: string,
+  ) {
     const qs = period ? `?period=${period}` : '';
     return this.proxy.forward({
       url: `${this.analyticsServiceUrl}/api/analytics/summary${qs}`,
@@ -161,12 +164,15 @@ export class AnalyticsController {
       headers: authHeader(req),
     });
   }
-  
+
   @Get('detection-rate-over-time')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'analyst')
   @ApiBearerAuth()
-  getDetectionRateOverTime(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
+  getDetectionRateOverTime(
+    @Req() req: AuthenticatedRequest,
+    @Query('period') period?: string,
+  ) {
     const qs = period ? `?period=${period}` : '';
     return this.proxy.forward({
       url: `${this.analyticsServiceUrl}/api/analytics/detection-rate-over-time${qs}`,
@@ -174,12 +180,15 @@ export class AnalyticsController {
       headers: authHeader(req),
     });
   }
-  
+
   @Get('by-department')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'analyst')
   @ApiBearerAuth()
-  getByDepartment(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
+  getByDepartment(
+    @Req() req: AuthenticatedRequest,
+    @Query('period') period?: string,
+  ) {
     const qs = period ? `?period=${period}` : '';
     return this.proxy.forward({
       url: `${this.analyticsServiceUrl}/api/analytics/by-department${qs}`,
@@ -187,12 +196,16 @@ export class AnalyticsController {
       headers: authHeader(req),
     });
   }
-  
+
   @Get('at-risk-users')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'analyst')
   @ApiBearerAuth()
-  getAtRiskUsers(@Req() req: AuthenticatedRequest, @Query('period') period?: string, @Query('limit') limit?: string) {
+  getAtRiskUsers(
+    @Req() req: AuthenticatedRequest,
+    @Query('period') period?: string,
+    @Query('limit') limit?: string,
+  ) {
     const params = new URLSearchParams();
     if (period) params.set('period', period);
     if (limit) params.set('limit', limit);
@@ -203,7 +216,7 @@ export class AnalyticsController {
       headers: authHeader(req),
     });
   }
-  
+
   @Get('campaigns')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'analyst')
