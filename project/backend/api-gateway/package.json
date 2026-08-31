@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "^9.0.2",
+    "@phishshield/dto": "workspace:*",
     "@nestjs/microservices": "^11.1.24",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.21",

@@ -26,9 +26,12 @@ import { EmailService } from '../email/email.service';
 import { EmailTemplateEntity, EmailDifficulty } from '../entities/email-template.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { UserEntity } from '../entities/user.entity';
+import { WaveService } from '../wave/wave.service';
+
+
 
 const mockResendBatchSend = jest.fn().mockResolvedValue({
-  data: { date: [{
+  data: { data: [{
     id: 'resend-id-1'
     },{
     id: 'resend-id-2'
@@ -48,6 +51,10 @@ const FUTURE_DATE_TO = new Date(Date.now() + 26 * 60 * 60 * 1000);
 describe('BatchEmailService', () => {
   let service: BatchEmailService;
 
+  const mockWaveService = {
+    saveWave: jest.fn().mockResolvedValue({ id: 'wave-uuid' }),
+  };
+
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
@@ -64,6 +71,10 @@ describe('BatchEmailService', () => {
 
   const mockUserRepository = {
     findOne: jest.fn().mockResolvedValue({ email: 'test@example.com' }),
+    find: jest.fn().mockResolvedValue([
+      { auth0Id: 'auth0|1', email: 'test@example.com' },
+      { auth0Id: 'auth0|2', email: 'test@example.com' },
+    ]),
   };
 
   const mockEmailService = {
@@ -101,6 +112,7 @@ describe('BatchEmailService', () => {
         { provide: EmailService, useValue: mockEmailService },
         { provide: getRepositoryToken(EmailTemplateEntity), useValue: mockEmailRepository },
         { provide: getRepositoryToken(UserEntity), useValue: mockUserRepository },
+        { provide: WaveService, useValue: mockWaveService },
         { provide: AmqpConnection, useValue: mockAmqpConnection },
       ],
     }).compile();
@@ -192,6 +204,8 @@ describe('BatchEmailService', () => {
           FUTURE_DATE_TO,
           FUTURE_DATE_FROM,
           false,
+          'Test wave',
+          undefined,
         ),
       ).rejects.toThrow(BadRequestException);
     });
@@ -199,8 +213,10 @@ describe('BatchEmailService', () => {
     it('sends a single batch with a scheduledAt per recipient when randomisedTimes=true and dates differs', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
-      mockResendBatchSend.mockResolvedValue({ data: { data: [{ id: 'resend-1' }, { id: 'resend-2' }] },
-  error: null });
+      mockResendBatchSend.mockResolvedValue({
+        data: { data: [{ id: 'resend-1' }, { id: 'resend-2' }] },
+        error: null,
+      });
 
       const result = await service.sendBatchRandomSameEmail(
         auth0Ids,
@@ -208,6 +224,8 @@ describe('BatchEmailService', () => {
         FUTURE_DATE_FROM,
         FUTURE_DATE_TO,
         true,
+        'Test wave',
+        undefined,
       );
 
       expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
@@ -233,6 +251,8 @@ describe('BatchEmailService', () => {
         sameDate,
         sameDate,
         false,
+        'Test wave',
+        undefined,
       );
 
       expect(mockResendBatchSend).toHaveBeenCalled();
@@ -249,6 +269,8 @@ describe('BatchEmailService', () => {
           FUTURE_DATE_FROM,
           FUTURE_DATE_TO,
           false,
+          'Test wave',
+          undefined,
         ),
       ).rejects.toThrow(NotFoundException);
     });
@@ -265,6 +287,7 @@ describe('BatchEmailService', () => {
           FUTURE_DATE_TO,
           FUTURE_DATE_FROM,
           false,
+          'Test wave',
         ),
       ).rejects.toThrow(BadRequestException);
     });
@@ -285,6 +308,7 @@ describe('BatchEmailService', () => {
         FUTURE_DATE_FROM,
         FUTURE_DATE_TO,
         true,
+        'Test wave',
       );
 
       expect(mockResendBatchSend).toHaveBeenCalledTimes(1);
@@ -309,6 +333,7 @@ describe('BatchEmailService', () => {
         FUTURE_DATE_FROM,
         FUTURE_DATE_TO,
         false,
+        'Test wave',
       );
 
       expect(mockResendBatchSend).toHaveBeenCalled();
