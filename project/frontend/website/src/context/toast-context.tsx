@@ -49,7 +49,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               padding: 16,
               borderRadius: 8,
               background: 'var(--bg-card)',
-              border: '1px solid var(--border)'
+              border: `1.5px solid ${
+                toast.type === 'success' 
+                  ? 'var(--color-success)'
+                  : toast.type === 'error'
+                    ? 'var(--color-danger)'
+                    : 'var(--color-warning)'
+              }`
             }}
           >
             <div
