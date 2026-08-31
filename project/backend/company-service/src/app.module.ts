@@ -25,7 +25,9 @@ import { Employee } from './employee/entities/employee.entity';
         synchronize: true,
       }),
     }),
-    ImportModule, EmployeeModule],
+    ImportModule,
+    EmployeeModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

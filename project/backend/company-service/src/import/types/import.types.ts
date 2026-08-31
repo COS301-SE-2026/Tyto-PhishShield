@@ -1,6 +1,6 @@
 export enum ImportType {
-    CSV,
-    EXCEL,
-    API,
-    JSON,
+  CSV,
+  EXCEL,
+  API,
+  JSON,
 }

@@ -1,3 +1,21 @@
+/**
+ * @Class EmployeeService
+ *
+ * @abstract Handles Employee information stored in the database
+ *
+ * @function {@link EmployeeService#create} - creates an employee entity in the db
+ * @function {@link EmployeeService#findAll}
+ * @function {@link EmployeeService#findOne}
+ * @function {@link EmployeeService#update} - updates an employee entity in the db
+ * @function {@link EmployeeService#remove} - removes an employee entity in the db
+ * @function {@link EmployeeService#isUnique} - checks if an employee entity already exists or not
+ * @function {@link EmployeeService#updateSubMembers} - nullifies the managerId field of all the employees under a manager
+ * @function {@link EmployeeService#findSubMembers} - finds all employees under a manger
+ * @function {@link EmployeeService#createValidEmployee} - validates an employee
+ * @function {@link EmployeeService#addEmployees} - adds a list of employees to the db
+ * @function {@link EmployeeService#mapEmployeesManagers} - ensures employee manager links uses the employeeId field
+ */
+
 import { Injectable } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -7,15 +25,14 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class EmployeeService {
-
   constructor(
     @InjectRepository(Employee)
-    private readonly db: Repository<Employee>
-  )
-  {}
+    private readonly db: Repository<Employee>,
+  ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto) {
-    if (!await this.isUnique(createEmployeeDto)) return await this.update(createEmployeeDto.employeeId, createEmployeeDto);
+    if (!(await this.isUnique(createEmployeeDto)))
+      return await this.update(createEmployeeDto.employeeId, createEmployeeDto);
     try {
       const validEmployee = this.createValidEmployee(createEmployeeDto);
       const employee = this.db.create(validEmployee);
@@ -33,15 +50,21 @@ export class EmployeeService {
     return await this.db.findOne({
       where: {
         employeeId: id,
-      }
+      },
     });
   }
 
   async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
     try {
       const validEmployee = this.createValidEmployee(updateEmployeeDto);
-      await this.db.update(id, validEmployee);
-    } catch(err) {
+      const existingEmployee = await this.findOne(id);
+      if (!existingEmployee) {
+        throw new Error('Employee not found');
+      }
+      Object.assign(existingEmployee, validEmployee);
+
+      return await this.db.save(existingEmployee);
+    } catch (err) {
       //save in invalid employee table
       console.log(err);
     }
@@ -64,7 +87,7 @@ export class EmployeeService {
 
   private async isUnique(employee: CreateEmployeeDto): Promise<boolean> {
     const foundEmployee = await this.findOne(employee.employeeId);
-    return foundEmployee ? true : false;
+    return !foundEmployee;
   }
 
   private async updateSubMembers(id: string) {
@@ -82,7 +105,7 @@ export class EmployeeService {
     return await this.db.find({
       where: {
         managerId: id,
-      }
+      },
     });
   }
 
@@ -99,12 +122,14 @@ export class EmployeeService {
   async addEmployees(employees: CreateEmployeeDto[]) {
     const mappedEmployees = this.mapEmployeesManagers(employees);
     console.log(mappedEmployees);
-    for(const employee of mappedEmployees) {
+    for (const employee of mappedEmployees) {
       console.log(await this.create(employee));
     }
   }
 
-  private mapEmployeesManagers(employees: CreateEmployeeDto[]): CreateEmployeeDto[] {
+  private mapEmployeesManagers(
+    employees: CreateEmployeeDto[],
+  ): CreateEmployeeDto[] {
     if (employees.length === 0) {
       return employees;
     }
@@ -112,19 +137,22 @@ export class EmployeeService {
     return employees.map((employee) => {
       let manager: CreateEmployeeDto | undefined;
       if (employee.managerId) {
-        manager = employees.find((potentialManager) => 
-          potentialManager.employeeId === employee.managerId ||
-          potentialManager.externalId === employee.managerId
-        );      
+        manager = employees.find(
+          (potentialManager) =>
+            potentialManager.employeeId === employee.managerId ||
+            potentialManager.externalId === employee.managerId,
+        );
       } else if (employee.managerEmail) {
-        manager = employees.find((potentialManager) => potentialManager.email === employee.managerEmail);
+        manager = employees.find(
+          (potentialManager) =>
+            potentialManager.email === employee.managerEmail,
+        );
       }
 
       return {
         ...employee,
         managerId: manager?.employeeId,
-      }
+      };
     });
   }
-
 }

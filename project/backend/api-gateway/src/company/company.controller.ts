@@ -1,3 +1,20 @@
+/**
+ * @Class CompanyController
+ * 
+ * @abstract Allows company data to be imported
+ * 
+ * @function {@link ImportService#create} - creates an import entity in the db
+ * @function {@link ImportService#findAll}
+ * @function {@link ImportService#findOne}
+ * @function {@link ImportService#CSVmethod} - starts parsing employee information using a csv file
+ * @function {@link ImportService#parseCSVFile} - actually parses the csv file
+ * @function {@link ImportService#validExtention} - checks if file extention is valid
+ * @function {@link ImportService#validMimeType} - checks if mimetype is valid
+ * @function {@link ImportService#importType} - returns the import type being handled 
+ * @function {@link ImportService#parseMap} - maps the parsed data according to the mapping provided
+ * @function {@link ImportService#mapEmployeeRow} - maps employee row data to an employee object
+ */
+
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ProxyService } from '../proxy/proxy.service';
 import { ConfigService } from '@nestjs/config';

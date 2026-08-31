@@ -1,7 +1,7 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreateImportDto {
-    @IsOptional()
-    @IsString()
-    mapping?: string;
+  @IsOptional()
+  @IsString()
+  mapping?: string;
 }

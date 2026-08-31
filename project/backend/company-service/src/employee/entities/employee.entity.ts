@@ -1,43 +1,51 @@
-import { Column, CreateDateColumn, Entity, ForeignKey, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { Import } from "../../import/entities/import.entity";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
+import { Import } from '../../import/entities/import.entity';
 
 @Entity('employee-entity')
 export class Employee {
-    @PrimaryColumn({unique: true, nullable: false})
-    employeeId!: string;
+  @PrimaryColumn({ unique: true, nullable: false })
+  employeeId!: string;
 
-    @Index()
-    @Column()
-    email!: string;
+  @Index()
+  @Column()
+  email!: string;
 
-    @Column({nullable: true})
-    firstName?: string;
+  @Column({ nullable: true })
+  firstName?: string;
 
-    @Column({nullable: true})
-    lastName?: string;
+  @Column({ nullable: true })
+  lastName?: string;
 
-    @Column({nullable: true})
-    department?: string;
+  @Column({ nullable: true })
+  department?: string;
 
-    @Column({nullable: true})
-    jobTitle?: string;
+  @Column({ nullable: true })
+  jobTitle?: string;
 
-    @Index()
-    @Column({nullable: true})
-    managerId?: string;
+  @Index()
+  @Column({ nullable: true })
+  managerId?: string;
 
-    @Column({nullable: true})
-    employeeStatus?: string;
+  @Column({ nullable: true })
+  employeeStatus?: string;
 
-    @Column({nullable: true})
-    externalId?: string;
+  @Column({ nullable: true })
+  externalId?: string;
 
-    @CreateDateColumn()
-    dateImported!: Date;
+  @CreateDateColumn()
+  dateImported!: Date;
 
-    @ManyToOne(() => Import, (importRecord) => importRecord.employees, {
-        nullable: false,
-    })
-    @JoinColumn({ name: 'import_id' })
-    import?: Import;
+  @ManyToOne(() => Import, (importRecord) => importRecord.employees, {
+    nullable: false,
+  })
+  @JoinColumn({ name: 'import_id' })
+  import?: Import;
 }
