@@ -23,6 +23,7 @@ import type { User } from '../users/entities/user.entity';
 import type { AxiosResponse } from 'axios';
 import { OtpService } from '../otp/otp.service';
 import { UserSyncService } from '../users/user-sync.service';
+import { koaJwtSecret } from 'jwks-rsa';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,
@@ -87,7 +88,7 @@ describe('AuthService', () => {
             }),
           },
         },
-        { provide: HttpService, useValue: { post: jest.fn(), get: jest.fn() } },
+        { provide: HttpService, useValue: { post: jest.fn(), get: jest.fn() , patch: jest.fn(), delete: jest.fn()} },
         {
           provide: UsersService,
           useValue: {
@@ -334,11 +335,19 @@ describe('AuthService', () => {
     });
   
     describe('updateProfile', () => {
-      it('calls usersService.updateProfile', async () => {
+      it('calls usersService.updateProfile and updates Auth0', async () => {
+        // mock management token to avoid HTTP post
+        jest.spyOn(service as any, 'getManagementToken').mockResolvedValue('fake-mgmt-token');
+
+        (httpService as any).patch = jest.fn().mockReturnValue(of(axiosOf({})));
+    
         usersService.updateProfile.mockResolvedValue(makeUser());
+    
         const result = await service.updateProfile('auth0|abc', { name: 'New' });
+    
         expect(usersService.updateProfile).toHaveBeenCalledWith('auth0|abc', { name: 'New' });
         expect(result.message).toContain('Profile updated');
+        expect(httpService.patch).toHaveBeenCalled();
       });
     });
   

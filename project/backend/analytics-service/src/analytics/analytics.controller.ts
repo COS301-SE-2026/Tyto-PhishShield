@@ -36,7 +36,35 @@ interface MailingPayload {
   referenceNumber?: string;
   recipient?: string;
   scheduledAt?: string;
-  entries?: { referenceNumber: string; recipient: string }[];
+  emailId?: string;
+  auth0Id?: string;
+  campaignId?: string;
+  entries?: {
+    referenceNumber: string;
+    recipient?: string;
+    scheduledAt: string;
+    emailId?: string;
+    auth0Id?: string;
+    waveId?: string;
+  }[];
+}
+
+interface AccountUserPayload {
+  auth0Id: string;
+  email?: string;
+  name?: string;
+  department?: string;
+  role?: string;
+}
+
+interface WaveEventPayload {
+  waveId: string;
+  waveName?: string;
+  scheduledFrom?: string;
+  scheduledTo?: string;
+  sameEmail?: boolean;
+  randomisedTimes?: boolean;
+  numberOfRecipients?: number;
 }
 
 @ApiTags('Analytics')
@@ -61,7 +89,7 @@ export class AnalyticsController {
 
   @RabbitSubscribe({
     exchange: 'xp-event-exchange',
-    routingKey: 'xp.give',
+    routingKey: ['xp.give', 'xp.given'],
     queue: 'analytics-xp-queue',
   })
   async onXpGiven(payload: XpPayload) {
@@ -73,12 +101,16 @@ export class AnalyticsController {
 
     // Whenever XP is given for a phishing report, we report that report as confirmed.
     //This is a bit of a hack - better to listen to dedicated report.confirmend event.
-    if (payload.reason && payload.reason.includes('phishing')) {
+    const reason = (payload.reason ?? '').toLowerCase();
+    if (reason.includes('phishing')) {
       await this.analyticsService.recordEvent({
         eventType: AnalyticsEventType.REPORT_CONFIRMED,
         auth0Id: payload.auth0Id,
         payload: payload as unknown as Record<string, unknown>,
       });
+    }
+    if (reason.includes('compromised')) {
+      await this.analyticsService.recordClickFromAuth0Id(payload.auth0Id);
     }
   }
 
@@ -116,6 +148,17 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SENT,
       payload: payload as unknown as Record<string, unknown>,
     });
+    if (payload.emailId && payload.referenceNumber) {
+      await this.analyticsService.recordSimulationSend({
+        emailId: payload.emailId,
+        referenceNumber: payload.referenceNumber,
+        auth0Id: payload.auth0Id,
+        campaignId: payload.campaignId,
+        sentAt: payload.scheduledAt
+          ? new Date(payload.scheduledAt)
+          : new Date(),
+      });
+    }
   }
 
   @RabbitSubscribe({
@@ -128,6 +171,18 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SCHEDULED,
       payload: payload as unknown as Record<string, unknown>,
     });
+
+    if (payload.emailId && payload.referenceNumber) {
+      await this.analyticsService.recordSimulationSend({
+        emailId: payload.emailId,
+        referenceNumber: payload.referenceNumber,
+        auth0Id: payload.auth0Id,
+        campaignId: payload.campaignId,
+        sentAt: payload.scheduledAt
+          ? new Date(payload.scheduledAt)
+          : new Date(),
+      });
+    }
   }
 
   @RabbitSubscribe({
@@ -138,9 +193,20 @@ export class AnalyticsController {
   async onBatchEmailSent(payload: MailingPayload) {
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.EMAIL_BATCH_SENT,
-      //just store the count for now, not the whole array
       payload: { count: payload.entries?.length ?? 0 },
     });
+
+    for (const entry of payload.entries ?? []) {
+      if (entry.emailId && entry.referenceNumber) {
+        await this.analyticsService.recordSimulationSend({
+          emailId: entry.emailId,
+          referenceNumber: entry.referenceNumber,
+          auth0Id: entry.auth0Id,
+          campaignId: entry.waveId,
+          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
+        });
+      }
+    }
   }
 
   @RabbitSubscribe({
@@ -153,7 +219,87 @@ export class AnalyticsController {
       eventType: AnalyticsEventType.EMAIL_SCHEDULED,
       payload: { count: payload.entries?.length ?? 0, batch: true },
     });
+
+    for (const entry of payload.entries ?? []) {
+      if (entry.emailId && entry.referenceNumber) {
+        await this.analyticsService.recordSimulationSend({
+          emailId: entry.emailId,
+          referenceNumber: entry.referenceNumber,
+          auth0Id: entry.auth0Id,
+          campaignId: entry.waveId,
+          sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
+        });
+      }
+    }
   }
+
+  @RabbitSubscribe({
+    exchange: 'accounts-event-exchange',
+    routingKey: 'user.created',
+    queue: 'analytics-user-created-queue',
+  })
+  async onUserCreated(payload: AccountUserPayload) {
+    await this.analyticsService.upsertUser({
+      auth0Id: payload.auth0Id,
+      email: payload.email,
+      name: payload.name,
+      department: payload.department,
+      role: payload.role,
+    });
+  }
+
+  @RabbitSubscribe({
+    exchange: 'accounts-event-exchange',
+    routingKey: 'user.updated',
+    queue: 'analytics-user-updated-queue',
+  })
+  async onUserUpdated(payload: AccountUserPayload) {
+    await this.analyticsService.upsertUser({
+      auth0Id: payload.auth0Id,
+      email: payload.email,
+      name: payload.name,
+      department: payload.department,
+      role: payload.role,
+    });
+  }
+
+  @RabbitSubscribe({
+    exchange: 'accounts-event-exchange',
+    routingKey: 'user.deleted',
+    queue: 'analytics-user-deleted-queue',
+  })
+  async onUserDeleted(payload: AccountUserPayload) {
+    await this.analyticsService.deleteUser(payload.auth0Id);
+  }
+
+  @RabbitSubscribe({
+    exchange: 'wave-event-exchange',
+    routingKey: 'wave.create',
+    queue: 'analytics-wave-create-queue',
+  })
+  async onWaveCreate(payload: WaveEventPayload) {
+    await this.analyticsService.upsertCampaign({
+      id: payload.waveId,
+      name: payload.waveName,
+      status: 'active',
+      targetDepartments: undefined,
+      startDate: payload.scheduledFrom
+        ? new Date(payload.scheduledFrom)
+        : undefined,
+      endDate: payload.scheduledTo ? new Date(payload.scheduledTo) : undefined,
+      createdBy: undefined,
+    });
+  }
+
+  @RabbitSubscribe({
+    exchange: 'wave-event-exchange',
+    routingKey: 'wave.delete',
+    queue: 'analytics-wave-delete-queue',
+  })
+  async onWaveDelete(payload: { waveId: string }) {
+    await this.analyticsService.deleteCampaign(payload.waveId);
+  }
+  // wave.updated, wave.completed similar
 
   @Get('overview')
   @UseGuards(JwtAuthGuard)
@@ -210,6 +356,54 @@ export class AnalyticsController {
   @MessagePattern('analytics.getUserStats')
   getUserStatsTcp(auth0Id: string) {
     return this.analyticsService.getUserStats(auth0Id);
+  }
+
+  @Get('summary')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  getSummary(@Query('period') period?: string) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    return this.analyticsService.getSummary(days);
+  }
+
+  @Get('detection-rate-over-time')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  getDetectionRateOverTime(@Query('period') period?: string) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    return this.analyticsService.getDetectionRateOverTime(days);
+  }
+
+  @Get('by-department')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  getByDepartment(@Query('period') period?: string) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    return this.analyticsService.getByDepartment(days);
+  }
+
+  @Get('at-risk-users')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'period', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  getAtRiskUsers(
+    @Query('period') period?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    const lim = limit ? parseInt(limit, 10) : 10;
+    return this.analyticsService.getAtRiskUsers(days, lim);
+  }
+
+  @Get('campaigns')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  getCampaigns() {
+    return this.analyticsService.getCampaigns();
   }
 
   @MessagePattern('analytics.getOverview')

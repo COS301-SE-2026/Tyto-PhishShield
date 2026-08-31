@@ -46,11 +46,11 @@ export function exportReportToPdf(report: GeneratedReport): void {
         startY,
         head: [['Metric', 'Value']],
         body: [
-          ['Detection rate', `${report.summary.detectionRate}%`],
-          ['Total simulations', String(report.summary.totalSimulations)],
-          ['Training completion', `${report.summary.trainingCompletionRate}%`],
-          ['Education assigned', String(report.summary.educationAssigned)],
-          ['Education completed', String(report.summary.educationCompleted)],
+          ['Detection rate', `${Math.round(report.summary.detectionRate.value)}%`],
+          ['Click rate', `${Math.round(report.summary.clickRate.value)}%`],
+          ['Total simulations', String(report.summary.totalSimulations.value)],
+          ['At-risk users', String(report.summary.atRiskUsers.value)],
+          ['Training completion', `${Math.round(report.summary.trainingCompletion.value)}%`],
         ],
       });
       autoTable(doc, {
@@ -108,10 +108,24 @@ export function exportReportToPdf(report: GeneratedReport): void {
         head: [['Name', 'Email', 'Role']],
         body: report.employees.map(e => [e.name, e.email, e.role]),
       });
-      doc.setFontSize(9);
-      doc.setTextColor(120);
-      doc.text('Department-level engagement stats are not available yet — pending analytics-service work.', 14, finalY(doc, startY) + 10);
-      doc.setTextColor(0);
+      const statsY = finalY(doc, startY) + 10;
+      if (report.stats) {
+        autoTable(doc, {
+          startY: statsY,
+          head: [['Metric (last 30 days)', 'Value']],
+          body: [
+            ['Emails sent', String(report.stats.sent)],
+            ['Reports submitted', String(report.stats.reported)],
+            ['Detection rate', `${Math.round(report.stats.detectionRate)}%`],
+            ['Click rate', `${Math.round(report.stats.clickRate)}%`],
+          ],
+        });
+      } else {
+        doc.setFontSize(9);
+        doc.setTextColor(120);
+        doc.text('No analytics activity recorded for this department in the last 30 days yet.', 14, statsY);
+        doc.setTextColor(0);
+      }
       break;
     }
   }

@@ -66,15 +66,23 @@ function GeneratedReportView({ report }: { readonly report: GeneratedReport }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
           <Card style={{ padding: '16px 18px' }}>
             <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Detection Rate</p>
-            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{report.summary.detectionRate}%</span>
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{Math.round(report.summary.detectionRate.value)}%</span>
+          </Card>
+          <Card style={{ padding: '16px 18px' }}>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Click Rate</p>
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{Math.round(report.summary.clickRate.value)}%</span>
           </Card>
           <Card style={{ padding: '16px 18px' }}>
             <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Total Simulations</p>
-            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{report.summary.totalSimulations.toLocaleString()}</span>
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{report.summary.totalSimulations.value.toLocaleString()}</span>
+          </Card>
+          <Card style={{ padding: '16px 18px' }}>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>At-Risk Users</p>
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{report.summary.atRiskUsers.value.toLocaleString()}</span>
           </Card>
           <Card style={{ padding: '16px 18px' }}>
             <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>Training Completion</p>
-            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{report.summary.trainingCompletionRate}%</span>
+            <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{Math.round(report.summary.trainingCompletion.value)}%</span>
           </Card>
         </div>
         <Card>
@@ -164,9 +172,23 @@ function GeneratedReportView({ report }: { readonly report: GeneratedReport }) {
           rows={report.employees.map(e => [e.name, e.email, e.role])}
         />
       </Card>
-      <Card style={{ padding: '20px 22px' }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>Department Statistics</h2>
-        <ComingSoon label="Department-level engagement stats aren't available yet: analytics-service doesn't capture department data on events." />
+      <Card>
+        <SectionTitle>Department Statistics (last 30 days)</SectionTitle>
+        {report.stats ? (
+          <ReportTable
+            head={['Metric', 'Value']}
+            rows={[
+              ['Emails sent', String(report.stats.sent)],
+              ['Reports submitted', String(report.stats.reported)],
+              ['Detection rate', `${Math.round(report.stats.detectionRate)}%`],
+              ['Click rate', `${Math.round(report.stats.clickRate)}%`],
+            ]}
+          />
+        ) : (
+          <div style={{ padding: '20px 22px' }}>
+            <ComingSoon label="No analytics activity recorded for this department in the last 30 days yet." />
+          </div>
+        )}
       </Card>
     </div>
   );

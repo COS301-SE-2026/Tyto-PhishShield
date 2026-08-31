@@ -1,37 +1,40 @@
 /**
  * Service: api-gateway
  *
- * Proxies incoming HTTP requests for batch email operations to the waves-service.
+ * Proxies incoming HTTP requests for batch email operations to the mailing-service.
  * Validates JWT authentication and forwards each request via ProxyService.
  *
  * Functions:
- * - {@link BatchEmailController#sendBatchRandom} - Forwards a request to send one randomly selected or chosen email (by difficulty) to all recipients.
- * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Forwards a request to send a different randomly selected email (by difficulty) to each recipient.
+ * - {@link BatchEmailController#sendBatchWithReference} - Forwards a request to send one email template to a list of recipients immediately.
+ * - {@link BatchEmailController#sendBatchRandomSameEmail} - Forwards a request to send one randomly selected email to all recipients.
+ * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Forwards a request to send a different randomly selected email to each recipient.
  */
 
 import {
-  Body,
   Controller,
+  Post,
+  Param,
+  Body,
   HttpCode,
   HttpStatus,
-  Param,
-  Post,
   UseGuards,
 } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
 import {
   ApiOperation,
+  ApiParam,
   ApiBearerAuth,
   ApiBody,
   ApiTags,
-  ApiParam,
 } from '@nestjs/swagger';
 import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SendBatchDto } from '../dto/send-batch.dto';
-import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
 import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
+import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Batch Emails')
 @Controller('batch-emails')
@@ -51,13 +54,15 @@ export class BatchEmailController {
   }
 
   @Post(':referenceNumber/send-batch-with-reference')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send one email template to many recipients immediately',
   })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   @ApiBody({
-    schema: { example: { recipients: ['a@example.com', 'b@example.com'] } },
+    schema: { example: { auth0Id: ['auth0|example1', 'auth0|example2'] } },
   })
   sendBatchWithReference(
     @Param('referenceNumber') referenceNumber: string,
@@ -71,6 +76,8 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-same-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
@@ -102,6 +109,8 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-different-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:

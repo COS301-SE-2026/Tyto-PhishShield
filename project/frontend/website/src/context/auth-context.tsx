@@ -105,7 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // if (!response.ok) throw new Error('Invalid OTP or email');
     let message = '';
     try {
+      localStorage.setItem('access_token', token?.access_token ?? '');
+      localStorage.setItem('token_expiry', String(token?.tokenExpiry));
       message = (await authApi.verifyOtp(email, code)).message;
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token_expiry');
     } catch {
       throw new Error(message);
     }

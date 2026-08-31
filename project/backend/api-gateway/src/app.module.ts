@@ -22,6 +22,8 @@ import { WebsocketModule } from './websocket/websocket.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 //import { OtpModule } from './otp/otp.module';
 import { WebhookModule } from './webhook/webhook.module';
+//import { WavesModule } from './waves/waves.module';
+import { LlmModule } from './llm/llm.module';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { WebhookModule } from './webhook/webhook.module';
     XpModule,
     EducationModule,
     AnalyticsModule,
+    //WavesModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
       {
@@ -93,6 +96,8 @@ import { WebhookModule } from './webhook/webhook.module';
     ]),
     WebsocketModule,
     WebhookModule,
+    //WavesModule,
+    LlmModule,
   ],
   controllers: [AppController],
   providers: [
