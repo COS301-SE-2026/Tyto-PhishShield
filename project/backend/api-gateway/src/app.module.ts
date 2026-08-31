@@ -21,7 +21,6 @@ import { WebsocketModule } from './websocket/websocket.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { OtpModule } from './otp/otp.module';
 import { WebhookModule } from './webhook/webhook.module';
-import { WavesModule } from './waves/waves.module';
 import { LlmModule } from './llm/llm.module';
 import { CompanyModule } from './company/company.module';
 import { ProxyModule } from './proxy/proxy.module';
@@ -38,7 +37,6 @@ import { ProxyModule } from './proxy/proxy.module';
     OtpModule,
     WebsocketModule,
     WebhookModule,
-    WavesModule,
     LlmModule,
     CompanyModule,
     ProxyModule,

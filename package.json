@@ -10,6 +10,8 @@
 		"dev:all": "pnpm -r --if-present start:dev",
 		"prod:all": "pnpm -r --if-present start:prod",
 		"lint:all": "pnpm -r --if-present lint",
+		"build:shared:dto": "pnpm --filter @phishshield/dto build",
+		"build:shared": "pnpm build:shared:dto",
 		"build:website": "pnpm --filter website build",
 		"dev:website": "pnpm --filter website dev",
 		"lint:website": "pnpm --filter website lint",

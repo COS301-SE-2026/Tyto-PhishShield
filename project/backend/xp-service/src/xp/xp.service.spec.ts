@@ -8,6 +8,8 @@ import { XpService } from './xp.service';
 import { XpEntity, XpReason } from '../entities/xp.entity';
 import { Department, UserEntity } from '../entities/user.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { EmailDetailsEntity } from '../entities/email-details.entity';
+import { ConfigService } from '@nestjs/config';
 
 const mockUser: Partial<UserEntity> = {
   id: '1',
@@ -65,6 +67,10 @@ describe('XpService', () => {
         { provide: getRepositoryToken(XpEntity), useValue: mockXpRepository },
         {
           provide: getRepositoryToken(UserEntity),
+          useValue: mockUserRepository,
+        },
+        {
+          provide: getRepositoryToken(EmailDetailsEntity),
           useValue: mockUserRepository,
         },
         {
