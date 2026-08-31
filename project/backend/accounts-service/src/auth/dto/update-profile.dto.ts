@@ -6,6 +6,10 @@ export class UpdateProfileDto {
   @IsOptional()
   name?: string;
 
+  @IsString()
+  @IsOptional()
+  email?: string;
+
   @IsEnum(Department)
   @IsOptional()
   department?: Department;

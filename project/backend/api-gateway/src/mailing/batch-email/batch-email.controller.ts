@@ -30,8 +30,11 @@ import {
 } from '@nestjs/swagger';
 import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { SendBatchDto } from '../dto/send-batch.dto';
 import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 @ApiTags('Batch Emails')
 @Controller('batch-emails')
@@ -51,13 +54,15 @@ export class BatchEmailController {
   }
 
   @Post(':referenceNumber/send-batch-with-reference')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send one email template to many recipients immediately',
   })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
   @ApiBody({
-    schema: { example: { recipients: ['a@example.com', 'b@example.com'] } },
+    schema: { example: { auth0Id: ['auth0|example1', 'auth0|example2'] } },
   })
   sendBatchWithReference(
     @Param('referenceNumber') referenceNumber: string,
@@ -71,22 +76,31 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-same-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Send one randomly selected email template to all recipients',
+    summary:
+      'Send one random / chosen email to all recipients. referenceNumber and randomisedTimes are optional',
   })
   @ApiBody({
-    schema: {
-      example: {
-        recipients: ['a@example.com', 'b@example.com'],
-        difficulty: 'medium',
-        scheduledFrom: '2026-06-24T10:00:00.000Z',
-        scheduledTo: '2026-06-24T12:00:00.000Z',
-        randomisedTimes: true,
+    type: SendBatchDto,
+    examples: {
+      default: {
+        summary: 'Same email to a batch of recipients',
+        value: {
+          auth0Id: ['auth0|1', 'auth0|2'],
+          difficulty: 'medium',
+          scheduledFrom: '2026-09-01T08:00:00.000Z',
+          scheduledTo: '2026-09-05T17:00:00.000Z',
+          randomisedTimes: true,
+          waveName: 'Finance Phishing Wave',
+          referenceNumber: 'PHISH-001',
+        },
       },
     },
   })
-  sendBatchRandomSameEmail(@Body() body: SendBatchRandomDto) {
+  sendBatchRandom(@Body() body: SendBatchDto) {
     return this.proxy.forward({
       url: `${this.mailingServiceUrl}/batch-emails/send-batch-random-same-email`,
       method: 'POST',
@@ -95,19 +109,26 @@ export class BatchEmailController {
   }
 
   @Post('send-batch-random-different-email')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary:
-      'Send a different randomly selected email template to each recipient',
+      'Send a different randomly selected email to each recipient. randomisedTimes is optional',
   })
   @ApiBody({
-    schema: {
-      example: {
-        recipients: ['a@example.com', 'b@example.com'],
-        difficulty: 'medium',
-        scheduledFrom: '2026-06-24T10:00:00.000Z',
-        scheduledTo: '2026-06-24T12:00:00.000Z',
-        randomisedTimes: true,
+    type: SendBatchRandomDto,
+    examples: {
+      default: {
+        summary: 'Different email per recipient',
+        value: {
+          auth0Id: ['auth0|1', 'auth0|2'],
+          difficulty: 'medium',
+          scheduledFrom: '2026-09-01T08:00:00.000Z',
+          scheduledTo: '2026-09-05T17:00:00.000Z',
+          randomisedTimes: true,
+          waveName: 'Finance Phishing Wave',
+        },
       },
     },
   })

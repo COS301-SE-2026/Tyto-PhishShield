@@ -19,6 +19,7 @@ import { ReportController } from './report.controller';
           { name: 'xp-event-exchange', type: 'topic' },
           { name: 'mailing-event-exchange', type: 'topic' },
           { name: 'education-event-exchange', type: 'topic' },
+          { name: 'report-event-exchange', type: 'topic' },
         ],
         enableControllerDiscovery: true,
         connectionInitOptions: {

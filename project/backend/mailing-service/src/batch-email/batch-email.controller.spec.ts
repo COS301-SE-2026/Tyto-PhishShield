@@ -14,9 +14,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BatchEmailController } from './batch-email.controller';
 import { BatchEmailService } from './batch-email.service';
-import { EmailDifficulty } from '../entities/emails.entity';
+import { EmailDifficulty } from '../entities/email-template.entity';
 import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { SendBatchDto } from '../dto/send-batch.dto';
 
 jest.mock('../dto/batch-post-return.dto', () => {
   return {
@@ -60,7 +61,7 @@ describe('BatchEmailController', () => {
   describe('sendBatchWithReference', () => {
     const referenceNumber = 'PHISH-001';
     const body: SendBatchEmailDto = {
-      recipients: ['a@example.com', 'b@example.com'],
+      auth0Id: ['auth0|1', 'auth0|2'],
     };
 
     it('should delegate to sendBatchWithReference', async () => {
@@ -73,7 +74,7 @@ describe('BatchEmailController', () => {
 
       expect(service.sendBatchWithReference).toHaveBeenCalledWith(
         referenceNumber,
-        body.recipients,
+        body.auth0Id,
       );
     });
 
@@ -93,12 +94,14 @@ describe('BatchEmailController', () => {
   });
 
   describe('sendBatchRandom', () => {
-    const body: SendBatchRandomDto = {
-      recipients: ['a@example.com', 'b@example.com'],
+    const body: SendBatchDto = {
+      auth0Id: ['auth0|1', 'auth0|2'],
       difficulty: EmailDifficulty.MEDIUM,
       scheduledFrom,
       scheduledTo,
       randomisedTimes: false,
+      waveName: 'Test wave',
+      referenceNumber: 'PHISH-001',
     };
 
     it('should delegate to sendBatchRandomSameEmail', async () => {
@@ -110,11 +113,13 @@ describe('BatchEmailController', () => {
       await controller.sendBatchRandom(body);
 
       expect(service.sendBatchRandomSameEmail).toHaveBeenCalledWith(
-        body.recipients,
+        body.auth0Id,
         body.difficulty,
         body.scheduledFrom,
         body.scheduledTo,
         body.randomisedTimes,
+        body.waveName,
+        body.referenceNumber,
       );
     });
 
@@ -135,11 +140,12 @@ describe('BatchEmailController', () => {
 
   describe('sendBatchRandomDifferentEmail', () => {
     const body: SendBatchRandomDto = {
-      recipients: ['a@example.com', 'b@example.com'],
+      auth0Id: ['auth0|1', 'auth0|2'],
       difficulty: EmailDifficulty.HARD,
       scheduledFrom,
       scheduledTo,
       randomisedTimes: true,
+      waveName: 'Test wave',
     };
 
     it('should call service.sendBatchRandomDifferentEmail with all DTO fields', async () => {
@@ -151,11 +157,12 @@ describe('BatchEmailController', () => {
       await controller.sendBatchRandomDifferentEmail(body);
 
       expect(service.sendBatchRandomDifferentEmail).toHaveBeenCalledWith(
-        body.recipients,
+        body.auth0Id,
         body.difficulty,
         body.scheduledFrom,
         body.scheduledTo,
         body.randomisedTimes,
+        body.waveName,
       );
     });
 

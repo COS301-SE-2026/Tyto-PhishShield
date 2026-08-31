@@ -1,5 +1,5 @@
 import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
-
+//Deprecated
 export class VerifyOtpDto {
   @IsEmail()
   email!: string;
@@ -8,7 +8,7 @@ export class VerifyOtpDto {
   @Length(6, 6)
   code!: string;
 }
-
+//Deprecated
 export class ExtendedVerifyOtpDto extends VerifyOtpDto {
   @IsString()
   @IsOptional()

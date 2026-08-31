@@ -136,16 +136,16 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         </Card>
       </div>
 
-      {/* Campaign performance table */}
+      {/* Wave performance table */}
       <Card>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Campaign Performance Summary</h2>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Phishing Wave Performance Summary</h2>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--bg-hover)' }}>
-                {['CAMPAIGN','SENT','CLICKED','REPORTED','DET. RATE','CLICK RATE','STATUS'].map(h => (
+                {['WAVE','SENT','CLICKED','REPORTED','DET. RATE','CLICK RATE','STATUS'].map(h => (
                   <th key={h} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', letterSpacing: '0.5px', fontFamily: 'Inter, system-ui, sans-serif', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>

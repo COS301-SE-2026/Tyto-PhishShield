@@ -6,6 +6,7 @@ import { useToast } from "../../context/toast-context";
 import { fetchLeaderboardXp, getInitials, groupUsersByDepartment, resolveDepartment,
     type XpNetEntry, } from "./leaderboard.service";
 import {connectXpSocket } from "../../services/xp-socket";
+import { Search } from "lucide-react";
 
 interface LeaderboardProps {
   onNavigate: (path: string) => void;
@@ -180,7 +181,7 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
                                placeholder={activeTab === 'users' ? 'Search by name or department…' : 'Search by department…'}
                                value={search}
                                onChange={e => setSearch(e.target.value)}
-                               leftIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+                               leftIcon={<Search size={14} aria-hidden='true' />}
                             />
                         </div>
                     </div>

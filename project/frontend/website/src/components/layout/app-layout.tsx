@@ -3,6 +3,7 @@ import { Sidebar } from './sidebar';
 import { ThemeToggle } from '../ui';
 import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
+import { Menu, Bell, ChevronRight, CircleHelp} from 'lucide-react';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -61,9 +62,7 @@ export function AppLayout({
               }}
               aria-label="Toggle sidebar"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-              </svg>
+              <Menu size={18} aria-hidden='true'/>
             </button>
             <div>
               {breadcrumbs && breadcrumbs.length > 0 ? (
@@ -71,9 +70,7 @@ export function AppLayout({
                   {breadcrumbs.map((b, i) => (
                     <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {i > 0 && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
-                          <polyline points="9 18 15 12 9 6"/>
-                        </svg>
+                        <ChevronRight size={18} color='var(--text-muted)' aria-hidden='true'/>
                       )}
                       {b.path ? (
                         <button onClick={() => onNavigate(b.path!)} style={{
@@ -113,10 +110,7 @@ export function AppLayout({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--text-secondary)', position: 'relative',
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
+              <Bell size={16} aria-hidden='true'/>
               {/* Notification dot */}
               <span style={{
                 position: 'absolute', top: 6, right: 6, width: 7, height: 7,
@@ -136,7 +130,7 @@ export function AppLayout({
                 color: 'var(--text-secondary)', position: 'relative',
               }}
             >
-              <span style={{ fontSize: 17, fontWeight: 500, lineHeight: 1, fontFamily: 'Inter, system-ui, sans-serif' }}>?</span>
+              <CircleHelp size={17} aria-hidden='true'/>
             </button> 
 
             <button

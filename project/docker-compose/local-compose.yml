@@ -185,6 +185,8 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - OUR_EMAIL=${OUR_EMAIL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
@@ -192,20 +194,30 @@ services:
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
       - EDUCATION_SERVICE_URL=http://${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
       - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - LLM_SERVICE_URL=http://${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
+      - COMPANY_SERVICE_URL=http://${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
       - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
       - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
       - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
+      - LLM_HOST=${LLM_APP_CONTAINER}
+      - COMPANY_HOST=${COMPANY_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
       - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
+      - LLM_TCP_PORT=${LLM_TCP_PORT}
+      - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - SERVER_DOMAIN=${SERVER_DOMAIN}
       - OUTLOOK_ADDIN_CORS=
@@ -224,7 +236,7 @@ services:
           cpus: '1.0'
           memory: 128M
     volumes:
-      - api_gateway_logs:/var/log/api-gateway
+      - api_gateway_logs_v2:/var/log/api-gateway
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -491,7 +503,12 @@ services:
       - PORT=${ANALYTICS_SERVICE_PORT}
       - TCP_PORT=${ANALYTICS_TCP_PORT}
       - DB_HOST=${ANALYTICS_DB_CONTAINER}
-      - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ANALYTICS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
@@ -510,17 +527,145 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+
+  llm_db:
+    image: postgres:15-alpine
+    restart: always
+
+    container_name: ${LLM_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${LLM_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${LLM_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    volumes:
+      - llm_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  llm_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/llm-service/Dockerfile
+
+    container_name: ${LLM_APP_CONTAINER}
+    environment:
+      - PORT=${LLM_SERVICE_PORT}
+      - TCP_PORT=${LLM_TCP_PORT}
+      - DB_HOST=${LLM_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${LLM_DB_NAME}
+      - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
+      - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+
+    depends_on:
+      llm_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+
+  company_db:
+    image: postgres:15-alpine
+    restart: always
+
+    container_name: ${COMPANY_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${COMPANY_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${COMPANY_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    volumes:
+      - company_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  company_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/company-service/Dockerfile
+
+    container_name: ${COMPANY_APP_CONTAINER}
+    environment:
+      - PORT=${COMPANY_SERVICE_PORT}
+      - TCP_PORT=${COMPANY_TCP_PORT}
+      - DB_HOST=${COMPANY_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMPANY_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      - "${COMPANY_SERVICE_PORT}:${COMPANY_SERVICE_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+
+    depends_on:
+      company_db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
   
   # builds the website using the website's dockerfile
   website:
     build:
       context: ../../
       dockerfile: project/frontend/website/Dockerfile
+      args:
+        VITE_API_GATEWAY_URL: "https://localhost/"
+        VITE_BASE_PATH: "/"
     restart: on-failure
     container_name: website
-    environment:
-      - WEBSITE_PORT=5173
-      - VITE_API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
     ports:
     - '5173:5173'
     deploy:
@@ -598,7 +743,7 @@ services:
 volumes:
   # Must be same as volume name for db
   # Must be hard coded
-  api_gateway_logs:
+  api_gateway_logs_v2:
   caddy_data:
   caddy_config:
   caddy_logs:
@@ -608,6 +753,8 @@ volumes:
   xp_pgdata:
   education_pgdata:
   analytics_pgdata:
+  llm_pgdata:
+  company_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local

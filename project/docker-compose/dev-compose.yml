@@ -166,6 +166,8 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - OUR_EMAIL=${OUR_EMAIL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
@@ -456,8 +458,8 @@ services:
     container_name: caddy
     restart: unless-stopped
     ports: 
-      - '80:80'
-      - '443:443'
+      - '127.0.0.1:8000:80'
+      - '127.0.0.1:8001:443'
     volumes:
       - ./dev-caddy-conf:/etc/caddy/
       - caddy_logs:/var/log/caddy

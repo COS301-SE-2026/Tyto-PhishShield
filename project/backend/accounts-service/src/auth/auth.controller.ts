@@ -41,6 +41,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
 import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -58,6 +59,7 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  //Deprecated
   @Post('login')
   @HttpCode(200)
   login(@Req() req: Request, @Body() dto: LoginDto) {
@@ -114,6 +116,7 @@ export class AuthController {
     };
   }
 
+  //Deprecated
   @Post('verify-otp')
   @HttpCode(200)
   async verifyOtp(
@@ -138,9 +141,29 @@ export class AuthController {
     return { message };
   }
 
+  //Deprecated
   @Post('resend-otp')
   @HttpCode(200)
   resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendOtp(dto);
+  }
+
+  @Get('is-active')
+  @HttpCode(200)
+  isActive(@Body() body: { authID: string }) {
+    return this.authService.isActive(body.authID);
+  }
+  
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      req.user.auth0Id,
+      req.user.email,
+      dto,
+    );
   }
 }
