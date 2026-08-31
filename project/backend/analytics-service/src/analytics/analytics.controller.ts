@@ -395,7 +395,7 @@ export class AnalyticsController {
     @Query('limit') limit?: string,
   ) {
     const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
-    const lim = limit ? parseInt(limit, 10) : 10;
+    const lim = limit ? Number.parseInt(limit, 10) : 10;
     return this.analyticsService.getAtRiskUsers(days, lim);
   }
 

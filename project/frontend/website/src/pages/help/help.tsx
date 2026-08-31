@@ -241,7 +241,7 @@ export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
   ];
 
   return (
-    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Help Centre" subtitle="Guides, tutorials, and answers to common questions" securityScore={72}>
+    <AppLayout activePath={activePath} onNavigate={onNavigate} title="Help Centre" subtitle="Guides, tutorials, and answers to common questions">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
         <section>
           <SectionHeading>Quick Links</SectionHeading>

@@ -50,13 +50,20 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
   const [loadingUser, setLoadingUser] = useState(!!userId);
   useEffect(() => {
     if (!userId) return;
-    setLoadingUser(true);
-    authFetch(`${API_BASE}/accounts/users/${userId}`)
-      .then(r => r.ok ? r.json() as Promise<FetchedUser> : Promise.reject(new Error(String(r.status))))
-      .then(data => setFetchedUser(data))
-      .catch(() => addToast({ type: 'error', title: 'Could not load user', message: 'User may not exist or you lack access.' }))
-      .finally(() => setLoadingUser(false));
-  }, [userId]);
+    const loadUser = async (): Promise<void> => {
+      setLoadingUser(true);
+      try {
+        const res = await authFetch(`${API_BASE}/accounts/users/${userId}`);
+        if (!res.ok) throw new Error(String(res.status));
+        setFetchedUser(await res.json() as FetchedUser);
+      } catch {
+        addToast({ type: 'error', title: 'Could not load user', message: 'User may not exist or you lack access.' });
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    void loadUser();
+  }, [userId, addToast]);
 
   const initials = (name?: string | null, email?: string) => {
     if (name) {
@@ -90,7 +97,7 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
   const xpPct = Math.min((profileUser.xp / xpTarget) * 100, 100);
   if (!isOwnProfile && loadingUser) {
     return (
-      <AppLayout activePath={activePath} onNavigate={onNavigate} title="Loading…" securityScore={72}>
+      <AppLayout activePath={activePath} onNavigate={onNavigate} title="Loading…">
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
           Loading user profile.
         </div>
@@ -106,7 +113,6 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
         { label: 'Users', path: '/users' },
         { label: profileUser.name },
       ]}
-      securityScore={72}
     >
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 16, alignItems: 'start' }}>
         {/* Profile card */}
@@ -215,8 +221,8 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
           <Card style={{ padding: '18px' }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 14, fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Activity</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {ACTIVITY.map((a, i) => (
-                <div key={i} style={{
+              {ACTIVITY.map((a) => (
+                <div key={a.title} style={{
                   display: 'flex', gap: 12, alignItems: 'flex-start',
                   padding: '10px 13px', borderRadius: 8,
                   background: a.bg, border: `1px solid ${a.borderColor}`,

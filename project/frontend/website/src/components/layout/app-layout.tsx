@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Sidebar } from './sidebar';
-import { ThemeToggle } from '../ui';
+import { ThemeToggle, Card } from '../ui';
 import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
+import { useNotifications } from '../../context/notification-context';
+import { fetchSecurityScore } from '../../services/security-score';
 import { Menu, Bell, ChevronRight, CircleHelp} from 'lucide-react';
 
 interface AppLayoutProps {
@@ -12,14 +14,24 @@ interface AppLayoutProps {
   title: string;
   subtitle?: string;
   breadcrumbs?: { label: string; path?: string }[];
-  securityScore?: number;
 }
 
 export function AppLayout({
-  children, activePath, onNavigate, title, subtitle, breadcrumbs, securityScore = 72, }: AppLayoutProps) {
+  children, activePath, onNavigate, title, subtitle, breadcrumbs, }: AppLayoutProps) {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { notifications, unreadCount, markAllRead } = useNotifications();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [securityScore, setSecurityScore] = useState(0);
+  useEffect(() => {
+    if (!user?.auth0Id) return;
+    let cancelled = false;
+    fetchSecurityScore(user.auth0Id)
+      .then(score => { if (!cancelled) setSecurityScore(score); })
+      .catch(() => { if (!cancelled) setSecurityScore(0); });
+    return () => { cancelled = true; };
+  }, [user?.auth0Id]);
   const initials = (() => {
     if (user?.name) {
       const parts = user.name.trim().split(/\s+/);
@@ -68,7 +80,7 @@ export function AppLayout({
               {breadcrumbs && breadcrumbs.length > 0 ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
                   {breadcrumbs.map((b, i) => (
-                    <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span key={b.path ?? b.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {i > 0 && (
                         <ChevronRight size={18} color='var(--text-muted)' aria-hidden='true'/>
                       )}
@@ -104,20 +116,71 @@ export function AppLayout({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
 
-            <button style={{
-              background: 'var(--bg-hover)', border: '1.5px solid var(--border)',
-              width: 36, height: 36, borderRadius: 8, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-secondary)', position: 'relative',
-            }}>
-              <Bell size={16} aria-hidden='true'/>
-              {/* Notification dot */}
-              <span style={{
-                position: 'absolute', top: 6, right: 6, width: 7, height: 7,
-                background: 'var(--color-danger)', borderRadius: '50%',
-                border: '1.5px solid var(--bg-topbar)',
-              }}/>
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                aria-label="Notifications"
+                onClick={() => {
+                  setNotificationsOpen(v => {
+                    const next = !v;
+                    if (next) markAllRead();
+                    return next;
+                  });
+                }}
+                style={{
+                  background: 'var(--bg-hover)', border: '1.5px solid var(--border)',
+                  width: 36, height: 36, borderRadius: 8, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--text-secondary)', position: 'relative',
+                }}>
+                <Bell size={16} aria-hidden='true'/>
+                {/* Notification dot */}
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: 6, right: 6, width: 7, height: 7,
+                    background: 'var(--color-danger)', borderRadius: '50%',
+                    border: '1.5px solid var(--bg-topbar)',
+                  }}/>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <>
+                  <div
+                    onClick={() => setNotificationsOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                  />
+                  <Card style={{
+                    position: 'absolute', top: 44, right: 0, width: 320, maxHeight: 420,
+                    overflowY: 'auto', zIndex: 1000, padding: 0,
+                  }}>
+                    <div style={{
+                      padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                      fontSize: 13, fontWeight: 700, color: 'var(--text-primary)',
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                    }}>
+                      Notifications
+                    </div>
+                    {notifications.length === 0 ? (
+                      <div style={{
+                        padding: '32px 16px', textAlign: 'center', fontSize: 12,
+                        color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif',
+                      }}>
+                        You are all caught up.
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{n.title}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2, fontFamily: 'Inter, system-ui, sans-serif' }}>{n.message}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>{new Date(n.timestamp).toLocaleString('en-ZA')}</div>
+                        </div>
+                      ))
+                    )}
+                  </Card>
+                </>
+              )}
+            </div>
 
             <button type="button"
               onClick={() => onNavigate('/help')}

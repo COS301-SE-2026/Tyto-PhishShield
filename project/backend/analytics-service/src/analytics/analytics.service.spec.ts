@@ -284,13 +284,27 @@ describe('AnalyticsService', () => {
       expect(result.falsePositive).toBe(3);
       expect(result.educationCompleted).toBe(1);
       expect(result.totalXp).toBe(125); // 50 + 75
+      expect(result.securityScore).toBe(33); // xpScore = min(100, 125/500*100) = 25, detectionScore = 2/5*100 = 40; score = round(0.5*25 + 0.5*40) = 33
     });
 
     it('handles user with no XP events', async () => {
       repo.find.mockResolvedValue([] as any);
       const result = await service.getUserStats(auth0Id);
-
       expect(result.totalXp).toBe(0);
+      expect(result.securityScore).toBe(20);
+    });
+
+    it('gives a neutral detection score when the user has no reports yet', async () => {
+      repo.count.mockResolvedValue(0);
+      repo.find.mockResolvedValue([{ payload: { amount: 200 } }] as any);
+      const result = await service.getUserStats(auth0Id);
+      expect(result.securityScore).toBe(45);
+    });
+
+    it('caps the XP component at 100 once past the max-score threshold', async () => {
+      repo.find.mockResolvedValue([{ payload: { amount: 5000 } }] as any);
+      const result = await service.getUserStats(auth0Id);
+      expect(result.securityScore).toBe(70);
     });
   });
 
