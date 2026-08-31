@@ -9,7 +9,6 @@ import { XpEntity, XpReason } from '../entities/xp.entity';
 import { Department, UserEntity } from '../entities/user.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { EmailDetailsEntity } from '../entities/email-details.entity';
-import { ConfigService } from '@nestjs/config';
 
 const mockUser: Partial<UserEntity> = {
   id: '1',
