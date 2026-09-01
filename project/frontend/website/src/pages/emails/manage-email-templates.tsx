@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useMemo, useCallback, type CSSProperties, useRef } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select, Badge } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
@@ -40,6 +40,36 @@ export function ManageEmailTemplates({
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const contentRef = useRef<HTMLTextAreaElement>(null);
+
+    const placeholders = [
+        {label: 'Name', value: '{{name}}'},
+        {label: 'Department', value: '{{department}}'},
+        {label: 'Business name', value: '{{business_name}}'},
+        {label: 'Tracking link', value: '{{tracking_link}}'},
+    ];
+
+    const insertPlaceholder = (placeholder: string) => {
+        if (!form) {
+            return;
+        }
+        const textarea = contentRef.current;
+
+        if (!textarea){
+            return;
+        }
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const newContent = form.content.slice(0, start) + placeholder + form.content.slice(end);
+
+        setField('content', newContent);
+        requestAnimationFrame(() => {
+            const cursorPosition = start + placeholder.length;
+            textarea.focus();
+            textarea.setSelectionRange(cursorPosition, cursorPosition);
+        });
+    }
 
     const fetchTemplates = useCallback(async () => {
         setLoading(true);
@@ -423,7 +453,38 @@ export function ManageEmailTemplates({
                                     </span>
                                 </label>
 
+                                <p
+                                    style={{
+                                        marginBottom: 8,
+                                        fontSize: 11,
+                                        color: 'var(--text-muted)',
+                                    }}
+                                >
+                                    Insert a placeholder:
+                                </p>
+
+                                <div
+                                    style={{
+                                        display:'flex',
+                                        gap: 8,
+                                        marginBottom: 8,
+                                        flexWrap: 'wrap'
+                                    }}
+                                >
+                                    {placeholders.map((placeholder) => (
+                                        <Button
+                                            key={placeholder.value}
+                                            type="button"
+                                            size="sm"
+                                            onClick={() => insertPlaceholder(placeholder.value)}
+                                        >
+                                            {placeholder.label}
+                                        </Button>
+                                    ))}
+                                </div>
+
                                 <textarea
+                                    ref={contentRef}
                                     rows={12}
                                     value={form.content}
                                     onChange={(event) => setField('content', event.target.value)}
