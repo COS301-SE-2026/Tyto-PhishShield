@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ProxyService } from '../proxy/proxy.service';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -6,11 +6,6 @@ import { ConfigService } from '@nestjs/config';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { DifficultyLlmGenerationDto } from './dto/difficulty-llm-generation.dto';
-
-function authHeader(req: Request): Record<string, string> {
-  const token = req.headers['authorization'] as string | undefined;
-  return token ? { authorization: token } : {};
-}
 
 @ApiTags('LLM')
 @Controller('llm')
@@ -36,14 +31,10 @@ export class LlmController {
       'Generate phishing-simulation email templates for a given difficulty, tone, and message type',
   })
   @ApiBody({ type: DifficultyLlmGenerationDto })
-  difficultyGeneration(
-    @Req() req: Request,
-    @Body() body: DifficultyLlmGenerationDto,
-  ) {
+  difficultyGeneration(@Body() body: DifficultyLlmGenerationDto) {
     return this.proxyService.forward({
       method: 'POST',
-      url: `${this.llmServiceUrl}/llm/difficulty_generation`,
-      headers: authHeader(req),
+      url: `${this.llmServiceUrl}/api/llm/difficulty_generation`,
       data: body,
     });
   }

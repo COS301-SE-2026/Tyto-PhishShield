@@ -10,6 +10,7 @@ import {
   LlmGatewayRequestBody,
   OkLlmGatewayResponse,
 } from './dto/llm-gateway.dto';
+import { ConfigService } from '@nestjs/config';
 
 // Searches for <a href="{{tracking_link}}"></a>
 const TRACKING_LINK_ANCHOR =
@@ -18,11 +19,18 @@ const TRACKING_LINK_ANCHOR =
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
+  private readonly llmProvider: string;
 
   constructor(
     private readonly promptBuilderService: PromptBuilderService,
     private readonly llmGatewayService: LlmGatewayService,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    this.llmProvider = this.config.get<string>(
+      'LLM_PROVIDER',
+      'google-ai-studio/gemini-3.1-flash-lite',
+    );
+  }
 
   async generateTemplates(
     dto: DifficultyLlmGenerationDto,
@@ -64,29 +72,29 @@ export class LlmService {
   }
 
   private buildGatewayRequest(systemPrompt: string): LlmGatewayRequestBody {
+    const systemInstructions = `
+      ${systemPrompt}
+      
+      You MUST respond with ONLY a valid JSON object. Do not include markdown formatting, backticks, or conversational text.
+      Ensure the JSON structure exactly matches this schema:
+      ${JSON.stringify(TEMPLATE_SCHEMA)}
+    `.trim();
+
     return {
-      model: 'gpt-5',
+      model: this.llmProvider,
       messages: [
         {
           role: 'system',
-          content: [
-            {
-              type: 'text',
-              text: systemPrompt,
-              cache_control: { type: 'ephemeral', ttl: '5m' },
-            },
-          ],
+          content: systemInstructions,
         },
-        { role: 'user', content: 'Generate one template variant.' },
+        {
+          role: 'user',
+          content: 'Generate one template variant as a raw JSON object.',
+        },
       ],
-      temperature: 0.9,
+      temperature: 0.7,
       response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'phishing_template',
-          strict: true,
-          schema: TEMPLATE_SCHEMA as unknown as Record<string, null>,
-        },
+        type: 'json_object',
       },
     };
   }

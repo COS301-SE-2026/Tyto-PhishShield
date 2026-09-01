@@ -44,8 +44,14 @@ export class BatchEmailService {
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
-    this.businessName = this.configService.get<string>('BUSINESS_NAME');
-    this.trackingLink = this.configService.get<string>('TRACKING_LINK');
+    this.businessName = this.configService.get<string>(
+      'BUSINESS_NAME',
+      'FiveGuys',
+    );
+    this.trackingLink = this.configService.get<string>(
+      'TRACKING_LINK',
+      'http://localhost:5050',
+    );
   }
 
   async sendBatchWithReference(
@@ -505,7 +511,8 @@ export class BatchEmailService {
     let returning = text;
 
     if (user.name) {
-      returning = returning.replace(/{{\s*name\s*}}/g, user.name);
+      const firstName: string = user.name.split(' ')[0];
+      returning = returning.replace(/{{\s*name\s*}}/g, firstName);
     }
 
     if (user.department) {
