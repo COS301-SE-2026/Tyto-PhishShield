@@ -111,6 +111,7 @@ export function Register({ onNavigate }: RegisterProps) {
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
@@ -124,6 +125,7 @@ export function Register({ onNavigate }: RegisterProps) {
     const e: Record<string, string> = {};
     if (!firstName.trim()) e.firstName = 'First name is required.';
     if (!lastName.trim()) e.lastName = 'Last name is required.';
+    if (!employeeId.trim()) e.employeeId = 'Employee ID is required.';
     if (!email) e.email = 'Email is required.';
     else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Enter a valid email.';
     if (!password) e.password = 'Password is required.';
@@ -146,6 +148,7 @@ export function Register({ onNavigate }: RegisterProps) {
       await authApi.register({
         email, password, name: `${firstName} ${lastName}`.trim(),
         department: DEPARTMENTS.find(d => d.value === department)?.label,
+        employeeId: employeeId.trim(),
       });
       addToast({ type: 'info', title: 'Confirmation email sent', message: `Check ${email} to verify your account.` });
       setStep(3);
@@ -196,6 +199,11 @@ export function Register({ onNavigate }: RegisterProps) {
                 onChange={e => { setLastName(e.target.value); setStep1Errors(p => ({ ...p, lastName: '' })); }}
                 error={step1Errors.lastName} required />
             </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <Input label="Employee ID" placeholder="EMP-00123" value={employeeId}
+              onChange={e => { setEmployeeId(e.target.value); setStep1Errors(p => ({ ...p, employeeId: '' })); }}
+              error={step1Errors.employeeId} required />
           </div>
           <div style={{ marginBottom: 12 }}>
             <Input label="Work email" type="email" placeholder="lisa@tyto.co.za" value={email}
