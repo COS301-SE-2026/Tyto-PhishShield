@@ -1,0 +1,232 @@
+services:
+  mailing_app:
+    image: fiveguys301/mailing:v1.0
+    container_name: blue_${MAILING_APP_CONTAINER}
+    environment:
+      - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - MAILING_DB_CONTAINER=${MAILING_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MAILING_DB_NAME=${MAILING_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      mailing_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+  
+  accounts_app:
+    image: fiveguys301/accounts:v1.0
+    container_name: blue_${ACCOUNTS_APP_CONTAINER}
+    environment:
+      - PORT=${ACCOUNTS_SERVICE_PORT}
+      - DB_HOST=${ACCOUNTS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ACCOUNTS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=prod
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      accounts_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+
+  api_app:
+    image: fiveguys301/api:v1.0
+    restart: on-failure
+    container_name: blue_${GATEWAY_APP_CONTAINER}
+    environment:
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
+      - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
+      - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - XP_HOST=${XP_APP_CONTAINER}
+      - REPORT_HOST=${REPORT_APP_CONTAINER}
+      - MAILING_HOST=${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - REPORT_TCP_PORT=${REPORT_TCP_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
+      - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SERVER_DOMAIN=${DOMAIN}
+      - OUTLOOK_ADDIN_CORS=
+      - ENVIRONMENT=prod
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 384M
+        reservations:
+          cpus: '1.0'
+          memory: 128M
+
+  report_app:
+    image: fiveguys301/report:v1.0
+    container_name: blue_${REPORT_APP_CONTAINER}
+    environment:
+      - PORT=${REPORT_SERVICE_PORT}
+      - TCP_PORT=${REPORT_TCP_PORT}
+      - DB_HOST=${REPORT_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}  
+      - DB_PASSWORD=${DB_PASSWORD} 
+      - DB_NAME=${REPORT_DB_NAME}  
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN} 
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
+      - REPORT_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      report_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+
+  xp_app:
+    image: fiveguys301/xp:v1.0
+    container_name: blue_${XP_APP_CONTAINER}
+    environment:
+      - XP_SERVICE_PORT=${XP_SERVICE_PORT}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - XP_DB_CONTAINER=${XP_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - XP_DB_NAME=${XP_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+    depends_on:
+      xp_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+      
+  education_app:
+    image: fiveguys301/education:v1.0
+    container_name: blue_${EDUCATION_APP_CONTAINER}
+    environment:
+      - PORT=${EDUCATION_SERVICE_PORT}
+      - TCP_PORT=${EDUCATION_TCP_PORT}
+      - DB_HOST=${EDUCATION_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${EDUCATION_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+
+    depends_on:
+      education_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      
+  analytics_app:
+    image: fiveguys301/analytics:v1.0
+    container_name: blue_${ANALYTICS_APP_CONTAINER}
+    environment:
+      - PORT=${ANALYTICS_SERVICE_PORT}
+      - TCP_PORT=${ANALYTICS_TCP_PORT}
+      - DB_HOST=${ANALYTICS_DB_CONTAINER}
+      - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      analytics_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '256M'
+
+  website:
+    image: fiveguys301/website:v1.0
+    restart: on-failure
+    container_name: blue_website
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 192M
+  
+  outlook_addin:
+    image: fiveguys301/addin:v1.0
+    restart: on-failure
+    container_name: blue_addin
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M

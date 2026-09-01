@@ -576,7 +576,7 @@ services:
           cpus: '1.0'
           memory: 192M
   
-  outlook-addin:
+  outlook_addin:
     image: fiveguys301/addin:latest
     restart: on-failure
     container_name: addin

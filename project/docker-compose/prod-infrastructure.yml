@@ -1,0 +1,277 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+
+    container_name: prod_rabbitmq
+    hostname: rabbitmq-server
+
+    volumes:
+      - prod_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  mailing_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${MAILING_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${MAILING_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${MAILING_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - prod_mailing_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+    
+  accounts_db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${ACCOUNTS_DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ACCOUNTS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    container_name: ${ACCOUNTS_DB_CONTAINER}
+    volumes:
+      - prod_accounts_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+  
+  report_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${REPORT_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${REPORT_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${REPORT_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - prod_report_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+  xp_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${XP_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${XP_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${XP_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - prod_xp_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+  education_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${EDUCATION_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${EDUCATION_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${EDUCATION_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - prod_education_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
+
+  analytics_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${ANALYTICS_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${ANALYTICS_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${ANALYTICS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - prod_analytics_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+  caddy:
+    image: caddy:2.11.3
+    container_name: prod_caddy
+    restart: unless-stopped
+    ports: 
+      - '127.0.0.1:8002:80'
+      - '127.0.0.1:8003:443'
+    volumes:
+      - ./prod-caddy-conf:/etc/caddy/
+      - prod_caddy_logs:/var/log/caddy
+      - prod_caddy_data:/data
+      - prod_caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 32M    
+
+  llm_db:
+    image: postgres:15-alpine
+    restart: always
+
+    container_name: ${LLM_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${LLM_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${LLM_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    volumes:
+      - llm_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
+
+  company_db:
+    image: postgres:15-alpine
+    restart: always
+
+    container_name: ${COMPANY_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${COMPANY_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${COMPANY_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    volumes:
+      - company_pgdata:/var/lib/postgresql/data
+
+    ports:
+      - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
+
+volumes:
+  # Must be same as volume name for db
+  # Must be hard coded
+  prod_mailing_pgdata:
+  prod_accounts_pgdata:
+  prod_xp_pgdata:
+  prod_report_pgdata:
+  prod_education_pgdata:
+  prod_analytics_pgdata:
+  prod_caddy_data:
+  prod_caddy_config:
+  prod_caddy_logs:
+  prod_rabbitmq_data:
+    driver: local
