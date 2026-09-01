@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DIFFICULTY_PROMPTS } from './prompts/difficulty.prompts';
 import {
+  Difficulty,
   DifficultyLlmGenerationDto,
   TemplateVariable,
 } from '../dto/difficulty-llm-generation.dto';
@@ -11,6 +12,8 @@ import { BASE_SYSTEM_INSTRUCTIONS } from './prompts/base-instructions.prompts';
 import { LINK_INSTRUCTIONS } from './prompts/link-instructions.prompts';
 import { OUTPUT_FORMAT } from './prompts/output-format.prompts';
 
+const BUSINESS_NAME_CONTEXT = `{{business_name}} is the recipient's business/organization name. Use it to make the message feel like it's coming from within their own company (If applicable).`;
+
 @Injectable()
 export class PromptBuilderService {
   buildSystemPrompt(dto: DifficultyLlmGenerationDto): string {
@@ -19,21 +22,32 @@ export class PromptBuilderService {
       DIFFICULTY_PROMPTS[dto.difficulty],
       TONE_PROMPTS[dto.tone],
       TYPE_PROMPTS[dto.messageType],
-      this.buildVariableSection(dto.templateVariable),
+      this.buildVariableSection(dto.templateVariable, dto.difficulty),
       LINK_INSTRUCTIONS,
       OUTPUT_FORMAT,
     ];
     return prompt.join('\n\n');
   }
 
-  private buildVariableSection(variables: TemplateVariable[]): string {
-    if (variables.length === 0) {
+  private buildVariableSection(
+    variables: TemplateVariable[],
+    difficulty: Difficulty,
+  ): string {
+    const includeBusinessName = difficulty !== Difficulty.EASY;
+
+    if (variables.length === 0 && !includeBusinessName) {
       return 'Do not include any personalization placeholders. Write the message generically. Only the {{tracking_link}} must appear in the message.';
     }
-    const placeholders = variables.map((v) => `{{${v}}}`).join(', ');
+    const placeholders = variables.map((v) => `{{${v}}}`);
     const contextLines = variables.map((v) => VARIABLE_CONTEXT_PROMPTS[v]);
+
+    if (includeBusinessName) {
+      placeholders.push(BUSINESS_NAME_CONTEXT);
+      contextLines.push(BUSINESS_NAME_CONTEXT);
+    }
+
     return [
-      `You may use these placeholders word-for-word where natural: ${placeholders}`,
+      `You may use these placeholders word-for-word where natural: ${placeholders.join(', ')}`,
       ...contextLines,
     ].join('\n');
   }
