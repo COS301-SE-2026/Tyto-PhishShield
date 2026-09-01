@@ -4,6 +4,7 @@ import { Button, Card, Input, Select, Badge } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
 import { deleteEmailTemplate, getEmailTemplates, updateEmailTemplate, type EmailTemplate, type UpdateEmailTemplateRequest } from "../../services/email-template";
 import type { EmailDifficulty } from "../../services/send-batch-email";
+import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
 
 interface ManageEmailTemplatesProps {
     readonly onNavigate: (path: string) => void;
@@ -41,13 +42,6 @@ export function ManageEmailTemplates({
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const contentRef = useRef<HTMLTextAreaElement>(null);
-
-    const placeholders = [
-        {label: 'Name', value: '{{name}}'},
-        {label: 'Department', value: '{{department}}'},
-        {label: 'Business name', value: '{{business_name}}'},
-        {label: 'Tracking link', value: '{{tracking_link}}'},
-    ];
 
     const insertPlaceholder = (placeholder: string) => {
         if (!form) {
@@ -471,7 +465,7 @@ export function ManageEmailTemplates({
                                         flexWrap: 'wrap'
                                     }}
                                 >
-                                    {placeholders.map((placeholder) => (
+                                    {EMAIL_PLACEHOLDERS.map((placeholder) => (
                                         <Button
                                             key={placeholder.value}
                                             type="button"

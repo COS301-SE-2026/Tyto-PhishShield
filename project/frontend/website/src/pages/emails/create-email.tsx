@@ -4,6 +4,7 @@ import { Button, Card, Input, Select } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
 import type { EmailDifficulty } from "../../services/send-batch-email";
 import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate } from '../../services/email-template';
+import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
 
 interface CreateEmailProps {
     onNavigate: (path: string) => void;
@@ -58,13 +59,6 @@ export function CreateEmail({
     useState<EmailTemplate | null>(null);
   const [copying, setCopying] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
-
-  const placeholders = [
-    {label: 'Name', value: '{{name}}'},
-    {label: 'Department', value: '{{department}}'},
-    {label: 'Business name', value: '{{business_name}}'},
-    {label: 'Tracking link', value: '{{tracking_link}}'},
-  ];
 
   const insertPlaceholder = (placeholder: string) => {
     const textarea = contentRef.current;
@@ -328,7 +322,7 @@ export function CreateEmail({
                             flexWrap: 'wrap'
                         }}
                     >
-                        {placeholders.map((placeholder) => (
+                        {EMAIL_PLACEHOLDERS.map((placeholder) => (
                             <Button
                                 key={placeholder.value}
                                 type="button"
