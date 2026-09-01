@@ -400,6 +400,7 @@ describe('Analytics (integration)', () => {
         reports: 5,
         confirmed: 2,
         falsePositive: 3,
+        securityScore: 33,
         totalXp: 125,
         educationCompleted: 1,
       });

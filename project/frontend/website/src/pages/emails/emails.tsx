@@ -33,7 +33,7 @@ function EmailActionCard({
       }}
     >
       <Icon
-        size={42}
+        size={24}
         strokeWidth={1.5}
         style={{ color: 'var(--color-primary)'}}
       />

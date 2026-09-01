@@ -8,603 +8,713 @@ on:
   #   branches: [main, dev]
 
 jobs:
-    install:
-      name: Install dependencies
+    lint-test-build:
+      name: Matrix lint, test and build
       runs-on: ubuntu-24.04
       strategy:
         matrix:
-          node-version: [24]
+          include:
+            - service: accounts
+              type: lint
+
+            - service: accounts
+              type: test
+
+            - service: accounts
+              type: build
+
+            - service: analytics
+              type: lint
+
+            - service: analytics
+              type: test
+
+            - service: analytics
+              type: build
+
+            - service: api
+              type: lint
+
+            - service: api
+              type: test
+
+            - service: api
+              type: build
+
+            - service: company
+              type: lint
+
+            - service: company
+              type: test
+
+            - service: company
+              type: build
+
+            - service: education
+              type: lint
+
+            - service: education
+              type: test
+
+            - service: education
+              type: build
+
+            - service: llm
+              type: lint
+
+            - service: llm
+              type: test
+
+            - service: llm
+              type: build
+
+            - service: mailing
+              type: lint
+
+            - service: mailing
+              type: test
+
+            - service: mailing
+              type: build
+
+            - service: report
+              type: lint
+
+            - service: report
+              type: test
+
+            - service: report
+              type: build
+
+            - service: xp
+              type: lint
+
+            - service: xp
+              type: test
+
+            - service: xp
+              type: build
       steps:
-        - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-        - name: Install pnpm
-          uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-          with:
-            version: 11.1.1
-        - name: Use Node.js ${{ matrix.node-version }}
-          uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
-          with:
-            node-version: ${{ matrix.node-version }}
-            cache: "pnpm"
-        - name: Install dependencies
-          run: pnpm install --frozen-lockfile --ignore-scripts
-        - name: Upload node_modules
-          uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
-          with:
-            name: node-modules
-            path: node_modules
-    
-    API-Gateway-lint:
-        name: API Gateway Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
           - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
           - name: Install pnpm
             uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
             with:
               version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+          - name: Use Node.js 24
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
             with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:api
+              node-version: 24
+              cache: "pnpm"
+          - name: Install dependencies
+            run: pnpm install --frozen-lockfile --ignore-scripts
+          - name: Build shared packages
+            run: pnpm build:shared
+          - name: ${{ matrix.service }} ${{ matrix.type }}
+            run: pnpm run ${{ matrix.type }}:${{ matrix.service }}
           
-    API-Gateway-tests:
-        name: API Gateway Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:api
+
+    # install:
+    #   name: Install dependencies
+    #   runs-on: ubuntu-24.04
+    #   strategy:
+    #     matrix:
+    #       node-version: [24]
+    #   steps:
+    #     - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #     - name: Install pnpm
+    #       uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #       with:
+    #         version: 11.1.1
+    #     - name: Use Node.js ${{ matrix.node-version }}
+    #       uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
+    #       with:
+    #         node-version: ${{ matrix.node-version }}
+    #         cache: "pnpm"
+    #     - name: Install dependencies
+    #       run: pnpm install --frozen-lockfile --ignore-scripts
+    #     - name: Build shared packages
+    #       run: pnpm build:shared
+    #     - name: Upload node_modules
+    #       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a #v7.0.1
+    #       with:
+    #         name: node-modules
+    #         path: | 
+    #           node_modules
+    #           project/backend/packages/dto/dist
+    #           project/backend/packages/dto/node_modules
     
-    API-Gateway-build:
-        name: API Gateway Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run build:api
-
-    Accounts-Service-lint:
-        name: Accounts Service Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:accounts
-
-    Accounts-Service-tests:
-        name: Accounts Service Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:accounts
+    # API-Gateway-lint:
+    #     name: API Gateway Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:api
+          
+    # API-Gateway-tests:
+    #     name: API Gateway Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:api
     
-    Accounts-Service-build:
-        name: Accounts Service Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run build:accounts
+    # API-Gateway-build:
+    #     name: API Gateway Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run build:api
 
-    Mailing-Service-lint:
-        name: Mailing Service Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:mailing
+    # Accounts-Service-lint:
+    #     name: Accounts Service Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:accounts
 
-    Mailing-Service-tests:
-        name: Mailing Service Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:mailing
+    # Accounts-Service-tests:
+    #     name: Accounts Service Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:accounts
     
-    Mailing-Service-build:
-        name: Mailing Service Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run  build:mailing
+    # Accounts-Service-build:
+    #     name: Accounts Service Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run build:accounts
+
+    # Mailing-Service-lint:
+    #     name: Mailing Service Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:mailing
+
+    # Mailing-Service-tests:
+    #     name: Mailing Service Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:mailing
     
-    Report-Service-lint:
-        name: Report Service Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:report
-
-    Report-Service-tests:
-        name: Report Service Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:report
+    # Mailing-Service-build:
+    #     name: Mailing Service Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run  build:mailing
     
-    Report-Service-build:
-        name: Report Service Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run build:report
+    # Report-Service-lint:
+    #     name: Report Service Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:report
+
+    # Report-Service-tests:
+    #     name: Report Service Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:report
     
-    XP-Service-lint:
-        name: XP Service Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:xp
-
-    XP-Service-tests:
-        name: XP Service Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:xp
+    # Report-Service-build:
+    #     name: Report Service Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run build:report
     
-    XP-Service-build:
-        name: XP Service Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run build:xp
+    # XP-Service-lint:
+    #     name: XP Service Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:xp
 
-    Education-Service-lint:
-        name: Education Service Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:education
-
-    Education-Service-tests:
-        name: Education Service Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:education
+    # XP-Service-tests:
+    #     name: XP Service Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:xp
     
-    Education-Service-build:
-        name: Education Service Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run build:education
+    # XP-Service-build:
+    #     name: XP Service Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run build:xp
 
-    Analytics-Service-lint:
-        name: Analytics Service Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:analytics
+    # Education-Service-lint:
+    #     name: Education Service Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:education
 
-    Analytics-Service-tests:
-        name: Analytics Service Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:analytics
+    # Education-Service-tests:
+    #     name: Education Service Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:education
     
-    Analytics-Service-build:
-        name: Analytics Service Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run build:analytics
+    # Education-Service-build:
+    #     name: Education Service Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run build:education
 
-    LLM-Service-lint:
-        name: LLM Service Backend lint
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: lint
-            run: pnpm run lint:llm
+    # Analytics-Service-lint:
+    #     name: Analytics Service Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:analytics
 
-    LLM-Service-tests:
-        name: LLM Service Backend tests
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: test
-            run: pnpm run test:llm
+    # Analytics-Service-tests:
+    #     name: Analytics Service Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:analytics
     
-    LLM-Service-build:
-        name: LLM Service Backend build
-        needs: install
-        runs-on: ubuntu-24.04
-        strategy:
-          matrix:
-            node-version: [24]
-        steps:
-          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-          - name: Install pnpm
-            uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
-            with:
-              version: 11.1.1
-          - name: Use Node.js ${{ matrix.node-version }}
-            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
-            with:
-              node-version: ${{ matrix.node-version }}
-          - name: Download node_modules
-            uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
-            with:
-              name: node-modules
-          - name: build
-            run: pnpm run build:llm
+    # Analytics-Service-build:
+    #     name: Analytics Service Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run build:analytics
+
+    # LLM-Service-lint:
+    #     name: LLM Service Backend lint
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: lint
+    #         run: pnpm run lint:llm
+
+    # LLM-Service-tests:
+    #     name: LLM Service Backend tests
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: test
+    #         run: pnpm run test:llm
+    
+    # LLM-Service-build:
+    #     name: LLM Service Backend build
+    #     needs: install
+    #     runs-on: ubuntu-24.04
+    #     strategy:
+    #       matrix:
+    #         node-version: [24]
+    #     steps:
+    #       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    #       - name: Install pnpm
+    #         uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+    #         with:
+    #           version: 11.1.1
+    #       - name: Use Node.js ${{ matrix.node-version }}
+    #         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 #v6.0.0
+    #         with:
+    #           node-version: ${{ matrix.node-version }}
+    #       - name: Download node_modules
+    #         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c #v8.0.1
+    #         with:
+    #           name: node-modules
+    #       - name: build
+    #         run: pnpm run build:llm
