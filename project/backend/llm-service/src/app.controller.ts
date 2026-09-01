@@ -10,7 +10,7 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
-  
+
   @MessagePattern('health.check')
   health(): string {
     return 'ok';
