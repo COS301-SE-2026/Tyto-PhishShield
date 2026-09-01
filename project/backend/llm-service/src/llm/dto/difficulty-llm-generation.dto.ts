@@ -1,5 +1,4 @@
 import {
-  ArrayNotEmpty,
   IsArray,
   IsEnum,
   IsInt,
@@ -64,7 +63,6 @@ export class DifficultyLlmGenerationDto {
   messageType!: MessageType;
 
   @IsArray()
-  @ArrayNotEmpty()
   @IsEnum(TemplateVariable, { each: true })
   templateVariable!: TemplateVariable[];
 
