@@ -4,6 +4,9 @@ import { HttpException, InternalServerErrorException } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { ProxyService } from './proxy.service';
 import type { AxiosResponse } from 'axios';
+import { ConfigService } from '@nestjs/config';
+import { RouteResolver } from './proxy.routes';
+import { ClientProxy } from '@nestjs/microservices';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,
@@ -16,12 +19,41 @@ const axiosOf = <T>(data: T): AxiosResponse<T> => ({
 describe('ProxyService', () => {
   let service: ProxyService;
   let httpService: jest.Mocked<HttpService>;
+  const mockClient = (): ClientProxy => ({
+    connect: jest.fn(),
+    send: jest.fn(),
+    close: jest.fn(),
+    emit: jest.fn(),
+  } as any);
+  const config = {
+      getOrThrow: jest.fn((key: string) => {
+          switch(key) {
+              case 'ACCOUNTS_SERVICE_URL': return 'accounts';
+              case 'EDUCATION_SERVICE_URL': return 'education';
+              case 'MAILING_SERVICE_URL': return 'mailing';
+              case 'REPORT_SERVICE_URL': return 'report';
+              case 'XP_SERVICE_URL': return 'xp';
+              case 'SERVER_DOMAIN': return 'domain';
+              default: throw Error('unexpected key');
+          }
+      })
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProxyService,
         { provide: HttpService, useValue: { request: jest.fn() } },
+        { provide: ConfigService, useValue: config},
+        { provide: RouteResolver, useValue: {resolve: jest.fn() }}, 
+        { provide: 'ACCOUNTS_SERVICE', useValue: mockClient() },
+        { provide: 'MAILING_SERVICE', useValue: mockClient() },
+        { provide: 'XP_SERVICE', useValue: mockClient() },
+        { provide: 'REPORT_SERVICE', useValue: mockClient() },
+        { provide: 'EDUCATION_SERVICE', useValue: mockClient() },
+        { provide: 'ANALYTICS_SERVICE', useValue: mockClient() },
+        { provide: 'LLM_SERVICE', useValue: mockClient() },
+        { provide: 'COMPANY_SERVICE', useValue: mockClient() },
       ],
     }).compile();
 

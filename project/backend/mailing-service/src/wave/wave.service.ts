@@ -6,6 +6,7 @@ import { WaveRecipientEntity } from '../entities/wave-recipient.entity';
 import { WaveDto } from '../dto/wave.dto';
 import { WaveMinimumDto } from '../dto/wave-minimum.dto';
 import { WaveRecipientDto } from '../dto/wave-recipient.dto';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 @Injectable()
 export class WaveService {
@@ -16,6 +17,7 @@ export class WaveService {
     private readonly waveRepository: Repository<WaveEntity>,
     @InjectRepository(WaveRecipientEntity)
     private readonly waveRecipientRepository: Repository<WaveRecipientEntity>,
+    private readonly ampqConnection: AmqpConnection,
   ) {}
 
   async saveWave(body: WaveDto): Promise<WaveEntity> {
@@ -28,12 +30,26 @@ export class WaveService {
       recipients: this.createWaveRecipients(body.recipients),
     });
 
+    let savedWave: WaveEntity;
+
     try {
-      return await this.waveRepository.save(wave);
+      savedWave = await this.waveRepository.save(wave);
     } catch (error) {
       this.logger.error(`Failed to save wave record "${body.waveName}"`, error);
       throw error;
     }
+
+    await this.ampqConnection.publish('wave-event-exchange', 'wave.create', {
+      waveId: savedWave.id,
+      waveName: savedWave.waveName,
+      scheduledFrom: savedWave.scheduledFrom.toISOString(),
+      scheduledTo: savedWave.scheduledTo.toISOString(),
+      sameEmail: savedWave.sameEmail,
+      randomisedTimes: savedWave.randomisedTimes,
+      numberOfRecipients: savedWave.recipients?.length ?? 0,
+    });
+
+    return savedWave;
   }
 
   private createWaveRecipients(
@@ -128,10 +144,18 @@ export class WaveService {
   }
 
   async deleteWave(id: string): Promise<void> {
+    const wave = await this.waveRepository.findOne({
+      where: { id },
+    });
+
     const result = await this.waveRepository.delete(id);
 
     if (result.affected === 0) {
       throw new NotFoundException(`Wave not found for id: ${id}`);
     }
+
+    await this.ampqConnection.publish('wave-event-exchange', 'wave.delete', {
+      waveId: wave.id,
+    });
   }
 }
