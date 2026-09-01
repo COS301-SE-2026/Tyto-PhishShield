@@ -27,7 +27,6 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { XpResponseDto } from '../dto/xp-response.dto';
 import { NetXpResponseDto } from '../dto/net-xp-response.dto';
 import { EmailDetailsEntity } from '../entities/email-details.entity';
-import { ConfigService } from '@nestjs/config';
 import { MailingBatchEventDto } from '../dto/mailing-batch-event.dto';
 
 @Injectable()
@@ -41,7 +40,6 @@ export class XpService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(EmailDetailsEntity)
     private readonly emailDetailsRepository: Repository<EmailDetailsEntity>,
-    private readonly configService: ConfigService,
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
