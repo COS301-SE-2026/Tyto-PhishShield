@@ -479,7 +479,8 @@ export class BatchEmailService {
     let returning = text;
 
     if (user.name) {
-      returning = returning.replace(/{{\s*name\s*}}/g, user.name);
+      const firstName: string = user.name.split(' ')[0];
+      returning = returning.replace(/{{\s*name\s*}}/g, firstName);
     }
 
     if (user.department) {
