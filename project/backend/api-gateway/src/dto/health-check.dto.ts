@@ -8,3 +8,9 @@ export class HealthServices {
   llmService?: string;
   companyService?: string;
 }
+
+export class Health {
+  api_version?: string;
+  environment?: string;
+  services?: HealthServices;
+}

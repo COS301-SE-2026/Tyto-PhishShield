@@ -185,6 +185,7 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - VERSION=local-version
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}

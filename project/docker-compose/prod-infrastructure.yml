@@ -21,6 +21,8 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
+    networks:
+      - infrastructure
 
   mailing_db:
     image: postgres:15-alpine
@@ -51,6 +53,8 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    networks:
+      - infrastructure
     
   accounts_db:
     image: postgres:15-alpine
@@ -76,6 +80,8 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    networks:
+      - infrastructure
   
   report_db:
     image: postgres:15-alpine
@@ -101,6 +107,8 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    networks:
+      - infrastructure
 
   xp_db:
     image: postgres:15-alpine
@@ -126,6 +134,8 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    networks:
+      - infrastructure
 
   education_db:
     image: postgres:15-alpine
@@ -151,6 +161,8 @@ services:
         reservations:
           cpus: '0.10'
           memory: 64M
+    networks:
+      - infrastructure
 
   analytics_db:
     image: postgres:15-alpine
@@ -177,6 +189,8 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    networks:
+      - infrastructure
 
   caddy:
     image: caddy:2.11.3
@@ -198,11 +212,12 @@ services:
         reservations:
           cpus: '0.25'
           memory: 32M    
+    networks:
+      - proxy
 
   llm_db:
     image: postgres:15-alpine
     restart: always
-
     container_name: ${LLM_DB_CONTAINER}
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -214,7 +229,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-
     deploy:
       resources:
         limits:
@@ -223,17 +237,16 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
-
     volumes:
-      - llm_pgdata:/var/lib/postgresql/data
-
+      - prod_llm_pgdata:/var/lib/postgresql/data
     ports:
       - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
+    networks:
+      - infrastructure
 
   company_db:
     image: postgres:15-alpine
     restart: always
-
     container_name: ${COMPANY_DB_CONTAINER}
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -245,7 +258,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-
     deploy:
       resources:
         limits:
@@ -254,12 +266,12 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
-
     volumes:
-      - company_pgdata:/var/lib/postgresql/data
-
+      - prod_company_pgdata:/var/lib/postgresql/data
     ports:
       - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
+    networks:
+      - infrastructure
 
 volumes:
   # Must be same as volume name for db
@@ -270,8 +282,19 @@ volumes:
   prod_report_pgdata:
   prod_education_pgdata:
   prod_analytics_pgdata:
+  prod_llm_pgdata:
+  prod_company_pgdata:
   prod_caddy_data:
   prod_caddy_config:
   prod_caddy_logs:
   prod_rabbitmq_data:
     driver: local
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+
+  infrastructure:
+    external: true
+    name: infrastructure

@@ -166,6 +166,7 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - VERSION=latest
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
@@ -567,9 +568,6 @@ services:
     image: fiveguys301/website:latest
     restart: on-failure
     container_name: website
-    environment:
-      - WEBSITE_PORT=5173
-      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
     deploy:
       resources:
         limits:

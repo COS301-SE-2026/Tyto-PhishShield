@@ -6,7 +6,7 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppService } from './app.service';
-import { HealthServices } from './dto/health-check.dto';
+import { Health } from './dto/health-check.dto';
 import { Public } from './auth/public.decorator';
 import { ContactSalesDto } from './dto/contact-sales.dto';
 
@@ -21,10 +21,10 @@ export class AppController {
       'returns all the services in which the tcp transport connections are open',
   })
   @ApiResponse({
-    type: HealthServices,
+    type: Health
   })
-  checkHealth() {
-    return this.appService.checkMicroServicesHealth();
+  async checkHealth(): Promise<Health> {
+    return {api_version: process.env.VERSION, environment: process.env.ENVIRONMENT, services: await this.appService.checkMicroServicesHealth()};
   }
 
   @Public()

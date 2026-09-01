@@ -1,7 +1,7 @@
 services:
   mailing_app:
     image: fiveguys301/mailing:v1.0
-    container_name: blue_${MAILING_APP_CONTAINER}
+    container_name: green_${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -23,12 +23,12 @@ services:
           cpus: '0.5'
           memory: 256M
     networks:
-      - blue
+      - green
       - infrastructure
   
   accounts_app:
     image: fiveguys301/accounts:v1.0
-    container_name: blue_${ACCOUNTS_APP_CONTAINER}
+    container_name: green_${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
       - DB_HOST=${ACCOUNTS_DB_CONTAINER}
@@ -61,34 +61,34 @@ services:
           cpus: '1.0'
           memory: 256M
     networks:
-      - blue
       - infrastructure
+      - green
 
   api_app1:
     image: fiveguys301/api:v1.0
     restart: on-failure
-    container_name: blue_${GATEWAY_APP_CONTAINER}_1
+    container_name: green_${GATEWAY_APP_CONTAINER}_1
     environment:
-      - VERSION=blue_1-v1.0
+      - VERSION=green_1-v1.0
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
-      - ACCOUNTS_SERVICE_URL=http://blue_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
-      - MAILING_SERVICE_URL=http://blue_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
-      - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
-      - REPORT_SERVICE_URL=http://blue_${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
-      - EDUCATION_SERVICE_URL=http://blue_${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
-      - ANALYTICS_SERVICE_URL=http://blue_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
-      - LLM_SERVICE_URL=http://blue_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
-      - COMPANY_SERVICE_URL=http://blue_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
-      - XP_HOST=blue_${XP_APP_CONTAINER}
-      - REPORT_HOST=blue_${REPORT_APP_CONTAINER}
-      - MAILING_HOST=blue_${MAILING_APP_CONTAINER}
-      - ACCOUNTS_HOST=blue_${ACCOUNTS_APP_CONTAINER}
-      - EDUCATION_HOST=blue_${EDUCATION_APP_CONTAINER}
-      - ANALYTICS_HOST=blue_${ANALYTICS_APP_CONTAINER}
-      - LLM_HOST=blue_${LLM_APP_CONTAINER}
-      - COMPANY_HOST=blue_${COMPANY_APP_CONTAINER}
+      - ACCOUNTS_SERVICE_URL=http://green_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+      - MAILING_SERVICE_URL=http://green_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_SERVICE_URL=http://green_${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
+      - REPORT_SERVICE_URL=http://green_${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://green_${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://green_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - LLM_SERVICE_URL=http://green_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
+      - COMPANY_SERVICE_URL=http://green_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - XP_HOST=green_${XP_APP_CONTAINER}
+      - REPORT_HOST=green_${REPORT_APP_CONTAINER}
+      - MAILING_HOST=green_${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=green_${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=green_${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=green_${ANALYTICS_APP_CONTAINER}
+      - LLM_HOST=green_${LLM_APP_CONTAINER}
+      - COMPANY_HOST=green_${COMPANY_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -117,34 +117,34 @@ services:
           memory: 128M
     networks:
       - proxy
-      - blue
+      - green
       - infrastructure
 
   api_app2:
     image: fiveguys301/api:v1.0
     restart: on-failure
-    container_name: blue_${GATEWAY_APP_CONTAINER}_2
+    container_name: green_${GATEWAY_APP_CONTAINER}_2
     environment:
-      - VERSION=blue_2-v1.0
+      - VERSION=green_2-v1.0
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
-      - ACCOUNTS_SERVICE_URL=http://blue_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
-      - MAILING_SERVICE_URL=http://blue_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
-      - XP_SERVICE_URL=http://blue_${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
-      - REPORT_SERVICE_URL=http://blue_${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
-      - EDUCATION_SERVICE_URL=http://blue_${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
-      - ANALYTICS_SERVICE_URL=http://blue_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
-      - LLM_SERVICE_URL=http://blue_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
-      - COMPANY_SERVICE_URL=http://blue_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
-      - XP_HOST=blue_${XP_APP_CONTAINER}
-      - REPORT_HOST=blue_${REPORT_APP_CONTAINER}
-      - MAILING_HOST=blue_${MAILING_APP_CONTAINER}
-      - ACCOUNTS_HOST=blue_${ACCOUNTS_APP_CONTAINER}
-      - EDUCATION_HOST=blue_${EDUCATION_APP_CONTAINER}
-      - ANALYTICS_HOST=blue_${ANALYTICS_APP_CONTAINER}
-      - LLM_HOST=blue_${LLM_APP_CONTAINER}
-      - COMPANY_HOST=blue_${COMPANY_APP_CONTAINER}
+      - ACCOUNTS_SERVICE_URL=http://green_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+      - MAILING_SERVICE_URL=http://green_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_SERVICE_URL=http://green_${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
+      - REPORT_SERVICE_URL=http://green_${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://green_${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://green_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - LLM_SERVICE_URL=http://green_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
+      - COMPANY_SERVICE_URL=http://green_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - XP_HOST=green_${XP_APP_CONTAINER}
+      - REPORT_HOST=green_${REPORT_APP_CONTAINER}
+      - MAILING_HOST=green_${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=green_${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=green_${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=green_${ANALYTICS_APP_CONTAINER}
+      - LLM_HOST=green_${LLM_APP_CONTAINER}
+      - COMPANY_HOST=green_${COMPANY_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -173,12 +173,12 @@ services:
           memory: 128M
     networks:
       - proxy
-      - blue
+      - green
       - infrastructure
 
   report_app:
     image: fiveguys301/report:v1.0
-    container_name: blue_${REPORT_APP_CONTAINER}
+    container_name: green_${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
       - TCP_PORT=${REPORT_TCP_PORT}
@@ -199,12 +199,12 @@ services:
           cpus: '0.5'
           memory: 192M
     networks:
-      - blue
+      - green
       - infrastructure
 
   xp_app:
     image: fiveguys301/xp:v1.0
-    container_name: blue_${XP_APP_CONTAINER}
+    container_name: green_${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
       - XP_TCP_PORT=${XP_TCP_PORT}
@@ -223,12 +223,12 @@ services:
           cpus: '0.5'
           memory: 256M
     networks:
-      - blue
+      - green
       - infrastructure
       
   education_app:
     image: fiveguys301/education:v1.0
-    container_name: blue_${EDUCATION_APP_CONTAINER}
+    container_name: green_${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
       - TCP_PORT=${EDUCATION_TCP_PORT}
@@ -245,15 +245,15 @@ services:
         limits:
           cpus: '0.5'
           memory: 192M
-    networks:
-      - blue
-      - infrastructure
     volumes:
       - ./src:/app/src
+    networks:
+      - green
+      - infrastructure
       
   analytics_app:
     image: fiveguys301/analytics:v1.0
-    container_name: blue_${ANALYTICS_APP_CONTAINER}
+    container_name: green_${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
       - TCP_PORT=${ANALYTICS_TCP_PORT}
@@ -271,42 +271,42 @@ services:
           cpus: '1.0'
           memory: '256M'
     networks:
-      - blue
+      - green
       - infrastructure
 
   website:
     image: fiveguys301/website:v1.0
     restart: on-failure
-    container_name: blue_website
+    container_name: green_website
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 192M
     networks:
-      - blue
+      - green
       - proxy
   
   outlook_addin:
     image: fiveguys301/addin:v1.0
     restart: on-failure
-    container_name: blue_addin
+    container_name: green_addin
     deploy:
       resources:
         limits:
           cpus: '0.25'
           memory: 64M
     networks:
-      - blue
+      - green
       - proxy
 
 networks:
   proxy:
     external: true
     name: proxy
-  blue:
+  green:
     external: true
-    name: blue
+    name: green
   infrastructure:
     external: true
     name: infrastructure
