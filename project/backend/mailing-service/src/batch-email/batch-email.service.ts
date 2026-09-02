@@ -44,8 +44,14 @@ export class BatchEmailService {
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
-    this.businessName = this.configService.get<string>('BUSINESS_NAME');
-    this.trackingLink = this.configService.get<string>('TRACKING_LINK');
+    this.businessName = this.configService.get<string>(
+      'BUSINESS_NAME',
+      'FiveGuys',
+    );
+    this.trackingLink = this.configService.get<string>(
+      'TRACKING_LINK',
+      'http://localhost:5050',
+    );
   }
 
   async sendBatchWithReference(
@@ -60,7 +66,7 @@ export class BatchEmailService {
       scheduledAt: now,
     }));
 
-    const { emailsIds, tokens } = await this.sendEmails(
+    const { emailsIds, tokens, recipientEmails } = await this.sendEmails(
       dispatches,
       `reference ${referenceNumber}`,
     );
@@ -70,6 +76,8 @@ export class BatchEmailService {
       dispatches,
       emailsIds,
       tokens,
+      undefined,
+      recipientEmails,
     );
 
     return {
@@ -227,7 +235,10 @@ export class BatchEmailService {
       randomisedTimes: boolean;
     },
   ): Promise<BatchSendResultDto> {
-    const { emailsIds, tokens } = await this.sendEmails(dispatches, details);
+    const { emailsIds, tokens, recipientEmails } = await this.sendEmails(
+      dispatches,
+      details,
+    );
 
     let waveId: string | undefined;
 
@@ -259,6 +270,7 @@ export class BatchEmailService {
       emailsIds,
       tokens,
       waveId,
+      recipientEmails,
     );
 
     return {
@@ -270,7 +282,11 @@ export class BatchEmailService {
   private async sendEmails(
     dispatches: BatchRecipientDto[],
     details: string,
-  ): Promise<{ emailsIds: string[]; tokens: string[] }> {
+  ): Promise<{
+    emailsIds: string[];
+    tokens: string[];
+    recipientEmails: string[];
+  }> {
     const referenceNumbers = [
       ...new Set(dispatches.map((dispatch) => dispatch.referenceNumber)),
     ];
@@ -302,12 +318,15 @@ export class BatchEmailService {
     const tokens = built.map((item) => item.token);
 
     const emailsIds = await this.sendResendBatch(payload);
+    const recipientEmails = dispatches.map(
+      (dispatch) => recipientMap.get(dispatch.auth0Id)?.email ?? '',
+    );
 
     this.logger.log(
       `Dispatched batch of ${dispatches.length} email(s) for ${details}`,
     );
 
-    return { emailsIds, tokens };
+    return { emailsIds, tokens, recipientEmails };
   }
 
   private routingKey(dispatches: BatchRecipientDto[]): string {
@@ -351,6 +370,7 @@ export class BatchEmailService {
     emailIds: string[],
     tokens: string[],
     waveId?: string,
+    recipientEmails?: string[],
   ): Promise<void> {
     const entries = dispatches.map((dispatch, index) => ({
       auth0Id: dispatch.auth0Id,
@@ -358,6 +378,7 @@ export class BatchEmailService {
       scheduledAt: dispatch.scheduledAt.toISOString(),
       emailId: emailIds[index],
       token: tokens[index],
+      recipient: recipientEmails?.[index] ?? undefined,
       ...(waveId ? { waveId } : {}),
     }));
 
@@ -479,7 +500,8 @@ export class BatchEmailService {
     let returning = text;
 
     if (user.name) {
-      returning = returning.replace(/{{\s*name\s*}}/g, user.name);
+      const firstName: string = user.name.split(' ')[0];
+      returning = returning.replace(/{{\s*name\s*}}/g, firstName);
     }
 
     if (user.department) {
@@ -504,7 +526,8 @@ export class BatchEmailService {
     let returning = text;
 
     if (user.name) {
-      returning = returning.replace(/{{\s*name\s*}}/g, user.name);
+      const firstName: string = user.name.split(' ')[0];
+      returning = returning.replace(/{{\s*name\s*}}/g, firstName);
     }
 
     if (user.department) {

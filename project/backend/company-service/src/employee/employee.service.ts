@@ -70,8 +70,8 @@ export class EmployeeService {
       existingEmployee.managerId = validEmployee.managerId;
       existingEmployee.employeeStatus = validEmployee.employeeStatus;
       existingEmployee.externalId = validEmployee.externalId;
+      existingEmployee.registered = validEmployee.registered ?? false;
 
-      console.log(existingEmployee);
       return await this.db.save(existingEmployee);
     } catch (err) {
       //save in invalid employee table
