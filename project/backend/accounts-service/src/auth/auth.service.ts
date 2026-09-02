@@ -109,7 +109,9 @@ export class AuthService {
     return this.cachedMgmtToken;
   }
 
-  async register(dto: RegisterDto): Promise<{ message: string }> {
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ response: string; message: string }> {
     const mgmtToken = await this.getManagementToken();
 
     let auth0User: Auth0UserResponse;
@@ -148,8 +150,9 @@ export class AuthService {
     });
 
     return {
+      response: 'ok',
       message:
-        'Registration successful. Please verify your email with the OTP sent to you.',
+        'Registration successful. Please verify your email with the verifcation sent to you.',
     };
   }
 

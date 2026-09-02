@@ -233,7 +233,10 @@ export class AccountsService {
     return this.cachedMgmtToken;
   }
 
-  async validateEmployeeId(employeeId: string): Promise<boolean> {
+  async validateEmployeeId(
+    employeeId: string,
+    employeeEmail: string,
+  ): Promise<boolean> {
     const employee = (await this.proxy.sendTcpMessage(
       this.proxy.companyClient,
       'employees.get.one',
@@ -249,11 +252,32 @@ export class AccountsService {
     const validEmployeeType = employee;
     if (
       validEmployeeType.employeeId !== employeeId ||
-      !validEmployeeType.registered
+      validEmployeeType.registered ||
+      validEmployeeType.email !== employeeEmail
     ) {
       return false;
     }
 
     return true;
+  }
+
+  async updateEmployeeAsRegistered(employeeId: string) {
+    const employee = (await this.proxy.sendTcpMessage(
+      this.proxy.companyClient,
+      'employees.get.one',
+      employeeId,
+    )) as EmployeeDto;
+    const registeredEmployee: EmployeeDto = {
+      ...employee,
+      registered: true,
+    };
+    await this.proxy.sendTcpMessage(
+      this.proxy.companyClient,
+      'employee.update',
+      {
+        employeeId: employeeId,
+        newEmployeeData: registeredEmployee,
+      },
+    );
   }
 }

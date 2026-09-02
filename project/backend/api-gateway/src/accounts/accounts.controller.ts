@@ -89,16 +89,21 @@ export class AccountsController {
   async register(@Body() body: ApiRegisterDto) {
     const valid = await this.accountsService.validateEmployeeId(
       body.employeeId,
+      body.email,
     );
     if (valid) {
       const accountsRegister = body as RegisterDto;
-      return this.proxy.forward({
+      const register = await this.proxy.forward({
         url: `${this.accountsServiceUrl}/api/auth/register`,
         method: 'POST',
         data: accountsRegister,
       });
+      if (register.response === 'ok')
+        await this.accountsService.updateEmployeeAsRegistered(body.employeeId);
+
+      return register;
     }
-    return new BadRequestException(
+    throw new BadRequestException(
       'Could not register employee. If this issue presists please contact the admin.',
     );
   }
