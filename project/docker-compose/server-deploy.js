@@ -3,19 +3,22 @@ const { execSync } = require('node:child_process');
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const lockDir = 'lock';
+const lockDir = './lock';
 
 async function main() {
     try {
         fs.mkdirSync(lockDir);
-    } catch {
-        throw new Error(
-            'Another deployment is already running'
-        );
+    } catch (error) {
+        if (error.code === 'EEXIST') {
+            throw new Error(
+                'Another deployment is already running'
+            );
+        }
+        throw error;
     }
 
     try {
-        const active = fs.readFileSync('./prod/state/active-environment').trim();
+        const active = fs.readFileSync('./prod/state/active-environment').toString().trim();
 
         if (!active) {
             throw new Error(
@@ -30,11 +33,11 @@ async function main() {
         const target = active === 'blue' ? 'green' : 'blue';
 
         execSync(
-            `docker compose -f ./prod/prod-${target}.yml --env-file .env.prod pull`, {stdio: 'inherit'}
+            `docker compose -p ${target} -f ./prod/prod-${target}.yml --env-file ./prod/.env.prod pull`, {stdio: 'inherit'}
         );
 
         execSync(
-            `docker compose -f ./prod/prod-${target}.yml --env-file .env.prod up -d`, {stdio: 'inherit'}
+            `docker compose -p ${target} -f ./prod/prod-${target}.yml --env-file ./prod/.env.prod up -d`, {stdio: 'inherit'}
         );
 
         let health = false; 
@@ -67,7 +70,7 @@ async function main() {
         
         try {
             execSync(
-                `docker exec caddy caddy validate --config /etc/caddy/Caddyfile`, { stdio: 'pipe' }
+                `docker exec prod_caddy caddy validate --config /etc/caddy/Caddyfile`, { stdio: 'pipe' }
             );
         } catch (error) {
             execSync(
@@ -83,7 +86,7 @@ async function main() {
 
         try {
             execSync(
-                `docker exec caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
+                `docker exec prod_caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
             );
         } catch (error) {
             execSync(
@@ -121,7 +124,7 @@ async function main() {
             );
 
             execSync(
-                `docker exec caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
+                `docker exec prod_caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
             );
 
             await sleep(1000);
@@ -132,7 +135,7 @@ async function main() {
 
         fs.writeFileSync('./prod/state/active-environment', target);
     } finally {
-        fs.rmSync(lockDir);
+        fs.rmSync(lockDir, {recursive: true, force: true});
     }
 }
 

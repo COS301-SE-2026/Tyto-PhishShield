@@ -1,6 +1,6 @@
 services:
   mailing_app:
-    image: fiveguys301/mailing:v1.0
+    image: fiveguys301/mailing:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     container_name: blue_${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
@@ -15,8 +15,6 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -27,7 +25,7 @@ services:
       - infrastructure
   
   accounts_app:
-    image: fiveguys301/accounts:v1.0
+    image: fiveguys301/accounts:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     container_name: blue_${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
@@ -53,8 +51,6 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -65,7 +61,7 @@ services:
       - infrastructure
 
   api_app1:
-    image: fiveguys301/api:v1.0
+    image: fiveguys301/api:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_1
     environment:
@@ -131,7 +127,7 @@ services:
       - infrastructure
 
   api_app2:
-    image: fiveguys301/api:v1.0
+    image: fiveguys301/api:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_2
     environment:
@@ -197,7 +193,7 @@ services:
       - infrastructure
 
   report_app:
-    image: fiveguys301/report:v1.0
+    image: fiveguys301/report:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     container_name: blue_${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
@@ -211,8 +207,6 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -223,7 +217,7 @@ services:
       - infrastructure
 
   xp_app:
-    image: fiveguys301/xp:v1.0
+    image: fiveguys301/xp:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     container_name: blue_${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
@@ -235,8 +229,6 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - XP_DB_NAME=${XP_DB_NAME}
       - DB_SYNC=${DB_SYNC}
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -247,7 +239,7 @@ services:
       - infrastructure
       
   education_app:
-    image: fiveguys301/education:v1.0
+    image: fiveguys301/education:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     container_name: blue_${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
@@ -268,11 +260,9 @@ services:
     networks:
       - blue
       - infrastructure
-    volumes:
-      - ./src:/app/src
       
   analytics_app:
-    image: fiveguys301/analytics:v1.0
+    image: fiveguys301/analytics:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
     container_name: blue_${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
@@ -283,8 +273,6 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${ANALYTICS_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -294,8 +282,52 @@ services:
       - blue
       - infrastructure
 
+  llm_app:
+    image: fiveguys301/llm:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${LLM_APP_CONTAINER}
+    environment:
+      - PORT=${LLM_SERVICE_PORT}
+      - TCP_PORT=${LLM_TCP_PORT}
+      - DB_HOST=${LLM_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${LLM_DB_NAME}
+      - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
+      - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+    networks:
+      - blue
+      - infrastructure
+    
+  company_app:
+    image: fiveguys301/company:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${COMPANY_APP_CONTAINER}
+    environment:
+      - PORT=${COMPANY_SERVICE_PORT}
+      - TCP_PORT=${COMPANY_TCP_PORT}
+      - DB_HOST=${COMPANY_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMPANY_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+    networks:
+      - blue
+      - infrastructure
+
   website:
-    image: fiveguys301/website:v1.0
+    image: fiveguys301/website:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6-prod
     restart: on-failure
     container_name: blue_website
     deploy:
@@ -308,7 +340,7 @@ services:
       - proxy
   
   outlook_addin:
-    image: fiveguys301/addin:v1.0
+    image: fiveguys301/addin:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6-prod
     restart: on-failure
     container_name: blue_addin
     deploy:

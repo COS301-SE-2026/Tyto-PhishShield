@@ -24,7 +24,7 @@ try {
         );
         console.log('starting infrastructure');
         execSync(
-            `ssh -p ${process.env.SSH_PORT} ${server} "docker compose -f ./prod/prod-infrastructure.yml --env-file ./prod/.env.prod up"`, {stdio: 'inherit'}
+            `ssh -p ${process.env.SSH_PORT} ${server} "docker compose -f ./prod/prod-infrastructure.yml --env-file ./prod/.env.prod up -d"`, {stdio: 'inherit'}
         );
     } else {
         const active = execSync(

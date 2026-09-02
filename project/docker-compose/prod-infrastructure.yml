@@ -178,7 +178,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-
     volumes:
       - prod_analytics_pgdata:/var/lib/postgresql/data
     deploy:
@@ -239,8 +238,6 @@ services:
           memory: 64M
     volumes:
       - prod_llm_pgdata:/var/lib/postgresql/data
-    ports:
-      - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
     networks:
       - infrastructure
 
@@ -268,8 +265,6 @@ services:
           memory: 64M
     volumes:
       - prod_company_pgdata:/var/lib/postgresql/data
-    ports:
-      - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
     networks:
       - infrastructure
 
