@@ -63,6 +63,44 @@ function main() {
     const devServices = new Set(Object.keys(dev.services));
     const prodServices = new Set(Object.keys(prod.services));
 
+    checkMissingServices(devServices, prodServices);
+
+    for (const service of devServices) {
+        if (service === 'llm_app' || service === 'company_app') continue;
+        let patterns;
+        if (typeOfService === 'infra') {
+            patterns = infraServices;
+        } else if (typeOfService === 'app') {
+            patterns = appServices;
+        } else {
+            continue;
+        }
+        compareEnvs(patterns, dev, prod, service);
+    }
+
+    console.log('check passed\n');
+}
+
+function compareEnvs(patterns, dev, prod, service) {
+    console.log(`comparing ${service} ENVs`);
+    for(const pattern of patterns) {
+        if (pattern.test(service)) {
+            const devService = dev.services[service];
+
+            if (service === 'api_app') {
+                const prodService1 = prod.services['api_app1'];
+                const prodService2 = prod.services['api_app2'];
+                compareEnv(devService, prodService1);
+                compareEnv(devService, prodService2);
+            } else {
+                const prodService = prod.services[service];   
+                compareEnv(devService, prodService);
+            }
+        }
+    }
+}
+
+function checkMissingServices(devServices, prodServices) {
     const missingServices = [...devServices].filter((service) => {
         let patterns;
         if (typeOfService === 'infra') {
@@ -91,36 +129,6 @@ function main() {
         }
         throw new Error('Ensure these services are included');
     }
-
-    for (const service of devServices) {
-        if (service === 'llm_app' || service === 'company_app') continue;
-        let patterns;
-        if (typeOfService === 'infra') {
-            patterns = infraServices;
-        } else if (typeOfService === 'app') {
-            patterns = appServices;
-        } else {
-            continue;
-        }
-        console.log(`comparing ${service} ENVs`);
-        for(const pattern of patterns) {
-            if (pattern.test(service)) {
-                const devService = dev.services[service];
-
-                if (service === 'api_app') {
-                    const prodService1 = prod.services['api_app1'];
-                    const prodService2 = prod.services['api_app2'];
-                    compareEnv(devService, prodService1);
-                    compareEnv(devService, prodService2);
-                } else {
-                    const prodService = prod.services[service];   
-                    compareEnv(devService, prodService);
-                }
-            }
-        }
-    }
-
-    console.log('check passed\n');
 }
 
 function getEnv(service) {

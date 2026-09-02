@@ -40,67 +40,20 @@ async function main() {
             `docker compose -p ${target} -f ./prod/prod-${target}.yml --env-file ./prod/.env.prod up -d`, {stdio: 'inherit'}
         );
 
-        let health = false; 
-        const start = Date.now();
-        while (!health && Date.now() - start < 120000) {
-            const health1 = execSync(
-                `docker inspect --format='{{.State.Health.Status}}' ${target}_api-gateway_1`
-            ).toString().trim();
+        await checkDockerHealth(target);
 
-            const health2 = execSync(
-                `docker inspect --format='{{.State.Health.Status}}' ${target}_api-gateway_2`
-            ).toString().trim();
+        switchCaddyfiles(active, target);
 
-            health = (health1 === 'healthy' && health2 === 'healthy');
+        checkSystemHealth(active, target);
 
-            await sleep(5000);
-        }
+        fs.writeFileSync('./prod/state/active-environment', target);
+    } finally {
+        fs.rmSync(lockDir, {recursive: true, force: true});
+    }
+}
 
-        if (!health) {
-            throw new Error('system did not become healthy!');
-        }
-
-        execSync(
-            `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${active}`, {stdio: 'inherit'}
-        );
-
-        execSync(
-            `cp ./prod/prod-caddy-conf/Caddyfile.${target} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
-        );
-        
-        try {
-            execSync(
-                `docker exec prod_caddy caddy validate --config /etc/caddy/Caddyfile`, { stdio: 'pipe' }
-            );
-        } catch (error) {
-            execSync(
-                `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${target}`, {stdio: 'inherit'}
-            );
-
-            execSync(
-                `cp ./prod/prod-caddy-conf/Caddyfile.${active} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
-            );
-
-            throw new Error('Caddyfile not valid! ' + error); 
-        }
-
-        try {
-            execSync(
-                `docker exec prod_caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
-            );
-        } catch (error) {
-            execSync(
-                `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${target}`, {stdio: 'inherit'}
-            );
-
-            execSync(
-                `cp ./prod/prod-caddy-conf/Caddyfile.${active} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
-            );
-
-            throw 'Caddyfile not valid! ' + error; 
-        }
-
-        let healthy = false;
+async function checkSystemHealth(active, target) {
+    let healthy = false;
 
         for (let i = 0; i < 6; i++) {
             await sleep(2000);
@@ -131,11 +84,69 @@ async function main() {
 
             throw new Error('system not reachable through caddy!');
         }
+}
 
+async function switchCaddyfiles(active, target) {
+    execSync(
+        `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${active}`, {stdio: 'inherit'}
+    );
 
-        fs.writeFileSync('./prod/state/active-environment', target);
-    } finally {
-        fs.rmSync(lockDir, {recursive: true, force: true});
+    execSync(
+        `cp ./prod/prod-caddy-conf/Caddyfile.${target} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
+    );
+    
+    try {
+        execSync(
+            `docker exec prod_caddy caddy validate --config /etc/caddy/Caddyfile`, { stdio: 'pipe' }
+        );
+    } catch (error) {
+        execSync(
+            `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${target}`, {stdio: 'inherit'}
+        );
+
+        execSync(
+            `cp ./prod/prod-caddy-conf/Caddyfile.${active} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
+        );
+
+        throw new Error('Caddyfile not valid! ' + error); 
+    }
+
+    try {
+        execSync(
+            `docker exec prod_caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
+        );
+    } catch (error) {
+        execSync(
+            `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${target}`, {stdio: 'inherit'}
+        );
+
+        execSync(
+            `cp ./prod/prod-caddy-conf/Caddyfile.${active} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
+        );
+
+        throw 'Caddyfile not valid! ' + error; 
+    }
+}
+
+async function checkDockerHealth(target) {
+    let health = false; 
+    const start = Date.now();
+    while (!health && Date.now() - start < 120000) {
+        const health1 = execSync(
+            `docker inspect --format='{{.State.Health.Status}}' ${target}_api-gateway_1`
+        ).toString().trim();
+
+        const health2 = execSync(
+            `docker inspect --format='{{.State.Health.Status}}' ${target}_api-gateway_2`
+        ).toString().trim();
+
+        health = (health1 === 'healthy' && health2 === 'healthy');
+
+        await sleep(5000);
+    }
+
+    if (!health) {
+        throw new Error('system did not become healthy!');
     }
 }
 
