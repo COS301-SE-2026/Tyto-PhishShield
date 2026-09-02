@@ -197,6 +197,7 @@ export class EmailService {
             recipient: user.email,
             referenceNumber: referenceNumber,
             scheduledAt: date.toISOString(),
+            auth0Id: auth0Id,
           },
         );
       } catch (publishError) {
@@ -262,6 +263,7 @@ export class EmailService {
             referenceNumber: referenceNumber,
             recipient: user.email,
             scheduledAt: scheduledAt.toISOString(),
+            auth0Id: auth0Id,
           },
         );
       } catch (publishError) {

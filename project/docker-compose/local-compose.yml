@@ -91,6 +91,8 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - BUSINESS_NAME=${BUSINESS_NAME}
+      - TRACKING_LINK=${TRACKING_LINK}
 
     ports:
       # Left side must be unique
