@@ -568,6 +568,32 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                         Template {index + 1}: {template.subject}
                       </p>
 
+                      <p
+                        style={{
+                          marginBottom: 8,
+                          fontSize: 11,
+                          lineHeight: 1.5,
+                          color: 'var(--text-muted)'
+                        }}
+                      >
+                        For security reasons, links are not rendered.
+                      </p>
+
+                      <div
+                        style={{
+                          padding: 12,
+                          maxHeight: 240,
+                          fontSize: 12,
+                          lineHeight: 1.5,
+                          overflow: 'auto',
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          background: 'var(--bg-card)',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
+                        <div dangerouslySetInnerHTML={{ __html: template.body, }} />
+                      </div>
                       <div
                         style={{
                           padding: 12,
