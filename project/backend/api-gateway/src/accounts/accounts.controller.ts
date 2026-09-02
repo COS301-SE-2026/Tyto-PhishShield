@@ -69,7 +69,7 @@ export class AccountsController {
       properties: {
         email: { type: 'string', example: 'test@example.com' },
         password: { type: 'string', example: 'Password123!' },
-        employeeId: {type: 'string', example: 'emp-id.0123456789'},
+        employeeId: { type: 'string', example: 'emp-id.0123456789' },
         name: { type: 'string', example: 'Test User' },
         department: {
           type: 'string',
@@ -87,7 +87,9 @@ export class AccountsController {
     },
   })
   async register(@Body() body: ApiRegisterDto) {
-    const valid = await this.accountsService.validateEmployeeId(body.employeeId);
+    const valid = await this.accountsService.validateEmployeeId(
+      body.employeeId,
+    );
     if (valid) {
       const accountsRegister = body as RegisterDto;
       return this.proxy.forward({
@@ -96,7 +98,9 @@ export class AccountsController {
         data: accountsRegister,
       });
     }
-    return new BadRequestException('Could not register employee. If this issue presists please contact the admin.');
+    return new BadRequestException(
+      'Could not register employee. If this issue presists please contact the admin.',
+    );
   }
 
   @Public()

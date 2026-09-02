@@ -30,17 +30,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RegisterDto } from './dto/register.dto';
+import { Department, RegisterDto, UserRole } from '@phishshield/dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService, CreateUserInput } from '../users/users.service';
-import { UserRole } from '../users/entities/user.entity';
 import { OtpService } from '../otp/otp.service';
 import { ExtendedVerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserSyncService } from '../users/user-sync.service';
-import { Department } from '../users/entities/user.entity';
 
 interface Auth0TokenResponse {
   access_token: string;

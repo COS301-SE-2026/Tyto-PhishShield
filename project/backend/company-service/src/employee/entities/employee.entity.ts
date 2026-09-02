@@ -40,7 +40,7 @@ export class Employee {
   @Column({ nullable: true })
   externalId?: string;
 
-  @Column({default: false})
+  @Column({ default: false })
   registered!: boolean;
 
   @CreateDateColumn()

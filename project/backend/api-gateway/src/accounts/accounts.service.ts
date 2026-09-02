@@ -234,12 +234,23 @@ export class AccountsService {
   }
 
   async validateEmployeeId(employeeId: string): Promise<boolean> {
-    const employee = await this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get.one', employeeId);
-    if (!employee || typeof employee.employeeId !== 'string' || typeof employee.registered !== 'boolean') {
+    const employee = (await this.proxy.sendTcpMessage(
+      this.proxy.companyClient,
+      'employees.get.one',
+      employeeId,
+    )) as EmployeeDto;
+    if (
+      !employee ||
+      typeof employee.employeeId !== 'string' ||
+      typeof employee.registered !== 'boolean'
+    ) {
       return false;
     }
-    const validEmployeeType = employee as EmployeeDto;
-    if (validEmployeeType.employeeId !== employeeId || !validEmployeeType.registered) {
+    const validEmployeeType = employee;
+    if (
+      validEmployeeType.employeeId !== employeeId ||
+      !validEmployeeType.registered
+    ) {
       return false;
     }
 
