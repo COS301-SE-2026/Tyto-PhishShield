@@ -40,6 +40,9 @@ export class Employee {
   @Column({ nullable: true })
   externalId?: string;
 
+  @Column({default: false})
+  registered!: boolean;
+
   @CreateDateColumn()
   dateImported!: Date;
 

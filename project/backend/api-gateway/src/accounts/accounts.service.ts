@@ -24,6 +24,7 @@ import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { OtpService } from '../otp/otp.service';
 import { logger } from '../logger/logger.service';
+import { EmployeeDto } from '@phishshield/dto';
 
 interface Auth0UserResponse {
   user_id: string;
@@ -230,5 +231,18 @@ export class AccountsService {
     this.mgmtTokenExpiry = Date.now() + data.expires_in * 1000;
 
     return this.cachedMgmtToken;
+  }
+
+  async validateEmployeeId(employeeId: string): Promise<boolean> {
+    const employee = await this.proxy.sendTcpMessage(this.proxy.companyClient, 'employees.get.one', employeeId);
+    if (!employee || typeof employee.employeeId !== 'string' || typeof employee.registered !== 'boolean') {
+      return false;
+    }
+    const validEmployeeType = employee as EmployeeDto;
+    if (validEmployeeType.employeeId !== employeeId || !validEmployeeType.registered) {
+      return false;
+    }
+
+    return true;
   }
 }
