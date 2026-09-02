@@ -5,9 +5,7 @@ import { Button } from '../../components/ui';
 import { API_BASE } from '../../services/api';
 import { TriangleAlert } from 'lucide-react';
 
-interface LinkClickedProps {
-  onNavigate: (path: string) => void;
-}
+interface LinkClickedProps { readonly onNavigate: (path: string) => void; }
 
 type Status = 'checking' | 'recorded' | 'invalid' | 'error';
 
