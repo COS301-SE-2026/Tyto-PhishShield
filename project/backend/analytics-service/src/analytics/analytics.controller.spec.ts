@@ -322,7 +322,6 @@ describe('AnalyticsController', () => {
     });
   });
 
-
   describe('onUserCreated / Updated / Deleted', () => {
     it('upserts user on created', async () => {
       const payload = {
