@@ -53,59 +53,69 @@ describe('EmailStatusService', () => {
   });
 
   describe('createStatus', () => {
-    const statusCreateDto = {
-      emailId: 'test-email-id',
-      messageId: 'test-message-id',
-      status: EmailStatusEnum.SENT,
-      webhookEventId: 'test-webhook-event-id',
-      occurredAt: new Date(),
-    } as StatusCreateDto;
+      const statusCreateDto = {
+        emailId: 'test-email-id',
+        messageId: 'test-message-id',
+        status: EmailStatusEnum.SENT,
+        webhookEventId: 'test-webhook-event-id',
+        occurredAt: '2026-09-02T10:00:00.000Z', // string, as the gateway sends
+      } as StatusCreateDto;
 
-    it('should create a new status entry', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
-      mockRepository.create.mockReturnValue(mockEmailStatus);
-      mockRepository.save.mockResolvedValue(mockEmailStatus);
+      it('should create a new status entry', async () => {
+        const expectedCreatedData = {
+          emailId: 'test-email-id',
+          messageId: 'test-message-id',
+          status: EmailStatusEnum.SENT,
+          reason: null,
+          webhookEventId: 'test-webhook-event-id',
+          occurredAt: new Date('2026-09-02T10:00:00.000Z'),
+        };
 
-      const result = await service.createStatus(statusCreateDto);
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { webhookEventId: statusCreateDto.webhookEventId },
+        mockRepository.findOne.mockResolvedValue(null);
+        mockRepository.create.mockReturnValue(mockEmailStatus);
+        mockRepository.save.mockResolvedValue(mockEmailStatus);
+
+        const result = await service.createStatus(statusCreateDto);
+
+        expect(mockRepository.findOne).toHaveBeenCalledWith({
+          where: { webhookEventId: statusCreateDto.webhookEventId },
+        });
+        expect(mockRepository.create).toHaveBeenCalledWith(expectedCreatedData);
+        expect(mockRepository.save).toHaveBeenCalledWith(mockEmailStatus);
+        expect(result).toEqual(mockEmailStatus);
       });
-      expect(mockRepository.create).toHaveBeenCalledWith(statusCreateDto);
-      expect(mockRepository.save).toHaveBeenCalledWith(mockEmailStatus);
-      expect(result).toEqual(mockEmailStatus);
-    });
 
-    it('should return the existing entry without creating a new one on a duplicate webhookEventId', async () => {
-      mockRepository.findOne.mockResolvedValue(mockEmailStatus);
+      it('should return the existing entry without creating a new one on a duplicate webhookEventId', async () => {
+        mockRepository.findOne.mockResolvedValue(mockEmailStatus);
 
-      const result = await service.createStatus(statusCreateDto);
+        const result = await service.createStatus(statusCreateDto);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { webhookEventId: statusCreateDto.webhookEventId },
+        expect(mockRepository.findOne).toHaveBeenCalledWith({
+          where: { webhookEventId: statusCreateDto.webhookEventId },
+        });
+        expect(mockRepository.create).not.toHaveBeenCalled();
+        expect(mockRepository.save).not.toHaveBeenCalled();
+        expect(result).toEqual(mockEmailStatus);
       });
-      expect(mockRepository.create).not.toHaveBeenCalled();
-      expect(mockRepository.save).not.toHaveBeenCalled();
-      expect(result).toEqual(mockEmailStatus);
-    });
 
-    it('should throw InternalServerErrorException if save fails', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
-      mockRepository.create.mockReturnValue(mockEmailStatus);
-      mockRepository.save.mockRejectedValue(new Error('DB error'));
+      it('should throw InternalServerErrorException if save fails', async () => {
+        mockRepository.findOne.mockResolvedValue(null);
+        mockRepository.create.mockReturnValue(mockEmailStatus);
+        mockRepository.save.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.createStatus(statusCreateDto)).rejects.toThrow(
-        InternalServerErrorException,
-      );
-    });
+        await expect(service.createStatus(statusCreateDto)).rejects.toThrow(
+          InternalServerErrorException,
+        );
+      });
 
-    it('should throw InternalServerErrorException if the duplicate check fails', async () => {
-      mockRepository.findOne.mockRejectedValue(new Error('DB error'));
+      it('should throw InternalServerErrorException if the duplicate check fails', async () => {
+        mockRepository.findOne.mockRejectedValue(new Error('DB error'));
 
-      await expect(service.createStatus(statusCreateDto)).rejects.toThrow(
-        InternalServerErrorException,
-      );
-      expect(mockRepository.create).not.toHaveBeenCalled();
-    });
+        await expect(service.createStatus(statusCreateDto)).rejects.toThrow(
+          InternalServerErrorException,
+        );
+        expect(mockRepository.create).not.toHaveBeenCalled();
+      });
   });
 
   describe('getStatus', () => {
