@@ -1,5 +1,40 @@
+// Some event types and methods may be removed or changed once the frontend dashboard is finalised.
+
+/**
+ * Service: analytics-service
+ *
+ * Contains the business logic for analytics aggregation.
+ * Stores raw events in the analytics_events table and maintains
+ * mirrored data for users, campaigns, clicks, and simulation sends.
+ * Provides dashboard-ready summaries, time series, department breakdowns,
+ * at-risk user lists, and campaign performance.
+ *
+ * Functions:
+ * - {@link AnalyticsService#recordEvent} - Persists a generic analytics event.
+ * - {@link AnalyticsService#getOverview} - Returns raw counts for the legacy overview endpoint.
+ * - {@link AnalyticsService#getReportStats} - Aggregates report submission counts and detection rate.
+ * - {@link AnalyticsService#getMailingStats} - Aggregates sent and scheduled simulation counts.
+ * - {@link AnalyticsService#getUserStats} - Returns analytics for a single user.
+ * - {@link AnalyticsService#getTimeSeries} - Groups events per day for charting.
+ * - {@link AnalyticsService#getLeaderboard} - Ranks users by XP.
+ * - {@link AnalyticsService#upsertUser} - Inserts or updates a mirrored analytics user.
+ * - {@link AnalyticsService#deleteUser} - Removes a mirrored analytics user.
+ * - {@link AnalyticsService#upsertCampaign} - Inserts or updates a mirrored campaign.
+ * - {@link AnalyticsService#deleteCampaign} - Removes a mirrored campaign.
+ * - {@link AnalyticsService#recordSimulationSend} - Records a sent simulation email.
+ * - {@link AnalyticsService#recordClickFromEmailId} - Records a click based on Resend email ID.
+ * - {@link AnalyticsService#recordClickFromAuth0Id} - Fallback click recording when only auth0Id is known.
+ * - {@link AnalyticsService#getSummary} - Returns KPI cards with deltas.
+ * - {@link AnalyticsService#getDetectionRateOverTime} - Daily detection and click rate series.
+ * - {@link AnalyticsService#getByDepartment} - Breaks down stats per department.
+ * - {@link AnalyticsService#getAtRiskUsers} - Lists users with high click rates.
+ * - {@link AnalyticsService#getCampaigns} - Lists campaigns and marks completed ones.
+ */
+
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+
+
 import {
   Repository,
   Between,
@@ -9,10 +44,15 @@ import {
   QueryFailedError,
 } from 'typeorm';
 import {
+
+
+
+
   AnalyticsEvent,
   AnalyticsEventType,
 } from './entities/analytics-event.entity';
 import { AnalyticsUser } from './entities/analytics-user.entity';
+
 import { Campaign } from './entities/campaign.entity';
 import { ClickEvent } from './entities/click-event.entity';
 import { SimulationSend } from './entities/simulation-send.entity';
@@ -22,6 +62,8 @@ interface RecordEventInput {
   auth0Id?: string;
   email?: string;
   payload?: Record<string, unknown>;
+
+
 }
 
 export interface AtRiskUser {
@@ -33,6 +75,8 @@ export interface AtRiskUser {
 }
 
 @Injectable()
+
+
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
   constructor(
@@ -42,6 +86,8 @@ export class AnalyticsService {
     private readonly userRepo: Repository<AnalyticsUser>,
     @InjectRepository(Campaign)
     private readonly campaignRepo: Repository<Campaign>,
+
+
     @InjectRepository(ClickEvent)
     private readonly clickRepo: Repository<ClickEvent>,
     @InjectRepository(SimulationSend)
@@ -71,6 +117,7 @@ export class AnalyticsService {
         where: { eventType: AnalyticsEventType.EMAIL_BATCH_SENT },
       }),
       this.repo.count({
+
         where: { eventType: AnalyticsEventType.REPORT_SUBMITTED },
       }),
       this.repo.count({
@@ -99,6 +146,7 @@ export class AnalyticsService {
     };
   }
 
+  //nice addition for reports page on the frontend, this will give the counts for the reports and the detection rate, which is the confirmed reports over the total reports.
   async getReportStats(from?: string, to?: string) {
     const where = this.makeWhere(from, to);
 
@@ -124,6 +172,7 @@ export class AnalyticsService {
   }
 
   async getMailingStats(from?: string, to?: string) {
+
     const where = this.makeWhere(from, to);
 
     const [sent, scheduled, batchSent, batchScheduled] = await Promise.all([
@@ -153,6 +202,7 @@ export class AnalyticsService {
       [
         this.repo.count({
           where: { auth0Id, eventType: AnalyticsEventType.REPORT_SUBMITTED },
+
         }),
         this.repo.count({
           where: { auth0Id, eventType: AnalyticsEventType.REPORT_CONFIRMED },
@@ -179,6 +229,7 @@ export class AnalyticsService {
 
     return {
       reports,
+
       confirmed,
       falsePositive: falsePos,
       totalXp,
@@ -204,6 +255,8 @@ export class AnalyticsService {
       string,
       { reports: number; emailsSent: number; xpGiven: number }
     >();
+
+
 
     for (const e of events) {
       const day = e.occurredAt.toISOString().split('T')[0];
@@ -233,6 +286,7 @@ export class AnalyticsService {
       where: { eventType: AnalyticsEventType.XP_GIVEN },
     });
     const confirmedReports = await this.repo.find({
+
       where: { eventType: AnalyticsEventType.REPORT_CONFIRMED },
     });
 
@@ -255,9 +309,13 @@ export class AnalyticsService {
 
     for (const e of confirmedReports) {
       if (!e.auth0Id) continue;
+
       const entry = users.get(e.auth0Id);
       if (entry) entry.reportCount++;
     }
+
+
+
 
     return Array.from(users.entries())
       .map(([auth0Id, data]) => ({
@@ -275,7 +333,10 @@ export class AnalyticsService {
   private async sumXp(): Promise<number> {
     const events = await this.repo.find({
       where: { eventType: AnalyticsEventType.XP_GIVEN },
+
+
     });
+
     return events.reduce((sum, e) => {
       const val = e.payload?.['amount'];
       return sum + (typeof val === 'number' ? val : 0);
@@ -290,12 +351,15 @@ export class AnalyticsService {
       return {
         occurredAt: MoreThanOrEqual(new Date(from)),
       };
+
     if (to)
       return {
         occurredAt: LessThanOrEqual(new Date(to)),
       };
     return {};
   }
+
+
 
   async upsertUser(user: {
     auth0Id: string;
@@ -316,10 +380,13 @@ export class AnalyticsService {
       return await this.userRepo.save(newUser);
     } catch (err: unknown) {
       if (err instanceof QueryFailedError) {
+
+
         const driverError = err.driverError as { code?: string } | undefined;
         if (driverError?.code === '23505') {
           this.logger.warn(
             `Duplicate user event for ${user.auth0Id}, ignoring`,
+            // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
           );
           return;
         }
@@ -332,6 +399,8 @@ export class AnalyticsService {
     await this.userRepo.delete({ auth0Id });
   }
 
+
+  //just need to make sure about these events form darius to ensure this works well.
   async upsertCampaign(campaign: Partial<Campaign>) {
     const existing = await this.campaignRepo.findOne({
       where: { id: campaign.id },
@@ -340,14 +409,17 @@ export class AnalyticsService {
       Object.assign(existing, campaign);
       return this.campaignRepo.save(existing);
     }
+
     const newCampaign = this.campaignRepo.create(campaign);
     return this.campaignRepo.save(newCampaign);
   }
 
   async deleteCampaign(campaignId: string): Promise<void> {
+
+
     await this.campaignRepo.delete({ id: campaignId });
   }
-
+  //also check mailing events here
   async recordSimulationSend(input: {
     emailId: string;
     referenceNumber: string;
@@ -367,6 +439,7 @@ export class AnalyticsService {
       if (input.referenceNumber !== undefined)
         existing.referenceNumber = input.referenceNumber;
       if (input.sentAt !== undefined) existing.sentAt = input.sentAt;
+      // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
       await this.sendRepo.save(existing);
       return;
     }
@@ -378,6 +451,7 @@ export class AnalyticsService {
   async recordClickFromEmailId(emailId: string): Promise<void> {
     const send = await this.sendRepo.findOne({
       where: { emailId },
+
     });
 
     if (!send) {
@@ -387,13 +461,14 @@ export class AnalyticsService {
 
     const click = this.clickRepo.create({
       referenceNumber: send.referenceNumber,
+
       auth0Id: send.auth0Id,
       campaignId: send.campaignId,
     });
 
     await this.clickRepo.save(click);
   }
-
+  //similar to overview, but fo phase 2/3 of the analytics service as discussed with Frikkie.
   async getSummary(periodDays = 30) {
     const now = new Date();
     const currentStart = new Date(now.getTime() - periodDays * 86400000);
@@ -402,7 +477,10 @@ export class AnalyticsService {
     );
 
     const current = await this.getPeriodStats(currentStart, now);
+
     const previous = await this.getPeriodStats(previousStart, currentStart);
+
+
 
     const currentAtRisk = await this.getAtRiskUsers(
       periodDays,
@@ -429,8 +507,11 @@ export class AnalyticsService {
         value: current.clickRate,
         delta: delta(current.clickRate, previous.clickRate),
       },
+
+
       totalSimulations: {
         value: current.totalEmailsSent,
+
         delta: delta(current.totalEmailsSent, previous.totalEmailsSent),
       },
       atRiskUsers: {
@@ -446,11 +527,13 @@ export class AnalyticsService {
       },
     };
   }
-
+  //TODO: finish getPeriodStats function to also compute the at risk users if necessary. Will check how it works without first.
   private async getPeriodStats(start: Date, end: Date) {
     const [
       totalEmailsSent,
       totalReports,
+
+
       confirmedPhishing,
       totalClicks,
       educationAssigned,
@@ -467,6 +550,8 @@ export class AnalyticsService {
       }),
       this.repo.count({
         where: {
+
+
           eventType: AnalyticsEventType.REPORT_SUBMITTED,
           occurredAt: Between(start, end),
         },
@@ -490,13 +575,17 @@ export class AnalyticsService {
           occurredAt: Between(start, end),
         },
       }),
+
+
+
     ]);
 
     const detectionRate =
       totalReports > 0 ? (confirmedPhishing / totalReports) * 100 : 0;
     const clickRate =
       totalEmailsSent > 0 ? (totalClicks / totalEmailsSent) * 100 : 0;
-    // At-risk users: you need per-user click rates, which we don't compute here. Placeholder 0.
+    // At-risk users: you need per-user click rates, which we don't compute here. Placeh
+    // older 0.
     const atRiskUsers = 0;
     const trainingCompletionRate =
       educationAssigned > 0
@@ -511,7 +600,7 @@ export class AnalyticsService {
       trainingCompletionRate,
     };
   }
-
+  //might need some math help to get the date stuff just right. Will see though.
   async getDetectionRateOverTime(periodDays = 30) {
     const start = new Date(Date.now() - periodDays * 86400000);
     const reports = await this.repo.find({
@@ -530,7 +619,7 @@ export class AnalyticsService {
     const clicks = await this.clickRepo.find({
       where: { clickedAt: MoreThanOrEqual(start) },
     });
-
+    // Initialize the byDay map with all days in the period
     const byDay = new Map<
       string,
       { reports: number; confirmed: number; sent: number; clicks: number }
@@ -541,35 +630,39 @@ export class AnalyticsService {
         .split('T')[0];
       byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
     }
-
+    //go through the reports, sends, and clicks to populate the byDay map with counts for each day in the period.
     for (const e of reports) {
       const day = e.occurredAt.toISOString().split('T')[0];
       if (!byDay.has(day))
         byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
+      // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
+
       const b = byDay.get(day);
       if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) b.reports++;
       if (e.eventType === AnalyticsEventType.REPORT_CONFIRMED) b.confirmed++;
     }
-
+    // loop through the sends and clicks to populate the byDay map with counts for each day in the period.
     for (const s of sends) {
       if (!s.sentAt) continue;
       const day = s.sentAt.toISOString().split('T')[0];
       if (!byDay.has(day))
         byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
       byDay.get(day).sent++;
-    }
+    } // loop through the clicks to populate the byDay map with counts for each day in the period.
 
     for (const c of clicks) {
       const day = c.clickedAt.toISOString().split('T')[0];
       if (!byDay.has(day))
         byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
       byDay.get(day).clicks++;
+      // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
     }
 
     return Array.from(byDay.entries()).map(([date, data]) => ({
       date,
       detectionRate:
         data.reports > 0 ? (data.confirmed / data.reports) * 100 : 0,
+
       clickRate: data.sent > 0 ? (data.clicks / data.sent) * 100 : 0,
     }));
   }
@@ -611,6 +704,7 @@ export class AnalyticsService {
           confirmed: 0,
           clicked: 0,
         });
+        //console.log(`user ${u.auth0Id} in department ${u.department}`);
       }
     }
 
@@ -626,10 +720,12 @@ export class AnalyticsService {
     // reports
     for (const e of reports) {
       const dept = e.auth0Id ? authToDept.get(e.auth0Id) : undefined;
+      // console.log(`report event for user ${e.auth0Id} in department ${dept} at ${e.occurredAt}`);
       if (!dept) continue;
       if (!deptMap.has(dept))
         deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
       const b = deptMap.get(dept);
+
       if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) b.reported++;
       if (e.eventType === AnalyticsEventType.REPORT_CONFIRMED) b.confirmed++;
     }
@@ -642,7 +738,7 @@ export class AnalyticsService {
         deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
       deptMap.get(dept).clicked++;
     }
-
+    // Compute the final results
     return Array.from(deptMap.entries()).map(([department, d]) => ({
       department,
       sent: d.sent,
@@ -651,7 +747,7 @@ export class AnalyticsService {
       clickRate: d.sent > 0 ? (d.clicked / d.sent) * 100 : 0,
     }));
   }
-
+  // will use this in conjunction with resend webhook. Check the webhook with Darius to ensure this works well. This will be used to get the at risk users, which is defined as users with a click rate above 30% in the given period.
   async getAtRiskUsers(
     periodDays = 30,
     limit = 10,
@@ -670,15 +766,18 @@ export class AnalyticsService {
     });
 
     const userSends = new Map<string, number>();
+
     const userClicks = new Map<string, number>();
 
     for (const s of sends) {
       if (s.auth0Id)
         userSends.set(s.auth0Id, (userSends.get(s.auth0Id) ?? 0) + 1);
+      // console.log(`send event for user ${s.auth0Id} at ${s.sentAt}`);
     }
     for (const c of clicks) {
       if (c.auth0Id)
         userClicks.set(c.auth0Id, (userClicks.get(c.auth0Id) ?? 0) + 1);
+      // console.log(`click event for user ${c.auth0Id} at ${c.clickedAt}`);
     }
 
     const users = await this.userRepo.find();
@@ -696,6 +795,7 @@ export class AnalyticsService {
 
       result.push({
         auth0Id,
+
         name: user.name,
         department: user.department,
         clickRate: Math.round(clickRate),
@@ -716,6 +816,8 @@ export class AnalyticsService {
     return campaigns.map((campaign) => {
       if (campaign.endDate && campaign.endDate < now) {
         return { ...campaign, status: 'completed' };
+        // debugging
+        // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
       }
       return campaign;
     });
