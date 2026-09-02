@@ -89,6 +89,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   const [generating, setGenerating] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
+  const [generatedDifficulty, setGeneratedDifficulty] = useState<Difficulty | null>(null);
 
   const setField = <K extends keyof GenerateEmailForm>(field: K, value: GenerateEmailForm[K]): void => {
     setForm((previous) => ({
@@ -157,6 +158,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
 
       setTemplates(result.templates);
       setSelectedTemplateIds(result.templates.map((template) => template.id));
+      setGeneratedDifficulty(form.difficulty);
 
       if (result.failed > 0) {
         addToast({
@@ -213,7 +215,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
             alias: form.alias.trim() || undefined,
             subject: template.subject,
             content: template.body,
-            difficulty: form.difficulty,
+            difficulty: generatedDifficulty ?? form.difficulty,
           }),
         )
       );
@@ -579,11 +581,18 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                           color: 'var(--text-secondary)',
                         }}
                       >
-                        <div
-                            dangerouslySetInnerHTML={{
-                              __html: template.body,
-                            }}
-                          />
+                        <pre
+                          style={{
+                            margin: 4,
+                            fontSize: 12,
+                            lineHeight: 1.5,
+                            whiteSpace: 'pre-wrap',
+                            overflowWrap: 'anywhere',
+                            fontFamily: 'monospace'
+                          }}
+                        >
+                          {template.body}
+                        </pre>
                       </div>
                     </div>
                   </div>
