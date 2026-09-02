@@ -30,7 +30,7 @@ switch(input) {
     case 'prod-compose.yml': { file =  'prod-compose.yml'; break; }
     case 'prod-green.yml': { file =  'prod-green.yml'; break; }
     case 'prod-infrastructure.yml': { file = 'prod-infrastructure.yml'; break; }
-    default: throw Error('bad input');
+    default: throw new Error('bad input');
 };
 
 const prodFile = file;
