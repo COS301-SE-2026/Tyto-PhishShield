@@ -93,11 +93,12 @@ export class AccountsController {
     );
     if (valid) {
       const accountsRegister = body as RegisterDto;
-      const register = await this.proxy.forward({
-        url: `${this.accountsServiceUrl}/api/auth/register`,
-        method: 'POST',
-        data: accountsRegister,
-      });
+      const register: { response: string; message: string } =
+        await this.proxy.forward({
+          url: `${this.accountsServiceUrl}/api/auth/register`,
+          method: 'POST',
+          data: accountsRegister,
+        });
       if (register.response === 'ok')
         await this.accountsService.updateEmployeeAsRegistered(body.employeeId);
 
