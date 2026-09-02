@@ -166,7 +166,7 @@ export class XpService {
     try {
       const xp_entry = this.xpRepository.create({
         userId: user.id,
-        amount: -40,
+        amount: -15,
         reason: XpReason.COMPROMISED,
       });
 
