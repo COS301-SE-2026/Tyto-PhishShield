@@ -15,11 +15,12 @@ import {
   UseGuards,
   HttpCode,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import { type Request, type Response } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
@@ -29,6 +30,8 @@ import { AccountsService } from './accounts.service';
 import { LoginDto } from '../dto/login.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ApiRegisterDto } from '../dto/register.dto';
+import { RegisterDto } from '@phishshield/dto';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -62,10 +65,11 @@ export class AccountsController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['email', 'password'],
+      required: ['email', 'password', 'employeeId'],
       properties: {
         email: { type: 'string', example: 'test@example.com' },
         password: { type: 'string', example: 'Password123!' },
+        employeeId: { type: 'string', example: 'emp-id.0123456789' },
         name: { type: 'string', example: 'Test User' },
         department: {
           type: 'string',
@@ -82,12 +86,27 @@ export class AccountsController {
       },
     },
   })
-  register(@Body() body: unknown) {
-    return this.proxy.forward({
-      url: `${this.accountsServiceUrl}/api/auth/register`,
-      method: 'POST',
-      data: body,
-    });
+  async register(@Body() body: ApiRegisterDto) {
+    const valid = await this.accountsService.validateEmployeeId(
+      body.employeeId,
+      body.email,
+    );
+    if (valid) {
+      const accountsRegister = body as RegisterDto;
+      const register: { response: string; message: string } =
+        await this.proxy.forward({
+          url: `${this.accountsServiceUrl}/api/auth/register`,
+          method: 'POST',
+          data: accountsRegister,
+        });
+      if (register.response === 'ok')
+        await this.accountsService.updateEmployeeAsRegistered(body.employeeId);
+
+      return register;
+    }
+    throw new BadRequestException(
+      'Could not register employee. If this issue presists please contact the admin.',
+    );
   }
 
   @Public()

@@ -1,9 +1,10 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, useRef } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
 import type { EmailDifficulty } from "../../services/send-batch-email";
 import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate } from '../../services/email-template';
+import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
 
 interface CreateEmailProps {
     onNavigate: (path: string) => void;
@@ -57,6 +58,26 @@ export function CreateEmail({
   const [createdTemplate, setCreatedTemplate] =
     useState<EmailTemplate | null>(null);
   const [copying, setCopying] = useState(false);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertPlaceholder = (placeholder: string) => {
+    const textarea = contentRef.current;
+
+    if (!textarea){
+        return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newContent = form.content.slice(0, start) + placeholder + form.content.slice(end);
+
+    setField('content', newContent);
+    requestAnimationFrame(() => {
+        const cursorPosition = start + placeholder.length;
+        textarea.focus();
+        textarea.setSelectionRange(cursorPosition, cursorPosition);
+    });
+  }
 
   const setField = <K extends keyof EmailForm>(
     field: K,
@@ -283,7 +304,38 @@ export function CreateEmail({
                     </span>
                     </label>
 
+                    <p
+                        style={{
+                            marginBottom: 8,
+                            fontSize: 11,
+                            color: 'var(--text-muted)',
+                        }}
+                    >
+                        Insert a placeholder:
+                    </p>
+
+                    <div
+                        style={{
+                            display:'flex',
+                            gap: 8,
+                            marginBottom: 8,
+                            flexWrap: 'wrap'
+                        }}
+                    >
+                        {EMAIL_PLACEHOLDERS.map((placeholder) => (
+                            <Button
+                                key={placeholder.value}
+                                type="button"
+                                size="sm"
+                                onClick={() => insertPlaceholder(placeholder.value)}
+                            >
+                                {placeholder.label}
+                            </Button>
+                        ))}
+                    </div>
+
                     <textarea
+                    ref={contentRef}
                     rows={10}
                     placeholder="Enter the HTML or text content of the phishing email..."
                     value={form.content}
