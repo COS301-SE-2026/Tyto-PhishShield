@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useAuth } from './auth-context';
 import { fetchNotifications, type AppNotification } from '../services/notifications';
 import { connectXpSocket } from '../services/xp-socket';
@@ -47,7 +47,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [rawNotifications, setRawNotifications] = useState<AppNotification[]>([]);
   const [lastSeenAt, setLastSeenAt] = useState(() => localStorage.getItem(LAST_SEEN_KEY) ?? new Date(0).toISOString());
-  const [preferences, setPreferencesState] = useState<NotificationPreferences>(() => loadPreferences());
+  const [preferences, setPreferences] = useState<NotificationPreferences>(() => loadPreferences());
 
   const refresh = useCallback(async () => {
     if (!user?.auth0Id) return;
@@ -84,8 +84,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setLastSeenAt(now);
   }, []);
 
-  const setPreferences = useCallback((prefs: NotificationPreferences) => {
-    setPreferencesState(prefs);
+  const updatePreferences = useCallback((prefs: NotificationPreferences) => {
+    setPreferences(prefs);
     try {
       localStorage.setItem(PREFERENCES_KEY, JSON.stringify(prefs));
     } catch {
@@ -96,8 +96,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const notifications = applyPreferences(rawNotifications, preferences);
   const unreadCount = notifications.filter(n => new Date(n.timestamp).getTime() > new Date(lastSeenAt).getTime()).length;
 
+  const value = useMemo<NotificationContextValue>(() => ({
+    notifications, unreadCount, markAllRead, preferences, setPreferences: updatePreferences,
+  }), [notifications, unreadCount, markAllRead, preferences, updatePreferences]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAllRead, preferences, setPreferences }}>
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
