@@ -258,7 +258,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
         message: `${savedCount} template${savedCount === 1 ? '' : 's'} added to email templates database.`
       });
 
-      onNavigate('/emails/templates')
+      onNavigate('/emails')
     } catch (error) {
       console.error(error);
 
