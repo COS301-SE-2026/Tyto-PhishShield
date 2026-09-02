@@ -21,10 +21,14 @@ export class AppController {
       'returns all the services in which the tcp transport connections are open',
   })
   @ApiResponse({
-    type: Health
+    type: Health,
   })
   async checkHealth(): Promise<Health> {
-    return {api_version: process.env.VERSION, environment: process.env.ENVIRONMENT, services: await this.appService.checkMicroServicesHealth()};
+    return {
+      api_version: process.env.VERSION,
+      environment: process.env.ENVIRONMENT,
+      services: await this.appService.checkMicroServicesHealth(),
+    };
   }
 
   @Public()

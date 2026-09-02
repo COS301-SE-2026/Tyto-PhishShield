@@ -64,7 +64,7 @@ describe('AnalyticsService', () => {
   let campaignRepo: jest.Mocked<typeof mockCampaignRepo>;
   let clickRepo: jest.Mocked<typeof mockClickRepo>;
   let sendRepo: jest.Mocked<typeof mockSendRepo>;
-// make sure everything is mocked and check with backedn that they are fine with these tests.
+  // make sure everything is mocked and check with backedn that they are fine with these tests.
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -201,7 +201,7 @@ describe('AnalyticsService', () => {
 
       expect(result.detectionRate).toBe(0);
     });
-// this is important for all the filters to be working in tandem with each other.
+    // this is important for all the filters to be working in tandem with each other.
     it('passes date filters to repository count', async () => {
       const from = '2026-08-01';
       const to = '2026-08-10';
@@ -218,7 +218,7 @@ describe('AnalyticsService', () => {
       });
     });
   });
-// yet again make sure with darius for this one righ here.
+  // yet again make sure with darius for this one righ here.
   describe('getMailingStats', () => {
     it('combines sent and scheuled counts correctly', async () => {
       repo.count.mockImplementation(({ where }: any) => {
@@ -249,7 +249,7 @@ describe('AnalyticsService', () => {
       expect(result.scheduled).toBe(0);
     });
   });
-// ok all this should test is the getUserStats function and make sure it works as intended.
+  // ok all this should test is the getUserStats function and make sure it works as intended.
   describe('getUserStats', () => {
     const auth0Id = 'auth0|123';
 
@@ -388,7 +388,7 @@ describe('AnalyticsService', () => {
         },
       ]);
     });
-//IMPORTANT 
+    //IMPORTANT
     it('skips entries without auth0Id', async () => {
       const xpEvents = [
         { auth0Id: null, payload: { amount: 100 } }, // should be ignored
@@ -446,7 +446,7 @@ describe('AnalyticsService', () => {
       expect(userRepo.create).toHaveBeenCalledWith(user);
       expect(userRepo.save).toHaveBeenCalled();
     });
-// for per user stats
+    // for per user stats
     it('updates existing user', async () => {
       const existing = {
         auth0Id: 'auth0|1',
@@ -474,7 +474,7 @@ describe('AnalyticsService', () => {
         expect.objectContaining({ email: 'new@example.com' }),
       );
     });
-// didnt work at first, but works now after some help debuggin, check again to make sure here.
+    // didnt work at first, but works now after some help debuggin, check again to make sure here.
     it('ignores duplicate key error (23505)', async () => {
       const user = {
         auth0Id: 'auth0|dup',
@@ -539,7 +539,7 @@ describe('AnalyticsService', () => {
       );
     });
   });
-//this was also inconsistent at the start, but looks fine now.
+  //this was also inconsistent at the start, but looks fine now.
   describe('recordSimulationSend', () => {
     it('creates new send if not existing', async () => {
       const input = {
@@ -586,7 +586,7 @@ describe('AnalyticsService', () => {
       );
     });
   });
-//TODO: add some more tests for recordClickFromEmailId and recordClickFromAuth0Id, including edge cases and error handling.
+  //TODO: add some more tests for recordClickFromEmailId and recordClickFromAuth0Id, including edge cases and error handling.
   describe('recordClickFromEmailId', () => {
     it('creates click event when send exists', async () => {
       const send = {
@@ -713,7 +713,7 @@ describe('AnalyticsService', () => {
       expect(day.clickRate).toBe(100);
     });
   });
-//TODO: add tests for getByDepartment and getAtRiskUsers, including edge cases and error handling.
+  //TODO: add tests for getByDepartment and getAtRiskUsers, including edge cases and error handling.
   describe('getByDepartment', () => {
     it('aggregates by department', async () => {
       userRepo.find.mockResolvedValue([
@@ -777,7 +777,7 @@ describe('AnalyticsService', () => {
       expect(result[0].riskLevel).toBe('high');
     });
   });
-//TODO: add tests for getCampaigns, including edge cases and error handling.
+  //TODO: add tests for getCampaigns, including edge cases and error handling.
   describe('getCampaigns', () => {
     it('returns campaigns ordered by startDate desc', async () => {
       campaignRepo.find.mockResolvedValue([

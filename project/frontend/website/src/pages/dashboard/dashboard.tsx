@@ -434,7 +434,7 @@ function UserDashboard({ onNavigate, onXpGained }: { onNavigate: (p: string) => 
   const statsCards = [
     { lbl: 'XP Points',          val: myXp,                                        delta: xpDeltaLabel,                                         deltaColor: recentGain !== null ? 'var(--color-success)' : 'var(--text-muted)' },
     { lbl: 'Organisation Rank',  val: rankValue,                                   delta: rankDelta,                                             deltaColor: 'var(--text-muted)' },
-    { lbl: 'Reports Filed',      val: reportsCount !== null ? reportsCount : '—',  delta: reportsCount !== null ? 'Total submitted' : 'Loading…', deltaColor: 'var(--color-success)' },
+    { lbl: 'Reports Filed',      val: reportsCount ?? '—',                         delta: reportsCount !== null ? 'Total submitted' : 'Loading…', deltaColor: 'var(--color-success)' },
     { lbl: 'Current Streak',     val: streak !== null ? `${streak} days` : '—',    delta: streak !== null ? (streak > 0 ? 'Keep it up!' : 'No streak yet') : 'Loading…', deltaColor: streak !== null && streak > 0 ? 'var(--color-primary)' : 'var(--text-muted)' },
   ];
 
