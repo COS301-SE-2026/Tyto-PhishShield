@@ -17,3 +17,4 @@ jobs:
             - backend
             - frontend
         uses: ./.github/workflows/ci-integration.yml
+        secrets: inherit

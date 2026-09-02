@@ -34,7 +34,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-
 import {
   Repository,
   Between,
@@ -44,10 +43,6 @@ import {
   QueryFailedError,
 } from 'typeorm';
 import {
-
-
-
-
   AnalyticsEvent,
   AnalyticsEventType,
 } from './entities/analytics-event.entity';
@@ -62,8 +57,6 @@ interface RecordEventInput {
   auth0Id?: string;
   email?: string;
   payload?: Record<string, unknown>;
-
-
 }
 
 export interface AtRiskUser {
@@ -75,8 +68,6 @@ export interface AtRiskUser {
 }
 
 @Injectable()
-
-
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
   constructor(
@@ -86,7 +77,6 @@ export class AnalyticsService {
     private readonly userRepo: Repository<AnalyticsUser>,
     @InjectRepository(Campaign)
     private readonly campaignRepo: Repository<Campaign>,
-
 
     @InjectRepository(ClickEvent)
     private readonly clickRepo: Repository<ClickEvent>,
@@ -117,7 +107,6 @@ export class AnalyticsService {
         where: { eventType: AnalyticsEventType.EMAIL_BATCH_SENT },
       }),
       this.repo.count({
-
         where: { eventType: AnalyticsEventType.REPORT_SUBMITTED },
       }),
       this.repo.count({
@@ -172,7 +161,6 @@ export class AnalyticsService {
   }
 
   async getMailingStats(from?: string, to?: string) {
-
     const where = this.makeWhere(from, to);
 
     const [sent, scheduled, batchSent, batchScheduled] = await Promise.all([
@@ -202,7 +190,6 @@ export class AnalyticsService {
       [
         this.repo.count({
           where: { auth0Id, eventType: AnalyticsEventType.REPORT_SUBMITTED },
-
         }),
         this.repo.count({
           where: { auth0Id, eventType: AnalyticsEventType.REPORT_CONFIRMED },
@@ -245,7 +232,10 @@ export class AnalyticsService {
     reports: number,
     confirmed: number,
   ): number {
-    const xpScore = Math.max(0,Math.min(100, (totalXp / AnalyticsService.XP_MAX_SCORE) * 100),);
+    const xpScore = Math.max(
+      0,
+      Math.min(100, (totalXp / AnalyticsService.XP_MAX_SCORE) * 100),
+    );
     const detectionScore = reports > 0 ? (confirmed / reports) * 100 : 50;
     return Math.round(0.5 * xpScore + 0.5 * detectionScore);
   }
@@ -269,8 +259,6 @@ export class AnalyticsService {
       string,
       { reports: number; emailsSent: number; xpGiven: number }
     >();
-
-
 
     for (const e of events) {
       const day = e.occurredAt.toISOString().split('T')[0];
@@ -300,7 +288,6 @@ export class AnalyticsService {
       where: { eventType: AnalyticsEventType.XP_GIVEN },
     });
     const confirmedReports = await this.repo.find({
-
       where: { eventType: AnalyticsEventType.REPORT_CONFIRMED },
     });
 
@@ -328,9 +315,6 @@ export class AnalyticsService {
       if (entry) entry.reportCount++;
     }
 
-
-
-
     return Array.from(users.entries())
       .map(([auth0Id, data]) => ({
         auth0Id,
@@ -347,8 +331,6 @@ export class AnalyticsService {
   private async sumXp(): Promise<number> {
     const events = await this.repo.find({
       where: { eventType: AnalyticsEventType.XP_GIVEN },
-
-
     });
 
     return events.reduce((sum, e) => {
@@ -373,8 +355,6 @@ export class AnalyticsService {
     return {};
   }
 
-
-
   async upsertUser(user: {
     auth0Id: string;
     email?: string;
@@ -394,8 +374,6 @@ export class AnalyticsService {
       return await this.userRepo.save(newUser);
     } catch (err: unknown) {
       if (err instanceof QueryFailedError) {
-
-
         const driverError = err.driverError as { code?: string } | undefined;
         if (driverError?.code === '23505') {
           this.logger.warn(
@@ -413,7 +391,6 @@ export class AnalyticsService {
     await this.userRepo.delete({ auth0Id });
   }
 
-
   //just need to make sure about these events form darius to ensure this works well.
   async upsertCampaign(campaign: Partial<Campaign>) {
     const existing = await this.campaignRepo.findOne({
@@ -429,8 +406,6 @@ export class AnalyticsService {
   }
 
   async deleteCampaign(campaignId: string): Promise<void> {
-
-
     await this.campaignRepo.delete({ id: campaignId });
   }
   //also check mailing events here
@@ -465,7 +440,6 @@ export class AnalyticsService {
   async recordClickFromEmailId(emailId: string): Promise<void> {
     const send = await this.sendRepo.findOne({
       where: { emailId },
-
     });
 
     if (!send) {
@@ -494,8 +468,6 @@ export class AnalyticsService {
 
     const previous = await this.getPeriodStats(previousStart, currentStart);
 
-
-
     const currentAtRisk = await this.getAtRiskUsers(
       periodDays,
       1000,
@@ -522,7 +494,6 @@ export class AnalyticsService {
         delta: delta(current.clickRate, previous.clickRate),
       },
 
-
       totalSimulations: {
         value: current.totalEmailsSent,
 
@@ -547,7 +518,6 @@ export class AnalyticsService {
       totalEmailsSent,
       totalReports,
 
-
       confirmedPhishing,
       totalClicks,
       educationAssigned,
@@ -564,8 +534,6 @@ export class AnalyticsService {
       }),
       this.repo.count({
         where: {
-
-
           eventType: AnalyticsEventType.REPORT_SUBMITTED,
           occurredAt: Between(start, end),
         },
@@ -589,9 +557,6 @@ export class AnalyticsService {
           occurredAt: Between(start, end),
         },
       }),
-
-
-
     ]);
 
     const detectionRate =

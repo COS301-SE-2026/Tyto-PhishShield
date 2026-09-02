@@ -52,9 +52,7 @@ describe('LlmController (e2e, real gateway)', () => {
         count: 2,
       });
 
-    if (response.status !== 200) {
-      console.error('Validation/Server Error Details:', response.body);
-    }
+    expect(response.status).toBe(200);
 
     const body = response.body as GeneratedTemplatesResponseDto;
 

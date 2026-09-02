@@ -88,8 +88,6 @@ class TestJwtStrategy extends PassportStrategy(Strategy) {
       issuer: `https://${config.get<string>('AUTH0_DOMAIN')}/`,
       algorithms: ['RS256'],
     });
-
-
   }
 
   validate(payload: any) {
@@ -100,8 +98,6 @@ class TestJwtStrategy extends PassportStrategy(Strategy) {
       role: payload['https://phishshield/roles']?.[0] ?? 'user',
     };
   }
-
-
 }
 // make sure these are actual integration tests and not just unit tests with mocks, so we use the real controller and service
 //  with mocked
@@ -117,7 +113,6 @@ describe('Analytics (integration)', () => {
 
   beforeAll(async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
-
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
@@ -139,7 +134,6 @@ describe('Analytics (integration)', () => {
         TestJwtStrategy,
         AnalyticsService,
 
-
         //so as we can see here the only thing that is being mocked is the repository and the amqp connection, which is fine because we are testing the controller and service
         { provide: getRepositoryToken(AnalyticsEvent), useValue: mockRepo },
         { provide: getRepositoryToken(AnalyticsUser), useValue: mockUserRepo },
@@ -155,7 +149,7 @@ describe('Analytics (integration)', () => {
       new ValidationPipe({ whitelist: true, transform: true }),
     );
     await app.init();
-// get the service and repositories from the testing module
+    // get the service and repositories from the testing module
     analyticsService = moduleFixture.get<AnalyticsService>(AnalyticsService);
 
     repo = moduleFixture.get(getRepositoryToken(AnalyticsEvent));
@@ -173,8 +167,6 @@ describe('Analytics (integration)', () => {
     jest.clearAllMocks();
   });
 
-
-
   const createToken = () =>
     jwt.sign(
       {
@@ -186,7 +178,6 @@ describe('Analytics (integration)', () => {
         exp: Math.floor(Date.now() / 1000) + 3600,
       },
       privateKeyPem,
-
 
       { algorithm: 'RS256', keyid: 'test-kid' },
     );
@@ -201,7 +192,6 @@ describe('Analytics (integration)', () => {
     it('accepts valid token', async () => {
       repo.count.mockResolvedValue(0);
       repo.find.mockResolvedValue([]);
-
 
       await request(app.getHttpServer())
         .get('/analytics/overview')
@@ -221,7 +211,6 @@ describe('Analytics (integration)', () => {
           case AnalyticsEventType.EMAIL_BATCH_SENT:
             return 5;
 
-
           case AnalyticsEventType.REPORT_SUBMITTED:
             return 20;
           case AnalyticsEventType.REPORT_CONFIRMED:
@@ -233,8 +222,6 @@ describe('Analytics (integration)', () => {
           case AnalyticsEventType.EDUCATION_COMPLETED:
             return 6;
           default:
-
-
             return 0;
         }
       });
@@ -253,7 +240,6 @@ describe('Analytics (integration)', () => {
         totalEmailsSent: 15,
         totalReports: 20,
 
-
         confirmedPhishing: 8,
         falsePositives: 12,
         totalXpGiven: 35,
@@ -262,7 +248,7 @@ describe('Analytics (integration)', () => {
       });
     });
   });
-// check with Frikkie, this is importatn.
+  // check with Frikkie, this is importatn.
   describe('GET /analytics/reports', () => {
     it('returns repot stats with date filters', async () => {
       repo.count.mockImplementation(({ where }: any) => {
@@ -270,7 +256,6 @@ describe('Analytics (integration)', () => {
         if (where?.eventType === AnalyticsEventType.REPORT_CONFIRMED) return 8;
         if (where?.eventType === AnalyticsEventType.REPORT_FALSE_POSITIVE)
           return 12;
-
 
         return 0;
       });
@@ -289,8 +274,6 @@ describe('Analytics (integration)', () => {
     });
 
     it('returns zero detection rate when no reports', async () => {
-
-
       repo.count.mockResolvedValue(0);
 
       const res = await request(app.getHttpServer())
@@ -301,12 +284,10 @@ describe('Analytics (integration)', () => {
       expect(res.body.detectionRate).toBe(0);
     });
   });
-//double check.
+  //double check.
   describe('GET /analytics/mailing', () => {
     it('returns mailing stats', async () => {
       repo.count.mockImplementation(({ where }: any) => {
-
-
         switch (where?.eventType) {
           case AnalyticsEventType.EMAIL_SENT:
             return 15;
@@ -324,15 +305,13 @@ describe('Analytics (integration)', () => {
         .set('Authorization', `Bearer ${createToken()}`)
         .expect(200);
 
-
-
       expect(res.body).toEqual({
         totalSent: 21,
         scheduled: 8,
       });
     });
   });
-//TODO: Add more test cases for different date ranges and event types
+  //TODO: Add more test cases for different date ranges and event types
   describe('GET /analytics/timeseries', () => {
     it('returns daly time series', async () => {
       const events = [
@@ -344,7 +323,6 @@ describe('Analytics (integration)', () => {
           occurredAt: new Date('2026-08-01T11:00:00Z'),
           eventType: AnalyticsEventType.REPORT_SUBMITTED,
         },
-
 
         {
           occurredAt: new Date('2026-08-01T12:00:00Z'),
@@ -374,9 +352,8 @@ describe('Analytics (integration)', () => {
       ]);
     });
   });
-//TODO: Add more test cases for different date ranges and event types
+  //TODO: Add more test cases for different date ranges and event types
   describe('GET /analytics/leaderboard', () => {
-
     it('returns leadrboard with limit', async () => {
       repo.find
         .mockResolvedValueOnce([
@@ -394,7 +371,6 @@ describe('Analytics (integration)', () => {
         .mockResolvedValueOnce([
           { auth0Id: 'user1' },
           { auth0Id: 'user1' },
-
         ] as any);
 
       const res = await request(app.getHttpServer())
@@ -414,7 +390,6 @@ describe('Analytics (integration)', () => {
           case AnalyticsEventType.REPORT_SUBMITTED:
             return 5;
 
-
           case AnalyticsEventType.REPORT_CONFIRMED:
             return 2;
           case AnalyticsEventType.REPORT_FALSE_POSITIVE:
@@ -426,9 +401,6 @@ describe('Analytics (integration)', () => {
         }
       });
       repo.find.mockResolvedValue([
-
-
-
         { payload: { amount: 50 } },
         { payload: { amount: 75 } },
       ] as any);
@@ -445,10 +417,6 @@ describe('Analytics (integration)', () => {
         securityScore: 33,
         totalXp: 125,
         educationCompleted: 1,
-
-
-
-
       });
     });
   });
@@ -470,8 +438,6 @@ describe('Analytics (integration)', () => {
           detectionRate: 25,
           clickRate: 4,
 
-
-
           atRiskUsers: 0,
           trainingCompletionRate: 40,
         });
@@ -488,14 +454,13 @@ describe('Analytics (integration)', () => {
 
       expect(res.body.detectionRate.value).toBe(20);
 
-
       expect(res.body.detectionRate.delta).toBeCloseTo(-20);
       expect(res.body.totalSimulations.value).toBe(100);
       expect(res.body.atRiskUsers.value).toBe(1);
       expect(res.body.trainingCompletion.value).toBe(50);
     });
   });
-//TODO: These test should be more comprehensive, but for now we just check that the endpoint returns data in the expected format. More detailed tests can be added later.
+  //TODO: These test should be more comprehensive, but for now we just check that the endpoint returns data in the expected format. More detailed tests can be added later.
   describe('GET /analytics/detection-rate-over-time', () => {
     it('returns daily detetion and click rates', async () => {
       repo.find.mockResolvedValue([
@@ -506,8 +471,6 @@ describe('Analytics (integration)', () => {
         {
           occurredAt: new Date('2026-08-01T11:00:00Z'),
           eventType: AnalyticsEventType.REPORT_CONFIRMED,
-
-
         },
       ] as any);
       sendRepo.find.mockResolvedValue([
@@ -528,7 +491,6 @@ describe('Analytics (integration)', () => {
     });
   });
 
-
   describe('GET /analytics/by-department', () => {
     it('returns departent breakdown', async () => {
       userRepo.find.mockResolvedValue([
@@ -545,7 +507,6 @@ describe('Analytics (integration)', () => {
           occurredAt: new Date(),
           eventType: AnalyticsEventType.REPORT_CONFIRMED,
           auth0Id: 'u1',
-
         },
       ] as any);
       sendRepo.find.mockResolvedValue([
@@ -564,7 +525,6 @@ describe('Analytics (integration)', () => {
       const finance = res.body.find((r: any) => r.department === 'Finance');
       expect(finance.detectionRate).toBe(100);
       expect(finance.clickRate).toBe(100);
-
     });
   });
 
@@ -583,8 +543,6 @@ describe('Analytics (integration)', () => {
         { auth0Id: 'u2', name: 'User Two', department: 'IT' },
       ] as any);
 
-
-
       const res = await request(app.getHttpServer())
         .get('/analytics/at-risk-users?period=7d&limit=5')
         .set('Authorization', `Bearer ${createToken()}`)
@@ -598,8 +556,6 @@ describe('Analytics (integration)', () => {
   });
 
   describe('GET /analytics/campaigns', () => {
-
-
     it('returns campagns', async () => {
       campaignRepo.find.mockResolvedValue([
         { id: 'wave-1', status: 'active', startDate: new Date('2026-08-01') },
@@ -611,8 +567,6 @@ describe('Analytics (integration)', () => {
         .set('Authorization', `Bearer ${createToken()}`)
         .expect(200);
 
-
-        
       expect(res.body).toHaveLength(2);
       expect(res.body[0].id).toBe('wave-1');
     });
