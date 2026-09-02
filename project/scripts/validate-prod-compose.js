@@ -3,22 +3,33 @@ const yaml = require('js-yaml');
 const { execSync } = require('node:child_process');
 
 const devFile = './project/docker-compose/dev-compose.yml';
-const prodFile = './project/docker-compose/' + process.argv[2];
+const input = process.argv[2];
 
-if (!prodFile) {
+if (!input) {
     throw 'Production file needs to be specified';
 }
 
 const possibleProdFiles = new Set ([
-    './project/docker-compose/prod-blue.yml',
-    './project/docker-compose/prod-compose.yml',
-    './project/docker-compose/prod-green.yml',
-    './project/docker-compose/prod-infrastructure.yml',
+    'prod-blue.yml',
+    'prod-compose.yml',
+    'prod-green.yml',
+    'prod-infrastructure.yml',
 ]);
 
-if (!possibleProdFiles.has(prodFile)) {
-    throw 'file listed is not a production related file';
+if (!possibleProdFiles.has(input)) {
+    throw new Error('file listed is not a production related file');
 }
+
+let file = '';
+//for security reasons
+switch(input) {
+    case 'prod-blue.yml': file = 'prod-blue.yml';
+    case 'prod-compose.yml': file =  'prod-compose.yml';
+    case 'prod-green.yml': file =  'prod-green.yml';
+    case 'prod-infrastructure.yml': file = 'prod-infrastructure.yml';
+};
+
+const prodFile = './project/docker-compose/' + file;
 
 const appServices = [
     /outlook_addin/,
@@ -46,7 +57,7 @@ function main() {
     const prod = yaml.load(fs.readFileSync(prodFile));
 
     if (!dev.services || !prod.services) {
-        throw 'services not found in yaml file';
+        throw new Error('services not found in yaml file');
     }
 
     const devServices = new Set(Object.keys(dev.services));
@@ -78,7 +89,7 @@ function main() {
         for (const service of missingServices) {
             console.log(`\n\t-${service}`);
         }
-        throw 'Ensure these services are included';
+        throw new Error('Ensure these services are included');
     }
 
     for (const service of devServices) {
@@ -144,7 +155,7 @@ function compareEnv(devService, prodService) {
         for (const env of missingFromProd) {
             console.log(`\n\t-${env}`);
         }
-        throw 'Ensure these envs are included';
+        throw new Error('Ensure these envs are included');
     }
 }
 

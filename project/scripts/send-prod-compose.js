@@ -6,7 +6,11 @@ const server = ` ${process.env.SERVER_USER}@${process.env.SERVER_IP}:./`;
 
 const folder = 'prod/';
 
-const prodFile = process.argv[2];
+const input = process.argv[2];
+
+if (!input) {
+    throw 'Production file needs to be specified';
+}
 
 const possibleProdFiles = new Set ([
     'prod-blue.yml',
@@ -15,9 +19,20 @@ const possibleProdFiles = new Set ([
     'prod-infrastructure.yml',
 ]);
 
-if (!possibleProdFiles.has(prodFile)) {
-    throw 'file listed may not be uploaded to the server';
+if (!possibleProdFiles.has(input)) {
+    throw new Error('file listed is not a production related file');
 }
+
+let file = '';
+//for security reasons
+switch(input) {
+    case 'prod-blue.yml': file = 'prod-blue.yml';
+    case 'prod-compose.yml': file =  'prod-compose.yml';
+    case 'prod-green.yml': file =  'prod-green.yml';
+    case 'prod-infrastructure.yml': file = 'prod-infrastructure.yml';
+};
+
+const prodFile = file;
 
 const commands = [
     `scp -P ${process.env.SSH_PORT} ./project/docker-compose/.env.prod ${server}${folder}`,
