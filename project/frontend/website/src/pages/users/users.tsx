@@ -5,8 +5,9 @@ import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { API_BASE, authFetch, authApi } from '../../services/api';
 import { fetchLeaderboardXp } from '../leaderboard/leaderboard.service';
+import { fetchEmployees, importEmployeesCsv, type Employee } from '../../services/company';
 import { connectXpSocket } from '../../services/xp-socket';
-import { ShieldCheck, Check, User, Search, Trash2, Ban, Lock } from 'lucide-react';
+import { ShieldCheck, Check, User, Search, Trash2, Ban, Lock, Upload } from 'lucide-react';
 
 type UserRole = 'admin' | 'analyst' | 'user';
 
@@ -190,6 +191,62 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
   );
 }
 
+function ImportUsersModal({ isOpen, onClose, onImported }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const { addToast } = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      await importEmployeesCsv(file);
+      addToast({ type: 'success', title: 'Import started', message: 'Employees are being added, refresh the list shortly to see them.' });
+      setFile(null);
+      onImported();
+      onClose();
+    } catch (err) {
+      addToast({ type: 'error', title: 'Import failed', message: err instanceof Error ? err.message : 'Please try again.' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Import Users" maxWidth={420}>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.6 }}>
+        Upload a CSV of employees to add them to the roster. Columns should be named <strong>employeeId</strong> and <strong>email</strong> (other columns like name and department are optional).
+      </p>
+      <label style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+        border: '1.5px dashed var(--border)', borderRadius: 10, padding: '24px 14px',
+        cursor: 'pointer', background: 'var(--bg-hover)', marginBottom: 20,
+      }}>
+        <Upload size={20} color="var(--text-muted)" aria-hidden="true" />
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+          {file ? file.name : 'Click to choose a CSV file'}
+        </span>
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          onChange={e => setFile(e.target.files?.[0] ?? null)}
+          style={{ display: 'none' }}
+        />
+      </label>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button fullWidth loading={uploading} disabled={!file} onClick={() => { void handleUpload(); }}>
+          Upload
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 export function Users({ onNavigate, activePath }: UsersProps) {
   const [users, setUsers] = useState<RealUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,7 +257,18 @@ export function Users({ onNavigate, activePath }: UsersProps) {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [selectedUser, setSelectedUser] = useState<RealUser | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
   const { addToast } = useToast();
+  const fetchUnregisteredEmployees = useCallback(async () => {
+    try {
+      const data = await fetchEmployees();
+      setEmployees(data.filter(e => !e.registered));
+    } catch {
+      addToast({ type: 'error', title: 'Could not load pending employees', message: 'Do you have admin access?' });
+    }
+  }, [addToast]);
+  useEffect(() => { void fetchUnregisteredEmployees(); }, [fetchUnregisteredEmployees]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -249,7 +317,10 @@ export function Users({ onNavigate, activePath }: UsersProps) {
     if (sortKey === k) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortKey(k); setSortDir('asc'); }
   };
-  const departments = Array.from(new Set(users.map(u => u.department).filter(Boolean))) as string[];
+  const departments = Array.from(new Set([
+    ...users.map(u => u.department),
+    ...employees.map(e => e.department),
+  ].filter(Boolean))) as string[];
 
   const filtered = users
     .filter(u => {
@@ -267,6 +338,17 @@ export function Users({ onNavigate, activePath }: UsersProps) {
       return sortDir === 'asc' ? cmp : -cmp;
     });
 
+  const employeeName = (e: Employee) => `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim();
+
+  const filteredEmployees = roleFilter !== 'all' ? [] : employees
+    .filter(e => {
+      const q = search.toLowerCase();
+      if (q && !employeeName(e).toLowerCase().includes(q) && !e.email.toLowerCase().includes(q)) return false;
+      if (deptFilter !== 'all' && e.department !== deptFilter) return false;
+      return true;
+    })
+    .sort((a, b) => employeeName(a).localeCompare(employeeName(b)));
+
   const SortBtn = ({ k, label }: { k: SortKey; label: string }) => (
     <th onClick={() => toggleSort(k)} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', letterSpacing: '0.5px', cursor: 'pointer', userSelect: 'none', fontFamily: 'Inter, system-ui, sans-serif', whiteSpace: 'nowrap' }}>
       {label} {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : ''}
@@ -283,9 +365,9 @@ export function Users({ onNavigate, activePath }: UsersProps) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Users"
-      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}>
+      subtitle={loading ? 'Loading…' : `${filtered.length + filteredEmployees.length} of ${users.length + employees.length} users`}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ flex: '1 1 220px' }}>
+        <div style={{ flex: '1 1 160px' }}>
           <Input
             placeholder="Search by name or email…"
             value={search}
@@ -300,8 +382,11 @@ export function Users({ onNavigate, activePath }: UsersProps) {
           <option value="all">All Departments</option>
           {departments.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
-        <Button variant="ghost" onClick={() => { void fetchUsers(); }} style={{ border: '1px solid var(--border)', padding: '0 14px' }}>
+        <Button variant="ghost" onClick={() => { void fetchUsers(); void fetchUnregisteredEmployees(); }} style={{ border: '1px solid var(--border)', padding: '0 14px' }}>
           Refresh
+        </Button>
+        <Button onClick={() => setImportOpen(true)} icon={<Upload size={14} aria-hidden="true" />} style={{ padding: '0 16px' }}>
+          Import Users
         </Button>
       </div>
 
@@ -318,6 +403,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                   <SortBtn k="name" label="USER" />
                   <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>ROLE</th>
                   <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DEPARTMENT</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>IS REGISTERED</th>
                   <SortBtn k="xp" label="XP" />
                   <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>JOINED</th>
                   <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>ACTIONS</th>
@@ -348,6 +434,9 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                     <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
                       {u.department ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>}
                     </td>
+                    <td style={{ padding: '11px 16px' }}>
+                      <Badge variant="success">Yes</Badge>
+                    </td>
                     <td style={{ padding: '11px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
                       {(u.xp ?? 0).toLocaleString()}
                     </td>
@@ -363,17 +452,50 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                     </td>
                   </tr>
                 ))}
+                {filteredEmployees.map(e => (
+                  <tr key={e.employeeId} style={{ borderTop: '1px solid var(--border)', transition: 'background 0.1s' }}
+                    onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--bg-hover)')}
+                    onMouseLeave={ev => (ev.currentTarget.style.background = 'transparent')}
+                  >
+                    <td style={{ padding: '11px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0, fontFamily: 'Inter, system-ui, sans-serif' }}>
+                          {initials(employeeName(e), e.email)}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{employeeName(e) || e.employeeId}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{e.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'Inter, system-ui, sans-serif' }}>—</td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                      {e.department ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>—</span>}
+                    </td>
+                    <td style={{ padding: '11px 16px' }}>
+                      <Badge variant="neutral">No</Badge>
+                    </td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'Inter, system-ui, sans-serif' }}>—</td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                      {new Date(e.dateImported).toLocaleDateString('en-ZA')}
+                    </td>
+                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                      Awaiting sign-up
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}
-          {!loading && filtered.length === 0 && (
+          {!loading && filtered.length === 0 && filteredEmployees.length === 0 && (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              No users match your search criteria.
+              No users match the search criteria.
             </div>
           )}
         </div>
       </Card>
       <UserActionsModal user={selectedUser} isOpen={actionsOpen} onClose={() => { setActionsOpen(false); void fetchUsers(); }} onNavigate={onNavigate} />
+      <ImportUsersModal isOpen={importOpen} onClose={() => setImportOpen(false)} onImported={() => { void fetchUnregisteredEmployees(); }} />
     </AppLayout>
   );
 }
