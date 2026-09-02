@@ -104,7 +104,7 @@ describe('LlmGatewayService', () => {
         ok: false,
         statusText: 'Too Many Requests',
         json: jest.fn().mockResolvedValueOnce(errorResponse),
-      } as unknown as Response);
+      });
 
       await expect(service.send(requestBody)).rejects.toEqual(errorResponse);
     });
