@@ -1,0 +1,1 @@
+export const OUTPUT_FORMAT = `Return exactly one email: a subject line and an HTML body fragment as described above. Keep formatting minimal, a couple of short paragraphs and the single required link. Never wrap the body in <html>, <head>, or <body> tags, since it will be inserted into an existing email template.`;
