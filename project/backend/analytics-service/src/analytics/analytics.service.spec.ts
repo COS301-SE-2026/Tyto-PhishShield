@@ -56,7 +56,7 @@ const mockSendRepo = {
   findOne: jest.fn(),
   find: jest.fn(),
 };
-
+// make sure about the tests this time. These should be unit and the other integration.
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
   let repo: jest.Mocked<typeof mockRepo>;
@@ -64,7 +64,7 @@ describe('AnalyticsService', () => {
   let campaignRepo: jest.Mocked<typeof mockCampaignRepo>;
   let clickRepo: jest.Mocked<typeof mockClickRepo>;
   let sendRepo: jest.Mocked<typeof mockSendRepo>;
-
+// make sure everything is mocked and check with backedn that they are fine with these tests.
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -87,9 +87,8 @@ describe('AnalyticsService', () => {
     sendRepo = module.get(getRepositoryToken(SimulationSend));
   });
 
-  // ============ Existing tests (unchanged except mocks) ============
   describe('recordEvent', () => {
-    it('creates and saves an event with the given input', async () => {
+    it('creates and saves an evnt with the given input', async () => {
       const input = {
         eventType: AnalyticsEventType.EMAIL_SENT,
         auth0Id: 'auth0|123',
@@ -165,7 +164,7 @@ describe('AnalyticsService', () => {
       });
     });
 
-    it('returns zero totals when no events exist', async () => {
+    it('returns zero totals whn no events exist', async () => {
       repo.count.mockResolvedValue(0);
       repo.find.mockResolvedValue([] as any);
 
@@ -202,7 +201,7 @@ describe('AnalyticsService', () => {
 
       expect(result.detectionRate).toBe(0);
     });
-
+// this is important for all the filters to be working in tandem with each other.
     it('passes date filters to repository count', async () => {
       const from = '2026-08-01';
       const to = '2026-08-10';
@@ -219,9 +218,9 @@ describe('AnalyticsService', () => {
       });
     });
   });
-
+// yet again make sure with darius for this one righ here.
   describe('getMailingStats', () => {
-    it('combines sent and scheduled counts correctly', async () => {
+    it('combines sent and scheuled counts correctly', async () => {
       repo.count.mockImplementation(({ where }: any) => {
         switch (where?.eventType) {
           case AnalyticsEventType.EMAIL_SENT:
@@ -250,7 +249,7 @@ describe('AnalyticsService', () => {
       expect(result.scheduled).toBe(0);
     });
   });
-
+// ok all this should test is the getUserStats function and make sure it works as intended.
   describe('getUserStats', () => {
     const auth0Id = 'auth0|123';
 
@@ -276,7 +275,7 @@ describe('AnalyticsService', () => {
       ] as any);
     });
 
-    it('returns aggregated user stats including total XP', async () => {
+    it('returns agregated user stats including total XP', async () => {
       const result = await service.getUserStats(auth0Id);
 
       expect(result.reports).toBe(5);
@@ -295,7 +294,7 @@ describe('AnalyticsService', () => {
   });
 
   describe('getTimeSeries', () => {
-    it('groups events by day and aggregates counts', async () => {
+    it('groups events by day and agregates counts', async () => {
       const from = '2026-08-01';
       const to = '2026-08-02';
       const events = [
@@ -342,7 +341,7 @@ describe('AnalyticsService', () => {
   });
 
   describe('getLeaderboard', () => {
-    it('returns top users by XP with report count', async () => {
+    it('returns top users by XP with report cont', async () => {
       const xpEvents = [
         { auth0Id: 'user1', email: 'u1@example.com', payload: { amount: 100 } },
         { auth0Id: 'user2', email: 'u2@example.com', payload: { amount: 50 } },
@@ -375,7 +374,7 @@ describe('AnalyticsService', () => {
         },
       ]);
     });
-
+//IMPORTANT 
     it('skips entries without auth0Id', async () => {
       const xpEvents = [
         { auth0Id: null, payload: { amount: 100 } }, // should be ignored
@@ -412,9 +411,8 @@ describe('AnalyticsService', () => {
     });
   });
 
-  // ============ New methods ============
   describe('upsertUser', () => {
-    it('creates a new user if not found', async () => {
+    it('creates a new user if not fund', async () => {
       const user = {
         auth0Id: 'auth0|new',
         email: 'new@example.com',
@@ -434,7 +432,7 @@ describe('AnalyticsService', () => {
       expect(userRepo.create).toHaveBeenCalledWith(user);
       expect(userRepo.save).toHaveBeenCalled();
     });
-
+// for per user stats
     it('updates existing user', async () => {
       const existing = {
         auth0Id: 'auth0|1',
@@ -462,7 +460,7 @@ describe('AnalyticsService', () => {
         expect.objectContaining({ email: 'new@example.com' }),
       );
     });
-
+// didnt work at first, but works now after some help debuggin, check again to make sure here.
     it('ignores duplicate key error (23505)', async () => {
       const user = {
         auth0Id: 'auth0|dup',
@@ -527,7 +525,7 @@ describe('AnalyticsService', () => {
       );
     });
   });
-
+//this was also inconsistent at the start, but looks fine now.
   describe('recordSimulationSend', () => {
     it('creates new send if not existing', async () => {
       const input = {
@@ -574,7 +572,7 @@ describe('AnalyticsService', () => {
       );
     });
   });
-
+//TODO: add some more tests for recordClickFromEmailId and recordClickFromAuth0Id, including edge cases and error handling.
   describe('recordClickFromEmailId', () => {
     it('creates click event when send exists', async () => {
       const send = {
@@ -604,7 +602,7 @@ describe('AnalyticsService', () => {
       expect(clickRepo.save).toHaveBeenCalled();
     });
 
-    it('logs warning and does nothing when send not found', async () => {
+    it('logs warning and does nohing when send not found', async () => {
       sendRepo.findOne.mockResolvedValue(null);
       const warnSpy = jest
         .spyOn(Logger.prototype, 'warn')
@@ -619,7 +617,7 @@ describe('AnalyticsService', () => {
   });
 
   describe('recordClickFromAuth0Id', () => {
-    it('creates click event with placeholder referenceNumber', async () => {
+    it('creates click event with placeholder refereceNumber', async () => {
       clickRepo.create.mockReturnValue({
         referenceNumber: 'unknown',
         auth0Id: 'auth0|1',
@@ -701,7 +699,7 @@ describe('AnalyticsService', () => {
       expect(day.clickRate).toBe(100);
     });
   });
-
+//TODO: add tests for getByDepartment and getAtRiskUsers, including edge cases and error handling.
   describe('getByDepartment', () => {
     it('aggregates by department', async () => {
       userRepo.find.mockResolvedValue([
@@ -765,7 +763,7 @@ describe('AnalyticsService', () => {
       expect(result[0].riskLevel).toBe('high');
     });
   });
-
+//TODO: add tests for getCampaigns, including edge cases and error handling.
   describe('getCampaigns', () => {
     it('returns campaigns ordered by startDate desc', async () => {
       campaignRepo.find.mockResolvedValue([
