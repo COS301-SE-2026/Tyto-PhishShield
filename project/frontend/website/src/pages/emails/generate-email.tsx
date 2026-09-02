@@ -588,7 +588,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                             lineHeight: 1.5,
                             whiteSpace: 'pre-wrap',
                             overflowWrap: 'anywhere',
-                            fontFamily: 'monospace'
+                            fontFamily: 'Inter, system-ui, sans-serif'
                           }}
                         >
                           {template.body}
