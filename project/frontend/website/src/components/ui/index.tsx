@@ -231,6 +231,18 @@ export function Card({
   );
 }
 
+// ComingSoon
+
+export function ComingSoon({ label }: { readonly label: string }) {
+  return (
+    <div style={{ padding: '24px 8px', textAlign: 'center' }}>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.6 }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
 // Modal
 
 interface ModalProps {
@@ -363,6 +375,7 @@ export function OtpInput({ value, onChange, length = 5 }: {
     <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
       {Array.from({ length }).map((_, i) => (
         <input
+        // eslint-disable-next-line react-x/no-array-index-key -- fixed-length digit slots, never reordered
           key={i}
           ref={el => { refs.current[i] = el; }}
           type="text" inputMode="numeric" maxLength={1}

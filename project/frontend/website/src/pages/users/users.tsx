@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
-import { API_BASE, authFetch } from '../../services/api';
+import { API_BASE, authFetch, authApi } from '../../services/api';
 import { fetchLeaderboardXp } from '../leaderboard/leaderboard.service';
 import { connectXpSocket } from '../../services/xp-socket';
 import { ShieldCheck, Check, User, Search, Trash2, Ban, Lock } from 'lucide-react';
@@ -45,12 +45,16 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
   const [view, setView] = useState<'actions' | 'editRole'>('actions');
   const [selectedRole, setSelectedRole] = useState<UserRole>('user');
   const [saving, setSaving] = useState(false);
+  const [prevOpen, setPrevOpen] = useState(isOpen);
 
-  useEffect(() => {
+  if (isOpen !== prevOpen) {
+    setPrevOpen(isOpen);
     if (isOpen && user) {
       setView('actions');
       setSelectedRole(user.role as UserRole);
-    }}, [isOpen, user]);
+    }
+  }
+
   if (!user) return null;
 
   const handleRoleSave = async () => {
@@ -68,6 +72,19 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
       onClose();
     } catch (err) {
       addToast({ type: 'error', title: 'Update failed', message: err instanceof Error ? err.message : 'Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setSaving(true);
+    try {
+      await authApi.forgotPassword(user.email);
+      addToast({ type: 'success', title: 'Reset email sent', message: `Password reset link sent to ${user.email}.` });
+      onClose();
+    } catch (err) {
+      addToast({ type: 'error', title: 'Could not send reset email', message: err instanceof Error ? err.message : 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -158,7 +175,7 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
         ), () => { onClose(); onNavigate(`/users/${user.id}`); })}
         {hasRole('admin') && actionBtn('Reset Password', (
           <Lock size={14} />
-        ), () => { addToast({ type: 'success', title: 'Reset email sent', message: `Password reset link sent to ${user.email}` }); onClose(); })}
+        ), () => { void handleResetPassword(); })}
         {hasRole('admin') && actionBtn(
           user.status === 'suspended' ? 'Reinstate User' : 'Suspend User',
           <Ban size={14} />,
@@ -185,7 +202,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const { addToast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await authFetch(`${API_BASE}/accounts/users`);
@@ -209,8 +226,8 @@ export function Users({ onNavigate, activePath }: UsersProps) {
     } finally {
       setLoading(false);
     }
-  };
-  useEffect(() => { void fetchUsers(); }, []);
+  }, [addToast]);
+  useEffect(() => { void fetchUsers(); }, [fetchUsers]);
   useEffect(() => {
     let cancelled = false;
     let socket: Awaited<ReturnType<typeof connectXpSocket>> | undefined;
@@ -266,8 +283,7 @@ export function Users({ onNavigate, activePath }: UsersProps) {
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Users"
-      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}
-      securityScore={72}>
+      subtitle={loading ? 'Loading…' : `${filtered.length} of ${users.length} users`}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 220px' }}>
           <Input

@@ -1,5 +1,5 @@
+import { UserRole } from '@phishshield/dto';
 import { IsEnum } from 'class-validator';
-import { UserRole } from '../../users/entities/user.entity';
 
 export class UpdateRoleDto {
   @IsEnum(UserRole)

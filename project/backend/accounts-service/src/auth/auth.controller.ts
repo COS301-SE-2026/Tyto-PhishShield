@@ -34,7 +34,7 @@ import {
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto } from '@phishshield/dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -153,7 +153,7 @@ export class AuthController {
   isActive(@Body() body: { authID: string }) {
     return this.authService.isActive(body.authID);
   }
-  
+
   @Patch('password')
   @UseGuards(JwtAuthGuard)
   async changePassword(

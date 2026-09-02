@@ -10,7 +10,7 @@ import {
   IsOptional,
   IsEnum,
 } from 'class-validator';
-import { Department } from '../../users/entities/user.entity';
+import { Department } from './enum';
 
 export class RegisterDto {
   @IsEmail()
