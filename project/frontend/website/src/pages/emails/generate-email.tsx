@@ -592,7 +592,16 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                           color: 'var(--text-secondary)',
                         }}
                       >
-                        <div dangerouslySetInnerHTML={{ __html: template.body, }} />
+                        <div 
+                          onClick={(event) => {
+                            const target = event.target as HTMLElement;
+                            const link = target.closest('a');
+                            if (link) {
+                              event.preventDefault();
+                            }
+                          }}
+                          dangerouslySetInnerHTML={{ __html: template.body, }} 
+                        />
                       </div>
                       <div
                         style={{
