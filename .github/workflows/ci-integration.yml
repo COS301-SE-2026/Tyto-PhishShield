@@ -2,7 +2,11 @@ name: Integration CI
 
 on:
     workflow_call:
-
+      secrets:
+        LLM_GATEWAY_KEY:
+          required: true
+        LLM_GATEWAY_URL:
+          required: true
 env:
   LLM_GATEWAY_KEY: ${{ secrets.LLM_GATEWAY_KEY }}
   LLM_GATEWAY_URL: ${{ secrets.LLM_GATEWAY_URL }}
@@ -27,6 +31,8 @@ jobs:
             cache: "pnpm"
         - name: Install dependencies
           run: pnpm install --frozen-lockfile --ignore-scripts
+        - name: Build shared packages
+          run: pnpm build:shared
         - name: run integration test
           run: pnpm int:test:accounts
       
