@@ -55,7 +55,7 @@ const TUTORIALS: Tutorial[] = [
     steps: [
       'An admin schedules a wave by setting a name, a start and end date, and a list of recipients.',
       'During the wave window, each recipient receives a simulated phishing email at a scheduled or randomised time.',
-      'Treat any suspicious-looking email normally — report it via the PhishShield add-in in Outlook, just like any other simulation.',
+      'Treat any suspicious-looking email normally, report it via the PhishShield add-in in Outlook, just like any other simulation.',
       'You will not be warned in advance that a wave is targeting you, since that defeats the purpose of the test.',
       'Correctly reporting earns XP. Interacting with the email (clicking links, downloading files, entering credentials) reduces XP and typically triggers a training module.',
       'Once the wave window closes it is marked Complete. Admins and analysts can then view outcomes on the Waves page and generate a wave report from the Reports page.',
@@ -122,7 +122,7 @@ const FAQs: Faq[] = [
   },
   {
     question: 'I accidentally clicked a link in a simulated phishing email. What happens now?',
-    answer: 'Interacting with a simulated phishing email — clicking a link, downloading an attachment, or entering credentials — counts as a failed simulation. Your XP will be reduced and you will likely be assigned one or more training modules. This is a learning opportunity, not a disciplinary action. Complete the assigned training to recover some of the lost XP.',
+    answer: 'Interacting with a simulated phishing email, clicking a link, downloading an attachment, or entering credentials, counts as a failed simulation. Your XP will be reduced and you will likely be assigned one or more training modules. This is a learning opportunity, not a disciplinary action. Complete the assigned training to recover some of the lost XP.',
   },
   {
     question: 'Will I be warned before being included in a wave?',
@@ -130,7 +130,7 @@ const FAQs: Faq[] = [
   },
   {
     question: 'What is the difference between active, scheduled, and complete waves?',
-    answer: 'Scheduled waves have not started yet — no emails have been sent. Active waves are currently running and sending emails to recipients within the defined time window. Complete waves have finished — the window has closed and all emails were delivered.',
+    answer: 'Scheduled waves have not started yet, no emails have been sent. Active waves are currently running and sending emails to recipients within the defined time window. Complete waves have finished, the window has closed and all emails were delivered.',
   },
   {
     question: 'Does not reporting a simulated email reduce my XP?',
@@ -285,7 +285,7 @@ export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
     {
       label: 'Reports',
       description: 'Generate and export organisation, user, wave, and department reports',
-      onClick: () => onNavigate('/reports'),
+      onClick: () => onNavigate('/analytics/reports'),
       icon: <BarChart2 size={16} />
     },
     {
