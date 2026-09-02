@@ -1,10 +1,10 @@
-import { API_BASE, } from './api';
+import { API_BASE } from './api';
 
 const LLM_BASE = `${API_BASE}/llm`;
 
 export type Difficulty = 'easy'|'medium'|'hard';
 
-export type MessageTone = 'proffessional'|'friendly'|'urgent'|'authoritative'|'neutral'|'apologetic';
+export type MessageTone = 'professional'|'friendly'|'urgent'|'authoritative'|'neutral'|'apologetic';
 
 export type MessageType = 'announcement'|'it_security_alert'|'finance_voucher'|'document_request'|'emergency'|'executive_request'|'meeting_invite'|'it_support'|'question';
 
@@ -21,7 +21,7 @@ export interface GenerateTemplatesRequest {
     senderDepartment?: Department;
 }
 
-export interface GenerateTemplate {
+export interface GeneratedTemplate {
     id: string;
     subject: string;
     body: string;
@@ -31,7 +31,7 @@ export interface GenerateTemplatesResponse {
     requested: number;
     generated: number;
     failed: number;
-    templates: GenerateTemplate[];
+    templates: GeneratedTemplate[];
 }
 
 export async function generateTemplates(request: GenerateTemplatesRequest): Promise<GenerateTemplatesResponse> {
