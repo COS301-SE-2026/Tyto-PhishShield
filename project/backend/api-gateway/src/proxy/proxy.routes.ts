@@ -41,6 +41,10 @@ export class RouteResolver {
       apiRoute: '/api/xp-websocket',
       targetService: this.config.getOrThrow('XP_SERVICE_URL'),
     },
+    {
+      apiRoute: '/api/company',
+      targetService: this.config.getOrThrow('COMPANY_SERVICE_URL'),
+    },
   ];
   private readonly expectedStart =
     'https://' + this.config.getOrThrow<string>('SERVER_DOMAIN');

@@ -10,6 +10,7 @@ RUN chown -R appuser:phishshield /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/api-gateway/package.json ./project/backend/api-gateway/package.json
+COPY project/backend/packages/dto/package.json ./project/backend/packages/dto/package.json
 
 RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-retry-mintimeout 10000 -g \
@@ -17,6 +18,10 @@ RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-timeout 120000 -g \
  && pnpm config set network-concurrency 8 -g \
  && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+
+COPY project/backend/packages/dto/ ./project/backend/packages/dto/
+
+RUN pnpm --filter @phishshield/dto build
 
 COPY project/backend/api-gateway/ ./project/backend/api-gateway/
 
@@ -37,9 +42,9 @@ RUN chown -R appuser:phishshield /app
 COPY --from=build /out ./
 COPY --from=build /app/project/backend/api-gateway/dist/ ./dist/
 
-RUN mkdir -p ../var/log/api-gateway
+RUN mkdir -p /var/log/api-gateway
 
-RUN chown -R appuser:phishshield ../var/log/api-gateway
+RUN chown -R appuser:phishshield /var/log/api-gateway
 
 USER appuser
 

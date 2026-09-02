@@ -3,6 +3,10 @@ name: Integration CI
 on:
     workflow_call:
 
+env:
+  LLM_GATEWAY_KEY: ${{ secrets.LLM_GATEWAY_KEY }}
+  LLM_GATEWAY_URL: ${{ secrets.LLM_GATEWAY_URL }}
+
 jobs:
     accounts-integration:
       name: accounts integration testing

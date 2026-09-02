@@ -37,6 +37,12 @@ localhost, phishshield.local {
         }
     }
 
+    handle /api-docs/* {
+        reverse_proxy api-gateway:3001 {
+            header_up X-Request-ID {http.request.header.X-Request-ID}
+        }
+    }
+
     handle /addin/* {
         uri strip_prefix /addin
         reverse_proxy outlook-addin:8080

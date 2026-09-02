@@ -30,7 +30,7 @@ import { SimulationSend } from './entities/simulation-send.entity';
           { name: 'education-event-exchange', type: 'topic' },
           { name: 'mailing-event-exchange', type: 'topic' },
           { name: 'accounts-event-exchange', type: 'topic' },
-          { name: 'waves-event-exchange', type: 'topic' },
+          { name: 'wave-event-exchange', type: 'topic' },
           { name: 'click-event-exchange', type: 'topic' },
         ],
         enableControllerDiscovery: true,
