@@ -23,10 +23,11 @@ if (!possibleProdFiles.has(input)) {
 let file = '';
 //for security reasons
 switch(input) {
-    case 'prod-blue.yml': file = 'prod-blue.yml';
-    case 'prod-compose.yml': file =  'prod-compose.yml';
-    case 'prod-green.yml': file =  'prod-green.yml';
-    case 'prod-infrastructure.yml': file = 'prod-infrastructure.yml';
+    case 'prod-blue.yml': { file = 'prod-blue.yml'; break; }
+    case 'prod-compose.yml': { file =  'prod-compose.yml'; break; }
+    case 'prod-green.yml': { file =  'prod-green.yml'; break; }
+    case 'prod-infrastructure.yml': { file = 'prod-infrastructure.yml'; break; }
+    default: throw Error('bad input');
 };
 
 const prodFile = './project/docker-compose/' + file;

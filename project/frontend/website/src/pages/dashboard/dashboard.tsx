@@ -74,9 +74,9 @@ function deriveWaveStatus(wave: RealWave): 'active' | 'complete' | 'scheduled' |
   const from = new Date(wave.scheduledFrom).getTime();
   const to   = new Date(wave.scheduledTo).getTime();
   const now  = Date.now();
-  if (isNaN(from)) return 'draft';
+  if (Number.isNaN(from)) return 'draft';
   if (from > now)  return 'scheduled';
-  if (!isNaN(to) && to < now) return 'complete';
+  if (!Number.isNaN(to) && to < now) return 'complete';
   return 'active';
 }
 

@@ -44,7 +44,7 @@ function deployServices() {
         `ssh -p ${process.env.SSH_PORT} ${server} "cat ./prod/state/active-environment"`
     ).toString().trim();
     if (!active) {
-        throw 'unable to find active environemnt';
+        throw new Error('unable to find active environemnt');
     }
     const target = active === 'blue' ? 'green' : 'blue';
 
