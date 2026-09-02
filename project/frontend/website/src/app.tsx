@@ -19,6 +19,7 @@ import { UserProfile } from './pages/users/user-profile';
 import { Settings } from './pages/settings/settings';
 import Leaderboard from './pages/leaderboard/leaderboard';
 import { Help } from './pages/help/help';
+import { LinkClicked } from './pages/link-clicked/link-clicked';
 
 function UserProfileById({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { id } = useParams<{ id: string }>();
@@ -45,6 +46,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home onNavigate={handleNavigate} />} />
+      <Route path="/link/:token" element={<LinkClicked onNavigate={handleNavigate} />} />
       <Route path="/login" element={ <PublicOnlyRoute><Login onNavigate={handleNavigate} /></PublicOnlyRoute> } />
       <Route path="/register" element={ <PublicOnlyRoute><Register onNavigate={handleNavigate} /></PublicOnlyRoute> } />
       <Route path="/dashboard" element={ <ProtectedRoute><Dashboard onNavigate={handleNavigate} activePath="/dashboard" /></ProtectedRoute> } />
