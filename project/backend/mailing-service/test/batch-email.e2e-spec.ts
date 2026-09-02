@@ -129,12 +129,30 @@ describe('BatchEmail service integration tests', () => {
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
         waveName: 'Wave Name',
+        referenceNumber: testReferenceNumber,
       })
       .expect(200)
       .expect((res) => {
         expect(res.body.success).toBe(true);
         expect(res.body.message).toContain(`${TEST_RECIPIENTS.length}`);
       });
+  });
+
+  it(`/batch-emails/send-batch-random-same-email (POST) - should return 404 if the provided referenceNumber does not exist`, () => {
+    const scheduledAt = new Date();
+
+    return request(app.getHttpServer())
+      .post(`/batch-emails/send-batch-random-same-email`)
+      .send({
+        auth0Id: TEST_AUTH0_IDS,
+        difficulty: EmailDifficulty.MEDIUM,
+        scheduledFrom: scheduledAt.toISOString(),
+        scheduledTo: scheduledAt.toISOString(),
+        randomisedTimes: false,
+        waveName: 'Wave Name',
+        referenceNumber: 'NON-EXISTENT-REF',
+      })
+      .expect(404);
   });
 
   it(`/batch-emails/send-batch-random-same-email (POST) - should schedule each recipient at an independent random time`, () => {
