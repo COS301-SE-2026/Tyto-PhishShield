@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card } from '../../components/ui';
-import { LayoutDashboard,BookOpen, Trophy, Mail, BookMarked, Library } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Trophy, Mail, BookMarked, Library, BarChart2 } from 'lucide-react';
 
 interface HelpProps {
   onNavigate: (path: string) => void;
@@ -50,6 +50,18 @@ const TUTORIALS: Tutorial[] = [
     ],
   },
   {
+    title: 'How phishing waves work',
+    intro: 'Phishing waves are coordinated simulation campaigns sent to a group of users over a defined time window. Understanding how they work helps you stay alert.',
+    steps: [
+      'An admin schedules a wave by setting a name, a start and end date, and a list of recipients.',
+      'During the wave window, each recipient receives a simulated phishing email at a scheduled or randomised time.',
+      'Treat any suspicious-looking email normally — report it via the PhishShield add-in in Outlook, just like any other simulation.',
+      'You will not be warned in advance that a wave is targeting you, since that defeats the purpose of the test.',
+      'Correctly reporting earns XP. Interacting with the email (clicking links, downloading files, entering credentials) reduces XP and typically triggers a training module.',
+      'Once the wave window closes it is marked Complete. Admins and analysts can then view outcomes on the Waves page and generate a wave report from the Reports page.',
+    ],
+  },
+  {
     title: 'Completing a training module',
     intro: 'Training modules are assigned after certain simulations to help you spot similar attacks in future.',
     steps: [
@@ -57,6 +69,18 @@ const TUTORIALS: Tutorial[] = [
       'Open a module marked "Not Started" or "In Progress".',
       'Work through the material and any quiz questions.',
       'Completed modules are marked done and stay visible for reference.',
+    ],
+  },
+  {
+    title: 'Generating and downloading a report (analysts and admins)',
+    intro: 'The Reports page lets you generate detailed snapshots of organisation, user, wave, or department activity and export them as PDFs.',
+    steps: [
+      'Go to Analytics → Reports from the sidebar.',
+      'Choose a report type: Organisation (overall stats), User (individual breakdown), Wave (a specific campaign), or Department (team-level view).',
+      'For User, Wave, and Department reports, use the second dropdown to pick the specific target.',
+      'For Organisation reports, select the time period you want to cover.',
+      'Click Generate Report. The results appear below the form.',
+      'Click Download PDF to export the report for sharing or record-keeping.',
     ],
   },
   {
@@ -73,24 +97,56 @@ const TUTORIALS: Tutorial[] = [
 
 const FAQs: Faq[] = [
   {
-    question: 'Why did I not I receive XP for a report I submitted?',
-    answer: 'XP is awarded once your report has been processed, which is not necessarily instant. Also note the possibility that you might have wrongfully marked a "safe" email as spam, and therefore not earn yourself any XP. If it has been a while and your XP total still has not updated, let your admin know.',
+    question: 'Why did I not receive XP for a report I submitted?',
+    answer: 'XP is awarded once your report has been processed, which is not necessarily instant. Also note the possibility that you might have wrongfully marked a "safe" email as phishing, in which case no XP is earned. If it has been a while and your XP total still has not updated, let your admin know.',
   },
   {
     question: 'How do I change my password?',
-    answer: 'Go to Settings and use the password section there. If you are logged out and cannot log in at all, use "Forgot password?" on the login page instead.',
+    answer: 'Go to Settings and use the password section there. If you are locked out and cannot log in at all, use "Forgot password?" on the login page instead.',
   },
   {
     question: 'I did not receive my verification email. What do I do?',
-    answer: 'Check your spam folder first. If it never arrived, contact your admin below. Please also note that email delivery for verification may be delayed at times.',
+    answer: 'Check your spam folder first. If it never arrived, contact your admin. Email delivery for verification can occasionally be delayed, so wait a few minutes before trying again.',
   },
   {
     question: 'Can I see how my department compares to others?',
-    answer: 'Yes, the Departments tab on the Leaderboard ranks teams by total or average XP, and lets you filter by team size.',
+    answer: 'Yes, the Departments tab on the Leaderboard ranks teams by total or average XP and lets you filter by team size.',
   },
   {
-    question: 'Who do I contact if I think a real (non-simulated) phishing email reach me?',
-    answer: 'Report it the same way you would a simulation (via the Outlook add-in) and separately flag it to your IT/security team directly, since real threats need a faster response than the simulation pipeline provides.',
+    question: 'Who do I contact if I think a real (non-simulated) phishing email reached me?',
+    answer: 'Report it the same way you would a simulation (via the Outlook add-in) and separately flag it to your IT or security team directly, since real threats need a faster response than the simulation pipeline provides.',
+  },
+  {
+    question: 'What is a phishing wave?',
+    answer: 'A phishing wave is a coordinated batch of simulated phishing emails sent to a selected group of users over a set time window. Waves are used to test and sharpen your ability to spot suspicious emails. You will not be told in advance that you are a target, since that would defeat the purpose.',
+  },
+  {
+    question: 'I accidentally clicked a link in a simulated phishing email. What happens now?',
+    answer: 'Interacting with a simulated phishing email — clicking a link, downloading an attachment, or entering credentials — counts as a failed simulation. Your XP will be reduced and you will likely be assigned one or more training modules. This is a learning opportunity, not a disciplinary action. Complete the assigned training to recover some of the lost XP.',
+  },
+  {
+    question: 'Will I be warned before being included in a wave?',
+    answer: 'No. Waves are designed to test your real-world behaviour, so recipients are not notified in advance. This mirrors how actual phishing attacks work.',
+  },
+  {
+    question: 'What is the difference between active, scheduled, and complete waves?',
+    answer: 'Scheduled waves have not started yet — no emails have been sent. Active waves are currently running and sending emails to recipients within the defined time window. Complete waves have finished — the window has closed and all emails were delivered.',
+  },
+  {
+    question: 'Does not reporting a simulated email reduce my XP?',
+    answer: 'Not reporting a simulation earns you nothing, but it does not necessarily reduce your XP. What reduces XP is actively interacting with the email (clicking links, entering credentials, etc.). Check with your admin to confirm the exact rules configured for your organisation.',
+  },
+  {
+    question: 'What does the Detection Rate mean?',
+    answer: 'The detection rate is the percentage of simulated phishing emails that were correctly reported by users without first interacting with them. A higher detection rate means users are better at spotting phishing attempts before engaging with them.',
+  },
+  {
+    question: 'How do I schedule a new phishing wave? (Admins)',
+    answer: 'Go to the Waves page from the sidebar and click "Schedule Wave". Set a wave name, start date, end date, and select the recipients. You can choose to send the same email to everyone or assign different emails, and whether to randomise send times within the window.',
+  },
+  {
+    question: 'How do I generate a report? (Analysts and Admins)',
+    answer: 'Go to Analytics → Reports from the sidebar. Select the report type (Organisation, User, Wave, or Department), then pick the specific target using the second dropdown. Click Generate Report. Once the report appears you can click Download PDF to export it.',
   },
 ];
 
@@ -225,6 +281,12 @@ export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
       description: 'Email the Tyto support team for anything else not covered here',
       onClick: () => { window.location.href = 'mailto:support@tyto.co.za'; },
       icon: <Mail size={16} />
+    },
+    {
+      label: 'Reports',
+      description: 'Generate and export organisation, user, wave, and department reports',
+      onClick: () => onNavigate('/reports'),
+      icon: <BarChart2 size={16} />
     },
     {
       label: 'User Guide',
