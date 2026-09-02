@@ -22,9 +22,8 @@ import { ConflictException, UnauthorizedException, NotFoundException } from '@ne
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { UserRole } from '../users/entities/user.entity';
-import type { AuthenticatedUser } from './strategies/jwt.strategy';
 import { Response, Request} from 'express';
+import { UserRole } from '@phishshield/dto';
 
 const mockResponse = () => {
   const res = {} as Response;
@@ -65,7 +64,7 @@ describe('AuthController', () => {
 // for register remember we are doing verification through auth0 and otp with login. It switch.
   describe('register()', () => {
     it('delegates to authService.register and returns result', async () => {
-      authService.register.mockResolvedValue({ message: 'Registration successful. Please verify your email with the OTP sent to you.', });
+      authService.register.mockResolvedValue({ message: 'Registration successful. Please verify your email with the OTP sent to you.', response: 'ok' });
 
       const dto = { email: 'new@user.com', password: 'Password123!', name: 'New'};
       const result = await controller.register(dto);
@@ -85,7 +84,7 @@ describe('AuthController', () => {
 
   describe('login()', () => {
     it('passes request cookies as deviceToken', async () => {
-      authService.login.mockResolvedValue({ access_token: 'jwt-token', expires_in: 86400 });
+      authService.login.mockResolvedValue({ access_token: 'jwt-token', expires_in: 86400, requiresOTP: false });
 
       const req = { cookies: {device_token: 'dev123' }} as unknown as Request;
       await controller.login(req, { email: 'a@b.com', password: 'pw'});
@@ -95,7 +94,7 @@ describe('AuthController', () => {
     });
 // this looks good.
     it('returns the login payload', async() => {
-      authService.login.mockResolvedValue({ access_token: 'abc', expires_in: 7200});
+      authService.login.mockResolvedValue({ access_token: 'abc', expires_in: 7200, requiresOTP: false });
       const req =  { cookies: {} } as  unknown as Request;
       const result = await controller.login(req, {email: 'x', password: 'y'});
       expect(result.access_token).toBe('abc');

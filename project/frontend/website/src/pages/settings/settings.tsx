@@ -5,6 +5,8 @@ import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
 import { useAccessibility } from '../../context/accessibility-context';
 import { useToast } from '../../context/toast-context';
+import { useNotifications } from '../../context/notification-context';
+import { authApi } from '../../services/api';
 import { User, Lock, Palette, Accessibility, Bell, Sun, Moon } from 'lucide-react';
 
 interface SettingsProps { onNavigate: (path: string) => void; activePath: string; }
@@ -16,6 +18,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
   const { theme, setTheme } = useTheme();
   const { fontSize, setFontSize, highContrast, setHighContrast, reduceMotion, setReduceMotion, enhancedFocus, setEnhancedFocus, } = useAccessibility();
   const { addToast } = useToast();
+  const { preferences: notifPreferences, setPreferences: setNotifPreferences } = useNotifications();
 
   const [tab, setTab] = useState<SettingsTab>('profile');
 
@@ -31,11 +34,6 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
   const [pwError, setPwError] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
 
-  // Notifications 
-  const [notifTraining, setNotifTraining] = useState(true);
-  const [notifLeaderboard, setNotifLeaderboard] = useState(false);
-  const [notifDigest, setNotifDigest] = useState(true);
-
   const handleSaveProfile = async () => {
     setProfileLoading(true);
     await new Promise(r => setTimeout(r, 700));
@@ -49,10 +47,15 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
     if (newPw.length < 8) { setPwError('New password must be at least 8 characters.'); return; }
     if (newPw !== confirmPw) { setPwError('New passwords do not match.'); return; }
     setPwLoading(true);
-    await new Promise(r => setTimeout(r, 700));
-    addToast({ type: 'success', title: 'Password changed', message: 'Your password has been updated.' });
-    setCurrentPw(''); setNewPw(''); setConfirmPw('');
-    setPwLoading(false);
+    try {
+      await authApi.changePassword(currentPw, newPw);
+      addToast({ type: 'success', title: 'Password changed', message: 'Your password has been updated.' });
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+    } catch (err) {
+      setPwError(err instanceof Error ? err.message : 'Could not change password. Please try again.');
+    } finally {
+      setPwLoading(false);
+    }
   };
 
   const TABS: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -245,16 +248,16 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
             <div>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif' }}>Notification Preferences</h2>
               
-              <Toggle value={notifTraining} onChange={setNotifTraining}
+              <Toggle value={notifPreferences.training} onChange={v => setNotifPreferences({ ...notifPreferences, training: v })}
                 label="Training reminders"
-                desc="Receive reminders for upcoming training due dates." />
-              <Toggle value={notifLeaderboard} onChange={setNotifLeaderboard}
+                desc="Show a notification in the bell when new training is assigned." />
+              <Toggle value={notifPreferences.leaderboard} onChange={v => setNotifPreferences({ ...notifPreferences, leaderboard: v })}
                 label="Leaderboard updates"
-                desc="Be notified when your rank changes on the leaderboard." />
-              <Toggle value={notifDigest} onChange={setNotifDigest}
+                desc="Show a notification in the bell whenever you gain or lose XP." />
+              <Toggle value={notifPreferences.digest} onChange={v => setNotifPreferences({ ...notifPreferences, digest: v })}
                 label="Weekly security digest"
-                desc="A weekly email summary of your performance and security score." />
-              <Button onClick={() => addToast({ type: 'success', title: 'Notification preferences saved' })} 
+                desc="A weekly email summary of your performance and security score — not available yet." />
+              <Button onClick={() => addToast({ type: 'success', title: 'Notification preferences saved' })}
                 style={{ 
                   marginTop: 20, 
                   alignSelf: 'flex-start',

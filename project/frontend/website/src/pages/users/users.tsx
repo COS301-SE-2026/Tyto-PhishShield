@@ -3,7 +3,7 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, Button, Input, Modal } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
-import { API_BASE, authFetch } from '../../services/api';
+import { API_BASE, authFetch, authApi } from '../../services/api';
 import { fetchLeaderboardXp } from '../leaderboard/leaderboard.service';
 import { connectXpSocket } from '../../services/xp-socket';
 import { ShieldCheck, Check, User, Search, Trash2, Ban, Lock } from 'lucide-react';
@@ -72,6 +72,19 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
       onClose();
     } catch (err) {
       addToast({ type: 'error', title: 'Update failed', message: err instanceof Error ? err.message : 'Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setSaving(true);
+    try {
+      await authApi.forgotPassword(user.email);
+      addToast({ type: 'success', title: 'Reset email sent', message: `Password reset link sent to ${user.email}.` });
+      onClose();
+    } catch (err) {
+      addToast({ type: 'error', title: 'Could not send reset email', message: err instanceof Error ? err.message : 'Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -162,7 +175,7 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
         ), () => { onClose(); onNavigate(`/users/${user.id}`); })}
         {hasRole('admin') && actionBtn('Reset Password', (
           <Lock size={14} />
-        ), () => { addToast({ type: 'success', title: 'Reset email sent', message: `Password reset link sent to ${user.email}` }); onClose(); })}
+        ), () => { void handleResetPassword(); })}
         {hasRole('admin') && actionBtn(
           user.status === 'suspended' ? 'Reinstate User' : 'Suspend User',
           <Ban size={14} />,

@@ -90,6 +90,18 @@ export const authApi = {
     if (res.status === 404) return { message: 'Reset email sent (stub)' };
     return parseResponse<{ message: string }>(res);
   },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/accounts/auth/password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    return parseResponse<{ message: string }>(res);
+  },
   
   contactSales: async (dto: { companyName: string; workEmail: string; message?: string }): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/company/contact-sales`, {
