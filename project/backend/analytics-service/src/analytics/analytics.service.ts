@@ -33,6 +33,8 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+
+
 import {
   Repository,
   Between,
@@ -42,6 +44,10 @@ import {
   QueryFailedError,
 } from 'typeorm';
 import {
+
+
+
+
   AnalyticsEvent,
   AnalyticsEventType,
 } from './entities/analytics-event.entity';
@@ -56,6 +62,8 @@ interface RecordEventInput {
   auth0Id?: string;
   email?: string;
   payload?: Record<string, unknown>;
+
+
 }
 
 export interface AtRiskUser {
@@ -67,6 +75,8 @@ export interface AtRiskUser {
 }
 
 @Injectable()
+
+
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
   constructor(
@@ -76,6 +86,7 @@ export class AnalyticsService {
     private readonly userRepo: Repository<AnalyticsUser>,
     @InjectRepository(Campaign)
     private readonly campaignRepo: Repository<Campaign>,
+
 
     @InjectRepository(ClickEvent)
     private readonly clickRepo: Repository<ClickEvent>,
@@ -106,6 +117,7 @@ export class AnalyticsService {
         where: { eventType: AnalyticsEventType.EMAIL_BATCH_SENT },
       }),
       this.repo.count({
+
         where: { eventType: AnalyticsEventType.REPORT_SUBMITTED },
       }),
       this.repo.count({
@@ -133,6 +145,7 @@ export class AnalyticsService {
       educationCompleted: eduDone,
     };
   }
+
   //nice addition for reports page on the frontend, this will give the counts for the reports and the detection rate, which is the confirmed reports over the total reports.
   async getReportStats(from?: string, to?: string) {
     const where = this.makeWhere(from, to);
@@ -159,6 +172,7 @@ export class AnalyticsService {
   }
 
   async getMailingStats(from?: string, to?: string) {
+
     const where = this.makeWhere(from, to);
 
     const [sent, scheduled, batchSent, batchScheduled] = await Promise.all([
@@ -188,6 +202,7 @@ export class AnalyticsService {
       [
         this.repo.count({
           where: { auth0Id, eventType: AnalyticsEventType.REPORT_SUBMITTED },
+
         }),
         this.repo.count({
           where: { auth0Id, eventType: AnalyticsEventType.REPORT_CONFIRMED },
@@ -214,6 +229,7 @@ export class AnalyticsService {
 
     return {
       reports,
+
       confirmed,
       falsePositive: falsePos,
       totalXp,
@@ -239,6 +255,8 @@ export class AnalyticsService {
       string,
       { reports: number; emailsSent: number; xpGiven: number }
     >();
+
+
 
     for (const e of events) {
       const day = e.occurredAt.toISOString().split('T')[0];
@@ -268,6 +286,7 @@ export class AnalyticsService {
       where: { eventType: AnalyticsEventType.XP_GIVEN },
     });
     const confirmedReports = await this.repo.find({
+
       where: { eventType: AnalyticsEventType.REPORT_CONFIRMED },
     });
 
@@ -295,6 +314,9 @@ export class AnalyticsService {
       if (entry) entry.reportCount++;
     }
 
+
+
+
     return Array.from(users.entries())
       .map(([auth0Id, data]) => ({
         auth0Id,
@@ -311,6 +333,8 @@ export class AnalyticsService {
   private async sumXp(): Promise<number> {
     const events = await this.repo.find({
       where: { eventType: AnalyticsEventType.XP_GIVEN },
+
+
     });
 
     return events.reduce((sum, e) => {
@@ -335,6 +359,8 @@ export class AnalyticsService {
     return {};
   }
 
+
+
   async upsertUser(user: {
     auth0Id: string;
     email?: string;
@@ -354,10 +380,13 @@ export class AnalyticsService {
       return await this.userRepo.save(newUser);
     } catch (err: unknown) {
       if (err instanceof QueryFailedError) {
+
+
         const driverError = err.driverError as { code?: string } | undefined;
         if (driverError?.code === '23505') {
           this.logger.warn(
             `Duplicate user event for ${user.auth0Id}, ignoring`,
+            // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
           );
           return;
         }
@@ -369,6 +398,8 @@ export class AnalyticsService {
   async deleteUser(auth0Id: string) {
     await this.userRepo.delete({ auth0Id });
   }
+
+
   //just need to make sure about these events form darius to ensure this works well.
   async upsertCampaign(campaign: Partial<Campaign>) {
     const existing = await this.campaignRepo.findOne({
@@ -384,6 +415,8 @@ export class AnalyticsService {
   }
 
   async deleteCampaign(campaignId: string): Promise<void> {
+
+
     await this.campaignRepo.delete({ id: campaignId });
   }
   //also check mailing events here
@@ -406,6 +439,7 @@ export class AnalyticsService {
       if (input.referenceNumber !== undefined)
         existing.referenceNumber = input.referenceNumber;
       if (input.sentAt !== undefined) existing.sentAt = input.sentAt;
+      // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
       await this.sendRepo.save(existing);
       return;
     }
@@ -417,6 +451,7 @@ export class AnalyticsService {
   async recordClickFromEmailId(emailId: string): Promise<void> {
     const send = await this.sendRepo.findOne({
       where: { emailId },
+
     });
 
     if (!send) {
@@ -445,6 +480,8 @@ export class AnalyticsService {
 
     const previous = await this.getPeriodStats(previousStart, currentStart);
 
+
+
     const currentAtRisk = await this.getAtRiskUsers(
       periodDays,
       1000,
@@ -470,6 +507,8 @@ export class AnalyticsService {
         value: current.clickRate,
         delta: delta(current.clickRate, previous.clickRate),
       },
+
+
       totalSimulations: {
         value: current.totalEmailsSent,
 
@@ -493,6 +532,8 @@ export class AnalyticsService {
     const [
       totalEmailsSent,
       totalReports,
+
+
       confirmedPhishing,
       totalClicks,
       educationAssigned,
@@ -509,6 +550,8 @@ export class AnalyticsService {
       }),
       this.repo.count({
         where: {
+
+
           eventType: AnalyticsEventType.REPORT_SUBMITTED,
           occurredAt: Between(start, end),
         },
@@ -532,6 +575,9 @@ export class AnalyticsService {
           occurredAt: Between(start, end),
         },
       }),
+
+
+
     ]);
 
     const detectionRate =
@@ -589,6 +635,7 @@ export class AnalyticsService {
       const day = e.occurredAt.toISOString().split('T')[0];
       if (!byDay.has(day))
         byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
+      // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
 
       const b = byDay.get(day);
       if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) b.reports++;
@@ -608,12 +655,14 @@ export class AnalyticsService {
       if (!byDay.has(day))
         byDay.set(day, { reports: 0, confirmed: 0, sent: 0, clicks: 0 });
       byDay.get(day).clicks++;
+      // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
     }
 
     return Array.from(byDay.entries()).map(([date, data]) => ({
       date,
       detectionRate:
         data.reports > 0 ? (data.confirmed / data.reports) * 100 : 0,
+
       clickRate: data.sent > 0 ? (data.clicks / data.sent) * 100 : 0,
     }));
   }
@@ -655,6 +704,7 @@ export class AnalyticsService {
           confirmed: 0,
           clicked: 0,
         });
+        //console.log(`user ${u.auth0Id} in department ${u.department}`);
       }
     }
 
@@ -670,6 +720,7 @@ export class AnalyticsService {
     // reports
     for (const e of reports) {
       const dept = e.auth0Id ? authToDept.get(e.auth0Id) : undefined;
+      // console.log(`report event for user ${e.auth0Id} in department ${dept} at ${e.occurredAt}`);
       if (!dept) continue;
       if (!deptMap.has(dept))
         deptMap.set(dept, { sent: 0, reported: 0, confirmed: 0, clicked: 0 });
@@ -721,10 +772,12 @@ export class AnalyticsService {
     for (const s of sends) {
       if (s.auth0Id)
         userSends.set(s.auth0Id, (userSends.get(s.auth0Id) ?? 0) + 1);
+      // console.log(`send event for user ${s.auth0Id} at ${s.sentAt}`);
     }
     for (const c of clicks) {
       if (c.auth0Id)
         userClicks.set(c.auth0Id, (userClicks.get(c.auth0Id) ?? 0) + 1);
+      // console.log(`click event for user ${c.auth0Id} at ${c.clickedAt}`);
     }
 
     const users = await this.userRepo.find();
@@ -763,6 +816,8 @@ export class AnalyticsService {
     return campaigns.map((campaign) => {
       if (campaign.endDate && campaign.endDate < now) {
         return { ...campaign, status: 'completed' };
+        // debugging
+        // console.log(`recorded event ${input.eventType} for user ${input.auth0Id}`);
       }
       return campaign;
     });
