@@ -22,7 +22,8 @@ if (!possibleProdFiles.has(prodFile)) {
 const commands = [
     `scp -P ${process.env.SSH_PORT} ./project/docker-compose/.env.prod ${server}${folder}`,
     `scp -P ${process.env.SSH_PORT} ./project/docker-compose/server-deploy.js ${server}${folder}`,
-    `scp -P ${process.env.SSH_PORT} ./project/docker-compose/prod-caddy-conf/Caddyfile ${server}${folder}prod-caddy-conf`,
+    `scp -P ${process.env.SSH_PORT} ./project/docker-compose/prod-caddy-conf/Caddyfile.green ${server}${folder}prod-caddy-conf`,
+    `scp -P ${process.env.SSH_PORT} ./project/docker-compose/prod-caddy-conf/Caddyfile.blue ${server}${folder}prod-caddy-conf`,
     `scp -P ${process.env.SSH_PORT} ./project/docker-compose/${prodFile} ${server}${folder}`,
 ];
 
