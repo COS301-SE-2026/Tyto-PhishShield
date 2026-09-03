@@ -104,6 +104,8 @@ This image shows a valid request using HTTPS that returns successful.
 **500 Concurrent Users**
 ![Screenshot of server maintaining efficiency with 500 concurrent users](./img/500-concurrent-users-diagram.png)
 
+In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second.
+
 #### NFR 3 Quality attribute: Portability and Compatibility
 1. The system’s admin dashboard shall support standard desktop resolutions and maintain usability across commonly used screen sizes including **resolutions from 1280px to 1920px+ .** 
 2. The system’s “report phish” button must appear on the **Outlook ribbon on Desktop, Web, and Mobile.**
