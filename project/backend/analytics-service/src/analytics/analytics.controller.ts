@@ -178,6 +178,20 @@ export class AnalyticsController {
   }
 
   @RabbitSubscribe({
+    exchange: 'education-event-exchange',
+    routingKey: 'education.completed',
+    queue: 'analytics-education-completed-queue',
+  })
+  async onEducationCompleted(payload: EducationPayload) {
+    await this.analyticsService.recordEvent({
+      eventType: AnalyticsEventType.EDUCATION_COMPLETED,
+      auth0Id: payload.auth0Id,
+      email: payload.email,
+      payload: payload as unknown as Record<string, unknown>,
+    });
+  }
+
+  @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
     routingKey: 'mailing.send',
     queue: 'analytics-mailing-send-queue',

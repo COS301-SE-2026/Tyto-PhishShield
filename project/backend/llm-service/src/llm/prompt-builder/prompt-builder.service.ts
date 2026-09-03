@@ -36,21 +36,15 @@ export class PromptBuilderService {
     variables: TemplateVariable[],
     difficulty: Difficulty,
   ): string {
-    let includeBusinessName = true;
     if (difficulty === Difficulty.EASY) {
-      includeBusinessName = false;
-    }
-
-    if (variables.length === 0 || !includeBusinessName) {
       return 'Do not include any personalization placeholders. Write the message generically. Only the {{tracking_link}} must appear in the message.';
     }
+
     const placeholders = variables.map((v) => `{{${v}}}`);
     const contextLines = variables.map((v) => VARIABLE_CONTEXT_PROMPTS[v]);
 
-    if (includeBusinessName) {
-      placeholders.push(BUSINESS_NAME_CONTEXT);
-      contextLines.push(BUSINESS_NAME_CONTEXT);
-    }
+    placeholders.push('{{business_name}}');
+    contextLines.push(BUSINESS_NAME_CONTEXT);
 
     return [
       `You may use these placeholders word-for-word where natural: ${placeholders.join(', ')}`,
