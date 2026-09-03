@@ -20,5 +20,5 @@ export class EventUser {
 
   @IsString()
   @IsOptional()
-  role!: UserRole;
+  role?: UserRole;
 }
