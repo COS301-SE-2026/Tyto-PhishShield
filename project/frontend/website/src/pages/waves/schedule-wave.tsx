@@ -539,16 +539,22 @@ export function ScheduleWave({
                   }
                 }}
               />
-
-              <Select
-                label="Difficulty"
-                value={form.difficulty}
-                options={DIFFICULTY_OPTIONS}
-                onChange={(event) =>
-                  setField("difficulty", event.target.value as EmailDifficulty)
-                }
-                disabled={form.emailDistribution === 'specific'}
-              />
+              <div
+                style={{
+                  opacity: form.emailDistribution === 'specific' ? 0.5: 1,
+                  transition: 'opacity 0.2s'
+                }}
+              >
+                <Select
+                  label="Difficulty"
+                  value={form.difficulty}
+                  options={DIFFICULTY_OPTIONS}
+                  onChange={(event) =>
+                    setField("difficulty", event.target.value as EmailDifficulty)
+                  }
+                  disabled={form.emailDistribution === 'specific'}
+                />
+              </div>
             </div>
 
             {form.emailDistribution === 'specific' && (
