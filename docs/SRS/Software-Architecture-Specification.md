@@ -78,7 +78,7 @@ Microservices each handle their own methods of communication. The only dependenc
 - Test that users with invalid authentication tokens do not have access to protected API endpoints.
 
 **HTTPS Request**
-![HTTPS Request returning success](/img/https-authorized-img.png)
+![HTTPS Request returning success](../images/https-authorized-img.png)
 This image shows a valid request using HTTPS that returns successful.
 
 #### NFR 2 Quality attribute: Performance
