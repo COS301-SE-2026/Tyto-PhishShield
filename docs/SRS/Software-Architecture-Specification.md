@@ -135,18 +135,6 @@ It takes less than one second for the xp change to happen.
 **NRF Test:** 
 - WCAG 2.1 AA accessibility compliance
 
-#### NFR 5 Quality attribute: Reliability and Availability
-1. The system must have 99.9% uptime.
-
-**Tactic:** Remove single points of failure, log requests, error exception communication.
-
-**Pattern:** Load balancing, log at load balancer.
-
-*For load balancing see ADR-03.
-
-**NRF Test:** 
-- Uptime checks should yield >99.9% uptime.
-
 **Lighthouse results**
 ![Screenshot of lighthouse analytics](./img/Accessability_score_demo3_analytics.png)
 ![Screenshot of lighthouse dashboard](./img/Accessability_score_demo3_dashboard.png)
@@ -165,6 +153,18 @@ It takes less than one second for the xp change to happen.
 ![Screenshot of lighthouse wave detail](./img/Accessability_score_demo3_waves-details.png)
 ![Screenshot of lighthouse waves](./img/Accessability_score_demo3_waves.png)
 In the images above you can see the lighthouse accessibility and best practices results
+
+#### NFR 5 Quality attribute: Reliability and Availability
+1. The system must have 99.9% uptime.
+
+**Tactic:** Remove single points of failure, log requests, error exception communication.
+
+**Pattern:** Load balancing, log at load balancer.
+
+*For load balancing see ADR-03.
+
+**NRF Test:** 
+- Uptime checks should yield >99.9% uptime.
 
 **Uptime**  
 ![Image showing uptime of last 30 days](./img/uptime-img.png)  
