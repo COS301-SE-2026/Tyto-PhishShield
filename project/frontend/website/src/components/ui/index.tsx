@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, type ReactNode } from 'react';
+import React, { useState, useRef, useEffect, type ReactNode, useId } from 'react';
 import { Eye, EyeOff, X, Moon, Sun, } from 'lucide-react';
 
 // Button
@@ -73,12 +73,17 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({
-  label, error, hint, leftIcon, rightIcon, ...props
+  label, error, hint, leftIcon, rightIcon, id, ...props
 }: InputProps) {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       {label && (
-        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+        <label 
+          htmlFor={inputId}
+          style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
           {label}
           {props.required && <span style={{ color: 'var(--color-danger)', marginLeft: 2 }}>*</span>}
         </label>
@@ -92,6 +97,7 @@ export function Input({
         )}
         <input
           {...props}
+          id={inputId}
           style={{
             width: '100%',
             border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border-strong, var(--border))'}`,
@@ -165,12 +171,16 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   options: { value: string; label: string }[];
 }
 
-export function Select({ label, error, options, ...props }: SelectProps) {
+export function Select({ label, error, options, id, ...props }: SelectProps) {
+  const generatedId = useId();
+  const selectId = id ?? generatedId;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      {label && <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{label}</label>}
+      {label && <label htmlFor={selectId} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{label}</label>}
       <select
         {...props}
+        id={selectId}
         style={{
           width: '100%', border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border-strong, var(--border))'}`,
           borderRadius: 'var(--radius-md)', padding: '9px 12px', fontSize: 13,
