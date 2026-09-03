@@ -174,7 +174,6 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **UC-15**   | Admin can create educational material.                         | As an admin, I want to be able to create educational material for users manually or automatically with the AI engine.                                                                        |
 | **UC-16**   | Admin can manage user states.                                  | As an admin, I want to be able to activate or deactivate user accounts to manage user access to the system.                                                                                  |
 | **UC-17**   | Admin can import company data.                                 | As an admin, I want to be able to add the company data, such as employee information to the system.                                                                                  |
-| **UC-18**   | Admin can update employee information.                                 | As an admin, I want to be able to update employee information on the system.                                                                                  |
 
 ## Use Case Diagrams
 
@@ -186,9 +185,11 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 
 ![Analystic Use Cases](<../images/Analystic Use Cases.jpg>)
 
+![Company Use Cases](<../images/Company Use Cases.jpg>)
+
 ## Requirements Use Case Traceability Matrix
 
-|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 | UC-15 | **UC-16** |
+|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 | UC-15 | UC-16 |
 | ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | --------- |
 | **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
 | **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
@@ -218,7 +219,7 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
 | **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
 | **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |       |       |           |
-| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | 7     | 4     | 5         |
+| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | **7**     | **4**     | **5**         |
 ## Domain Model
 ![Domain model](<../images/Domain Model.jpg>)
 
