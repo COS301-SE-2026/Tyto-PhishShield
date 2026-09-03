@@ -1,4 +1,5 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { Department, UserRole } from '../accounts/enum';
 
 export class EventUser {
   @IsString()
@@ -15,5 +16,9 @@ export class EventUser {
 
   @IsString()
   @IsOptional()
-  department!: string;
+  department!: Department;
+
+  @IsString()
+  @IsOptional()
+  role!: UserRole;
 }
