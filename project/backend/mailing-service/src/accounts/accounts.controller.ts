@@ -11,6 +11,7 @@ import { Controller } from '@nestjs/common';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { User } from '../dto/user.dto';
 import { AccountsService } from './accounts.service';
+import { EventUser } from '@phishshield/dto';
 
 @Controller('accounts')
 export class AccountsController {
@@ -23,5 +24,14 @@ export class AccountsController {
   })
   async createUser(user: User): Promise<void> {
     await this.accountsService.createUser(user);
+  }
+
+  @RabbitSubscribe({
+    exchange: 'accounts-event-exchange',
+    routingKey: 'user.deleted',
+    queue: 'mailing-event-exchange',
+  })
+  async deleteUser(user: EventUser): Promise<void> {
+    await this.accountsService.deleteUser(user);
   }
 }

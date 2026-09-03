@@ -136,6 +136,7 @@ export class ReportService {
             auth0Id: user.auth0Id,
             email: user.email,
             reportId: saved.id,
+            source: 'report-service',
           },
         ); //here are the events section,, necassary for demo 2.
         this.logger.log(`Published education.assign for user ${user.auth0Id}`);
