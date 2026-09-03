@@ -817,4 +817,25 @@ export class AnalyticsService {
     });
     await this.clickRepo.save(click);
   }
+
+  async isRecentDuplicate(
+    eventType: AnalyticsEventType,
+    auth0Id: string,
+    payload: Record<string, unknown>,
+    windowMs: number,
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - windowMs);
+    const events = await this.repo.find({
+      where: {
+        eventType,
+        auth0Id,
+        occurredAt: MoreThanOrEqual(since),
+      },
+      order: { occurredAt: 'DESC' },
+      take: 10,
+    });
+    return events.some(
+      (e) => JSON.stringify(e.payload) === JSON.stringify(payload),
+    );
+  }
 }

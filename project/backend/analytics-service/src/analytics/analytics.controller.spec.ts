@@ -29,6 +29,7 @@ const mockAnalyticsService = {
   getByDepartment: jest.fn(),
   getAtRiskUsers: jest.fn(),
   getCampaigns: jest.fn(),
+  isRecentDuplicate: jest.fn().mockResolvedValue(false),
 };
 //controller tests here, less important but shoud still checka nd make sure with everyone.
 describe('AnalyticsController', () => {
