@@ -30,7 +30,7 @@ const mockAnalyticsService = {
   getAtRiskUsers: jest.fn(),
   getCampaigns: jest.fn(),
 };
-
+//controller tests here, less important but shoud still checka nd make sure with everyone.
 describe('AnalyticsController', () => {
   let controller: AnalyticsController;
   let service: jest.Mocked<typeof mockAnalyticsService>;
@@ -53,8 +53,6 @@ describe('AnalyticsController', () => {
     jest.clearAllMocks();
   });
 
-  // ===================== RabbitMQ event handlers =====================
-
   describe('onReportSubmitted', () => {
     it('records REPORT_SUBMITTED with auth0Id and email', async () => {
       const payload = {
@@ -73,7 +71,7 @@ describe('AnalyticsController', () => {
       });
     });
 
-    it('records without email if missing', async () => {
+    it('recods without email if missing', async () => {
       const payload = {
         auth0Id: 'auth0|456',
         reportId: 'rep2',
@@ -91,7 +89,7 @@ describe('AnalyticsController', () => {
   });
 
   describe('onXpGiven', () => {
-    it('records XP_GIVEN and REPORT_CONFIRMED when reason includes "phishing"', async () => {
+    it('records XP_GIVEN and REPORT_CONFIRMED when reason includes "phihing"', async () => {
       const payload = {
         auth0Id: 'auth0|123',
         amount: 10,
@@ -113,7 +111,7 @@ describe('AnalyticsController', () => {
       });
     });
 
-    it('calls recordClickFromAuth0Id when reason includes "compromised"', async () => {
+    it('calls recordClickFromAuth0Id when reson includes "compromised"', async () => {
       const payload = {
         auth0Id: 'auth0|123',
         amount: -40,
@@ -126,7 +124,7 @@ describe('AnalyticsController', () => {
       expect(service.recordEvent).toHaveBeenCalledTimes(1);
     });
 
-    it('does not call recordClickFromAuth0Id for normal xp reasons', async () => {
+    it('does not call recordCickFromAuth0Id for normal xp reasons', async () => {
       const payload = {
         auth0Id: 'auth0|123',
         amount: 10,
@@ -141,7 +139,7 @@ describe('AnalyticsController', () => {
   });
 
   describe('onEducationAssigned', () => {
-    it('records EDUCATION_ASSIGNED and REPORT_FALSE_POSITIVE', async () => {
+    it('records EDUATION_ASSIGNED and REPORT_FALSE_POSITIVE', async () => {
       const payload = {
         auth0Id: 'auth0|123',
         email: 'test@example.com',
@@ -167,7 +165,7 @@ describe('AnalyticsController', () => {
   });
 
   describe('onEmailSent', () => {
-    it('records EMAIL_SENT and SimulationSend when emailId present', async () => {
+    it('records EMAIL_SENT and SiulationSend when emailId present', async () => {
       const payload = {
         emailId: 'email-123',
         referenceNumber: 'PHISH-123',
@@ -205,7 +203,7 @@ describe('AnalyticsController', () => {
   });
 
   describe('onEmailScheduled', () => {
-    it('records EMAIL_SCHEDULED and SimulationSend when emailId present', async () => {
+    it('records EMAIL_SCHEDULED and SimulationSen when emailId present', async () => {
       const payload = {
         emailId: 'email-123',
         referenceNumber: 'PHISH-123',
@@ -275,7 +273,7 @@ describe('AnalyticsController', () => {
       });
     });
 
-    it('does not call recordSimulationSend if entries missing emailId', async () => {
+    it('does not call recordSimulationSend if entries missing emilId', async () => {
       const payload = {
         entries: [
           {
@@ -321,7 +319,6 @@ describe('AnalyticsController', () => {
       expect(service.recordSimulationSend).toHaveBeenCalled();
     });
   });
-
 
   describe('onUserCreated / Updated / Deleted', () => {
     it('upserts user on created', async () => {
@@ -387,10 +384,8 @@ describe('AnalyticsController', () => {
     });
   });
 
-  // ===================== HTTP endpoints =====================
-
   describe('new HTTP endpoints', () => {
-    it('getSummary returns service result with parsed period', async () => {
+    it('getSummary returns service result wth parsed period', async () => {
       service.getSummary.mockResolvedValue({
         detectionRate: { value: 10 },
       } as any);
@@ -424,10 +419,8 @@ describe('AnalyticsController', () => {
     });
   });
 
-  // ===================== TCP message patterns =====================
-
   describe('TCP message patterns', () => {
-    it('getUserStatsTcp forwards auth0Id to service', async () => {
+    it('getUserSttsTcp forwards auth0Id to service', async () => {
       service.getUserStats.mockResolvedValue({ totalXp: 10 } as any);
       const result = await controller.getUserStatsTcp('auth0|123');
       expect(service.getUserStats).toHaveBeenCalledWith('auth0|123');

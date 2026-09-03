@@ -7,7 +7,7 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Analytics } from './pages/analytics/analytics';
 import { Reports } from './pages/analytics/reports';
 import { Training } from './pages/training/training';
-import { Waves } from './pages/waves/waves';
+import { Waves, WaveDetail } from './pages/waves/waves';
 import { Emails } from './pages/emails/emails';
 import { ManageEmailTemplates } from "./pages/emails/manage-email-templates";
 import { ScheduleWave } from './pages/waves/schedule-wave';
@@ -19,10 +19,25 @@ import { UserProfile } from './pages/users/user-profile';
 import { Settings } from './pages/settings/settings';
 import Leaderboard from './pages/leaderboard/leaderboard';
 import { Help } from './pages/help/help';
+import { LinkClicked } from './pages/link-clicked/link-clicked';
 
 function UserProfileById({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { id } = useParams<{ id: string }>();
   return <UserProfile onNavigate={onNavigate} activePath="/users" userId={id} />;
+}
+
+function WaveDetailById({ onNavigate}: { onNavigate: (path: string) => void }) {
+  const { id } = useParams<{ id: string }>();
+  if (!id) {
+    return null;
+  }
+  return (
+    <WaveDetail
+      onNavigate={onNavigate}
+      activePath="/waves"
+      waveId={id}
+    />
+  );
 }
 
 function App() {
@@ -31,6 +46,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home onNavigate={handleNavigate} />} />
+      <Route path="/link/:token" element={<LinkClicked onNavigate={handleNavigate} />} />
       <Route path="/login" element={ <PublicOnlyRoute><Login onNavigate={handleNavigate} /></PublicOnlyRoute> } />
       <Route path="/register" element={ <PublicOnlyRoute><Register onNavigate={handleNavigate} /></PublicOnlyRoute> } />
       <Route path="/dashboard" element={ <ProtectedRoute><Dashboard onNavigate={handleNavigate} activePath="/dashboard" /></ProtectedRoute> } />
@@ -40,6 +56,7 @@ function App() {
       <Route path="/analytics" element={ <ProtectedRoute minRole="analyst"><Analytics onNavigate={handleNavigate} activePath="/analytics" /></ProtectedRoute> } />
       <Route path="/analytics/reports" element={ <ProtectedRoute minRole="analyst"><Reports onNavigate={handleNavigate} activePath="/analytics/reports" /></ProtectedRoute> } />
       <Route path="/waves" element={ <ProtectedRoute minRole="analyst"><Waves onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
+      <Route path="/waves/:id" element={ <ProtectedRoute minRole="analyst"><WaveDetailById onNavigate={handleNavigate} /></ProtectedRoute>}/>
       <Route path="/emails/templates" element={ <ProtectedRoute minRole="analyst"><ManageEmailTemplates onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/emails" element={ <ProtectedRoute minRole="analyst"><Emails onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/waves/schedule" element={ <ProtectedRoute minRole="admin"><ScheduleWave onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />

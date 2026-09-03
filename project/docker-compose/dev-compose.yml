@@ -166,6 +166,7 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - VERSION=latest
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
@@ -175,20 +176,30 @@ services:
       - REPORT_SERVICE_URL=http://${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
       - EDUCATION_SERVICE_URL=http://${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
       - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - LLM_SERVICE_URL=http://${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
+      - COMPANY_SERVICE_URL=http://${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
       - ACCOUNTS_HOST=${ACCOUNTS_APP_CONTAINER}
       - EDUCATION_HOST=${EDUCATION_APP_CONTAINER}
       - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
+      - LLM_HOST=${LLM_APP_CONTAINER}
+      - COMPANY_HOST=${COMPANY_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
       - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
       - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
+      - LLM_TCP_PORT=${LLM_TCP_PORT}
+      - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
@@ -409,7 +420,10 @@ services:
       - PORT=${ANALYTICS_SERVICE_PORT}
       - TCP_PORT=${ANALYTICS_TCP_PORT}
       - DB_HOST=${ANALYTICS_DB_CONTAINER}
-      - ANALYTICS_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ANALYTICS_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     # ports:
@@ -428,7 +442,7 @@ services:
           cpus: '1.0'
           memory: '256M'
 
-    llm_db:
+  llm_db:
     image: postgres:15-alpine
     restart: always
 
@@ -461,10 +475,7 @@ services:
       
 # Main service app container
   llm_app:
-    build:
-      context: ../../
-      dockerfile: project/backend/llm-service/Dockerfile
-
+    image: fiveguys301/llm:latest
     container_name: ${LLM_APP_CONTAINER}
     environment:
       - PORT=${LLM_SERVICE_PORT}
@@ -526,10 +537,7 @@ services:
       
 # Main service app container
   company_app:
-    build:
-      context: ../../
-      dockerfile: project/backend/company-service/Dockerfile
-
+    image: fiveguys301/company:latest
     container_name: ${COMPANY_APP_CONTAINER}
     environment:
       - PORT=${COMPANY_SERVICE_PORT}
@@ -560,16 +568,13 @@ services:
     image: fiveguys301/website:latest
     restart: on-failure
     container_name: website
-    environment:
-      - WEBSITE_PORT=5173
-      - API_GATEWAY_URL=http://${GATEWAY_APP_CONTAINER}:${API_GATEWAY_PORT}
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 192M
   
-  outlook-addin:
+  outlook_addin:
     image: fiveguys301/addin:latest
     restart: on-failure
     container_name: addin
@@ -628,6 +633,8 @@ volumes:
   report_pgdata:
   education_pgdata:
   analytics_pgdata:
+  llm_pgdata:
+  company_pgdata:
   caddy_data:
   caddy_config:
   caddy_logs:

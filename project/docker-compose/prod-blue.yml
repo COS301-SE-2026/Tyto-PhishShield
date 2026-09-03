@@ -1,0 +1,364 @@
+services:
+  mailing_app:
+    image: fiveguys301/mailing:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${MAILING_APP_CONTAINER}
+    environment:
+      - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - MAILING_DB_CONTAINER=${MAILING_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MAILING_DB_NAME=${MAILING_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    networks:
+      - blue
+      - infrastructure
+  
+  accounts_app:
+    image: fiveguys301/accounts:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${ACCOUNTS_APP_CONTAINER}
+    environment:
+      - PORT=${ACCOUNTS_SERVICE_PORT}
+      - DB_HOST=${ACCOUNTS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ACCOUNTS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=prod
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
+      - RESEND_EMAIL=${RESEND_EMAIL}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+    networks:
+      - blue
+      - infrastructure
+
+  api_app1:
+    image: fiveguys301/api:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    restart: on-failure
+    container_name: blue_${GATEWAY_APP_CONTAINER}_1
+    environment:
+      - VERSION=blue_1-v1.0
+      - OUR_EMAIL=${OUR_EMAIL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
+      - ACCOUNTS_SERVICE_URL=http://blue_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+      - MAILING_SERVICE_URL=http://blue_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_SERVICE_URL=http://${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
+      - REPORT_SERVICE_URL=http://blue_${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://blue_${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://blue_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - LLM_SERVICE_URL=http://blue_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
+      - COMPANY_SERVICE_URL=http://blue_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - XP_HOST=blue_${XP_APP_CONTAINER}
+      - REPORT_HOST=blue_${REPORT_APP_CONTAINER}
+      - MAILING_HOST=blue_${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=blue_${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=blue_${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=blue_${ANALYTICS_APP_CONTAINER}
+      - LLM_HOST=blue_${LLM_APP_CONTAINER}
+      - COMPANY_HOST=blue_${COMPANY_APP_CONTAINER}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - REPORT_TCP_PORT=${REPORT_TCP_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
+      - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
+      - LLM_TCP_PORT=${LLM_TCP_PORT}
+      - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SERVER_DOMAIN=${DOMAIN}
+      - OUTLOOK_ADDIN_CORS=
+      - ENVIRONMENT=prod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:${API_GATEWAY_PORT}/api/health').then(async r => { const j = await r.json(); if (r.status != 200) process.exit(1); }).catch(() => process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 384M
+        reservations:
+          cpus: '1.0'
+          memory: 128M
+    networks:
+      - proxy
+      - blue
+      - infrastructure
+
+  api_app2:
+    image: fiveguys301/api:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    restart: on-failure
+    container_name: blue_${GATEWAY_APP_CONTAINER}_2
+    environment:
+      - VERSION=blue_2-v1.0
+      - OUR_EMAIL=${OUR_EMAIL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
+      - ACCOUNTS_SERVICE_URL=http://blue_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
+      - MAILING_SERVICE_URL=http://blue_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
+      - XP_SERVICE_URL=http://blue_${XP_APP_CONTAINER}:${XP_SERVICE_PORT}
+      - REPORT_SERVICE_URL=http://blue_${REPORT_APP_CONTAINER}:${REPORT_SERVICE_PORT}
+      - EDUCATION_SERVICE_URL=http://blue_${EDUCATION_APP_CONTAINER}:${EDUCATION_SERVICE_PORT}
+      - ANALYTICS_SERVICE_URL=http://blue_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
+      - LLM_SERVICE_URL=http://blue_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
+      - COMPANY_SERVICE_URL=http://blue_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - XP_HOST=blue_${XP_APP_CONTAINER}
+      - REPORT_HOST=blue_${REPORT_APP_CONTAINER}
+      - MAILING_HOST=blue_${MAILING_APP_CONTAINER}
+      - ACCOUNTS_HOST=blue_${ACCOUNTS_APP_CONTAINER}
+      - EDUCATION_HOST=blue_${EDUCATION_APP_CONTAINER}
+      - ANALYTICS_HOST=blue_${ANALYTICS_APP_CONTAINER}
+      - LLM_HOST=blue_${LLM_APP_CONTAINER}
+      - COMPANY_HOST=blue_${COMPANY_APP_CONTAINER}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - REPORT_TCP_PORT=${REPORT_TCP_PORT}
+      - MAILING_TCP_PORT=${MAILING_TCP_PORT}
+      - ACCOUNTS_TCP_PORT=${ACCOUNTS_TCP_PORT}
+      - EDUCATION_TCP_PORT=${EDUCATION_TCP_PORT}
+      - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
+      - LLM_TCP_PORT=${LLM_TCP_PORT}
+      - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
+      - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SERVER_DOMAIN=${DOMAIN}
+      - OUTLOOK_ADDIN_CORS=
+      - ENVIRONMENT=prod
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:${API_GATEWAY_PORT}/api/health').then(async r => { const j = await r.json(); if (r.status != 200) process.exit(1); }).catch(() => process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 384M
+        reservations:
+          cpus: '1.0'
+          memory: 128M
+    networks:
+      - proxy
+      - blue
+      - infrastructure
+
+  report_app:
+    image: fiveguys301/report:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${REPORT_APP_CONTAINER}
+    environment:
+      - PORT=${REPORT_SERVICE_PORT}
+      - TCP_PORT=${REPORT_TCP_PORT}
+      - DB_HOST=${REPORT_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}  
+      - DB_PASSWORD=${DB_PASSWORD} 
+      - DB_NAME=${REPORT_DB_NAME}  
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN} 
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
+      - REPORT_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+    networks:
+      - blue
+      - infrastructure
+
+  xp_app:
+    image: fiveguys301/xp:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${XP_APP_CONTAINER}
+    environment:
+      - XP_SERVICE_PORT=${XP_SERVICE_PORT}
+      - XP_TCP_PORT=${XP_TCP_PORT}
+      - XP_DB_CONTAINER=${XP_DB_CONTAINER}
+      - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - XP_DB_NAME=${XP_DB_NAME}
+      - DB_SYNC=${DB_SYNC}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    networks:
+      - blue
+      - infrastructure
+      
+  education_app:
+    image: fiveguys301/education:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${EDUCATION_APP_CONTAINER}
+    environment:
+      - PORT=${EDUCATION_SERVICE_PORT}
+      - TCP_PORT=${EDUCATION_TCP_PORT}
+      - DB_HOST=${EDUCATION_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${EDUCATION_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 192M
+    networks:
+      - blue
+      - infrastructure
+      
+  analytics_app:
+    image: fiveguys301/analytics:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${ANALYTICS_APP_CONTAINER}
+    environment:
+      - PORT=${ANALYTICS_SERVICE_PORT}
+      - TCP_PORT=${ANALYTICS_TCP_PORT}
+      - DB_HOST=${ANALYTICS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${ANALYTICS_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: '256M'
+    networks:
+      - blue
+      - infrastructure
+
+  llm_app:
+    image: fiveguys301/llm:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${LLM_APP_CONTAINER}
+    environment:
+      - PORT=${LLM_SERVICE_PORT}
+      - TCP_PORT=${LLM_TCP_PORT}
+      - DB_HOST=${LLM_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${LLM_DB_NAME}
+      - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
+      - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+    networks:
+      - blue
+      - infrastructure
+    
+  company_app:
+    image: fiveguys301/company:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    container_name: blue_${COMPANY_APP_CONTAINER}
+    environment:
+      - PORT=${COMPANY_SERVICE_PORT}
+      - TCP_PORT=${COMPANY_TCP_PORT}
+      - DB_HOST=${COMPANY_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMPANY_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+    networks:
+      - blue
+      - infrastructure
+
+  website:
+    image: fiveguys301/website:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6-prod
+    restart: on-failure
+    container_name: blue_website
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 192M
+    networks:
+      - blue
+      - proxy
+  
+  outlook_addin:
+    image: fiveguys301/addin:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6-prod
+    restart: on-failure
+    container_name: blue_addin
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+    networks:
+      - blue
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+  blue:
+    external: true
+    name: blue
+  infrastructure:
+    external: true
+    name: infrastructure

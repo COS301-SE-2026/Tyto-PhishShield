@@ -18,12 +18,12 @@ import { HttpService } from '@nestjs/axios';
 import { of, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { UserRole } from '../users/entities/user.entity';
 import type { User } from '../users/entities/user.entity';
 import type { AxiosResponse } from 'axios';
 import { OtpService } from '../otp/otp.service';
 import { UserSyncService } from '../users/user-sync.service';
 import { koaJwtSecret } from 'jwks-rsa';
+import { UserRole } from '@phishshield/dto';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,

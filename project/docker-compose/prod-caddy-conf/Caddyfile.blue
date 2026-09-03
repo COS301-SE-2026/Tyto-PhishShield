@@ -22,21 +22,24 @@ prod-caddy.internal {
     }
 
     handle /socket.io/* {
-        reverse_proxy prod_api-gateway:3001
+        reverse_proxy blue_api-gateway_1:3001 blue_api-gateway_2:3001 {
+            lb_policy ip_hash
+        }
     }
 
     handle /api/* {
-        reverse_proxy prod_api-gateway:3001 {
+        reverse_proxy blue_api-gateway_1:3001 blue_api-gateway_2:3001 {
             header_up X-Request-ID {http.request.header.X-Request-ID}
+            lb_policy round_robin
         }
     }
 
     handle /addin/* {
         uri strip_prefix /addin
-        reverse_proxy blue-outlook-addin:8080
+        reverse_proxy blue_addin:8080
     }
 
     handle {
-        reverse_proxy blue-website:5173
+        reverse_proxy blue_website:5173
     }
 }

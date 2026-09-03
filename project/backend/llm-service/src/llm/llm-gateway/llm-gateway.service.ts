@@ -3,20 +3,19 @@
  *
  * LLM-Gateway:
  * Proxies requests to an external LLM-Gateway which manages which LLMs are used and applies rate limiting.
- * 
+ *
  * Requires:
  * env variables:
  * LLM_GATEWAY_KEY
  * LLM_GATEWAY_URL
  *
  * Functions:
- * - {@link LlmGatewayService#basicChat} - Basic function which just handles sending a basic content chat message to the LLM gateway.
+ * - {@link LlmGatewayService#send} - Sends a fully-formed chat completion request to the LLM gateway and returns the parsed response.
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
-  ChatDto,
   ErrorLlmGatewayResponse,
   LlmGatewayRequestBody,
   OkLlmGatewayResponse,
@@ -24,6 +23,7 @@ import {
 
 @Injectable()
 export class LlmGatewayService {
+  private readonly logger = new Logger(LlmGatewayService.name);
   private readonly llmGatewayUrl: string;
   private readonly llmGatewayKey: string;
 
@@ -32,8 +32,7 @@ export class LlmGatewayService {
     this.llmGatewayUrl = config.getOrThrow<string>('LLM_GATEWAY_URL');
   }
 
-  async basicChat(chat: ChatDto): Promise<OkLlmGatewayResponse> {
-    const body: LlmGatewayRequestBody = { ...chat, n: 1 };
+  async send(body: LlmGatewayRequestBody): Promise<OkLlmGatewayResponse> {
     const response = await fetch(`${this.llmGatewayUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -45,11 +44,12 @@ export class LlmGatewayService {
 
     if (!response.ok) {
       const error = (await response.json()) as ErrorLlmGatewayResponse;
+      this.logger.warn(
+        `LLM gateway request failed: ${error.error?.message ?? response.statusText}`,
+      );
       throw error;
     }
 
-    const data: OkLlmGatewayResponse =
-      (await response.json()) as OkLlmGatewayResponse;
-    return data;
+    return (await response.json()) as OkLlmGatewayResponse;
   }
 }

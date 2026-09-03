@@ -208,7 +208,7 @@ interface OptionsUpdate {
 
 async function loadMissingOptions(reportType: ReportType, state: OptionsState): Promise<OptionsUpdate | null> {
   if (reportType === 'user' && !state.users) return { users: await fetchAllUsers() };
-  if (reportType === 'wave' && !state.waves) return { waves: await getWaves() };
+  if (reportType === 'wave' && state.waves === null) return { waves: (await getWaves()) ?? [] };
   if (reportType === 'department' && !state.departments) return { departments: await fetchDepartmentOptions() };
   return null;
 }
@@ -330,9 +330,19 @@ export function Reports({ onNavigate, activePath }: ReportsProps) {
               <Select
                 label="Wave"
                 value={selectedWaveId}
+                disabled={loadingOptions}
                 onChange={e => setSelectedWaveId(e.target.value)}
-                options={[{ value: '', label: loadingOptions ? 'Loading waves…' : 'Select a wave' },
-                  ...(waves ?? []).map(w => ({ value: w.id, label: w.waveName }))]}
+                options={[
+                  {
+                    value: '',
+                    label: loadingOptions
+                      ? 'Loading waves…'
+                      : waves !== null && waves.length === 0
+                        ? 'No waves found — create one first'
+                        : 'Select a wave',
+                  },
+                  ...(waves ?? []).map(w => ({ value: w.id, label: w.waveName })),
+                ]}
               />
             </div>
           )}
