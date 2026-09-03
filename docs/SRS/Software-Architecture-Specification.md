@@ -55,7 +55,7 @@ Microservices each handle their own methods of communication. The only dependenc
 ### Quality Requirements based off of [NFR](./Software_Requirements_Specification.md#non-functional-requirements)
 
 #### NFR 1 Quality attribute: Security
-1. The system must reject 100% or requests to protected API endpoints that do not have valid or expired authentication tokens.
+1. The system must reject 100% or requests to protected API endpoints that have invalid or expired authentication tokens.
 2. The system must enforce that 100% of the protected API endpoints can only be accessed by users with an appropriate role.
 
 **Tactic:** Use RBAC in the API gateway, use authorization tokens.
@@ -85,6 +85,18 @@ This image shows a valid request using HTTPS that returns successful.
 ![HTTP Request Returning Unauthorized](./img/http-unauthorized-img.png)
 This image shows a unsuccessful request since HTTP was used instead of HTTPS.
 
+**Requests to protected API endpoints without a valid authentication token and without the role necessary to access those endpoints**
+![Accounts Unauthorized](./img/accounts-unauthorized-img.png)
+![Analytics Unauthorized](./img/analytics-unauthorized-img.png)
+![Batch Emails Unauthorized](./img/batch-emails-unauthorized-img.png)
+![Company Unauthorized](./img/company-unauthorized-img.png)
+![Education Unauthorized](./img/education-unauthorized-img.png)
+![Emails Unauthorized](./img/emails-unauthorized-img.png)
+![llm Unauthorized](./img/llm-unauthorized-img.png)
+![Reports Unauthorized](./img/report-unauthorized-img.png)
+![Wave Unauthorized](./img/wave-unauthorized-img.png)
+The above images shows unsuccessful requests because the user does not have the valid authentication token of an admin or analyst who have the necessary role clearance.
+
 #### NFR 2 Quality attribute: Performance
 1. The system shall handle XP transactions and leader board updates within 1s of user action.
 2. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
@@ -101,7 +113,7 @@ This image shows a unsuccessful request since HTTP was used instead of HTTPS.
 | Many requests for different services need to pass through the API gateway. Response time needs to be optimal according the the measures in the quality attribute. | Add a second API gateway instance and use a load balancer to spread the load. | Increases the complexity of the system and adds a bit of latancy. |
 
 **NRF Test:** 
-- Test system responsiveness with 500 concurrent users.
+- Test system responsiveness with 500 concurrent users and that it remains under 2s.
 - Test that error rate is less than 0.1% when subjected to a load of 500 concurrent users.
 - Test that the response time is within 1s.
 
@@ -114,7 +126,7 @@ In this image you can see a test ran using 500 virtual users sending 266700 requ
 It takes less than one second for the xp change to happen.
 
 #### NFR 3 Quality attribute: Portability and Compatibility
-1. The platform shall be deployable on Ubuntu Server environments without requiring platform-specific modifications.
+1. The system shall deploy the complete system from the Docker/Docker Compose configuration on the target Ubuntu environment without modifying application source code.
 
 **Tactic:** Use Infrastructure as Code (IaC) and containerisation, use multiplatform design for frontend systems.
 
@@ -126,13 +138,28 @@ It takes less than one second for the xp change to happen.
 | System should be deployable on any ubuntu server environment. | Create a docker container for each service in the system | Running many containers on a server may use up server resources but limits can be added to ensure the system runs efficiently. |
 
 **NRF Test:** 
-- System is deployable on ubuntu servers.
+- System is deployable.
+
+**Behold**  
+[our Website](https://capstone-five-guys.dns.net.za/)
 
 #### NFR 4 Quality attribute: Usability  
 1. The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
 
+**Tactic:** Apply accessible interface design principles, including sufficient colour contrast, semantic HTML, accessible labels, keyboard navigation and visible focus states.
+
+**Pattern:** Reusable accessible UI components and a consistent design system are used across the frontend to enforce accessibility requirements consistently.
+
 **NRF Test:** 
 - WCAG 2.1 AA accessibility compliance
+- Test foreground and background colour contrast.
+- Run Lighthouse accessibility tests on all major user-facing pages.
+
+**ADR-05** Accessible frontend design
+
+| **Context** | **Decision** | **Consequences** |
+|---|---|---|
+| All user-facing interfaces must comply with WCAG 2.1 AA accessibility requirements. | Use reusable accessible UI components and globally defined styles to maintain WCAG 2.1 AA accessibility across the frontend. | Accessibility requirements can be applied consistently across the system, but frontend components and styling must be designed and tested with accessibility in mind. |
 
 **Lighthouse results**
 ![Screenshot of lighthouse analytics](./img/Accessability_score_demo3_analytics.png)
@@ -160,14 +187,14 @@ In the images above you can see the lighthouse accessibility and best practices 
 
 **Pattern:** Load balancing, log at load balancer.
 
-*For load balancing see ADR-03.
+**ADR-06:** *For load balancing see ADR-03.
 
 **NRF Test:** 
 - Uptime checks should yield >99.9% uptime.
 
 **Uptime**  
 ![Image showing uptime of last 30 days](./img/uptime-img.png)  
-We have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
+As of demo 3 we have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
 
 #### NFR 6 Quality attribute: Flexibility:
 1. The system must be able to scale up to 500 concurrent users without any of the core services becoming unresponsive. 
@@ -183,7 +210,11 @@ We have a 99.895% over the last 30 days. Although it is slightly less than 99.9%
 
 
 **NRF Test:** 
-- .
+- Test system with 500 concurrent users and check to see if any core services becoming unresponsive.
+
+**500 Concurrent Users**
+![Screenshot of core services remaining responsive with 500 concurrent users](./img/500-concurrent-users-diagram.png)
+No core services became unresponsive with 500 concurrent users.
 
 #### NFR 7 Quality attribute: Maintainability
 1. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
@@ -192,6 +223,23 @@ We have a 99.895% over the last 30 days. Although it is slightly less than 99.9%
 **NRF Test:** 
 - CI/CD pipeline tests pass.
 - Code coverage of 80% is reached.
+
+### NFR Quality Requirement Matrix
+
+| ID | NFR | Quantified requirement | Tactic in SAS | Test / tool | Target / actual |
+|---|---|---|---|---|---|
+| QR-01 | NFR 1 - Security | Protected API requests with invalid or expired authentication tokens must be rejected | RBAC at API gateway + authorization tokens | Postman / Protected endpoint authentication tests | 100% rejected / Pass for tested endpoints |
+| QR-02 | NFR 1 - Security | Protected API endpoints may only be accessed by users with an appropriate role | Centralized RBAC at API gateway | Postman / Protected endpoint role authorization tests | 100% enforced / Pass for tested endpoints |
+| QR-03 | NFR 2 - Performance | XP transactions and leaderboard updates must complete within 1 second of user action | Load distribution, caching and database indexing | Postman / XP transaction response-time test | <1 s / <1 s |
+| QR-04 | NFR 2 - Performance | Live analytics and leaderboard data must update within 3 seconds of receiving new event data | WebSocket communication | WebSocket update latency test | <3 s / TBD |
+| QR-05 | NFR 2 - Performance | Server error rate must remain below 0.1% at 500 concurrent users | Load balancing across API gateway instances | Postman | <0.1% / 0% |
+| QR-06 | NFR 2 - Performance | 95th percentile API response time must remain below 2 seconds at 500 concurrent users | Load balancing, caching and database indexing | Postman | <2 s / 1.381 s |
+| QR-07 | NFR 3 - Portability and Compatibility | Platform must be deployable without platform-specific application modifications | Infrastructure as Code + containerisation | Docker / Docker Compose deployment test | No platform-specific modifications / Pass on target deployment environment |
+| QR-08 | NFR 4 - Usability | All user-facing dashboards and interfaces must comply with WCAG 2.1 AA accessibility requirements | Accessible interface design, semantic HTML, sufficient colour contrast, accessible labels, keyboard navigation and visible focus states | Lighthouse | WCAG 2.1 AA / Testing in progress |
+| QR-09 | NFR 5 - Reliability and Availability | System uptime must be at least 99.9% | Load balancing, removal of single points of failure and health monitoring | UptimeRobot | >=99.9% / 99.895% |
+| QR-10 | NFR 6 - Flexibility | System must support 500 concurrent users without core services becoming unresponsive | Independent microservices + load distribution | Postman / 500 concurrent user load test | 500 users with no unresponsive core services / Pass |
+| QR-11 | NFR 7 - Maintainability | Unit and integration tests must execute automatically on every push to the main development branches | Automated CI/CD quality gates | GitHub Actions | Tests on every push / TBD |
+| QR-12 | NFR 7 - Maintainability | Automated backend test coverage must be at least 80% | Automated test coverage measurement | Test coverage report / GitHub Actions | >=80% / TBD |
 
  <!-- 1. Flexibility: See [NFR 6](./Software_Requirements_Specification.md#non-functional-requirements)
 
