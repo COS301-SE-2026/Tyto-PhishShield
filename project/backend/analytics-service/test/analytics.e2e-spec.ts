@@ -373,6 +373,11 @@ describe('Analytics (integration)', () => {
           { auth0Id: 'user1' },
         ] as any);
 
+        userRepo.find.mockResolvedValue([
+          { auth0Id: 'user1', email: 'u1@example.com' },
+          { auth0Id: 'user2', email: 'u2@example.com' },
+        ] as any);
+
       const res = await request(app.getHttpServer())
         .get('/analytics/leaderboard?limit=5')
         .set('Authorization', `Bearer ${createToken()}`)
