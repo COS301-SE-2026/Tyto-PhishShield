@@ -102,12 +102,24 @@
 		"dc:logs": "docker compose logs -f",
 		"dc:up:dev-server": "docker compose -f project/docker-compose/dev-compose.yml --env-file ./project/docker-compose/.env.dev up -d --build",
 		"dc:down:dev-server": "docker compose -f project/docker-compose/dev-compose.yml --env-file ./project/docker-compose/.env.dev down",
-		"demo1:backend": "pnpm dc:up",
-		"demo1:frontend": "pnpm start:outlook-addin && pnpm dev:website",
+		"dc:up:local-server": "docker compose -f project/docker-compose/local-compose-dockerhub.yml --env-file ./project/docker-compose/.env.local up -d --build",
+		"dc:down:local-server": "docker compose -f project/docker-compose/local-compose-dockerhub.yml --env-file ./project/docker-compose/.env.local down",
+		"dc:check:prod": "docker compose -p infrastructure -f project/docker-compose/prod-infrastructure.yml --env-file ./project/docker-compose/.env.prod config && docker compose -p blue -f project/docker-compose/prod-blue.yml --env-file ./project/docker-compose/.env.prod config && docker compose -p green -f project/docker-compose/prod-green.yml --env-file ./project/docker-compose/.env.prod config",
+		"dc:up:prod-infra": "docker compose -p infrastructure -f project/docker-compose/prod-infrastructure.yml --env-file ./project/docker-compose/.env.prod up",
+		"dc:down:prod-infra": "docker compose -p infrastructure -f project/docker-compose/prod-infrastructure.yml --env-file ./project/docker-compose/.env.prod down",
+		"dc:up:prod-blue": "docker compose -p blue -f project/docker-compose/prod-blue.yml --env-file ./project/docker-compose/.env.prod up",
+		"dc:down:prod-blue": "docker compose -p blue -f project/docker-compose/prod-blue.yml --env-file ./project/docker-compose/.env.prod down",
+		"dc:up:prod-green": "docker compose -p green -f project/docker-compose/prod-green.yml --env-file ./project/docker-compose/.env.prod up",
+		"dc:down:prod-green": "docker compose -p green -f project/docker-compose/prod-green.yml --env-file ./project/docker-compose/.env.prod down",
 		"db:seed": "pnpm dc:up && node ./project/scripts/seed.js",
 		"server:update:dev": "node ./project/scripts/send-dev-compose.js",
-		"server:update:prod": "node ./project/scripts/send-prod-compose.js",
-		"server:update:caddy": "node ./project/scripts/send-edge-caddy.js"
+		"server:update:prod": "node ./project/scripts/send-prod-compose.js prod-infrastructure.yml",
+		"server:update:caddy": "node ./project/scripts/send-edge-caddy.js",
+		"validate:blue": "node ./project/scripts/validate-prod-compose.js prod-blue.yml",
+		"validate:green": "node ./project/scripts/validate-prod-compose.js prod-green.yml",
+		"validate:infra": "node ./project/scripts/validate-prod-compose.js prod-infrastructure.yml",
+		"deploy:infra": "node ./project/scripts/deploy.js infrastructure",
+		"deploy:production": "node ./project/scripts/deploy.js prod"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^11.0.21",
@@ -121,6 +133,7 @@
 		"cross-env": "^10.1.0",
 		"dotenv": "^17.4.2",
 		"dotenv-cli": "^11.0.0",
+		"js-yaml": "^5.4.1",
 		"ngrok": "5.0.0-beta.2"
 	}
 }

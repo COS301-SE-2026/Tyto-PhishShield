@@ -274,21 +274,23 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
                   <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>WAVE</th>
                   <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>STATUS</th>
                   <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>STARTED</th>
+                  <th style={{ padding: '8px 16px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>ENDS</th>
                 </tr>
               </thead>
               <tbody>
                 {campaigns.map(c => (
                   <tr key={c.id} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{c.name ?? c.id}</td>
-                    <td style={{ padding: '10px 16px' }}><Badge variant="neutral">{c.status ?? 'unknown'}</Badge></td>
+                    <td style={{ padding: '10px 16px' }}><Badge variant={c.status === 'completed' ? 'neutral' : 'success'}>{c.status ?? 'unknown'}</Badge></td>
                     <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{c.startDate ? new Date(c.startDate).toLocaleDateString('en-ZA') : '—'}</td>
+                    <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{c.endDate ? new Date(c.endDate).toLocaleDateString('en-ZA') : '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <ComingSoon label="No wave activity to summarise yet — waves-service doesn't publish wave events to analytics-service yet, so this table stays empty until that's wired up." />
+          <ComingSoon label="No waves have been created yet, this table will populate automatically once a wave is launched." />
         )}
       </Card>
     </AppLayout>

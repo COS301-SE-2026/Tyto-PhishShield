@@ -1,3 +1,34 @@
+/**
+ * Controller: AnalyticsController
+ * Base path: /api/analytics
+ *
+ * Exposes analytics dashboard endpoints and subscribes to RabbitMQ events
+ * from other PhishShield services. Aggregated data is served via REST endpoints
+ * (guarded by JWT) and service-to-service TCP message patterns.
+ *
+ * Endpoints:
+ * - {@link AnalyticsController#getOverview} - Raw counts for dashboard cards.
+ * - {@link AnalyticsController#getReportStats} - Report counts with date filters.
+ * - {@link AnalyticsController#getMailingStats} - Sent and scheduled simulation counts.
+ * - {@link AnalyticsController#getTimeSeries} - Daily grouped events for charts.
+ * - {@link AnalyticsController#getLeaderboard} - Top users by XP.
+ * - {@link AnalyticsController#getUserStats} - Per-user analytics.
+ * - {@link AnalyticsController#getSummary} - KPI cards with deltas.
+ * - {@link AnalyticsController#getDetectionRateOverTime} - Daily detection and click rates.
+ * - {@link AnalyticsController#getByDepartment} - Department breakdown.
+ *
+ *
+ * - {@link AnalyticsController#getAtRiskUsers} - Users with high click rates.
+ * - {@link AnalyticsController#getCampaigns} - Campaign performance.
+ *
+ * RabbitMQ subscribers:
+ * - report.submitted, xp.give / xp.given, education.assigned, mailing.send / schedule,
+ *   mailing.batch_send / schedule, accounts user events, wave.create / wave.delete.
+ *
+ * TCP patterns:
+ * - analytics.getUserStats, analytics.getOverview
+ */
+
 import { Controller, Get, Query, UseGuards, Param } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -10,6 +41,7 @@ import { MessagePattern } from '@nestjs/microservices';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsEventType } from './entities/analytics-event.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { EventUser } from '@phishshield/dto';
 
 //payload shapes, could move to shared types later, but for now just here.
 
@@ -28,6 +60,8 @@ interface XpPayload {
 interface EducationPayload {
   auth0Id: string;
   email?: string;
+  source?: string;
+
   assignmentId?: string;
   reportId?: string;
 }
@@ -38,6 +72,7 @@ interface MailingPayload {
   scheduledAt?: string;
   emailId?: string;
   auth0Id?: string;
+
   campaignId?: string;
   entries?: {
     referenceNumber: string;
@@ -86,13 +121,23 @@ export class AnalyticsController {
       payload: payload as unknown as Record<string, unknown>,
     });
   }
-
+  //exchange and routing keys are hardcoded here, but could be moved to config/env if needed in future.
   @RabbitSubscribe({
     exchange: 'xp-event-exchange',
-    routingKey: ['xp.give', 'xp.given'],
+    routingKey: 'xp.given',
+
     queue: 'analytics-xp-queue',
   })
   async onXpGiven(payload: XpPayload) {
+    const duplicate = await this.analyticsService.isRecentDuplicate(
+      AnalyticsEventType.XP_GIVEN,
+      payload.auth0Id,
+      payload as unknown as Record<string, unknown>,
+      60_000,
+    );
+    if (duplicate) {
+      return; // already processed this exact event
+    }
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.XP_GIVEN,
       auth0Id: payload.auth0Id,
@@ -105,6 +150,7 @@ export class AnalyticsController {
     if (reason.includes('phishing')) {
       await this.analyticsService.recordEvent({
         eventType: AnalyticsEventType.REPORT_CONFIRMED,
+
         auth0Id: payload.auth0Id,
         payload: payload as unknown as Record<string, unknown>,
       });
@@ -113,10 +159,10 @@ export class AnalyticsController {
       await this.analyticsService.recordClickFromAuth0Id(payload.auth0Id);
     }
   }
-
+  // rabbitmq subscribers for education assigned, email sent/scheduled/batch, user created/updated/deleted, wave create/delete
   @RabbitSubscribe({
     exchange: 'education-event-exchange',
-    routingKey: 'education.assigned',
+    routingKey: 'education.assign',
     queue: 'analytics-education-assigned-queue',
   })
   async onEducationAssigned(payload: EducationPayload) {
@@ -130,8 +176,24 @@ export class AnalyticsController {
 
     // Whenever education is assigned, it's because the user reported a real phishing email(false positive)
     // so we count that as a false positive report.
+    if (!payload.source || payload.source === 'report-service') {
+      await this.analyticsService.recordEvent({
+        eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+        auth0Id: payload.auth0Id,
+        email: payload.email,
+        payload: payload as unknown as Record<string, unknown>,
+      });
+    }
+  }
+
+  @RabbitSubscribe({
+    exchange: 'education-event-exchange',
+    routingKey: 'education.completed',
+    queue: 'analytics-education-completed-queue',
+  })
+  async onEducationCompleted(payload: EducationPayload) {
     await this.analyticsService.recordEvent({
-      eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+      eventType: AnalyticsEventType.EDUCATION_COMPLETED,
       auth0Id: payload.auth0Id,
       email: payload.email,
       payload: payload as unknown as Record<string, unknown>,
@@ -157,10 +219,12 @@ export class AnalyticsController {
         sentAt: payload.scheduledAt
           ? new Date(payload.scheduledAt)
           : new Date(),
+        //this should be the actual sent time, but we don't have that info from the gateway, so we use scheduledAt or now as a fallback.
       });
     }
   }
 
+  // have to check for emailId and referenceNumber because some events may not have them, e.g. batch sends with no entries. Have to check with Darius.
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
     routingKey: 'mailing.schedule',
@@ -203,6 +267,7 @@ export class AnalyticsController {
           referenceNumber: entry.referenceNumber,
           auth0Id: entry.auth0Id,
           campaignId: entry.waveId,
+
           sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
         });
       }
@@ -227,12 +292,13 @@ export class AnalyticsController {
           referenceNumber: entry.referenceNumber,
           auth0Id: entry.auth0Id,
           campaignId: entry.waveId,
+
           sentAt: entry.scheduledAt ? new Date(entry.scheduledAt) : new Date(),
         });
       }
     }
   }
-
+  // have to check all these methods above wth darius and the event exchange there.
   @RabbitSubscribe({
     exchange: 'accounts-event-exchange',
     routingKey: 'user.created',
@@ -265,10 +331,11 @@ export class AnalyticsController {
 
   @RabbitSubscribe({
     exchange: 'accounts-event-exchange',
+
     routingKey: 'user.deleted',
     queue: 'analytics-user-deleted-queue',
   })
-  async onUserDeleted(payload: AccountUserPayload) {
+  async onUserDeleted(payload: EventUser) {
     await this.analyticsService.deleteUser(payload.auth0Id);
   }
 
@@ -293,6 +360,7 @@ export class AnalyticsController {
 
   @RabbitSubscribe({
     exchange: 'wave-event-exchange',
+
     routingKey: 'wave.delete',
     queue: 'analytics-wave-delete-queue',
   })
@@ -319,6 +387,7 @@ export class AnalyticsController {
     return this.analyticsService.getReportStats(from, to);
   }
 
+  //yet again check this with darisu.
   @Get('mailing')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -357,7 +426,7 @@ export class AnalyticsController {
   getUserStatsTcp(auth0Id: string) {
     return this.analyticsService.getUserStats(auth0Id);
   }
-
+  // here phase 2/3 starts, check with Frikkie to ensure this is enough or whether we might need even more stuff.
   @Get('summary')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -375,7 +444,7 @@ export class AnalyticsController {
     const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
     return this.analyticsService.getDetectionRateOverTime(days);
   }
-
+  //check for department with Frikkie and Josua.
   @Get('by-department')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -398,7 +467,8 @@ export class AnalyticsController {
     const lim = limit ? Number.parseInt(limit, 10) : 10;
     return this.analyticsService.getAtRiskUsers(days, lim);
   }
-
+  //check with darius.
+  //Also: TODO: might have to change this to waves instead of campaigns.
   @Get('campaigns')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

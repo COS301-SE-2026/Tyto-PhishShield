@@ -106,7 +106,7 @@ export class XpController {
   @Post('link-clicked')
   @ApiOperation({ summary: 'Marks link as clicked and deducts xp from user' })
   @ApiBody({
-    schema: { example: { token: 'ABC123' } },
+    schema: { example: { token: 'ABC123456789' } },
   })
   linkClicked(
     @Body() tokenDto: TokenDto,

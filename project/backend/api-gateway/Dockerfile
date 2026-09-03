@@ -42,9 +42,9 @@ RUN chown -R appuser:phishshield /app
 COPY --from=build /out ./
 COPY --from=build /app/project/backend/api-gateway/dist/ ./dist/
 
-RUN mkdir -p ../var/log/api-gateway
+RUN mkdir -p /var/log/api-gateway
 
-RUN chown -R appuser:phishshield ../var/log/api-gateway
+RUN chown -R appuser:phishshield /var/log/api-gateway
 
 USER appuser
 

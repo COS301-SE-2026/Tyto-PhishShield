@@ -345,6 +345,9 @@ Docker containerizes the system in separate containers making our system portabl
 
 ## API Service Contracts
 
+[View documentation](./service-contracts/api-service-contract.md)
+[View open-api yaml file](./service-contracts/openapi.yaml)
+
 ## Deployment
 
 ### Deployment Requirements
@@ -352,15 +355,61 @@ Docker containerizes the system in separate containers making our system portabl
 
 Currently we have a local development environment that we run on our local computers for testing the integrated system. Then we deploy the system automatically to docker hub and we use watchtower to pull new images into our staging development environment.
 
-In the future we will add a production environment on the server where the most stable versions will be deployed and accessible to everyone. Currently the staging development environment is accessible to all but it will be restricted in the future.
+Once everything is working in the staging environment we can prepare the compose files for production. We apply the hashed tags to the new blue or green compose file. Then we run `pnpm deploy:production` to start the deployment process for the new services. [See process below.](#deployment-process)
 
 Containerization: All services are containerized and are able to run in a docker environment. This allows the local integration testing and production environments to be reproducible through the containers.
 
-Environment variables are used on the server to set up our current staging development environment, and GitHub secrets are used to deploy our containers to docker hub.
+Environment variables are used on the server to set up our staging development environment, prodcution environment, and GitHub secrets are used to deploy our containers to docker hub.
 
-Roll-back strategy: To deploy to production we plan to use rolling deployment to deploy the microservice containers using image tag pinning. If a microservice goes down the system as a whole is still up and we can easily roll back the microservice to an earlier tagged version.<br>
-For the api-gateway we plan to use a blue-green deployment strategy to switch the api-gateway to the next version through routing to the blue/green container and if the version fails one can switch back to the the other version.
+Roll-back strategy: We use blue green roll-back to provide 0 down time for the services. [(See deployment process below)](#deployment-process)<br>
+For the production infrastructure we do update the infrastructure compose file and then start any new services added to the infrastructure while causing minimal down time. 
 
+### Deployment Process
+```mermaid
+flowchart TD
+	A([Push / pull to main]) --> B[automatically run CI/CD workflow]
+	B --> C(watchtower pulls new images from docker hub)
+	C --> D{check active environment}
+	D --> |green| E(target blue)
+	D --> |blue| F(target green)
+	E --> G(tag images in target compose file with new tags on docker hub)
+	F --> G
+	G --> H[Run deploy script on local machine]
+	H --> I{obtain lock}
+	I --> |fail| Z
+	I --> |lock obtained| J{get active environment}
+	J --> |green| K{valid blue compose}
+	J --> |blue| L{valid green compose}
+	K --> |valid| M(send blue compose to server)
+	K --> |invalid| Z
+	L --> |valid| N(send green compose to server)
+	L --> |invalid| Z
+	M --> O[Automatically run deployment script on server through ssh]
+	N --> O
+	O --> P{obtain lock}
+	P --> |fail| Z
+	P --> |lock obtained| Q{get active environment}
+	Q --> |green| R(pull docker compose blue images)
+	Q --> |blue| S(pull docker compose green images)
+	R --> T(start docker compose blue containers)
+	S --> U(start docker compose green containers)
+	U --> V(check containers' health)
+	T --> V
+	V --> W(switch out caddy file to point to new target)
+	W --> X{Valid caddy file}
+	X --> |yes| Y{reload caddy file into caddy container}
+	X --> |No| a(switch caddy file back to previous)
+	a --> Z
+	Y --> |success| b{check system health}
+	Y --> |failed| c(switch caddy file back to previous)
+	c --> d(reload previous caddy file)
+	d --> Z
+	b --> |healthy| e(write new active environment)
+	b --> |unhealth| c
+	e --> f(release server lock)
+	f --> g(release local lock)
+	Z(report failure) --> f
+```
 
 ### Deployment Diagram
 !['Deployment Diagram'](<../images/Deployment Diagram.png>)

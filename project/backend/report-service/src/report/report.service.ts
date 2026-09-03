@@ -89,19 +89,19 @@ export class ReportService {
 
     const saved = await this.repo.save(report);
 
-  try {
-    await this.amqpConnection.publish(
-      'report-event-exchange',
-      'report.submitted',
-      {
-        auth0Id: user.auth0Id,
-        email: user.email,
-        reportId: saved.id,
-      },
-    );
-  } catch (err) {
-    this.logger.error('Failed to publish report.submitted', err);
-  }
+    try {
+      await this.amqpConnection.publish(
+        'report-event-exchange',
+        'report.submitted',
+        {
+          auth0Id: user.auth0Id,
+          email: user.email,
+          reportId: saved.id,
+        },
+      );
+    } catch (err) {
+      this.logger.error('Failed to publish report.submitted', err);
+    }
 
     //const matchedReportable = await this.reportableRepo.findOne({
     //  where: { messageId: dto.outlookMessageId ?? '' },
@@ -136,6 +136,7 @@ export class ReportService {
             auth0Id: user.auth0Id,
             email: user.email,
             reportId: saved.id,
+            source: 'report-service',
           },
         ); //here are the events section,, necassary for demo 2.
         this.logger.log(`Published education.assign for user ${user.auth0Id}`);
