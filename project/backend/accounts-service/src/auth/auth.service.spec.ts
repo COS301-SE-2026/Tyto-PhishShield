@@ -33,25 +33,24 @@ const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   config: {} as never,
 }) as AxiosResponse<T>;
 
-const makeUser = () =>
-  ({
-    id: 'uuid-123',
-    auth0Id: 'auth0|abc123',
-    email: 'test@example.com',
-    name: 'Test User',
-    role: UserRole.USER,
-    isVerified: true,
-    isActive: true,
-    department: 'Finance',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }) as User;
+const makeUser = (overrides = {}) => 
+({  id: 'uuid-123',
+  auth0Id: 'auth0|abc123',
+  email: 'test@example.com',
+  name: 'Test User',
+  role: UserRole.USER,
+  isVerified: true,
+  isActive: true,
+  department: 'Finance',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}) as User;
 
-const httpService = {
-  post: jest.fn(),
-  get: jest.fn(),
-  patch: jest.fn(),
-  delete: jest.fn(),
+let httpService: {
+  post: jest.Mock;
+  get: jest.Mock;
+  patch: jest.Mock;
+  delete: jest.Mock;
 };
 
 describe('AuthService', () => {
@@ -69,6 +68,13 @@ describe('AuthService', () => {
   });
 
   beforeEach(async () => {
+    httpService = {
+      post: jest.fn(),
+      get: jest.fn(),
+      patch: jest.fn(),
+      delete: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -86,14 +92,16 @@ describe('AuthService', () => {
               })[key] ?? '',
             ),
             getOrThrow: jest.fn((key: string) => {
-              switch(key) {
-                case 'AUTH0_DOMAIN': return 'test.us.auth0.com';
-                default: throw new Error('key does not match');
+              switch (key) {
+                case 'AUTH0_DOMAIN':
+                  return 'test.us.auth0.com';
+                default:
+                  throw new Error('key does not match');
               }
             }),
           },
         },
-        { provide: HttpService, useValue: { post: jest.fn(), get: jest.fn() , patch: jest.fn(), delete: jest.fn()} },
+        { provide: HttpService, useValue: httpService },
         {
           provide: UsersService,
           useValue: {
