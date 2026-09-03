@@ -89,7 +89,7 @@ This image shows a unsuccessful request since HTTP was used instead of HTTPS.
 1. The system shall handle XP transactions and leader board updates within 1s of user action.
 2. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
 3. The system must maintain a server error rate of less than 0.1% when subjected to a load up to 500 concurrent users.
-4. The system must maintain a 95th percentile response time of under 3 second for all API requests when subjected to a load up to 500 concurrent users.
+4. The system must maintain a 95th percentile response time of under 2 seconds for all API requests when subjected to a load up to 500 concurrent users.
 
 **Tactic:** Spread the load accross 2 API gateway instances, make use of caching for non-live reads, optimize database indexing.
 
