@@ -299,7 +299,7 @@ export class AnalyticsService {
     for (const e of xpEvents) {
       if (!e.auth0Id) continue;
       const entry = users.get(e.auth0Id) ?? {
-        email: e.email ?? 'unknown',
+        email: 'unknown',
         totalXp: 0,
         reportCount: 0,
       };
@@ -310,16 +310,24 @@ export class AnalyticsService {
 
     for (const e of confirmedReports) {
       if (!e.auth0Id) continue;
-
       const entry = users.get(e.auth0Id);
       if (entry) entry.reportCount++;
     }
 
+    // Fetch all mirrored users to replace "unknown" emails
+    const allUsers = await this.userRepo.find();
+    const userMap = new Map(allUsers.map((u) => [u.auth0Id, u]));
+
     return Array.from(users.entries())
-      .map(([auth0Id, data]) => ({
-        auth0Id,
-        ...data,
-      }))
+      .map(([auth0Id, data]) => {
+        const user = userMap.get(auth0Id);
+        return {
+          auth0Id,
+          email: user?.email ?? data.email, // fallback to event email if user not found
+          totalXp: data.totalXp,
+          reportCount: data.reportCount,
+        };
+      })
       .sort((a, b) => b.totalXp - a.totalXp)
       .slice(0, limit);
   }
