@@ -45,10 +45,10 @@
   --text-on-dark:   #FFFFFF;
 
   /* Sidebar text */
-  --sidebar-text:        rgba(255,255,255,0.45);
+  --sidebar-text:        rgba(255,255,255,0.65);
   --sidebar-text-active: #FFFFFF;
-  --sidebar-active-bg:   rgba(37,99,235,0.3);
-  --sidebar-hover-bg:    rgba(255,255,255,0.06);
+  --sidebar-active-bg:   rgba(37,99,235,0.35);
+  --sidebar-hover-bg:    rgba(255,255,255,0.08);
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
