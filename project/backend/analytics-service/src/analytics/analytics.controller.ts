@@ -124,7 +124,7 @@ export class AnalyticsController {
   //exchange and routing keys are hardcoded here, but could be moved to config/env if needed in future.
   @RabbitSubscribe({
     exchange: 'xp-event-exchange',
-    routingKey: ['xp.give', 'xp.given'],
+    routingKey: 'xp.given',
 
     queue: 'analytics-xp-queue',
   })
