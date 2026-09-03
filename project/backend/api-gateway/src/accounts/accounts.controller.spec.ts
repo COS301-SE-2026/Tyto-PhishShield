@@ -3,14 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { HttpException } from '@nestjs/common';
 import { AccountsController } from './accounts.controller';
 import { ProxyService } from '../proxy/proxy.service';
-import { RouteResolver } from '../proxy/proxy.routes';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
-import type { Request, Response } from 'express';
+import { AccountsService } from './accounts.service';
+import { LoginDto } from '../dto/login.dto';
+import { RouteResolver } from '../proxy/proxy.routes';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
   let proxyService: jest.Mocked<ProxyService>;
-  let routeResolver: jest.Mocked<RouteResolver>;
+  let accountsService: jest.Mocked<AccountsService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,16 +24,34 @@ describe('AccountsController', () => {
           useValue: {
             get: jest.fn((key: string, defaultValue?: string) => {
               if (key === 'ACCOUNTS_SERVICE_URL') return 'http://accounts-service:3002';
+              if (key === 'AUTH0_DOMAIN') return 'Domain';
+              return defaultValue;
+            }),
+            getOrThrow: jest.fn((key: string, defaultValue?: string) => {
+              if (key === 'ACCOUNTS_SERVICE_URL') return 'http://accounts-service:3002';
+              if (key === 'AUTH0_DOMAIN') return 'Domain';
               return defaultValue;
             }),
           },
+        },
+        { 
+          provide: AccountsService, useValue: { 
+            login: jest.fn(), 
+            updateEmployeeAsRegistered: jest.fn(), 
+            validateEmployeeId: jest.fn((employeeId: string, employeeEmail: string) => {
+              if (employeeId === '1' && employeeEmail === 'test@example.com') {
+                return true;
+              }
+              return false;
+            })
+          } 
         },
       ],
     }).compile();
 
     controller = module.get<AccountsController>(AccountsController);
     proxyService = module.get(ProxyService);
-    routeResolver = module.get(RouteResolver);
+    accountsService = module.get(AccountsService);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -42,8 +61,9 @@ describe('AccountsController', () => {
   // ===========================================================================
 
   describe('register()', () => {
+    const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User', employeeId: '1' };
     it('should forward the request to the accounts service and return the result', async () => {
-      const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User' };
+      const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User', employeeId: '1' };
       const expected = { message: 'Registration successful', userId: 'uuid-123' };
       proxyService.forward.mockResolvedValue(expected);
 
@@ -61,7 +81,7 @@ describe('AccountsController', () => {
       proxyService.forward.mockRejectedValue(new HttpException('Conflict', 409));
 
       await expect(
-        controller.register({ email: 'taken@example.com', password: 'Password123!' }),
+        controller.register(body),
       ).rejects.toThrow(HttpException);
     });
 
@@ -69,7 +89,7 @@ describe('AccountsController', () => {
       proxyService.forward.mockRejectedValue(new Error('Could not reach downstream service'));
 
       await expect(
-        controller.register({ email: 'test@example.com', password: 'Password123!' }),
+        controller.register(body),
       ).rejects.toThrow('Could not reach downstream service');
     });
   });
@@ -79,42 +99,20 @@ describe('AccountsController', () => {
   // ===========================================================================
 
   describe('login()', () => {
-    it('should proxy the login request using the resolved route', () => {
-      const req = {
-        originalUrl: '/api/accounts/auth/login',
-        url: '/api/accounts/auth/login',
-      } as unknown as Request;
-      const res = {} as Response;
-      const route = {
-        apiRoute: '/api/accounts',
-        targetService: 'http://accounts-service:3002/api',
-      };
-      routeResolver.resolve.mockReturnValue(route);
+    it('Expect login function from accounts service to be called', async () => {
+      const loginDto: LoginDto = {
+        email: 'test email',
+        password: 'test password'
+      }
 
-      controller.login(req, res);
+      try {
+        await controller.login(loginDto);
+      } catch {
 
-      expect(routeResolver.resolve).toHaveBeenCalledWith('/api/accounts/auth/login');
-      expect(req.url).toBe('/auth/login');
-      expect(proxyService.beterForward).toHaveBeenCalledWith(
-        req,
-        res,
-        'http://accounts-service:3002/api',
-      );
-    });
+      }
 
-    it('should propogate errors from route resolver', async () => {
-      const req = {
-        originalUrl: '/api/accounts/auth/login',
-        url: '/api/accounts/auth/login',
-      } as unknown as Request;
-      const res = {} as Response;
-
-      routeResolver.resolve.mockImplementation(() => {
-        throw new Error('Unknown route');
-      })
-
-      expect(() => controller.login(req, res)).toThrow('Unknown route');
-    });
+      expect(accountsService.login).toHaveBeenCalledWith(loginDto);
+    })
   });
 
   // ===========================================================================

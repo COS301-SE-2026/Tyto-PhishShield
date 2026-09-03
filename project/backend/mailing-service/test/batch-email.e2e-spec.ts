@@ -14,20 +14,58 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
-import { EmailDifficulty } from '../src/entities/emails.entity';
-
-const TEST_SENDER = process.env.RESEND_EMAIL;
+import {
+  EmailDifficulty,
+  EmailTemplateEntity,
+} from '../src/entities/email-template.entity';
+import { UserEntity } from '../src/entities/user.entity';
+import { In, Repository } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { WaveEntity } from '../src/entities/wave.entity';
+const TEST_SENDER = `test@${process.env.DOMAIN}`;
 const TEST_RECIPIENT_EMAIL = process.env.RESEND_EMAIL_DELIVERED;
-const TEST_RECIPIENTS = [TEST_RECIPIENT_EMAIL, TEST_RECIPIENT_EMAIL, TEST_RECIPIENT_EMAIL];
+const TEST_RECIPIENTS = [
+  TEST_RECIPIENT_EMAIL,
+  TEST_RECIPIENT_EMAIL,
+  TEST_RECIPIENT_EMAIL,
+];
+const TEST_AUTH0_IDS = [
+  'auth0|batch-e2e-1',
+  'auth0|batch-e2e-2',
+  'auth0|batch-e2e-3',
+];
 
 describe('BatchEmail service integration tests', () => {
   let app: INestApplication;
   let testReferenceNumber: string;
+  let userRepository: Repository<UserEntity>;
+  let waveRepository: Repository<WaveEntity>;
+  let emailTemplateRepository: Repository<EmailTemplateEntity>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [MailingServiceModule],
     }).compile();
+
+    userRepository = moduleFixture.get<Repository<UserEntity>>(
+      getRepositoryToken(UserEntity),
+    );
+
+    waveRepository = moduleFixture.get<Repository<WaveEntity>>(
+      getRepositoryToken(WaveEntity),
+    );
+
+    emailTemplateRepository = moduleFixture.get<
+      Repository<EmailTemplateEntity>
+    >(getRepositoryToken(EmailTemplateEntity));
+
+    await userRepository.save(
+      TEST_AUTH0_IDS.map((auth0Id) => ({
+        auth0Id,
+        name: 'Batch E2E Test User',
+        email: TEST_RECIPIENT_EMAIL,
+      })),
+    );
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -42,17 +80,27 @@ describe('BatchEmail service integration tests', () => {
       difficulty: EmailDifficulty.MEDIUM,
     });
 
+    if (res.status !== 201 && res.status !== 200) {
+      throw new Error(
+        `Failed to seed email template: ${res.status} ${JSON.stringify(res.body)}`,
+      );
+    }
+
     testReferenceNumber = res.body.referenceNumber;
   }, 30000);
 
   afterAll(async () => {
+
+    await waveRepository.delete({ waveName: 'Wave Name' });
+    await userRepository.delete({ auth0Id: In(TEST_AUTH0_IDS) });
+    await emailTemplateRepository.delete({ sender: TEST_SENDER });
     await app.close();
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should send one template to all recipients immediately`, () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/${testReferenceNumber}/send-batch-with-reference`)
-      .send({ recipients: TEST_RECIPIENTS })
+      .send({ auth0Id: TEST_AUTH0_IDS })
       .expect(200)
       .expect((res) => {
         expect(res.body.success).toBe(true);
@@ -64,7 +112,7 @@ describe('BatchEmail service integration tests', () => {
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 404 for unknown reference`, () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/NON-EXISTENT-REF/send-batch-with-reference`)
-      .send({ recipients: TEST_RECIPIENTS })
+      .send({ auth0Id: TEST_AUTH0_IDS })
       .expect(404);
   });
 
@@ -75,17 +123,36 @@ describe('BatchEmail service integration tests', () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/send-batch-random-same-email`)
       .send({
-        recipients: TEST_RECIPIENTS,
+        auth0Id: TEST_AUTH0_IDS,
         difficulty: EmailDifficulty.MEDIUM,
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
+        waveName: 'Wave Name',
+        referenceNumber: testReferenceNumber,
       })
       .expect(200)
       .expect((res) => {
         expect(res.body.success).toBe(true);
         expect(res.body.message).toContain(`${TEST_RECIPIENTS.length}`);
       });
+  });
+
+  it(`/batch-emails/send-batch-random-same-email (POST) - should return 404 if the provided referenceNumber does not exist`, () => {
+    const scheduledAt = new Date();
+
+    return request(app.getHttpServer())
+      .post(`/batch-emails/send-batch-random-same-email`)
+      .send({
+        auth0Id: TEST_AUTH0_IDS,
+        difficulty: EmailDifficulty.MEDIUM,
+        scheduledFrom: scheduledAt.toISOString(),
+        scheduledTo: scheduledAt.toISOString(),
+        randomisedTimes: false,
+        waveName: 'Wave Name',
+        referenceNumber: 'NON-EXISTENT-REF',
+      })
+      .expect(404);
   });
 
   it(`/batch-emails/send-batch-random-same-email (POST) - should schedule each recipient at an independent random time`, () => {
@@ -98,11 +165,12 @@ describe('BatchEmail service integration tests', () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/send-batch-random-same-email`)
       .send({
-        recipients: TEST_RECIPIENTS,
+        auth0Id: TEST_AUTH0_IDS,
         difficulty: EmailDifficulty.MEDIUM,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
@@ -121,7 +189,7 @@ describe('BatchEmail service integration tests', () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/send-batch-random-same-email`)
       .send({
-        recipients: TEST_RECIPIENTS,
+        auth0Id: TEST_AUTH0_IDS,
         difficulty: EmailDifficulty.MEDIUM,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
@@ -137,11 +205,12 @@ describe('BatchEmail service integration tests', () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/send-batch-random-different-email`)
       .send({
-        recipients: TEST_RECIPIENTS,
+        auth0Id: TEST_AUTH0_IDS,
         difficulty: EmailDifficulty.MEDIUM,
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
@@ -160,11 +229,12 @@ describe('BatchEmail service integration tests', () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/send-batch-random-different-email`)
       .send({
-        recipients: TEST_RECIPIENTS,
+        auth0Id: TEST_AUTH0_IDS,
         difficulty: EmailDifficulty.MEDIUM,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
+        waveName: 'Wave Name',
       })
       .expect(200)
       .expect((res) => {
@@ -183,7 +253,7 @@ describe('BatchEmail service integration tests', () => {
     return request(app.getHttpServer())
       .post(`/batch-emails/send-batch-random-different-email`)
       .send({
-        recipients: TEST_RECIPIENTS,
+        auth0Id: TEST_AUTH0_IDS,
         difficulty: EmailDifficulty.MEDIUM,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),

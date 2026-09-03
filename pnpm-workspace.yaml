@@ -1,5 +1,6 @@
 packages:
   - 'project/**'
+injectWorkspacePackages: true
 allowBuilds:
   '@nestjs/core': true
   '@scarf/scarf': true
@@ -12,3 +13,4 @@ allowBuilds:
   protobufjs: true
   'protobufjs@8.0.1': true
   unrs-resolver: true
+  ngrok: true

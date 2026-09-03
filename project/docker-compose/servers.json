@@ -63,6 +63,45 @@
             "ConnectionParameters": {
                 "passfile": "/var/lib/pgadmin/.pgpass"
             }
+        },
+
+        "analytics-db": {
+            "Name": "Analytics Database",
+            "Group": "Servers",
+            "Host": "analytics_db",
+            "Port": 5432,
+            "MaintenanceDB": "analytics_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
+        },
+
+        "llm-db": {
+            "Name": "LLM Database",
+            "Group": "Servers",
+            "Host": "llm_db",
+            "Port": 5432,
+            "MaintenanceDB": "llm_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
+        },
+
+        "company-db": {
+            "Name": "Company Database",
+            "Group": "Servers",
+            "Host": "company_db",
+            "Port": 5432,
+            "MaintenanceDB": "company_db",
+            "Username": "FiveGuys",
+            "SSLMode": "prefer",
+            "ConnectionParameters": {
+                "passfile": "/var/lib/pgadmin/.pgpass"
+            }
         }
     }
 }

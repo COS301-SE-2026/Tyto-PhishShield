@@ -1,4 +1,6 @@
-capstone-five-guys.dns.net.za:443 {
+dev-caddy.internal {
+    tls internal
+
     log {
         output file /var/log/caddy/access.log {
             roll_size 10MiB
@@ -31,7 +33,7 @@ capstone-five-guys.dns.net.za:443 {
 
     handle /addin/* {
         uri strip_prefix /addin
-        reverse_proxy outlook-addin:8080
+        reverse_proxy addin:8080
     }
 
     handle {

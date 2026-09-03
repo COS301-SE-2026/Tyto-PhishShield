@@ -1,0 +1,1841 @@
+openapi: 3.0.3
+info:
+  title: PhishShield API
+  description: |
+    Service contract for the PhishShield platform. Defines all endpoints,
+    authentication requirements, request/response schemas, and error handling.
+    This contract is versioned and must be updated with team agreement.
+  version: 1.0.0
+
+servers:
+  - url: https://capstone-five-guys.dns.net.za/staging
+    description: Staging server
+  - url: https://capstone-five-guys.dns.net.za
+    description: Production server
+  - url: http://localhost:3001
+    description: Local development
+
+tags:
+  - name: App
+    description: Health and sales endpoints
+  - name: Accounts
+    description: User registration, authentication, and profile management
+  - name: OTP
+    description: One-time password operations
+  - name: Emails
+    description: Phishing email template management and sending
+  - name: Batch Emails
+    description: Bulk sending of phishing emails (waves)
+  - name: Waves
+    description: Wave (campaign) management
+  - name: Reports
+    description: User-submitted phishing reports
+  - name: XP
+    description: Experience points tracking
+  - name: Education
+    description: Security awareness training assignments
+  - name: Analytics
+    description: Aggregated statistics for admin dashboard
+  - name: Webhook
+    description: Endpoint for Resend email events
+  - name: LLM
+    description: AI-generated email content
+  - name: Company
+    description: Company employee data import and management
+  - name: XpWebsocket
+    description: WebSocket ticket issuance
+
+paths:
+  /api/health:
+    get:
+      tags: [App]
+      summary: Returns overall system health
+      responses:
+        '200':
+          description: Health check passed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /api/company/contact-sales:
+    post:
+      tags: [App]
+      summary: Send PhishShield info to a prospective company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [companyName, workEmail]
+              properties:
+                companyName: { type: string, example: Acme Corp }
+                workEmail: { type: string, example: you@acme.com }
+                message: { type: string, example: We have 200 employees... }
+      responses:
+        '200':
+          description: Message sent successfully
+
+  /api/accounts/auth/register:
+    post:
+      tags: [Accounts]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: test@example.com }
+                password: { type: string, minLength: 8, example: Password123! }
+                name: { type: string, example: Test User }
+                department:
+                  type: string
+                  enum: [IT & Security, Finance, Human Resources, Legal & Compliance, Operations, Executive]
+                  example: IT & Security
+      responses:
+        '201':
+          description: User created
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/accounts/auth/verify-otp:
+    post:
+      tags: [Accounts]
+      summary: Verify OTP for email verification (deprecated)
+      deprecated: true
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: { type: string, example: test@example.com }
+                code: { type: string, example: '123456' }
+      responses:
+        '200':
+          description: OTP verified
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/accounts/auth/resend-otp:
+    post:
+      tags: [Accounts]
+      summary: Resend OTP for email verification (deprecated)
+      deprecated: true
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, example: test@example.com }
+      responses:
+        '200':
+          description: OTP sent
+
+  /api/accounts/auth/login:
+    post:
+      tags: [Accounts]
+      summary: Authenticate user and receive JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: test@example.com }
+                password: { type: string, example: Password123! }
+                sendOTP: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/accounts/auth/logout:
+    post:
+      tags: [Accounts]
+      summary: Logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+
+  /api/accounts/auth/me:
+    get:
+      tags: [Accounts]
+      summary: Get current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/accounts/auth/profile:
+    patch:
+      tags: [Accounts]
+      summary: Update profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: New Name }
+                email: { type: string, format: email, example: newemail@example.com }
+                department:
+                  type: string
+                  enum: [IT & Security, Finance, Human Resources, Legal & Compliance, Operations, Executive]
+                  example: IT & Security
+      responses:
+        '200':
+          description: Profile updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/accounts/auth/forgot-password:
+    post:
+      tags: [Accounts]
+      summary: Send password reset email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, example: test@example.com }
+      responses:
+        '200':
+          description: Reset email sent if account exists
+
+  /api/accounts/auth/account:
+    delete:
+      tags: [Accounts]
+      summary: Delete own account
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Account deleted
+
+  /api/accounts/users:
+    get:
+      tags: [Accounts]
+      summary: List all users (admin/analyst)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/accounts/users/{id}:
+    get:
+      tags: [Accounts]
+      summary: Get a specific user by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Accounts]
+      summary: Delete a user (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/accounts/users/{id}/role:
+    patch:
+      tags: [Accounts]
+      summary: Update user role (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [admin, analyst, user]
+      responses:
+        '200':
+          description: Role updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/accounts/auth/password:
+    patch:
+      tags: [Accounts]
+      summary: Change current user password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string, example: OldPass123! }
+                newPassword: { type: string, minLength: 8, example: NewPass123! }
+      responses:
+        '200':
+          description: Password updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/accounts/users/{id}/active:
+    patch:
+      tags: [Accounts]
+      summary: Activate or deactivate user (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive: { type: boolean }
+      responses:
+        '200':
+          description: User status updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/auth/otp/verify-otp:
+    post:
+      tags: [OTP]
+      summary: Verify OTP
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: { type: string, example: test@example.com }
+                code: { type: string, example: '0123456' }
+      responses:
+        '200':
+          description: OTP verified
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/otp/resend-otp:
+    post:
+      tags: [OTP]
+      summary: Resend OTP
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, example: test@example.com }
+      responses:
+        '200':
+          description: OTP sent
+
+  /api/emails:
+    post:
+      tags: [Emails]
+      summary: Create a new email template
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailsDto'
+            examples:
+              default:
+                summary: New phishing email template
+                value:
+                  sender: example@example.com
+                  alias: IT Support
+                  subject: This is the subject
+                  content: Here is the example content
+                  difficulty: medium
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    get:
+      tags: [Emails]
+      summary: Retrieve all generated emails
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmailTemplate'
+
+  /api/emails/{referenceNumber}:
+    get:
+      tags: [Emails]
+      summary: Get a specific email template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: referenceNumber
+          in: path
+          required: true
+          schema: { type: string, example: PHISH-001 }
+      responses:
+        '200':
+          description: Template found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Emails]
+      summary: Update an email template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: referenceNumber
+          in: path
+          required: true
+          schema: { type: string, example: PHISH-001 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailDto'
+      responses:
+        '200':
+          description: Template updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Emails]
+      summary: Delete email template
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: referenceNumber
+          in: path
+          required: true
+          schema: { type: string, example: PHISH-001 }
+      responses:
+        '200':
+          description: Template deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/emails/{referenceNumber}/send-single:
+    post:
+      tags: [Emails]
+      summary: Send single email
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: referenceNumber
+          in: path
+          required: true
+          schema: { type: string, example: PHISH-001 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendSingleEmailDto'
+      responses:
+        '200':
+          description: Email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailingResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/emails/{referenceNumber}/schedule-send-single:
+    post:
+      tags: [Emails]
+      summary: Schedule single email
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: referenceNumber
+          in: path
+          required: true
+          schema: { type: string, example: PHISH-001 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleSingleEmailDto'
+      responses:
+        '200':
+          description: Email scheduled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailingResponse'
+
+  /api/batch-emails/{referenceNumber}/send-batch-with-reference:
+    post:
+      tags: [Batch Emails]
+      summary: Send one template to many recipients
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: referenceNumber
+          in: path
+          required: true
+          schema: { type: string, example: PHISH-001 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [auth0Id]
+              properties:
+                auth0Id:
+                  type: array
+                  items: { type: string }
+                  example: [auth0|example1, auth0|example2]
+      responses:
+        '200':
+          description: Batch sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /api/batch-emails/send-batch-random-same-email:
+    post:
+      tags: [Batch Emails]
+      summary: Send same random template to all recipients
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendBatchDto'
+      responses:
+        '200':
+          description: Batch sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /api/batch-emails/send-batch-random-different-email:
+    post:
+      tags: [Batch Emails]
+      summary: Send different random template to each recipient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendBatchRandomDto'
+      responses:
+        '200':
+          description: Batch sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /api/wave/names:
+    get:
+      tags: [Waves]
+      summary: Retrieve all wave names
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of wave names
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+
+  /api/wave/minimum:
+    get:
+      tags: [Waves]
+      summary: Retrieve minimal wave information
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of wave summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WaveMinimum'
+
+  /api/wave/user/{auth0Id}:
+    get:
+      tags: [Waves]
+      summary: Retrieve all waves belonging to a user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: auth0Id
+          in: path
+          required: true
+          schema: { type: string, example: auth0|1 }
+      responses:
+        '200':
+          description: List of waves
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wave'
+
+  /api/wave:
+    get:
+      tags: [Waves]
+      summary: Retrieve all waves
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of waves
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wave'
+
+  /api/wave/{id}:
+    get:
+      tags: [Waves]
+      summary: Get a specific wave
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Wave found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wave'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Waves]
+      summary: Delete a wave
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Wave deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/report/auth/microsoft:
+    post:
+      tags: [Reports]
+      summary: Exchange Microsoft SSO token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200':
+          description: Token exchanged
+
+  /api/report:
+    post:
+      tags: [Reports]
+      summary: Submit a phishing report
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                outlookMessageId: { type: string, example: MSG-001 }
+                emailSubject: { type: string, example: Urgent password reset }
+                emailSender: { type: string, example: phisher@capstone-five-guys.dns.net.za }
+                emailBody: { type: string, example: Click here... }
+                emailReceivedAt: { type: string, format: date-time, example: '2026-07-22T10:00:00Z' }
+                notes: { type: string, example: Looks suspicious }
+      responses:
+        '201':
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    get:
+      tags: [Reports]
+      summary: Get all reports (admin/analyst)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Report'
+
+  /api/report/mine:
+    get:
+      tags: [Reports]
+      summary: Get current user reports
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Report'
+
+  /api/report/{id}:
+    get:
+      tags: [Reports]
+      summary: Get specific report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Report found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/report/{id}/status:
+    patch:
+      tags: [Reports]
+      summary: Update report status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, reviewed, confirmed_phishing, false_positive]
+      responses:
+        '200':
+          description: Status updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/xp:
+    post:
+      tags: [XP]
+      summary: Award XP to a user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GiveXpDto'
+      responses:
+        '201':
+          description: XP awarded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XpRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    get:
+      tags: [XP]
+      summary: Retrieve all XP records
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of XP records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/XpRecord'
+
+  /api/xp/net:
+    get:
+      tags: [XP]
+      summary: Get net XP leaderboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NetXpEntry'
+
+  /api/xp/{auth0Id}:
+    get:
+      tags: [XP]
+      summary: Get XP history for user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: auth0Id
+          in: path
+          required: true
+          schema: { type: string, example: auth0|123456789 }
+      responses:
+        '200':
+          description: XP history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/XpRecord'
+
+  /api/xp/{auth0Id}/net:
+    get:
+      tags: [XP]
+      summary: Get net XP for user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: auth0Id
+          in: path
+          required: true
+          schema: { type: string, example: auth0|123456789 }
+      responses:
+        '200':
+          description: Net XP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetXpEntry'
+
+  /api/xp/link-clicked:
+    post:
+      tags: [XP]
+      summary: Mark link as clicked and deduct XP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, example: ABC123 }
+      responses:
+        '200':
+          description: XP deducted
+
+  /api/education/questions:
+    post:
+      tags: [Education]
+      summary: Add a question (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [questionText, options, correctOptionIndex]
+              properties:
+                questionText: { type: string, example: What is a common sign of a phishing email? }
+                options:
+                  type: array
+                  items: { type: string }
+                  example: [Option A, Option B, Option C, Option D]
+                correctOptionIndex: { type: number, example: 1 }
+      responses:
+        '201':
+          description: Question added
+    get:
+      tags: [Education]
+      summary: List all questions (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of questions
+
+  /api/education/assignments:
+    post:
+      tags: [Education]
+      summary: Create an education assignment
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Assignment created
+
+  /api/education/assignment/mine:
+    get:
+      tags: [Education]
+      summary: Get current pending assignment
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pending assignment
+
+  /api/education/history/mine:
+    get:
+      tags: [Education]
+      summary: Get assignment history
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Assignment history
+
+  /api/education/answers:
+    post:
+      tags: [Education]
+      summary: Submit answers for assignment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignmentId, answers]
+              properties:
+                assignmentId: { type: string, example: uuid-here }
+                answers:
+                  type: array
+                  items: { type: number }
+                  example: [1, 2, 1]
+      responses:
+        '200':
+          description: Answers submitted
+
+  /api/analytics/overview:
+    get:
+      tags: [Analytics]
+      summary: Top-level stats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Overview stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsOverview'
+
+  /api/analytics/reports:
+    get:
+      tags: [Analytics]
+      summary: Report statistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Report stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportStats'
+
+  /api/analytics/mailing:
+    get:
+      tags: [Analytics]
+      summary: Mailing statistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Mailing stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailingStats'
+
+  /api/analytics/timeseries:
+    get:
+      tags: [Analytics]
+      summary: Time series data
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Time series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSeriesItem'
+
+  /api/analytics/leaderboard:
+    get:
+      tags: [Analytics]
+      summary: Top users by XP
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardItem'
+
+  /api/analytics/users/{auth0Id}:
+    get:
+      tags: [Analytics]
+      summary: Per-user analytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: auth0Id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: User stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+
+  /api/analytics/summary:
+    get:
+      tags: [Analytics]
+      summary: KPI summary with deltas
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        '200':
+          description: Summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsSummary'
+
+  /api/analytics/detection-rate-over-time:
+    get:
+      tags: [Analytics]
+      summary: Detection rate and click rate per day
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        '200':
+          description: Time series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DetectionRateItem'
+
+  /api/analytics/by-department:
+    get:
+      tags: [Analytics]
+      summary: Department breakdown
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        '200':
+          description: Department stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentStats'
+
+  /api/analytics/at-risk-users:
+    get:
+      tags: [Analytics]
+      summary: At-risk users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: At-risk users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AtRiskUser'
+
+  /api/analytics/campaigns:
+    get:
+      tags: [Analytics]
+      summary: Campaign performance
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Campaign'
+
+  /api/xp-websocket/ticket:
+    post:
+      tags: [XpWebsocket]
+      summary: Issue WebSocket ticket
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Ticket issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticket: { type: string }
+
+  /api/webhook/create:
+    post:
+      tags: [Webhook]
+      summary: Receive Resend webhook events
+      security: []
+      parameters:
+        - name: svix-id
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendWebhookPayload'
+      responses:
+        '201':
+          description: Webhook processed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/llm/generate-email:
+    post:
+      tags: [LLM]
+      summary: Generate email body
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [topic]
+              properties:
+                topic: { type: string, example: warning about phishing emails }
+      responses:
+        '201':
+          description: Generated content
+
+  /api/company/import:
+    post:
+      tags: [Company]
+      summary: Import company employee data
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/uploadDataDto'
+      responses:
+        '201':
+          description: Import started
+
+  /api/company/imports:
+    get:
+      tags: [Company]
+      summary: Fetch all imports
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Import history
+
+  /api/company/imports/{importId}:
+    get:
+      tags: [Company]
+      summary: Fetch specific import
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: importId
+          in: path
+          required: true
+          schema: { type: string, example: IMPORT-001 }
+      responses:
+        '200':
+          description: Import data
+
+  /api/company/employees:
+    get:
+      tags: [Company]
+      summary: Fetch all employees
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of employees
+
+  /api/company/employees/{employeeId}:
+    get:
+      tags: [Company]
+      summary: Fetch specific employee
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string, example: u-001 }
+      responses:
+        '200':
+          description: Employee data
+    patch:
+      tags: [Company]
+      summary: Update employee
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string, example: u-001 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmployeeDto'
+      responses:
+        '200':
+          description: Employee updated
+    delete:
+      tags: [Company]
+      summary: Delete employee
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema: { type: string, example: u-001 }
+      responses:
+        '204':
+          description: Employee deleted
+
+  /api/company/fields:
+    get:
+      tags: [Company]
+      summary: Fetch available fields
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Field list
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required: [statusCode, message]
+      properties:
+        statusCode: { type: integer }
+        message: { type: string }
+        error: { type: string }
+
+    HealthStatus:
+      type: object
+      properties:
+        accountsService: { type: string }
+        mailingService: { type: string }
+        xpService: { type: string }
+        reportService: { type: string }
+        educationService: { type: string }
+        analyticsService: { type: string }
+
+    UserProfile:
+      type: object
+      required: [auth0Id, email, role]
+      properties:
+        auth0Id: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [admin, analyst, user] }
+        name: { type: string }
+        department: { type: string, nullable: true }
+
+    LoginResponse:
+      type: object
+      required: [access_token, expires_in]
+      properties:
+        access_token: { type: string }
+        expires_in: { type: integer }
+        requiresOTP: { type: boolean }
+
+    EmailsDto:
+      type: object
+      required: [sender, subject, content, difficulty]
+      properties:
+        sender: { type: string, format: email }
+        alias: { type: string, description: Optional display name }
+        subject: { type: string }
+        content: { type: string }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+
+    UpdateEmailDto:
+      type: object
+      properties:
+        sender: { type: string, format: email }
+        alias: { type: string }
+        subject: { type: string }
+        content: { type: string }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+
+    EmailTemplate:
+      allOf:
+        - $ref: '#/components/schemas/EmailsDto'
+        - type: object
+          properties:
+            referenceNumber: { type: string }
+            createdAt: { type: string, format: date-time }
+
+    SendSingleEmailDto:
+      type: object
+      required: [auth0Id]
+      properties:
+        auth0Id: { type: string }
+
+    ScheduleSingleEmailDto:
+      type: object
+      required: [auth0Id, scheduledAt]
+      properties:
+        auth0Id: { type: string }
+        scheduledAt: { type: string, format: date-time }
+
+    SendBatchDto:
+      type: object
+      required: [auth0Id, difficulty, scheduledFrom, scheduledTo, waveName]
+      properties:
+        auth0Id: { type: array, items: { type: string } }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+        scheduledFrom: { type: string, format: date-time }
+        scheduledTo: { type: string, format: date-time }
+        randomisedTimes: { type: boolean, default: false }
+        waveName: { type: string }
+        referenceNumber: { type: string, description: Optional; if omitted random template is selected }
+
+    SendBatchRandomDto:
+      type: object
+      required: [auth0Id, difficulty, scheduledFrom, scheduledTo, waveName]
+      properties:
+        auth0Id: { type: array, items: { type: string } }
+        difficulty: { type: string, enum: [easy, medium, hard] }
+        scheduledFrom: { type: string, format: date-time }
+        scheduledTo: { type: string, format: date-time }
+        randomisedTimes: { type: boolean, default: false }
+        waveName: { type: string }
+
+    GiveXpDto:
+      type: object
+      required: [auth0Id, amount]
+      properties:
+        auth0Id: { type: string }
+        amount: { type: number, description: Can be negative }
+        reason: { type: string }
+
+    MailingResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        deliveryId: { type: string, nullable: true }
+
+    BatchResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+
+    WaveMinimum:
+      type: object
+      properties:
+        waveName: { type: string }
+        scheduledFrom: { type: string, format: date-time }
+        scheduledTo: { type: string, format: date-time }
+        sameEmail: { type: boolean }
+        randomisedTimes: { type: boolean }
+        numberOfRecipients: { type: integer }
+
+    Wave:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        waveName: { type: string }
+        scheduledFrom: { type: string, format: date-time }
+        scheduledTo: { type: string, format: date-time }
+        sameEmail: { type: boolean }
+        randomisedTimes: { type: boolean }
+        recipients:
+          type: array
+          items: { type: object, additionalProperties: true }
+
+    Report:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        outlookMessageId: { type: string, nullable: true }
+        emailSubject: { type: string }
+        emailSender: { type: string }
+        emailBody: { type: string }
+        emailReceivedAt: { type: string, format: date-time }
+        notes: { type: string }
+        status: { type: string, enum: [pending, reviewed, confirmed_phishing, false_positive] }
+
+    XpRecord:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        amount: { type: number }
+        reason: { type: string }
+        createdAt: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/UserProfile' }
+
+    NetXpEntry:
+      type: object
+      properties:
+        totalXp: { type: number }
+        user: { $ref: '#/components/schemas/UserProfile' }
+
+    AnalyticsOverview:
+      type: object
+      properties:
+        totalEmailsSent: { type: integer }
+        totalReports: { type: integer }
+        confirmedPhishing: { type: integer }
+        falsePositives: { type: integer }
+        totalXpGiven: { type: integer }
+        educationAssigned: { type: integer }
+        educationCompleted: { type: integer }
+
+    ReportStats:
+      type: object
+      properties:
+        submitted: { type: integer }
+        confirmed: { type: integer }
+        falsePositive: { type: integer }
+        detectionRate: { type: number }
+
+    MailingStats:
+      type: object
+      properties:
+        totalSent: { type: integer }
+        scheduled: { type: integer }
+
+    TimeSeriesItem:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        reports: { type: integer }
+        emailsSent: { type: integer }
+        xpGiven: { type: integer }
+
+    LeaderboardItem:
+      type: object
+      properties:
+        auth0Id: { type: string }
+        email: { type: string }
+        totalXp: { type: integer }
+        reportCount: { type: integer }
+
+    UserStats:
+      type: object
+      properties:
+        reports: { type: integer }
+        confirmed: { type: integer }
+        falsePositive: { type: integer }
+        totalXp: { type: integer }
+        educationCompleted: { type: integer }
+
+    KpiMetric:
+      type: object
+      properties:
+        value: { type: number }
+        delta: { type: number }
+
+    AnalyticsSummary:
+      type: object
+      properties:
+        detectionRate: { $ref: '#/components/schemas/KpiMetric' }
+        clickRate: { $ref: '#/components/schemas/KpiMetric' }
+        totalSimulations: { $ref: '#/components/schemas/KpiMetric' }
+        atRiskUsers: { $ref: '#/components/schemas/KpiMetric' }
+        trainingCompletion: { $ref: '#/components/schemas/KpiMetric' }
+
+    DetectionRateItem:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        detectionRate: { type: number }
+        clickRate: { type: number }
+
+    DepartmentStats:
+      type: object
+      properties:
+        department: { type: string }
+        sent: { type: integer }
+        reported: { type: integer }
+        detectionRate: { type: number }
+        clickRate: { type: number }
+
+    AtRiskUser:
+      type: object
+      properties:
+        auth0Id: { type: string }
+        name: { type: string }
+        department: { type: string }
+        clickRate: { type: number }
+        riskLevel: { type: string, enum: [high, medium] }
+
+    Campaign:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status: { type: string, description: Computed from endDate }
+        startDate: { type: string, format: date-time }
+        endDate: { type: string, format: date-time }
+        createdBy: { type: string, nullable: true }
+
+    ResendWebhookPayload:
+      type: object
+      required: [type, data]
+      properties:
+        type: { type: string }
+        created_at: { type: string, format: date-time }
+        data:
+          type: object
+          required: [email_id]
+          properties:
+            email_id: { type: string }
+            message_id: { type: string }
+            from: { type: string }
+            to: { type: array, items: { type: string } }
+            subject: { type: string }
+
+    uploadDataDto:
+      type: object
+      required: [file, mapping]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The CSV file to upload
+        mapping:
+          type: string
+          description: JSON mapping of system fields to CSV column names.
+
+    UpdateEmployeeDto:
+      type: object
+      properties:
+        employeeId: { type: string, example: u-001 }
+        email: { type: string, example: test@example.com }
+        firstName: { type: string, example: John }
+        lastName: { type: string, example: Doe }
+        department: { type: string, example: IT & Security }
+        jobTitle: { type: string, example: developer }
+        managerEmail: { type: string, example: manager@example.com }
+        managerId: { type: string, example: u-002 }
+        employeeStatus: { type: string, example: Active }
+        externalId: { type: string, example: '0123456' }

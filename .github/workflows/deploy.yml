@@ -29,11 +29,16 @@ jobs:
               
               - image: education
                 dockerfile: ./project/backend/education-service/Dockerfile
+
+              - image: llm
+                dockerfile: ./project/backend/llm-service/Dockerfile
+
+              - image: company
+                dockerfile: ./project/backend/company-service/Dockerfile
+
               
-              - image: website
-                dockerfile: ./project/frontend/website/Dockerfile
         steps:
-            - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
             - name: login to  Docker Hub
               uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee #v4.2.0
@@ -50,12 +55,67 @@ jobs:
                 push: true
                 context: .
                 file: ${{ matrix.dockerfile }}
-                tags: ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
+                tags: |
+                  ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
+                  ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
+
+    build-and-push-website:
+        runs-on: ubuntu-24.04
+        strategy:
+          matrix:
+            include:
+              - api-url: ${{ vars.STAGING_URL }}
+                base: /staging/
+                tag: latest
+              
+              - api-url: ${{ vars.STAGING_URL }}
+                base: /staging/
+                tag: ${{ github.sha }}-dev
+
+              - api-url: ${{ vars.PRODUCTION_URL }}
+                base: /
+                tag: ${{ github.sha }}-prod
+        steps:
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+            - name: login to  Docker Hub
+              uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee #v4.2.0
+              with:
+                username: ${{ vars.DOCKERHUB_USERNAME }}
+                password: ${{ secrets.DOCKERHUB_TOKEN }}
+            
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 #v4.1.0
+            
+            - name: Build and push
+              uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f #v7.1.0
+              with:
+                push: true
+                context: .
+                file: ./project/frontend/website/Dockerfile
+                tags: ${{ vars.DOCKERHUB_USERNAME }}/website:${{ matrix.tag }} 
+                build-args: |
+                  VITE_API_GATEWAY_URL=${{ matrix.api-url }}
+                  VITE_BASE_PATH=${{ matrix.base }}
 
     build-and-push-addin:
+        strategy:
+          matrix:
+            include:
+              - api-url: ${{ vars.PRODUCTION_API_BASE }}
+                base: ${{ vars.PRODUCTION_ADDIN_BASE_URL }}
+                tag: ${{ github.sha }}-prod
+
+              - api-url: ${{ vars.STAGING_URL }}/api
+                base: ${{ vars.STAGING_URL }}/addin
+                tag: latest
+
+              - api-url: ${{ vars.STAGING_URL }}/api
+                base: ${{ vars.STAGING_URL }}/addin
+                tag: ${{ github.sha }}-dev
         runs-on: ubuntu-24.04
         steps:
-            - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
             - name: login to  Docker Hub
               uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee #v4.2.0
@@ -72,7 +132,7 @@ jobs:
                 push: true
                 context: .
                 file: ./project/frontend/phishshield-outlook-addin/Dockerfile
-                tags: ${{ vars.DOCKERHUB_USERNAME }}/addin:latest
+                tags: ${{ vars.DOCKERHUB_USERNAME }}/addin:${{ matrix.tag }}
                 build-args: |
-                  API_BASE=${{ vars.PRODUCTION_API_BASE }}
-                  ADDIN_BASE_URL=${{ vars.PRODUCTION_ADDIN_BASE_URL }}
+                  API_BASE=${{ matrix.api-url }}
+                  ADDIN_BASE_URL=${{ matrix.base }}

@@ -34,6 +34,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           position: 'fixed',
           top: 20,
           right: 20,
+          zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
@@ -47,12 +48,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             style={{
               padding: 16,
               borderRadius: 8,
-              border: '1px solid',
-              background: toast.type === 'success'
-                      ? 'var(--color-success-light)'
-                      : toast.type === 'error'
-                        ? 'var(--color-danger-light)'
-                        : 'var(--color-warning-light)',
+              background: 'var(--bg-card)',
+              border: `1.5px solid ${
+                toast.type === 'success' 
+                  ? 'var(--color-success)'
+                  : toast.type === 'error'
+                    ? 'var(--color-danger)'
+                    : 'var(--color-warning)'
+              }`
             }}
           >
             <div

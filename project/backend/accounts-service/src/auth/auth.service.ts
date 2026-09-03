@@ -8,9 +8,6 @@
  *
  * Methods:
  * - {@link AuthService#register} – creates a new user in Auth0 and the local DB
- * - {@link AuthService#login} – validates credentials and returns a JWT (optionally triggers OTP)
- * - {@link AuthService#verifyOtp} – verifies a one‑time password and marks the user as verified
- * - {@link AuthService#resendOtp} – sends a new OTP code
  * - {@link AuthService#logout} – returns a confirmation message (client must discard the token)
  * - {@link AuthService#updateProfile} – updates the user’s name or department
  * - {@link AuthService#forgotPassword} – sends a password‑reset email via Auth0
@@ -23,21 +20,14 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   NotFoundException,
-  BadRequestException,
-  Inject,
-  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { Department, RegisterDto, UserRole } from '@phishshield/dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService, CreateUserInput } from '../users/users.service';
-import { UserRole } from '../users/entities/user.entity';
-import { OtpService } from '../otp/otp.service';
-import { ExtendedVerifyOtpDto } from './dto/verify-otp.dto';
-import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserSyncService } from '../users/user-sync.service';
 
 interface Auth0TokenResponse {
@@ -51,11 +41,6 @@ interface Auth0UserResponse {
   email: string;
   name: string;
   email_verified: boolean;
-}
-
-interface Auth0LoginResponse {
-  access_token: string;
-  expires_in: number;
 }
 
 interface Auth0Roles {
@@ -83,8 +68,6 @@ export class AuthService {
     private readonly http: HttpService,
     private readonly usersService: UsersService,
     private readonly userSyncService: UserSyncService,
-    @Inject(forwardRef(() => OtpService))
-    private readonly otpService: OtpService,
   ) {
     this.DOMAIN = this.config.getOrThrow<string>('AUTH0_DOMAIN');
   }
@@ -109,7 +92,9 @@ export class AuthService {
     return this.cachedMgmtToken;
   }
 
-  async register(dto: RegisterDto): Promise<{ message: string }> {
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ response: string; message: string }> {
     const mgmtToken = await this.getManagementToken();
 
     let auth0User: Auth0UserResponse;
@@ -147,135 +132,11 @@ export class AuthService {
       role: UserRole.USER,
     });
 
-    await this.otpService.generateAndSend(dto.email);
-
     return {
+      response: 'ok',
       message:
-        'Registration successful. Please verify your email with the OTP sent to you.',
+        'Registration successful. Please verify your email with the verifcation sent to you.',
     };
-  }
-
-  async login(dto: LoginDto): Promise<{
-    access_token: string;
-    expires_in: number;
-    requiresOTP: boolean;
-  }> {
-    let auth0User: Auth0UserResponse;
-    try {
-      const data = await this.getAuth0UserByEmail(dto.email);
-      if (data && !data.email_verified) {
-        throw new UnauthorizedException(
-          'Email not verified. Please verify your email before logging in. (Note it may take time for the email to be marked as verified.)',
-        );
-      }
-      auth0User = data;
-      if (data && (await this.userSyncService.needSyncing(auth0User.user_id))) {
-        const createDbUser: CreateUserInput = {
-          auth0Id: auth0User.user_id,
-          email: data.email,
-          name: data.name,
-          role:
-            (await this.getAuth0UserRoles(auth0User.user_id))[0]?.name ??
-            UserRole.USER,
-          isVerified: false,
-        };
-        void this.userSyncService.syncAuth0User(createDbUser);
-      }
-    } catch (err: unknown) {
-      if (!(err instanceof UnauthorizedException)) {
-        console.log(err);
-        throw new InternalServerErrorException(
-          'Failed to check if account is verified.',
-        );
-      } else {
-        throw err;
-      }
-    }
-
-    const user = await this.usersService.findByAuth0Id(auth0User.user_id);
-    if (user && !user.isActive) {
-      throw new UnauthorizedException(
-        'Account is deactivated. Please contact support.',
-      );
-    }
-
-    try {
-      const { data } = await firstValueFrom(
-        this.http.post<Auth0LoginResponse>(
-          `https://${this.DOMAIN}/oauth/token`,
-          {
-            grant_type: 'password',
-            username: dto.email,
-            password: dto.password,
-            audience: this.config.get<string>('AUTH0_AUDIENCE'),
-            scope: 'openid profile email',
-            client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
-            client_secret: this.config.get<string>('AUTH0_CLIENT_SECRET'),
-            connection: 'Username-Password-Authentication',
-          },
-        ),
-      );
-
-      let requiresOTP: boolean = false;
-      if (dto.sendOTP) {
-        if (!dto.deviceToken) {
-          await this.otpService.generateAndSend(dto.email);
-          requiresOTP = true;
-        } else {
-          if (
-            !(await this.otpService.verifyDevice(dto.email, dto.deviceToken))
-          ) {
-            await this.otpService.generateAndSend(dto.email);
-            requiresOTP = true;
-          }
-        }
-      }
-
-      return {
-        access_token: data.access_token,
-        expires_in: data.expires_in,
-        requiresOTP,
-      };
-    } catch (err: unknown) {
-      const axiosErr = err as AxiosErrorShape;
-      console.error(
-        'Login error:',
-        axiosErr.response?.data ?? axiosErr.message,
-      );
-      throw new UnauthorizedException('Invalid email or password');
-    }
-  }
-
-  async verifyOtp(
-    dto: ExtendedVerifyOtpDto,
-  ): Promise<{ message: string; deviceToken: string }> {
-    const { valid, deviceToken } = await this.otpService.verify(
-      dto.email,
-      dto.code,
-      dto.userAgent ?? '',
-      dto.ip ?? '',
-    );
-    if (!valid) throw new BadRequestException('Invalid or expired OTP code');
-
-    const user = await this.usersService.findByEmail(dto.email);
-    if (!user) throw new NotFoundException('User not found');
-
-    await this.usersService.markVerified(user.auth0Id);
-    return {
-      message: 'Email verified successfully. You can now log in.',
-      deviceToken,
-    };
-  }
-
-  async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
-    const user = await this.usersService.findByEmail(dto.email);
-    if (!user)
-      throw new NotFoundException('No account associated with this email');
-    // if (user.isVerified)
-    //   throw new BadRequestException('Email is already verified');
-
-    await this.otpService.generateAndSend(dto.email);
-    return { message: 'A new OTP code has been sent to your email.' };
   }
 
   logout(): { message: string } {
@@ -289,6 +150,7 @@ export class AuthService {
     dto: UpdateProfileDto,
   ): Promise<{ message: string }> {
     await this.usersService.updateProfile(auth0Id, dto);
+    await this.updateAuth0UserProfile(auth0Id, dto);
     return { message: 'Profile updated successfully' };
   }
 
@@ -349,6 +211,22 @@ export class AuthService {
     return data[0];
   }
 
+  async getAuth0UserByAuth0Id(auth0ID: string): Promise<Auth0UserResponse> {
+    const mgmtToken = await this.getManagementToken();
+    const { data } = await firstValueFrom(
+      this.http.get<Auth0UserResponse>(
+        `https://${this.DOMAIN}/api/v2/users/${auth0ID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${mgmtToken}`,
+            Accept: 'application/json',
+          },
+        },
+      ),
+    );
+    return data;
+  }
+
   async getAuth0Roles(): Promise<Auth0Roles[]> {
     const mgmtToken = await this.getManagementToken();
     const { data } = await firstValueFrom(
@@ -387,43 +265,180 @@ export class AuthService {
     return data;
   }
 
-  async updateAuth0UserRole(auth0Id: string, roles: UserRole[]) {
+  async updateAuth0UserRole(auth0Id: string, roles: UserRole[]): Promise<void> {
     const mgmtToken = await this.getManagementToken();
-    //Get current roles:
+
+    // Remove existing roles
     const userRoles = await this.getAuth0UserRoles(auth0Id);
-    const rollIDsToRemove: string[] = [];
-    for (const roll of userRoles) {
-      rollIDsToRemove.push(roll.id);
+    const rollIDsToRemove = userRoles.map((r) => r.id);
+    if (rollIDsToRemove.length > 0) {
+      await firstValueFrom(
+        this.http.delete(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
+          {
+            headers: {
+              Authorization: `Bearer ${mgmtToken}`,
+              'Content-Type': 'application/json',
+            },
+            data: { roles: rollIDsToRemove },
+          },
+        ),
+      );
     }
-    //remove current roles:
-    this.http.delete(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`, {
-      headers: {
-        Authorization: `Bearer ${mgmtToken}`,
-        'Content-Type': 'application/json',
-      },
-      data: {
-        roles: rollIDsToRemove,
-      },
-    });
-    //Find roleID that match roles of what we want to add:
+
+    // Find IDs of desired roles
     const allRoles = await this.getAuth0Roles();
     const rollIDsToAdd: string[] = [];
-    for (let i = 0; i < roles.length; i++) {
-      for (const roll of allRoles) {
-        if (roll.name === roles[i]) {
-          rollIDsToAdd.push(roll.id);
-        }
-      }
+    for (const roleName of roles) {
+      const found = allRoles.find((r) => r.name === roleName);
+      if (found) rollIDsToAdd.push(found.id);
     }
-    //Add roles to auth0
-    this.http.post(`https://${this.DOMAIN}/api/v2/users/${auth0Id}/roles`, {
-      headers: {
-        Authorization: `Bearer ${mgmtToken}`,
-        'Content-Type': 'application/json',
-      },
-      data: {
-        roles: rollIDsToAdd,
-      },
-    });
+
+    if (rollIDsToAdd.length > 0) {
+      await firstValueFrom(
+        this.http.post(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}/roles`,
+          { roles: rollIDsToAdd },
+          {
+            headers: {
+              Authorization: `Bearer ${mgmtToken}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+    }
+  }
+
+  private async verifyPassword(
+    email: string,
+    password: string,
+  ): Promise<boolean> {
+    try {
+      await firstValueFrom(
+        this.http.post(`https://${this.DOMAIN}/oauth/token`, {
+          grant_type: 'password',
+          username: email,
+          password,
+          audience: this.config.get<string>('AUTH0_AUDIENCE'),
+          scope: 'openid profile email',
+          client_id: this.config.get<string>('AUTH0_CLIENT_ID'),
+          client_secret: this.config.get<string>('AUTH0_CLIENT_SECRET'),
+          connection: 'Username-Password-Authentication',
+        }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async changePassword(
+    auth0Id: string,
+    email: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    // Verify current password
+    const valid = await this.verifyPassword(email, dto.currentPassword);
+    if (!valid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const mgmtToken = await this.getManagementToken();
+
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          { password: dto.newPassword },
+          { headers: { Authorization: `Bearer ${mgmtToken}` } },
+        ),
+      );
+    } catch (err: unknown) {
+      const e = err as AxiosErrorShape;
+      console.error('Change password error:', e.response?.data ?? e.message);
+      throw new InternalServerErrorException('Failed to change password');
+    }
+
+    return { message: 'Password updated successfully' };
+  }
+
+  async updateAuth0UserProfile(
+    auth0Id: string,
+    data: { name?: string; department?: Department },
+  ): Promise<void> {
+    const mgmtToken = await this.getManagementToken();
+
+    try {
+      await firstValueFrom(
+        this.http.patch(
+          `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+          {
+            ...(data.name !== undefined && { name: data.name }),
+            ...(data.department !== undefined && {
+              user_metadata: { department: data.department },
+            }),
+          },
+          { headers: { Authorization: `Bearer ${mgmtToken}` } },
+        ),
+      );
+    } catch (err: unknown) {
+      const e = err as AxiosErrorShape;
+      console.error(
+        'Update Auth0 profile error:',
+        e.response?.data ?? e.message,
+      );
+      throw new InternalServerErrorException(
+        'Failed to sync profile with Auth0',
+      );
+    }
+  }
+
+  async blockUser(auth0Id: string): Promise<void> {
+    const mgmtToken = await this.getManagementToken();
+    await firstValueFrom(
+      this.http.patch(
+        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+        { blocked: true },
+        { headers: { Authorization: `Bearer ${mgmtToken}` } },
+      ),
+    );
+  }
+
+  async unblockUser(auth0Id: string): Promise<void> {
+    const mgmtToken = await this.getManagementToken();
+    await firstValueFrom(
+      this.http.patch(
+        `https://${this.DOMAIN}/api/v2/users/${encodeURIComponent(auth0Id)}`,
+        { blocked: false },
+        { headers: { Authorization: `Bearer ${mgmtToken}` } },
+      ),
+    );
+  }
+
+  async isActive(auth0ID: string): Promise<boolean> {
+    if (auth0ID && (await this.userSyncService.needSyncing(auth0ID))) {
+      const auth0User = await this.getAuth0UserByAuth0Id(auth0ID);
+      const createDbUser: CreateUserInput = {
+        auth0Id: auth0User.user_id,
+        email: auth0User.email,
+        name: auth0User.name,
+        role: (await this.getAuth0UserRoles(auth0ID))[0]?.name ?? UserRole.USER,
+        isVerified: false,
+      };
+      void this.userSyncService.syncAuth0User(createDbUser);
+    }
+    const role =
+      (await this.getAuth0UserRoles(auth0ID))[0]?.name ?? UserRole.USER;
+    const user = await this.usersService.findByAuth0Id(auth0ID);
+    if (user?.role !== role) {
+      this.usersService.updateRole(auth0ID, role);
+    }
+    if (user && !user.isActive) {
+      throw new UnauthorizedException(
+        'Account is deactivated. Please contact support.',
+      );
+    }
+    return user?.isActive ?? false;
   }
 }

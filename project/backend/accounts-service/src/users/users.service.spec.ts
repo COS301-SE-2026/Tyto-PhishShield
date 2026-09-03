@@ -8,9 +8,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
-import { User, UserRole, Department } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import { EventProducerService } from '../event-producer/event-producer.service';
 import  { NotFoundException } from '@nestjs/common';
+import { Department, UserRole } from '@phishshield/dto';
 
 const makeUser = (overrides = {}) =>
 ({  id: 'uuid-123',
@@ -45,7 +46,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repo },
-        { provide: EventProducerService, useValue: { publishUserCreatedEvent: jest.fn().mockResolvedValue(undefined) } },//remember to check with Josua about this one.
+        { provide: EventProducerService, useValue: { publishUserCreatedEvent: jest.fn().mockResolvedValue(undefined), publishUserUpdatedEvent: jest.fn().mockResolvedValue(undefined),} },//remember to check with Josua about this one.
       ],
     }).compile();
 

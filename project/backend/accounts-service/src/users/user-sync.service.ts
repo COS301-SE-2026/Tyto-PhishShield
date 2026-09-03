@@ -29,6 +29,7 @@ export class UserSyncService implements OnModuleInit {
         name: user.name,
         email: user.email,
         department: user.department,
+        role: user.role,
       });
     }
 
@@ -36,12 +37,18 @@ export class UserSyncService implements OnModuleInit {
   }
 
   async syncAuth0User(user: CreateUserInput) {
-    const nodeEnv = this.configService.get<string>('NODE_ENV');
-    if (nodeEnv !== 'development' && nodeEnv !== 'dev' && nodeEnv !== 'local') {
-      return;
-    }
+    // const nodeEnv = this.configService.get<string>('NODE_ENV');
+    // if (nodeEnv !== 'development' && nodeEnv !== 'dev' && nodeEnv !== 'local') {
+    //   return;
+    // }
 
-    this.logger.log('Development mode - syncing auth0 user...');
+    // this.logger.log('Development mode - syncing auth0 user...');
+
+    const emailConflict = await this.usersService.findByEmail(user.email);
+
+    if (emailConflict) {
+      await this.usersService.remove(emailConflict.id);
+    }
 
     const savedUser = await this.usersService.create(user);
 

@@ -22,7 +22,9 @@ step 2: Create the service - `nest new <service-name> -p pnpm` <br>
 enter the service folder `cd <service-name>` <br>
 ensure there are no git folders in the service (this can mess up the git repository a bit)
 
-(optional step): to add postgress modules - `pnpm add @nestjs/typeorm typeorm pg`
+(optional step): to add postgress modules - `pnpm add @nestjs/typeorm typeorm pg`<br>
+(optional step): to add rabbitMQ modules - `pnpm add @golevelup/nestjs-rabbitmq amqplib`<br>
+(optional step): to add microservice modules - `pnpm add @nestjs/microservices`<br>
 
 step 3: update `src/main.ts`:
 ```Typescript
@@ -66,34 +68,72 @@ async function bootstrap() {
 bootstrap();
 ```
 
+Optional Add DB configuration to app.module.ts at the imports section:
+```Typescript
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get<string>('DB_HOST', 'localhost'),
+        port: config.get<number>('DB_PORT', 5432),
+        username: config.get('DB_USERNAME'),
+        password: config.get('DB_PASSWORD'),
+        database: config.get('DB_NAME'),
+        entities: [/* any entities in the service */],
+        synchronize: true,
+      }),
+    }),
+```
+
 Step 4: add docker file `Dockerfile`
 ```Dockerfile
-FROM ghcr.io/pnpm/pnpm:11.1.1
+FROM ghcr.io/pnpm/pnpm:11.1.1@sha256:18bcf6373f2ca9b74f13d939951f02b4514ec10a6f548fec8cfe28eb02cc4b4f AS build
 
 RUN groupadd phishshield && useradd -m -g phishshield appuser
 
-RUN pnpm runtime set node 22 -g
+RUN pnpm runtime set node 24 -g
 
 WORKDIR /app
 
 RUN chown -R appuser:phishshield /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY project/backend/<service-name>/package.json ./project/backend/<service-name>/package.json
-COPY project/backend/<service-name>/ ./project/backend/<service-name>/
+COPY project/backend/<service name>/package.json ./project/backend/<service name>/package.json
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set fetch-retries 8 -g \
+ && pnpm config set fetch-retry-mintimeout 10000 -g \
+ && pnpm config set fetch-retry-maxtimeout 120000 -g \
+ && pnpm config set fetch-timeout 120000 -g \
+ && pnpm config set network-concurrency 8 -g \
+ && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
-WORKDIR /app/project/backend/<service-name>
+COPY project/backend/<service name>/ ./project/backend/<service name>/
+
+WORKDIR /app/project/backend/<service name>
 
 RUN rm -f tsconfig.build.tsbuildinfo && pnpm run build
+
+RUN pnpm deploy --filter <service name> --prod /out
+
+FROM node:24.19-alpine3.24@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS runtime
+
+RUN addgroup -S phishshield && adduser -S appuser -G phishshield
+
+WORKDIR /app
+
+RUN chown -R appuser:phishshield /app
+ 
+COPY --from=build /out ./
+COPY --from=build /app/project/backend/<service name>/dist/ ./dist/
 
 USER appuser
 
 CMD ["node", "dist/main.js"]
 ```
 
-Step 5: update .env (the main env to update should be in `root/docker-compose/.env`)
+Step 5: update .env (the main env to update should be in `root/docker-compose/.env.local`)
 ```yml
 # add the following
 
@@ -134,6 +174,15 @@ Step 6: update the compose `local-compose.yml`:
     volumes:
       - <service>_pgdata:/var/lib/postgresql/data
 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
     ports:
       # Left side must be unique
       - "${<service>_DB_PORT}:${INTERNAL_DB_PORT}"
@@ -150,12 +199,21 @@ Step 6: update the compose `local-compose.yml`:
       - PORT=${<service-name>_PORT}
       - TCP_PORT=${<service>_TCP_PORT}
       - DB_HOST=${<service>_DB_CONTAINER}
-      - <service>_DB_PORT=${INTERNAL_DB_PORT}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${<service>_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     ports:
       # Left side must be unique
       - "${<service-name>_PORT}:${<service-name>_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
 
     depends_on:
       <service>_db:
@@ -229,6 +287,9 @@ imports: [
         },
       ],
       enableControllerDiscovery: true,
+      connectionInitOptions: {
+        wait: false,
+      },
     })
   ],
 ```

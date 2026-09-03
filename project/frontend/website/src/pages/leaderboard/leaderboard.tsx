@@ -6,6 +6,7 @@ import { useToast } from "../../context/toast-context";
 import { fetchLeaderboardXp, getInitials, groupUsersByDepartment, resolveDepartment,
     type XpNetEntry, } from "./leaderboard.service";
 import {connectXpSocket } from "../../services/xp-socket";
+import { Search } from "lucide-react";
 
 interface LeaderboardProps {
   onNavigate: (path: string) => void;
@@ -42,39 +43,28 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<LoadError>(null);
     const [xpEntries, setXpEntries] = useState<XpNetEntry[] | null>(null);
-  
+
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
-        setLoadError(null);
-        fetchLeaderboardXp()
-            .then(data => { if (!cancelled) setXpEntries(data); })
-            .catch(() => {
-                if (cancelled) {
+        const loadLeaderboard = async (): Promise<void> => {
+            setLoading(true);
+            setLoadError(null);
+            try {
+                const data = await fetchLeaderboardXp();
+                if (!cancelled) setXpEntries(data);
+            } catch {
+                if (!cancelled) {
                     setLoadError('other');
                     addToast({ type: 'error', title: 'Could not load leaderboard', message: 'Please try again.' });
                 }
-            })
-            .finally(() => { if (!cancelled) setLoading(false); });
-        return () => { cancelled = true; };
-    }, []);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
 
-    //Supplementary XP, no role restriction, live updates
-    useEffect(() => {
-        let cancelled = false;
-        setLoading(true);
-        setLoadError(null);
-        fetchLeaderboardXp()
-            .then(data => { if (!cancelled) setXpEntries(data); })
-            .catch(() => {
-                if (!cancelled) {
-                    setLoadError('other');
-                    addToast({ type: 'error', title: 'Could not load leaderboard', message: 'Please try again shortly.' });
-                }
-            })
-            .finally(() => { if (!cancelled) setLoading(false); });
+        void loadLeaderboard();
         return () => { cancelled = true; };
-    }, []);
+    }, [addToast]);
 
     // Live updates
     useEffect(() => {
@@ -145,7 +135,7 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     }, [departmentGroups, sizeFilter, departmentRankMode, search]);
 
     return(
-        <AppLayout activePath={activePath} onNavigate={onNavigate} title='Leaderboard' securityScore={72}> 
+        <AppLayout activePath={activePath} onNavigate={onNavigate} title='Leaderboard'> 
             <main style={{ background: 'var(--bg-page)', minHeight: '100%', padding: 24 }}>
                 <section style={{width: '100%'}}>
                     <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -180,7 +170,7 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
                                placeholder={activeTab === 'users' ? 'Search by name or department…' : 'Search by department…'}
                                value={search}
                                onChange={e => setSearch(e.target.value)}
-                               leftIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
+                               leftIcon={<Search size={14} aria-hidden='true' />}
                             />
                         </div>
                     </div>
