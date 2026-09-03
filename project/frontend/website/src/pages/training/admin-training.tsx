@@ -245,6 +245,7 @@ export function AdminTraining({
                             </label>
 
                             <textarea
+                                id='question-text'
                                 style={textAreaStyle}
                                 value={questionText}
                                 rows={3}

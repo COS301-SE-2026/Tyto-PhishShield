@@ -59,7 +59,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
     if (!best || item.path.length > best.path.length) return item;
   return best;
   }, null);  
-  const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
+  const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--sidebar-danger)';
   const scoreLabel = securityScore >= 70 ? 'Good' : securityScore >= 40 ? 'Fair' : 'At Risk';
   return (
     <aside style={{
