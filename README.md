@@ -164,6 +164,7 @@ All project documentation can be found in our
 |-----------|
 | 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
 | 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
 | { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
 | 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
@@ -184,6 +185,7 @@ All project documentation can be found in our
 | 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
 | 📐 [Software Architecture Specification (SAS) Deployment](docs/SRS/Software-Architecture-Specification.md#deployment) |
 | 📐 [Software Architecture Specification (SAS) Service Contracts](docs/SRS/Software-Architecture-Specification.md#api-service-contracts) |
+| 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |

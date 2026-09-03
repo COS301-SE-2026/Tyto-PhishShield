@@ -271,6 +271,9 @@ Docker containerizes the system in separate containers making our system portabl
 
 ## API Service Contracts
 
+[View documentation](./service-contracts/api-service-contract.md)
+[View open-api yaml file](./service-contracts/openapi.yaml)
+
 ## Deployment
 
 ### Deployment Requirements
