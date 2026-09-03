@@ -58,7 +58,6 @@ Microservices each handle their own methods of communication. The only dependenc
 1. The system must reject 100% or requests to protected API endpoints that do not have valid or expired authentication tokens.
 2. The system must enforce that 100% of the protected API endpoints can only be accessed by users with an appropriate role.
 
-
 **Tactic:** Use RBAC in the API gateway, use authorization tokens.
 
 **Pattern:** Centralized API gateway authentication pattern.
@@ -78,11 +77,14 @@ Microservices each handle their own methods of communication. The only dependenc
 - Test that unauthorized user roles do not have access to protected API endpoints.
 - Test that users with invalid authentication tokens do not have access to protected API endpoints.
 
+**HTTPS Request**
+![HTTPS Request returning success](/img/https-authorized-img.png)
+This image shows a valid request using HTTPS that returns successful.
+
 #### NFR 2 Quality attribute: Performance
 1. The system shall handle XP transactions and leader board updates within **500ms** of user action.
 2. The system shall load “Teachable moment” screens within **1s** of clicking a link on a phishing email.
-3. The system shall display confirmation toasts in the Outlook Add-in feature within **300ms.**
-4. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
+3. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
 
 **Tactic:** Spread the load accross 2 API gateway instances, make use of caching for non-live reads, optimize database indexing.
 
@@ -124,10 +126,9 @@ Microservices each handle their own methods of communication. The only dependenc
 - WCAG 2.1 AA accessibility compliance
 
 #### NFR 5 Quality attribute: Reliability and Availability
-1. Availability: The system must have 99.9% uptime.
-2. Recoverability: In the event of an AI provider failure, the system shall automatically switch to the fallback Llama-3 model within 30 seconds.
+1. The system must have 99.9% uptime.
 
-**Tactic:** Remove single points of failure, log requests, error exception communication, switch service provider.
+**Tactic:** Remove single points of failure, log requests, error exception communication.
 
 **Pattern:** Load balancing, log at load balancer, add a LLM gateway.
 
@@ -143,8 +144,7 @@ Microservices each handle their own methods of communication. The only dependenc
 - LLM service responds to requests even if a model is not working anymore.
 
 #### NFR 6 Quality attribute: Flexibility:
-1. Scalable: The system must be able to scale to handle 500 concurrent users.
-2. Adaptable: Horizontal scaling of the AI Engine, Analytics, and Authentication services independently.
+1. The system must be able to scale to handle 500 concurrent users.
 
 **Tactic:** Spread the load accross multiple independent services.
 
