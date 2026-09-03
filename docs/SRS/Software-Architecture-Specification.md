@@ -82,7 +82,7 @@ Microservices each handle their own methods of communication. The only dependenc
 This image shows a valid request using HTTPS that returns successful.
 
 #### NFR 2 Quality attribute: Performance
-1. The system shall handle XP transactions and leader board updates within **500ms** of user action.
+1. The system shall handle XP transactions and leader board updates within **1s** of user action.
 2. The system shall load “Teachable moment” screens within **1s** of clicking a link on a phishing email.
 3. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
 4. The system must maintain a server error rate of less than 0.1% when subjected to a load up to 500 concurrent users.
@@ -107,9 +107,7 @@ This image shows a valid request using HTTPS that returns successful.
 In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second.
 
 #### NFR 3 Quality attribute: Portability and Compatibility
-1. The system’s admin dashboard shall support standard desktop resolutions and maintain usability across commonly used screen sizes including **resolutions from 1280px to 1920px+ .** 
-2. The system’s “report phish” button must appear on the **Outlook ribbon on Desktop, Web, and Mobile.**
-3. The platform shall be deployable on **Ubuntu Server environments** using Docker and Docker Compose without requiring platform-specific modifications.
+1. The platform shall be deployable on Ubuntu Server environments without requiring platform-specific modifications.
 
 **Tactic:** Use Infrastructure as Code (IaC) and containerisation, use multiplatform design for frontend systems.
 
@@ -167,11 +165,8 @@ In this image you can see a test ran using 500 virtual users sending 266700 requ
 - .
 
 #### NFR 7 Quality attribute: Maintainability
-1. The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
-2. The complete application stack shall be fully containerized using Docker and orchestrated through Docker Compose for deployment handoff.
-3. All backend endpoints shall be documented using OpenAPI 3.0 documentation standards.
-4. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
-5. The system shall achieve a minimum automated backend test coverage of 80%.The system shall achieve a minimum automated backend test coverage of 80%.
+1. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
+2. The system shall achieve a minimum automated backend test coverage of 80%.The system shall achieve a minimum automated backend test coverage of 80%.
 
 **NRF Test:** 
 - CI/CD pipeline tests pass.
