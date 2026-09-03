@@ -60,6 +60,7 @@ interface XpPayload {
 interface EducationPayload {
   auth0Id: string;
   email?: string;
+  source?: string;
 
   assignmentId?: string;
   reportId?: string;
@@ -152,7 +153,7 @@ export class AnalyticsController {
   // rabbitmq subscribers for education assigned, email sent/scheduled/batch, user created/updated/deleted, wave create/delete
   @RabbitSubscribe({
     exchange: 'education-event-exchange',
-    routingKey: 'education.assigned',
+    routingKey: 'education.assign',
     queue: 'analytics-education-assigned-queue',
   })
   async onEducationAssigned(payload: EducationPayload) {
@@ -166,12 +167,14 @@ export class AnalyticsController {
 
     // Whenever education is assigned, it's because the user reported a real phishing email(false positive)
     // so we count that as a false positive report.
-    await this.analyticsService.recordEvent({
-      eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
-      auth0Id: payload.auth0Id,
-      email: payload.email,
-      payload: payload as unknown as Record<string, unknown>,
-    });
+    if (!payload.source || payload.source === 'report-service') {
+      await this.analyticsService.recordEvent({
+        eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+        auth0Id: payload.auth0Id,
+        email: payload.email,
+        payload: payload as unknown as Record<string, unknown>,
+      });
+    }
   }
 
   @RabbitSubscribe({
