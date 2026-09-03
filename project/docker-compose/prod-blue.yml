@@ -1,6 +1,6 @@
 services:
   mailing_app:
-    image: fiveguys301/mailing:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/mailing:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
@@ -15,6 +15,8 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://prod_rabbitmq:5672
+      - BUSINESS_NAME=${BUSINESS_NAME}
+      - TRACKING_LINK=${TRACKING_LINK}
     deploy:
       resources:
         limits:
@@ -25,7 +27,7 @@ services:
       - infrastructure
   
   accounts_app:
-    image: fiveguys301/accounts:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/accounts:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
@@ -60,11 +62,11 @@ services:
       - infrastructure
 
   api_app1:
-    image: fiveguys301/api:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/api:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_1
     environment:
-      - VERSION=blue_1-v1.0
+      - VERSION=blue_1-a484af3ba51228f541fb9bfdb0b57284e7e9dffa
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
@@ -102,6 +104,7 @@ services:
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=prod
+      - LOG_DIR=/var/log/api-gateway
     healthcheck:
       test:
         [
@@ -126,11 +129,11 @@ services:
       - infrastructure
 
   api_app2:
-    image: fiveguys301/api:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/api:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_2
     environment:
-      - VERSION=blue_2-v1.0
+      - VERSION=blue_2-a484af3ba51228f541fb9bfdb0b57284e7e9dffa
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
@@ -168,6 +171,7 @@ services:
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=prod
+      - LOG_DIR=/var/log/api-gateway
     healthcheck:
       test:
         [
@@ -192,7 +196,7 @@ services:
       - infrastructure
 
   report_app:
-    image: fiveguys301/report:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/report:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
@@ -216,7 +220,7 @@ services:
       - infrastructure
 
   xp_app:
-    image: fiveguys301/xp:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/xp:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
@@ -238,7 +242,7 @@ services:
       - infrastructure
       
   education_app:
-    image: fiveguys301/education:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/education:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
@@ -261,7 +265,7 @@ services:
       - infrastructure
       
   analytics_app:
-    image: fiveguys301/analytics:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/analytics:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
@@ -271,6 +275,8 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${ANALYTICS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://prod_rabbitmq:5672
     deploy:
       resources:
@@ -282,7 +288,7 @@ services:
       - infrastructure
 
   llm_app:
-    image: fiveguys301/llm:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/llm:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${LLM_APP_CONTAINER}
     environment:
       - PORT=${LLM_SERVICE_PORT}
@@ -305,7 +311,7 @@ services:
       - infrastructure
     
   company_app:
-    image: fiveguys301/company:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6
+    image: fiveguys301/company:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
     container_name: blue_${COMPANY_APP_CONTAINER}
     environment:
       - PORT=${COMPANY_SERVICE_PORT}
@@ -326,7 +332,7 @@ services:
       - infrastructure
 
   website:
-    image: fiveguys301/website:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6-prod
+    image: fiveguys301/website:a484af3ba51228f541fb9bfdb0b57284e7e9dffa-prod
     restart: on-failure
     container_name: blue_website
     deploy:
@@ -339,7 +345,7 @@ services:
       - proxy
   
   outlook_addin:
-    image: fiveguys301/addin:b281197aaab3c5e75e8cef1b94d9e23570ddf6d6-prod
+    image: fiveguys301/addin:a484af3ba51228f541fb9bfdb0b57284e7e9dffa-prod
     restart: on-failure
     container_name: blue_addin
     deploy:

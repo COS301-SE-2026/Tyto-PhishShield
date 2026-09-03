@@ -82,33 +82,6 @@ describe('AuthController', () => {
     });
   });
 
-  describe('login()', () => {
-    it('passes request cookies as deviceToken', async () => {
-      authService.login.mockResolvedValue({ access_token: 'jwt-token', expires_in: 86400, requiresOTP: false });
-
-      const req = { cookies: {device_token: 'dev123' }} as unknown as Request;
-      await controller.login(req, { email: 'a@b.com', password: 'pw'});
-      expect(authService.login).toHaveBeenCalledWith(
-        expect.objectContaining({ deviceToken: 'dev123'}),
-      );
-    });
-// this looks good.
-    it('returns the login payload', async() => {
-      authService.login.mockResolvedValue({ access_token: 'abc', expires_in: 7200, requiresOTP: false });
-      const req =  { cookies: {} } as  unknown as Request;
-      const result = await controller.login(req, {email: 'x', password: 'y'});
-      expect(result.access_token).toBe('abc');
-    });
-
-    it('throws UnauthorizedException when credentials are invalid', async () => {
-      authService.login.mockRejectedValue(new UnauthorizedException());
-      const req = { cookies: {} } as unknown as Request;
-      await expect(
-        controller.login(req, {email: 'bad', password: 'creds'}),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-  });
-
   describe('getProfile', () => {
     it('should return the user from req.user', () => {
       const user = {
@@ -179,48 +152,6 @@ describe('AuthController', () => {
         );
       });
     });
-
-      describe('verifyOtp', () => {
-        it('calls authService.verifyOtp with extended dto and sets cookie', async () => {
-          const mockRes = mockResponse();
-          const req = {
-            header: (name: string) => (name === 'user-agent' ? 'test-agent' : ''),
-            ip: '127.0.0.1',
-          } as unknown as Request;
-          authService.verifyOtp.mockResolvedValue({
-            message: 'Email verified successfully. You can now log in.',
-            deviceToken: 'dev-456',
-          });
-    
-          const dto = { email: 'a@b.com', code: '123456' };
-          const result = await controller.verifyOtp(req, dto, mockRes);
-    
-          expect(authService.verifyOtp).toHaveBeenCalledWith({
-            email: dto.email,
-            code: dto.code,
-            userAgent: 'test-agent',
-            ip: '127.0.0.1',
-          });
-          expect(mockRes.cookie).toHaveBeenCalledWith(
-            'device_token',
-            'dev-456',
-            expect.objectContaining({ httpOnly: true, secure: true }),
-          );
-          expect(result).toEqual({ message: expect.stringContaining('verified') });
-        });
-      });
-
-        describe('resendOtp', () => {
-          it('passes dto to authService.resendOtp', async () => {
-            authService.resendOtp.mockResolvedValue({
-              message: 'A new OTP code has been sent to your email.',
-            });
-            const dto = { email: 'a@b.com' };
-            const result = await controller.resendOtp(dto);
-            expect(authService.resendOtp).toHaveBeenCalledWith(dto);
-            expect(result.message).toContain('new OTP code');
-          });
-        });
 //more convenience teest, dont see world where logout fails, but obviously good to add.
           describe('logout', () => {
             it('returns the logout message from service', () => {

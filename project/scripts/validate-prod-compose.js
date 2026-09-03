@@ -67,7 +67,6 @@ function main() {
     checkMissingServices(devServices, prodServices);
 
     for (const service of devServices) {
-        if (service === 'llm_app' || service === 'company_app') continue;
         let patterns;
         if (typeOfService === 'infra') {
             patterns = infraServices;
@@ -115,7 +114,6 @@ function checkMissingServices(devServices, prodServices) {
         for(const pattern of patterns) {
             if (pattern.test(service)) {
                 if (service === 'api_app') return !prodServices.has('api_app1') || !prodServices.has('api_app2');
-                if (service === 'llm_app' || service === 'company_app') return false;
                 return !prodServices.has(service);
             }
         }
