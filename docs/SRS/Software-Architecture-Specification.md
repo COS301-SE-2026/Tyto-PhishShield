@@ -130,7 +130,6 @@ It takes less than one second for the xp change to happen.
 
 #### NFR 4 Quality attribute: Usability  
 1. The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
-2. The system shall provide **immediate visual feedback** for all critical user actions including reporting phishing emails, completing simulations, and earning XP rewards.
 
 **NRF Test:** 
 - WCAG 2.1 AA accessibility compliance
