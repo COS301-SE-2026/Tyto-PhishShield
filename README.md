@@ -176,6 +176,23 @@ All project documentation can be found in our
 
 <h2 align="center"> 📁 Documentation Archive<h2>
 <details style="font-size: 14px;">
+<summary>Demo 3 Documentation</summary>
+
+| Documents |
+|-----------|
+| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 📐 [Software Architecture Specification (SAS) Deployment](docs/SRS/Software-Architecture-Specification.md#deployment) |
+| 📐 [Software Architecture Specification (SAS) Service Contracts](docs/SRS/Software-Architecture-Specification.md#api-service-contracts) |
+| 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
+| 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
+| 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
+| 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
+| 🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
+| 🎬 [Demo 3 videos]() |
+
+</details> 
+<details style="font-size: 14px;">
 <summary>Demo 2 Documentation</summary>
 
 | Documents |
