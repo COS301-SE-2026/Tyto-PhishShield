@@ -78,15 +78,18 @@ Microservices each handle their own methods of communication. The only dependenc
 - Test that users with invalid authentication tokens do not have access to protected API endpoints.
 
 **HTTPS Request**
-![HTTPS Request returning success](./img/https-authorized-img.png)
+![HTTPS Request Returning Success](./img/https-authorized-img.png)
 This image shows a valid request using HTTPS that returns successful.
 
+**HTTP Request**
+![HTTP Request Returning Unauthorized](./img/http-unauthorized-img.png)
+This image shows a unsuccessful request since HTTP was used instead of HTTPS.
+
 #### NFR 2 Quality attribute: Performance
-1. The system shall handle XP transactions and leader board updates within **1s** of user action.
-2. The system shall load “Teachable moment” screens within **1s** of clicking a link on a phishing email.
-3. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
-4. The system must maintain a server error rate of less than 0.1% when subjected to a load up to 500 concurrent users.
-5. The system must maintain a 95th percentile response time of under 3 second for all API requests when subjected to a load up to 500 concurrent users.
+1. The system shall handle XP transactions and leader board updates within 1s of user action.
+2. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
+3. The system must maintain a server error rate of less than 0.1% when subjected to a load up to 500 concurrent users.
+4. The system must maintain a 95th percentile response time of under 3 second for all API requests when subjected to a load up to 500 concurrent users.
 
 **Tactic:** Spread the load accross 2 API gateway instances, make use of caching for non-live reads, optimize database indexing.
 
@@ -103,8 +106,11 @@ This image shows a valid request using HTTPS that returns successful.
 
 **500 Concurrent Users**
 ![Screenshot of server maintaining efficiency with 500 concurrent users](./img/500-concurrent-users-diagram.png)
-
 In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second.
+
+**Response Time**
+![Time it takes a xp transaction to apply to a user](./img/xp-given-to-user-in-less-than-one-second-img.png)
+It takes less than one second for the xp change to happen.
 
 #### NFR 3 Quality attribute: Portability and Compatibility
 1. The platform shall be deployable on Ubuntu Server environments without requiring platform-specific modifications.
@@ -120,7 +126,6 @@ In this image you can see a test ran using 500 virtual users sending 266700 requ
 
 **NRF Test:** 
 - System is deployable on ubuntu servers.
-- Frontend design scales well on large screens and the report button can be used on multiple devices.
 
 #### NFR 4 Quality attribute: Usability
 1. The system’s “report phish” button must follow the **Microsoft Fluent UI design system.**
@@ -135,18 +140,16 @@ In this image you can see a test ran using 500 virtual users sending 266700 requ
 
 **Tactic:** Remove single points of failure, log requests, error exception communication.
 
-**Pattern:** Load balancing, log at load balancer, add a LLM gateway.
-
-**ADR-05** LLM gateway
-|**Context**|**Decision**|**Consquences**|
-|---|---|---|
-| Should an external LLM be unavailable the system should still be able to operate and generate emails. | Add an LLM gateway to route requests to available LLMs. | Introduces extra overhead to system and can degrade performance. |
+**Pattern:** Load balancing, log at load balancer.
 
 *For load balancing see ADR-03.
 
 **NRF Test:** 
 - Uptime checks should yield >99.9% uptime.
-- LLM service responds to requests even if a model is not working anymore.
+
+**Uptime**
+![Image showing uptime of last 30 days](./img/uptime-img.png)
+We have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
 
 #### NFR 6 Quality attribute: Flexibility:
 1. The system must be able to scale up to 500 concurrent users without any of the core services becoming unresponsive. 
