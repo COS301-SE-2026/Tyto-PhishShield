@@ -164,7 +164,7 @@ It takes less than one second for the xp change to happen.
 ![Screenshot of lighthouse users](./img/Accessability_score_demo3_users.png)
 ![Screenshot of lighthouse wave detail](./img/Accessability_score_demo3_waves-details.png)
 ![Screenshot of lighthouse waves](./img/Accessability_score_demo3_waves.png)
-In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second. This tests both point 3 and 4 of NFR 2.
+In the images above you can see the lighthouse accessibility and best practices results
 
 **Uptime**  
 ![Image showing uptime of last 30 days](./img/uptime-img.png)
