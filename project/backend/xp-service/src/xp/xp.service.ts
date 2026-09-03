@@ -192,6 +192,23 @@ export class XpService {
         );
       }
 
+      try {
+        await this.amqpConnection.publish(
+          'xp-event-exchange',
+          'xp.link_clicked',
+          {
+            auth0Id: user.auth0Id,
+            amount: saved.amount,
+            reason: XpReason.COMPROMISED,
+          },
+        );
+      } catch (publishError) {
+        this.logger.error(
+          `Failed to publish xp.link_clicked event for user ${user.auth0Id}`,
+          publishError,
+        );
+      }
+
       return {
         success: true,
         message: `Link with token: ${token} was successfully marked as clicked and XP was deducted`,
