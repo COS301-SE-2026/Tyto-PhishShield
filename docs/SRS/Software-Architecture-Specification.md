@@ -55,32 +55,34 @@ Microservices each handle their own methods of communication. The only dependenc
 ### Quality Requirements based off of [NFR](./Software_Requirements_Specification.md#non-functional-requirements)
 
 #### NFR 1 Quality attribute: Security
-1. Authenticity: The system shall authenticate and authorize all protected API requests using **Role-Based Access Control (RBAC)** enforced at the API gateway layer with server-side validation on **100% of protected endpoints.**
-2. Confidentiality: The system shall encrypt all data in transit using **TLS 1.3** and encrypt sensitive data at rest using **AES-256 encryption standards.**
+1. The system must reject 100% or requests to protected API endpoints that do not have valid or expired authentication tokens.
+2. The system must enforce that 100% of the protected API endpoints can only be accessed by users with an appropriate role.
 
-**Tactic:** Use RBAC in the API gateway, use authorization tokens, use encrypted communication paths and encrypt sensitve fields in the databases.
+
+**Tactic:** Use RBAC in the API gateway, use authorization tokens.
 
 **Pattern:** Centralized API gateway authentication pattern.
 
-**ADR-01** Users authenticated and RBAC for protect endpoints 
+**ADR-01** Users authenticated for protect endpoints 
 |**Context**|**Decision**|**Consquences**|
 |---|---|---|
-| Only authenticated users should be able to have access to the system. Users have specific roles and should only have access to what their role is ment to have access to. | Apply RBAC at the API gateway with Auth0. Use Auth0 for all authorization requests. | No RBAC is applied at microservices. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
+| Only authenticated users should be able to have access to the system.| Use Auth0 for all authorization requests. | No authentication is done in individual microservices, it is only done in the API gateway. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
 
-**ADR-02** Data encrypted in transit and at rest 
+**ADR-02** RBAC for protect endpoints 
 |**Context**|**Decision**|**Consquences**|
 |---|---|---|
-| Data in transit needs to be encrypted. Sensetive data at rest must also be kept confidential. | Use HTTPS for all requests. | Reduces performance. More processing time is used to encrypt and decrypt data. |
+| Users have specific roles and should only have access to what their role is meant to have access to. | Apply RBAC at the API gateway with Auth0. Use Auth0 for all authorization requests. | No RBAC is applied in individual microservices, it is only applied in the API gateway. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
 
 **NRF Test:** 
 - Test that only HTTPS requests work. 
-- Test that unautherized users do not have access to the system.
+- Test that unauthorized user roles do not have access to protected API endpoints.
+- Test that users with invalid authentication tokens do not have access to protected API endpoints.
 
 #### NFR 2 Quality attribute: Performance
 1. The system shall handle XP transactions and leader board updates within **500ms** of user action.
 2. The system shall load “Teachable moment” screens within **1s** of clicking a link on a phishing email.
 3. The system shall display confirmation toasts in the Outlook Add-in feature within **300ms.**
-4. The admin dashboard shall update live analytics and leaderboard data within **2 seconds** of receiving new event data through WebSocket communication.
+4. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
 
 **Tactic:** Spread the load accross 2 API gateway instances, make use of caching for non-live reads, optimize database indexing.
 
