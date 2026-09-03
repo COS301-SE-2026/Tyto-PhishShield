@@ -19,8 +19,6 @@ const DEPARTMENTS = [
   { value: 'executive', label: 'Executive' },
 ];
 
-const ROLES = ['User', 'Analyst', 'Admin'] as const;
-
 // Check password strength
 function PwHints({ password }: { password: string }) {
   const checks = [
@@ -56,7 +54,7 @@ function PwHints({ password }: { password: string }) {
 function StepSidebar({ step }: { step: Step }) {
   const steps = [
     { n: 1, label: 'Account details', desc: 'Name, email, password' },
-    { n: 2, label: 'Organisation', desc: 'Department and role' },
+    { n: 2, label: 'Organisation', desc: 'Oganisation and Department' },
     { n: 3, label: 'Check your email', desc: 'Verify your email address' },
   ];
 
@@ -116,7 +114,6 @@ export function Register({ onNavigate }: RegisterProps) {
   const [password, setPassword] = useState('');
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
   const [department, setDepartment] = useState('it_security');
-  const [role, setRole] = useState<'User' | 'Analyst' | 'Admin'>('User');
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -139,7 +136,7 @@ export function Register({ onNavigate }: RegisterProps) {
     setStep1Errors({});
     setStep(2);
   };
-  const step2Valid = !!department && !!role;
+  const step2Valid = !!department;
 
   const handleStep2Continue = async () => {
     setLoading(true);
@@ -259,30 +256,6 @@ export function Register({ onNavigate }: RegisterProps) {
               onChange={e => setDepartment(e.target.value)}
               options={DEPARTMENTS}
             />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 8, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Role
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {ROLES.map(r => (
-                <button
-                  key={r}
-                  onClick={() => setRole(r)}
-                  style={{
-                    flex: 1, padding: '9px 0', borderRadius: 8, cursor: 'pointer',
-                    fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif',
-                    fontWeight: role === r ? 700 : 400,
-                    border: `1.5px solid ${role === r ? 'var(--color-primary)' : 'var(--border)'}`,
-                    background: role === r ? 'var(--color-primary-light)' : 'var(--bg-input)',
-                    color: role === r ? 'var(--color-primary)' : 'var(--text-secondary)',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
           </div>
           {submitError && (
             <div style={{

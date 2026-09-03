@@ -50,7 +50,7 @@ const typeOfService = infraPattern.test(prodFile) ? 'infra' : 'app';
 function main() {
     console.log(`\nverifying ${prodFile}\n`);
     execSync(
-        `docker compose -f ./project/docker-compose/${prodFile} --env-file ./project/docker-compose/.env.prod`
+        `docker compose -f ${prodFile} --env-file ./project/docker-compose/.env.prod config`
     );
 
     console.log(`\ncomparing ${devFile} --> ${prodFile}\n`);
@@ -133,7 +133,7 @@ function checkMissingServices(devServices, prodServices) {
 }
 
 function getEnv(service) {
-  const environment = service.environment || {};
+  const environment = service?.environment || {};
 
   if (Array.isArray(environment)) {
     return environment.map(entry => {
