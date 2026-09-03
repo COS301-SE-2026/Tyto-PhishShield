@@ -14,7 +14,7 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
     volumes:
       - ./src:/app/src
     deploy:
@@ -47,12 +47,11 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=prod
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
     volumes:
       - ./src:/app/src
     deploy:
@@ -103,7 +102,7 @@ services:
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=prod
@@ -169,7 +168,7 @@ services:
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=prod
@@ -210,7 +209,7 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN} 
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
     volumes:
       - ./src:/app/src
     deploy:
@@ -230,7 +229,7 @@ services:
       - XP_TCP_PORT=${XP_TCP_PORT}
       - XP_DB_CONTAINER=${XP_DB_CONTAINER}
       - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - XP_DB_NAME=${XP_DB_NAME}
@@ -259,7 +258,7 @@ services:
       - DB_NAME=${EDUCATION_DB_NAME}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
     deploy:
       resources:
         limits:
@@ -282,7 +281,7 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${ANALYTICS_DB_NAME}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
     volumes:
       - ./src:/app/src
     deploy:

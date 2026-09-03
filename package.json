@@ -102,6 +102,8 @@
 		"dc:logs": "docker compose logs -f",
 		"dc:up:dev-server": "docker compose -f project/docker-compose/dev-compose.yml --env-file ./project/docker-compose/.env.dev up -d --build",
 		"dc:down:dev-server": "docker compose -f project/docker-compose/dev-compose.yml --env-file ./project/docker-compose/.env.dev down",
+		"dc:up:local-server": "docker compose -f project/docker-compose/local-compose-dockerhub.yml --env-file ./project/docker-compose/.env.local up -d --build",
+		"dc:down:local-server": "docker compose -f project/docker-compose/local-compose-dockerhub.yml --env-file ./project/docker-compose/.env.local down",
 		"dc:check:prod": "docker compose -p infrastructure -f project/docker-compose/prod-infrastructure.yml --env-file ./project/docker-compose/.env.prod config && docker compose -p blue -f project/docker-compose/prod-blue.yml --env-file ./project/docker-compose/.env.prod config && docker compose -p green -f project/docker-compose/prod-green.yml --env-file ./project/docker-compose/.env.prod config",
 		"dc:up:prod-infra": "docker compose -p infrastructure -f project/docker-compose/prod-infrastructure.yml --env-file ./project/docker-compose/.env.prod up",
 		"dc:down:prod-infra": "docker compose -p infrastructure -f project/docker-compose/prod-infrastructure.yml --env-file ./project/docker-compose/.env.prod down",
