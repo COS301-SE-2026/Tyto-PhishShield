@@ -38,7 +38,7 @@ export class EducationController {
     await this.educationService.createAssignment(payload.auth0Id);
   }
 
-    @RabbitSubscribe({
+  @RabbitSubscribe({
     exchange: 'xp-event-exchange',
     routingKey: 'xp.link_clicked',
     queue: 'education-service-link-clicked-queue',
@@ -49,7 +49,9 @@ export class EducationController {
       await this.educationService.createAssignment(payload.auth0Id);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown error';
-      this.logger.warn(`Could not create assignment for ${payload.auth0Id}: ${message}`);
+      this.logger.warn(
+        `Could not create assignment for ${payload.auth0Id}: ${message}`,
+      );
     }
   }
 
