@@ -85,6 +85,8 @@ This image shows a valid request using HTTPS that returns successful.
 1. The system shall handle XP transactions and leader board updates within **500ms** of user action.
 2. The system shall load “Teachable moment” screens within **1s** of clicking a link on a phishing email.
 3. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
+4. The system must maintain a server error rate of less than 0.1% when subjected to a load up to 500 concurrent users.
+5. The system must maintain a 95th percentile response time of under 3 second for all API requests when subjected to a load up to 500 concurrent users.
 
 **Tactic:** Spread the load accross 2 API gateway instances, make use of caching for non-live reads, optimize database indexing.
 
@@ -96,8 +98,11 @@ This image shows a valid request using HTTPS that returns successful.
 | Many requests for different services need to pass through the API gateway. Response time needs to be optimal according the the measures in the quality attribute. | Add a second API gateway instance and use a load balancer to spread the load. | Increases the complexity of the system and adds a bit of latancy. |
 
 **NRF Test:** 
-- Test system responsiveness with 500 concurent users. 
+- Test system responsiveness with 500 concurrent users. 
 - Test that the response time is within 1s.
+
+**500 Concurrent Users**
+![Screenshot of server maintaining efficiency with 500 concurrent users](./img/500-concurrent-users-diagram.png)
 
 #### NFR 3 Quality attribute: Portability and Compatibility
 1. The system’s admin dashboard shall support standard desktop resolutions and maintain usability across commonly used screen sizes including **resolutions from 1280px to 1920px+ .** 
@@ -144,7 +149,7 @@ This image shows a valid request using HTTPS that returns successful.
 - LLM service responds to requests even if a model is not working anymore.
 
 #### NFR 6 Quality attribute: Flexibility:
-1. The system must be able to scale to handle 500 concurrent users.
+1. The system must be able to scale up to 500 concurrent users without any of the core services becoming unresponsive. 
 
 **Tactic:** Spread the load accross multiple independent services.
 
@@ -157,8 +162,7 @@ This image shows a valid request using HTTPS that returns successful.
 
 
 **NRF Test:** 
-- System still responds under 500 concurent users.
-- Adding more services independently scales easily.
+- .
 
 #### NFR 7 Quality attribute: Maintainability
 1. The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
