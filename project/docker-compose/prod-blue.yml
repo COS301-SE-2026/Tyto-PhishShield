@@ -1,6 +1,6 @@
 services:
   mailing_app:
-    image: fiveguys301/mailing:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/mailing:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
@@ -27,7 +27,7 @@ services:
       - infrastructure
   
   accounts_app:
-    image: fiveguys301/accounts:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/accounts:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
@@ -62,11 +62,11 @@ services:
       - infrastructure
 
   api_app1:
-    image: fiveguys301/api:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/api:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_1
     environment:
-      - VERSION=blue_1-a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+      - VERSION=blue_1-bae0df29913521a1529ecf7a2004e6e1a5379cc1
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
@@ -129,11 +129,11 @@ services:
       - infrastructure
 
   api_app2:
-    image: fiveguys301/api:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/api:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_2
     environment:
-      - VERSION=blue_2-a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+      - VERSION=blue_2-bae0df29913521a1529ecf7a2004e6e1a5379cc1
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
@@ -196,7 +196,7 @@ services:
       - infrastructure
 
   report_app:
-    image: fiveguys301/report:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/report:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
@@ -220,7 +220,7 @@ services:
       - infrastructure
 
   xp_app:
-    image: fiveguys301/xp:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/xp:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
@@ -242,7 +242,7 @@ services:
       - infrastructure
       
   education_app:
-    image: fiveguys301/education:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/education:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
@@ -265,7 +265,7 @@ services:
       - infrastructure
       
   analytics_app:
-    image: fiveguys301/analytics:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/analytics:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
@@ -288,7 +288,7 @@ services:
       - infrastructure
 
   llm_app:
-    image: fiveguys301/llm:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/llm:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${LLM_APP_CONTAINER}
     environment:
       - PORT=${LLM_SERVICE_PORT}
@@ -311,7 +311,7 @@ services:
       - infrastructure
     
   company_app:
-    image: fiveguys301/company:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
+    image: fiveguys301/company:bae0df29913521a1529ecf7a2004e6e1a5379cc1
     container_name: blue_${COMPANY_APP_CONTAINER}
     environment:
       - PORT=${COMPANY_SERVICE_PORT}
@@ -332,7 +332,7 @@ services:
       - infrastructure
 
   website:
-    image: fiveguys301/website:a484af3ba51228f541fb9bfdb0b57284e7e9dffa-prod
+    image: fiveguys301/website:bae0df29913521a1529ecf7a2004e6e1a5379cc1-prod
     restart: on-failure
     container_name: blue_website
     deploy:
@@ -345,7 +345,7 @@ services:
       - proxy
   
   outlook_addin:
-    image: fiveguys301/addin:a484af3ba51228f541fb9bfdb0b57284e7e9dffa-prod
+    image: fiveguys301/addin:bae0df29913521a1529ecf7a2004e6e1a5379cc1-prod
     restart: on-failure
     container_name: blue_addin
     deploy:
