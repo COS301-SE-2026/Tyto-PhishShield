@@ -101,12 +101,13 @@ This image shows a unsuccessful request since HTTP was used instead of HTTPS.
 | Many requests for different services need to pass through the API gateway. Response time needs to be optimal according the the measures in the quality attribute. | Add a second API gateway instance and use a load balancer to spread the load. | Increases the complexity of the system and adds a bit of latancy. |
 
 **NRF Test:** 
-- Test system responsiveness with 500 concurrent users. 
+- Test system responsiveness with 500 concurrent users.
+- Test that error rate is less than 0.1% when subjected to a load of 500 concurrent users.
 - Test that the response time is within 1s.
 
 **500 Concurrent Users**
 ![Screenshot of server maintaining efficiency with 500 concurrent users](./img/500-concurrent-users-diagram.png)
-In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second.
+In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second. This tests both point 3 and 4 of NFR 2.
 
 **Response Time**
 ![Time it takes a xp transaction to apply to a user](./img/xp-given-to-user-in-less-than-one-second-img.png)
@@ -127,10 +128,9 @@ It takes less than one second for the xp change to happen.
 **NRF Test:** 
 - System is deployable on ubuntu servers.
 
-#### NFR 4 Quality attribute: Usability
-1. The system’s “report phish” button must follow the **Microsoft Fluent UI design system.**
-2. The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
-3. The system shall provide **immediate visual feedback** for all critical user actions including reporting phishing emails, completing simulations, and earning XP rewards.
+#### NFR 4 Quality attribute: Usability  
+1. The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
+2. The system shall provide **immediate visual feedback** for all critical user actions including reporting phishing emails, completing simulations, and earning XP rewards.
 
 **NRF Test:** 
 - WCAG 2.1 AA accessibility compliance
@@ -147,7 +147,26 @@ It takes less than one second for the xp change to happen.
 **NRF Test:** 
 - Uptime checks should yield >99.9% uptime.
 
-**Uptime**
+**Lighthouse results**
+![Screenshot of lighthouse analytics](./img/Accessability_score_demo3_analytics.png)
+![Screenshot of lighthouse dashboard](./img/Accessability_score_demo3_dashboard.png)
+![Screenshot of lighthouse emails](./img/Accessability_score_demo3_emails.png)
+![Screenshot of lighthouse generate emails](./img/Accessability_score_demo3_generate-email.png)
+![Screenshot of lighthouse help](./img/Accessability_score_demo3_help.png)
+![Screenshot of lighthouse landing](./img/Accessability_score_demo3_landing.png)
+![Screenshot of lighthouse leaderboard](./img/Accessability_score_demo3_leaderboard.png)
+![Screenshot of lighthouse reports](./img/Accessability_score_demo3_reports.png)
+![Screenshot of lighthouse schedule wave](./img/Accessability_score_demo3_schedule-wave.png)
+![Screenshot of lighthouse send email](./img/Accessability_score_demo3_send-email.png)
+![Screenshot of lighthouse settings](./img/Accessability_score_demo3_settings.png)
+![Screenshot of lighthouse template edit](./img/Accessability_score_demo3_template-edit.png)
+![Screenshot of lighthouse training](./img/Accessability_score_demo3_training.png)
+![Screenshot of lighthouse users](./img/Accessability_score_demo3_users.png)
+![Screenshot of lighthouse wave detail](./img/Accessability_score_demo3_waves-details.png)
+![Screenshot of lighthouse waves](./img/Accessability_score_demo3_waves.png)
+In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second. This tests both point 3 and 4 of NFR 2.
+
+**Uptime**  
 ![Image showing uptime of last 30 days](./img/uptime-img.png)
 We have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
 
