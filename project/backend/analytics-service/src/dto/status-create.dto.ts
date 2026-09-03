@@ -1,7 +1,6 @@
 import { IsEnum, IsOptional, IsString, IsDateString } from 'class-validator';
 import { EmailStatusEnum } from '../email-status/entities/email-status.entity';
 
-
 export class StatusCreateDto {
   @IsString()
   emailId: string;

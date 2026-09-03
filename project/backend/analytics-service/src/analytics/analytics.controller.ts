@@ -41,6 +41,7 @@ import { MessagePattern } from '@nestjs/microservices';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsEventType } from './entities/analytics-event.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { EventUser } from '@phishshield/dto';
 
 //payload shapes, could move to shared types later, but for now just here.
 
@@ -308,7 +309,7 @@ export class AnalyticsController {
     routingKey: 'user.deleted',
     queue: 'analytics-user-deleted-queue',
   })
-  async onUserDeleted(payload: AccountUserPayload) {
+  async onUserDeleted(payload: EventUser) {
     await this.analyticsService.deleteUser(payload.auth0Id);
   }
 

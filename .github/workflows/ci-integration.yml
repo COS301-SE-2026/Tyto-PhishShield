@@ -55,6 +55,8 @@ jobs:
             cache: "pnpm"
         - name: Install dependencies
           run: pnpm install --frozen-lockfile --ignore-scripts
+        - name: Build shared packages
+          run: pnpm build:shared
         - name: run integration test
           run: pnpm int:test:education
 
@@ -77,6 +79,8 @@ jobs:
             cache: "pnpm"
         - name: Install dependencies
           run: pnpm install --frozen-lockfile --ignore-scripts
+        - name: Build shared packages
+          run: pnpm build:shared
         - name: run integration test
           run: pnpm int:test:report
 
@@ -99,6 +103,8 @@ jobs:
             cache: "pnpm"
         - name: Install dependencies
           run: pnpm install --frozen-lockfile --ignore-scripts
+        - name: Build shared packages
+          run: pnpm build:shared
         - name: run integration test
           run: pnpm int:test:analytics
 
@@ -121,5 +127,7 @@ jobs:
             cache: "pnpm"
         - name: Install dependencies
           run: pnpm install --frozen-lockfile --ignore-scripts
+        - name: Build shared packages
+          run: pnpm build:shared
         - name: run integration test
           run: pnpm int:test:llm

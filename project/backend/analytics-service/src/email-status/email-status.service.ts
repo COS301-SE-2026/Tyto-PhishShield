@@ -30,15 +30,15 @@ export class EmailStatusService {
         return entity;
       }
       const newStatus = this.statusRepository.create({
-      emailId: body.emailId,
-      messageId: body.messageId,
-      status: body.status,
-      reason: body.reason ?? null,
-      webhookEventId: body.webhookEventId,
-      occurredAt: body.occurredAt ? new Date(body.occurredAt) : undefined,
-    });
+        emailId: body.emailId,
+        messageId: body.messageId,
+        status: body.status,
+        reason: body.reason ?? null,
+        webhookEventId: body.webhookEventId,
+        occurredAt: body.occurredAt ? new Date(body.occurredAt) : undefined,
+      });
 
-    const savedStatus = await this.statusRepository.save(newStatus);
+      const savedStatus = await this.statusRepository.save(newStatus);
 
       this.logger.log(
         `Status of email: ${body.emailId}, was successfully created`,

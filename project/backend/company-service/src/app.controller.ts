@@ -1,7 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MessagePattern } from '@nestjs/microservices';
-import { Employee } from './employee/entities/employee.entity';
 
 @Controller()
 export class AppController {
