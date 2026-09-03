@@ -167,7 +167,7 @@ It takes less than one second for the xp change to happen.
 In the images above you can see the lighthouse accessibility and best practices results
 
 **Uptime**  
-![Image showing uptime of last 30 days](./img/uptime-img.png)
+![Image showing uptime of last 30 days](./img/uptime-img.png)  
 We have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
 
 #### NFR 6 Quality attribute: Flexibility:
