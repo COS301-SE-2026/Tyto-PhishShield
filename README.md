@@ -187,6 +187,8 @@ All project documentation can be found in our
 |-----------|
 | 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
 | 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 📐 [Software Architecture Specification (SAS) NFR Test](docs/SRS/Software-Architecture-Specification.md#quality-requirements-based-off-of-nfr) |
+| 📐 [Software Architecture Specification (SAS) NFR Tracability matrix](docs/SRS/Software-Architecture-Specification.md#nfr-quality-requirement-matrix) |
 | 📐 [Software Architecture Specification (SAS) Deployment](docs/SRS/Software-Architecture-Specification.md#deployment) |
 | 📐 [Software Architecture Specification (SAS) Service Contracts](docs/SRS/Software-Architecture-Specification.md#api-service-contracts) |
 | 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
@@ -195,7 +197,7 @@ All project documentation can be found in our
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
 | 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
 | 🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
-| 🎬 [Demo 3 videos]() |
+| 🎬 [Demo 3 videos](https://drive.google.com/drive/u/1/folders/1KzNlCSQ1aX3uWdeu567TElWooIkOOStt) |
 
 </details> 
 <details style="font-size: 14px;">

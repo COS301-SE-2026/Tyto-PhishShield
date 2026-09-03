@@ -51,36 +51,58 @@ Microservices each handle their own methods of communication. The only dependenc
  4. Build native Outlook Add-in (Office JS API).
  5. API authenticates all enpoints before anything reaches the services.
  6. Each Microservice's database is its own and may not be accessed by another.
+ 7. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
 
 ### Quality Requirements based off of [NFR](./Software_Requirements_Specification.md#non-functional-requirements)
 
 #### NFR 1 Quality attribute: Security
-1. Authenticity: The system shall authenticate and authorize all protected API requests using **Role-Based Access Control (RBAC)** enforced at the API gateway layer with server-side validation on **100% of protected endpoints.**
-2. Confidentiality: The system shall encrypt all data in transit using **TLS 1.3** and encrypt sensitive data at rest using **AES-256 encryption standards.**
+1. The system must reject 100% or requests to protected API endpoints that have invalid or expired authentication tokens.
+2. The system must enforce that 100% of the protected API endpoints can only be accessed by users with an appropriate role.
 
-**Tactic:** Use RBAC in the API gateway, use authorization tokens, use encrypted communication paths and encrypt sensitve fields in the databases.
+**Tactic:** Use RBAC in the API gateway, use authorization tokens.
 
 **Pattern:** Centralized API gateway authentication pattern.
 
-**ADR-01** Users authenticated and RBAC for protect endpoints 
+**ADR-01** Users authenticated for protect endpoints 
 |**Context**|**Decision**|**Consquences**|
 |---|---|---|
-| Only authenticated users should be able to have access to the system. Users have specific roles and should only have access to what their role is ment to have access to. | Apply RBAC at the API gateway with Auth0. Use Auth0 for all authorization requests. | No RBAC is applied at microservices. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
+| Only authenticated users should be able to have access to the system.| Use Auth0 for all authorization requests. | No authentication is done in individual microservices, it is only done in the API gateway. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
 
-**ADR-02** Data encrypted in transit and at rest 
+**ADR-02** RBAC for protect endpoints 
 |**Context**|**Decision**|**Consquences**|
 |---|---|---|
-| Data in transit needs to be encrypted. Sensetive data at rest must also be kept confidential. | Use HTTPS for all requests. | Reduces performance. More processing time is used to encrypt and decrypt data. |
+| Users have specific roles and should only have access to what their role is meant to have access to. | Apply RBAC at the API gateway with Auth0. Use Auth0 for all authorization requests. | No RBAC is applied in individual microservices, it is only applied in the API gateway. Thus all requests have to go to the API gateway first and it should not be possible to send a request directly to a microservice. |
 
 **NRF Test:** 
 - Test that only HTTPS requests work. 
-- Test that unautherized users do not have access to the system.
+- Test that unauthorized user roles do not have access to protected API endpoints.
+- Test that users with invalid authentication tokens do not have access to protected API endpoints.
+
+**HTTPS Request**
+![HTTPS Request Returning Success](./img/https-authorized-img.png)
+This image shows a valid request using HTTPS that returns successful.
+
+**HTTP Request**
+![HTTP Request Returning Unauthorized](./img/http-unauthorized-img.png)
+This image shows a unsuccessful request since HTTP was used instead of HTTPS.
+
+**Requests to protected API endpoints without a valid authentication token and without the role necessary to access those endpoints**
+![Accounts Unauthorized](./img/accounts-unauthorized-img.png)
+![Analytics Unauthorized](./img/analytics-unauthorized-img.png)
+![Batch Emails Unauthorized](./img/batch-emails-unauthorized-img.png)
+![Company Unauthorized](./img/company-unauthorized-img.png)
+![Education Unauthorized](./img/education-unauthorized-img.png)
+![Emails Unauthorized](./img/emails-unauthorized-img.png)
+![llm Unauthorized](./img/llm-unauthorized-img.png)
+![Reports Unauthorized](./img/report-unauthorized-img.png)
+![Wave Unauthorized](./img/wave-unauthorized-img.png)
+The above images shows unsuccessful requests because the user does not have the valid authentication token of an admin or analyst who have the necessary role clearance.
 
 #### NFR 2 Quality attribute: Performance
-1. The system shall handle XP transactions and leader board updates within **500ms** of user action.
-2. The system shall load “Teachable moment” screens within **1s** of clicking a link on a phishing email.
-3. The system shall display confirmation toasts in the Outlook Add-in feature within **300ms.**
-4. The admin dashboard shall update live analytics and leaderboard data within **2 seconds** of receiving new event data through WebSocket communication.
+1. The system shall handle XP transactions and leader board updates within 1s of user action.
+2. The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
+3. The system must maintain a server error rate of less than 0.1% when subjected to a load up to 500 concurrent users.
+4. The system must maintain a 95th percentile response time of under 2 seconds for all API requests when subjected to a load up to 500 concurrent users.
 
 **Tactic:** Spread the load accross 2 API gateway instances, make use of caching for non-live reads, optimize database indexing.
 
@@ -92,13 +114,20 @@ Microservices each handle their own methods of communication. The only dependenc
 | Many requests for different services need to pass through the API gateway. Response time needs to be optimal according the the measures in the quality attribute. | Add a second API gateway instance and use a load balancer to spread the load. | Increases the complexity of the system and adds a bit of latancy. |
 
 **NRF Test:** 
-- Test system responsiveness with 500 concurent users. 
+- Test system responsiveness with 500 concurrent users and that it remains under 2s.
+- Test that error rate is less than 0.1% when subjected to a load of 500 concurrent users.
 - Test that the response time is within 1s.
 
+**500 Concurrent Users**
+![Screenshot of server maintaining efficiency with 500 concurrent users](./img/500-concurrent-users-diagram.png)
+In this image you can see a test ran using 500 virtual users sending 266700 requests over a time period of 10min to the staging server. Two GET requests where sent namely, /xp and the loading of the landing page, since they are the most used endpoints for normal users. 0% Errors and 0% Failures where achieved with a 95th percentile response time of 1,381 second. This tests both point 3 and 4 of NFR 2.
+
+**Response Time**
+![Time it takes a xp transaction to apply to a user](./img/xp-given-to-user-in-less-than-one-second-img.png)
+It takes less than one second for the xp change to happen.
+
 #### NFR 3 Quality attribute: Portability and Compatibility
-1. The system’s admin dashboard shall support standard desktop resolutions and maintain usability across commonly used screen sizes including **resolutions from 1280px to 1920px+ .** 
-2. The system’s “report phish” button must appear on the **Outlook ribbon on Desktop, Web, and Mobile.**
-3. The platform shall be deployable on **Ubuntu Server environments** using Docker and Docker Compose without requiring platform-specific modifications.
+1. The system shall deploy the complete system from the Docker/Docker Compose configuration on the target Ubuntu environment without modifying application source code.
 
 **Tactic:** Use Infrastructure as Code (IaC) and containerisation, use multiplatform design for frontend systems.
 
@@ -110,39 +139,66 @@ Microservices each handle their own methods of communication. The only dependenc
 | System should be deployable on any ubuntu server environment. | Create a docker container for each service in the system | Running many containers on a server may use up server resources but limits can be added to ensure the system runs efficiently. |
 
 **NRF Test:** 
-- System is deployable on ubuntu servers.
-- Frontend design scales well on large screens and the report button can be used on multiple devices.
+- System is deployable.
 
-#### NFR 4 Quality attribute: Usability
-1. The system’s “report phish” button must follow the **Microsoft Fluent UI design system.**
-2. The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
-3. The system shall provide **immediate visual feedback** for all critical user actions including reporting phishing emails, completing simulations, and earning XP rewards.
+**Behold**  
+[our Website](https://capstone-five-guys.dns.net.za/)
+
+#### NFR 4 Quality attribute: Usability  
+1. The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
+
+**Tactic:** Apply accessible interface design principles, including sufficient colour contrast, semantic HTML, accessible labels, keyboard navigation and visible focus states.
+
+**Pattern:** Reusable accessible UI components and a consistent design system are used across the frontend to enforce accessibility requirements consistently.
 
 **NRF Test:** 
 - WCAG 2.1 AA accessibility compliance
+- Test foreground and background colour contrast.
+- Run Lighthouse accessibility tests on all major user-facing pages.
+
+**ADR-05** Accessible frontend design
+
+| **Context** | **Decision** | **Consequences** |
+|---|---|---|
+| All user-facing interfaces must comply with WCAG 2.1 AA accessibility requirements. | Use reusable accessible UI components and globally defined styles to maintain WCAG 2.1 AA accessibility across the frontend. | Accessibility requirements can be applied consistently across the system, but frontend components and styling must be designed and tested with accessibility in mind. |
+
+**Lighthouse results**
+![Screenshot of lighthouse analytics](./img/Accessability_score_demo3_analytics.png)
+![Screenshot of lighthouse dashboard](./img/Accessability_score_demo3_dashboard.png)
+![Screenshot of lighthouse emails](./img/Accessability_score_demo3_emails.png)
+![Screenshot of lighthouse generate emails](./img/Accessability_score_demo3_generate-email.png)
+![Screenshot of lighthouse help](./img/Accessability_score_demo3_help.png)
+![Screenshot of lighthouse landing](./img/Accessability_score_demo3_landing.png)
+![Screenshot of lighthouse leaderboard](./img/Accessability_score_demo3_leaderboard.png)
+![Screenshot of lighthouse reports](./img/Accessability_score_demo3_reports.png)
+![Screenshot of lighthouse schedule wave](./img/Accessability_score_demo3_schedule-wave.png)
+![Screenshot of lighthouse send email](./img/Accessability_score_demo3_send-email.png)
+![Screenshot of lighthouse settings](./img/Accessability_score_demo3_settings.png)
+![Screenshot of lighthouse template edit](./img/Accessability_score_demo3_template-edit.png)
+![Screenshot of lighthouse training](./img/Accessability_score_demo3_training.png)
+![Screenshot of lighthouse users](./img/Accessability_score_demo3_users.png)
+![Screenshot of lighthouse wave detail](./img/Accessability_score_demo3_waves-details.png)
+![Screenshot of lighthouse waves](./img/Accessability_score_demo3_waves.png)
+In the images above you can see the lighthouse accessibility and best practices results
 
 #### NFR 5 Quality attribute: Reliability and Availability
-1. Availability: The system must have 99.9% uptime.
-2. Recoverability: In the event of an AI provider failure, the system shall automatically switch to the fallback Llama-3 model within 30 seconds.
+1. The system must have 99.9% uptime.
 
-**Tactic:** Remove single points of failure, log requests, error exception communication, switch service provider.
+**Tactic:** Remove single points of failure, log requests, error exception communication.
 
-**Pattern:** Load balancing, log at load balancer, add a LLM gateway.
+**Pattern:** Load balancing, log at load balancer.
 
-**ADR-05** LLM gateway
-|**Context**|**Decision**|**Consquences**|
-|---|---|---|
-| Should an external LLM be unavailable the system should still be able to operate and generate emails. | Add an LLM gateway to route requests to available LLMs. | Introduces extra overhead to system and can degrade performance. |
-
-*For load balancing see ADR-03.
+**ADR-06:** *For load balancing see ADR-03.
 
 **NRF Test:** 
 - Uptime checks should yield >99.9% uptime.
-- LLM service responds to requests even if a model is not working anymore.
+
+**Uptime**  
+![Image showing uptime of last 30 days](./img/uptime-img.png)  
+As of demo 3 we have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
 
 #### NFR 6 Quality attribute: Flexibility:
-1. Scalable: The system must be able to scale to handle 500 concurrent users.
-2. Adaptable: Horizontal scaling of the AI Engine, Analytics, and Authentication services independently.
+1. The system must be able to scale up to 500 concurrent users without any of the core services becoming unresponsive. 
 
 **Tactic:** Spread the load accross multiple independent services.
 
@@ -155,19 +211,37 @@ Microservices each handle their own methods of communication. The only dependenc
 
 
 **NRF Test:** 
-- System still responds under 500 concurent users.
-- Adding more services independently scales easily.
+- Test system with 500 concurrent users and check to see if any core services becoming unresponsive.
+
+**500 Concurrent Users**
+![Screenshot of core services remaining responsive with 500 concurrent users](./img/500-concurrent-users-diagram.png)
+No core services became unresponsive with 500 concurrent users.
 
 #### NFR 7 Quality attribute: Maintainability
-1. The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
-2. The complete application stack shall be fully containerized using Docker and orchestrated through Docker Compose for deployment handoff.
-3. All backend endpoints shall be documented using OpenAPI 3.0 documentation standards.
-4. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
-5. The system shall achieve a minimum automated backend test coverage of 80%.The system shall achieve a minimum automated backend test coverage of 80%.
+1. The system shall achieve a minimum automated backend test coverage of 80%.
 
 **NRF Test:** 
-- CI/CD pipeline tests pass.
 - Code coverage of 80% is reached.
+
+**Test Coverage**
+As of demo 3 we have an average backend coverage of 73.77%. This is below our NFR requirement of 80%.
+
+
+### NFR Quality Requirement Matrix
+
+| ID | NFR | Quantified requirement | Tactic in SAS | Test / tool | Target / actual |
+|---|---|---|---|---|---|
+| QR-01 | NFR 1 - Security | Protected API requests with invalid or expired authentication tokens must be rejected | RBAC at API gateway + authorization tokens | Postman / Protected endpoint authentication tests | 100% rejected / Pass for tested endpoints |
+| QR-02 | NFR 1 - Security | Protected API endpoints may only be accessed by users with an appropriate role | Centralized RBAC at API gateway | Postman / Protected endpoint role authorization tests | 100% enforced / Pass for tested endpoints |
+| QR-03 | NFR 2 - Performance | XP transactions and leaderboard updates must complete within 1 second of user action | Load distribution, caching and database indexing | Postman / XP transaction response-time test | <1 s / <1 s |
+| QR-04 | NFR 2 - Performance | Live analytics and leaderboard data must update within 3 seconds of receiving new event data | WebSocket communication | WebSocket update latency test | <3 s |
+| QR-05 | NFR 2 - Performance | Server error rate must remain below 0.1% at 500 concurrent users | Load balancing across API gateway instances | Postman | <0.1% / 0% |
+| QR-06 | NFR 2 - Performance | 95th percentile API response time must remain below 2 seconds at 500 concurrent users | Load balancing, caching and database indexing | Postman | <2 s / 1.381 s |
+| QR-07 | NFR 3 - Portability and Compatibility | Platform must be deployable without platform-specific application modifications | Infrastructure as Code + containerisation | Docker / Docker Compose deployment test | No platform-specific modifications / Pass on target deployment environment |
+| QR-08 | NFR 4 - Usability | All user-facing dashboards and interfaces must comply with WCAG 2.1 AA accessibility requirements | Accessible interface design, semantic HTML, sufficient colour contrast, accessible labels, keyboard navigation and visible focus states | Lighthouse | WCAG 2.1 AA |
+| QR-09 | NFR 5 - Reliability and Availability | System uptime must be at least 99.9% | Load balancing, removal of single points of failure and health monitoring | UptimeRobot | >=99.9% / 99.895% |
+| QR-10 | NFR 6 - Flexibility | System must support 500 concurrent users without core services becoming unresponsive | Independent microservices + load distribution | Postman / 500 concurrent user load test | 500 users with no unresponsive core services / Pass |
+| QR-11 | NFR 7 - Maintainability | Automated backend test coverage must be at least 80% | Automated test coverage measurement | Test coverage report / GitHub Actions | >=80% / 73.77% |
 
  <!-- 1. Flexibility: See [NFR 6](./Software_Requirements_Specification.md#non-functional-requirements)
 
