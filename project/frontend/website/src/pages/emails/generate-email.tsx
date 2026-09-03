@@ -83,7 +83,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   const { addToast } = useToast();
 
   const [form, setForm] = useState<GenerateEmailForm>(INITIAL_FORM);
-  const [templateVariables, setTemplateVariables] = useState<TemplateVariable[]>(['name']);
+  const [templateVariables, setTemplateVariables] = useState<TemplateVariable[]>([]);
   const [templates, setTemplates] = useState<GeneratedTemplate[]>([]);
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -129,10 +129,6 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
       nextErrors.sender = 'Sender email required.';
     }else if (!EMAIL_PATTERN.test(form.sender.trim())) {
       nextErrors.sender = 'Enter a valid sender email address.';
-    }
-
-    if (templateVariables.length === 0) {
-      nextErrors.templateVariable = 'Select at least one template variable.';
     }
 
     setErrors(nextErrors);
@@ -411,7 +407,6 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
             <div>
               <label style={labelStyle}>
                 Template variables{' '}
-                <span style={{color: 'var(--color-danger)'}}>*</span>
               </label>
 
               <p 
