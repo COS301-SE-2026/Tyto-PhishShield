@@ -129,6 +129,15 @@ export class AnalyticsController {
     queue: 'analytics-xp-queue',
   })
   async onXpGiven(payload: XpPayload) {
+    const duplicate = await this.analyticsService.isRecentDuplicate(
+      AnalyticsEventType.XP_GIVEN,
+      payload.auth0Id,
+      payload as unknown as Record<string, unknown>,
+      60_000,
+    );
+    if (duplicate) {
+      return; // already processed this exact event
+    }
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.XP_GIVEN,
       auth0Id: payload.auth0Id,
