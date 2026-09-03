@@ -51,6 +51,7 @@ Microservices each handle their own methods of communication. The only dependenc
  4. Build native Outlook Add-in (Office JS API).
  5. API authenticates all enpoints before anything reaches the services.
  6. Each Microservice's database is its own and may not be accessed by another.
+ 7. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
 
 ### Quality Requirements based off of [NFR](./Software_Requirements_Specification.md#non-functional-requirements)
 
@@ -217,12 +218,14 @@ As of demo 3 we have a 99.895% over the last 30 days. Although it is slightly le
 No core services became unresponsive with 500 concurrent users.
 
 #### NFR 7 Quality attribute: Maintainability
-1. The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
-2. The system shall achieve a minimum automated backend test coverage of 80%.The system shall achieve a minimum automated backend test coverage of 80%.
+1. The system shall achieve a minimum automated backend test coverage of 80%.
 
 **NRF Test:** 
-- CI/CD pipeline tests pass.
 - Code coverage of 80% is reached.
+
+**Test Coverage**
+As of demo 3 we have an average backend coverage of 73.77%. This is below our NFR requirement of 80%.
+
 
 ### NFR Quality Requirement Matrix
 
@@ -238,8 +241,7 @@ No core services became unresponsive with 500 concurrent users.
 | QR-08 | NFR 4 - Usability | All user-facing dashboards and interfaces must comply with WCAG 2.1 AA accessibility requirements | Accessible interface design, semantic HTML, sufficient colour contrast, accessible labels, keyboard navigation and visible focus states | Lighthouse | WCAG 2.1 AA |
 | QR-09 | NFR 5 - Reliability and Availability | System uptime must be at least 99.9% | Load balancing, removal of single points of failure and health monitoring | UptimeRobot | >=99.9% / 99.895% |
 | QR-10 | NFR 6 - Flexibility | System must support 500 concurrent users without core services becoming unresponsive | Independent microservices + load distribution | Postman / 500 concurrent user load test | 500 users with no unresponsive core services / Pass |
-| QR-11 | NFR 7 - Maintainability | Unit and integration tests must execute automatically on every push to the main development branches | Automated CI/CD quality gates | GitHub Actions | Tests on every push / TBD |
-| QR-12 | NFR 7 - Maintainability | Automated backend test coverage must be at least 80% | Automated test coverage measurement | Test coverage report / GitHub Actions | >=80% / TBD |
+| QR-11 | NFR 7 - Maintainability | Automated backend test coverage must be at least 80% | Automated test coverage measurement | Test coverage report / GitHub Actions | >=80% / 73.77% |
 
  <!-- 1. Flexibility: See [NFR 6](./Software_Requirements_Specification.md#non-functional-requirements)
 
