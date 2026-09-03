@@ -29,6 +29,7 @@ export class UserSyncService implements OnModuleInit {
         name: user.name,
         email: user.email,
         department: user.department,
+        role: user.role,
       });
     }
 
