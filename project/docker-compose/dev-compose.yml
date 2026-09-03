@@ -206,6 +206,7 @@ services:
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=dev
+      - LOG_DIR=/var/log/api-gateway
     # ports:
     #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     deploy:
@@ -426,6 +427,8 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${ANALYTICS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     # ports:
