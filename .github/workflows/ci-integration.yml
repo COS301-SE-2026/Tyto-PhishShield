@@ -10,6 +10,7 @@ on:
 env:
   LLM_GATEWAY_KEY: ${{ secrets.LLM_GATEWAY_KEY }}
   LLM_GATEWAY_URL: ${{ secrets.LLM_GATEWAY_URL }}
+  LOCAL_LLM_URL: testing-environment
 
 jobs:
     accounts-integration:
