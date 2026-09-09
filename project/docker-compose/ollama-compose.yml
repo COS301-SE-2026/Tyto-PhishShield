@@ -15,8 +15,22 @@ services:
       networks:
         - local-llm
 
+# downloads model
+  ollama-pull-model:
+    image: ollama/ollama:0.33.3
+    container_name: ollama_pull_model
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: /bin/sh
+    command: >
+      -c "sleep 5 && ollama pull gemma2:2b"
+    depends_on:
+      - ollama
+    
+
 volumes:
   ollama_data:
+    driver: local
 
 networks:
   local-llm:
