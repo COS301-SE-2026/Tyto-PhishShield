@@ -1,0 +1,24 @@
+services:
+  ollama:
+    image: ollama/ollama:0.33.3
+    container_name: ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '512M'
+      networks:
+        - local-llm
+
+volumes:
+  ollama_data:
+
+networks:
+  local-llm:
+    external: true
+    name: local-llm
