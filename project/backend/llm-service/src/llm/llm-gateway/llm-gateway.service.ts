@@ -8,6 +8,7 @@
  * env variables:
  * LLM_GATEWAY_KEY
  * LLM_GATEWAY_URL
+ * LOCAL_LLM_URL
  *
  * Functions:
  * - {@link LlmGatewayService#send} - Sends a fully-formed chat completion request to the LLM gateway and returns the parsed response.
@@ -20,16 +21,21 @@ import {
   LlmGatewayRequestBody,
   OkLlmGatewayResponse,
 } from '../dto/llm-gateway.dto';
+import { Ollama } from 'ollama';
 
 @Injectable()
 export class LlmGatewayService {
   private readonly logger = new Logger(LlmGatewayService.name);
   private readonly llmGatewayUrl: string;
   private readonly llmGatewayKey: string;
+  private readonly localLlmUrl: string;
+  private readonly ollama: Ollama;
 
   constructor(private readonly config: ConfigService) {
     this.llmGatewayKey = config.getOrThrow<string>('LLM_GATEWAY_KEY');
     this.llmGatewayUrl = config.getOrThrow<string>('LLM_GATEWAY_URL');
+    this.localLlmUrl = config.getOrThrow<string>('LOCAL_LLM_URL');
+    this.ollama = new Ollama({ host: this.localLlmUrl });
   }
 
   async send(body: LlmGatewayRequestBody): Promise<OkLlmGatewayResponse> {
@@ -51,5 +57,20 @@ export class LlmGatewayService {
     }
 
     return (await response.json()) as OkLlmGatewayResponse;
+  }
+
+  //TODO: IMPLEMENT THIS FUNCTION
+  //Currently a placeholder example
+  async sendLocal() {
+    const response = await this.ollama.chat({
+      model: 'gemma2:2b',
+      messages: [{ role: 'user', content: `is this email phishing? EMAIL` }],
+      stream: false,
+      options: {
+        temperature: 0,
+      },
+    });
+
+    return response;
   }
 }
