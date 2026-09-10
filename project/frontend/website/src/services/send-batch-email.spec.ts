@@ -162,6 +162,7 @@ describe('sendBatchRandomSameEmail', () => {
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             true,
+            'Test Wave',
         );
 
         expect(result).toEqual(backendResponse);
@@ -183,6 +184,7 @@ describe('sendBatchRandomSameEmail', () => {
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: true,
+                    waveName: 'Test Wave',
                 }),
             },
         );
@@ -202,6 +204,7 @@ describe('sendBatchRandomSameEmail', () => {
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
@@ -228,6 +231,7 @@ describe('sendBatchRandomSameEmail', () => {
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
@@ -239,6 +243,41 @@ describe('sendBatchRandomSameEmail', () => {
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: false,
+                    waveName: 'Test Wave',
+                })
+            }),
+        );
+    });
+
+    it('should include a reference number for a same email wave when one is provided', async () => {
+        const backendResponse: BatchEmailResponse = {
+            success: true,
+            message: 'Same-email batch scheduled successfully'
+        };
+
+        mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
+
+        await sendBatchRandomSameEmail(
+            ['auth0|user1'],
+            'hard',
+            '2026-10-20T10:00:00.000Z',
+            '2026-10-20T12:00:00.000Z',
+            false,
+            'Test Wave',
+            'PHISH-67',
+        );
+    
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                body: JSON.stringify({
+                    auth0Id: ['auth0|user1'],
+                    difficulty: 'hard',
+                    scheduledFrom: '2026-10-20T10:00:00.000Z',
+                    scheduledTo: '2026-10-20T12:00:00.000Z',
+                    randomisedTimes: false,
+                    waveName: 'Test Wave',
+                    referenceNumber: 'PHISH-67',
                 })
             }),
         );
@@ -256,6 +295,7 @@ describe('sendBatchRandomSameEmail', () => {
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('No matching email template was found');
     });
@@ -272,6 +312,7 @@ describe('sendBatchRandomSameEmail', () => {
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times same-email batch');
     });
@@ -293,6 +334,7 @@ describe('sendBatchRandomSameEmail', () => {
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times same-email batch');
     });
@@ -329,6 +371,7 @@ describe('sendBatchRandomDifferentEmail', () => {
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             true,
+            'Test Wave',
         );
 
         expect(result).toEqual(backendResponse);
@@ -350,6 +393,7 @@ describe('sendBatchRandomDifferentEmail', () => {
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: true,
+                    waveName: 'Test Wave',
                 }),
             },
         );
@@ -369,6 +413,7 @@ describe('sendBatchRandomDifferentEmail', () => {
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
@@ -395,6 +440,7 @@ describe('sendBatchRandomDifferentEmail', () => {
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
@@ -406,6 +452,7 @@ describe('sendBatchRandomDifferentEmail', () => {
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: false,
+                    waveName: 'Test Wave',
                 })
             }),
         );
@@ -423,6 +470,7 @@ describe('sendBatchRandomDifferentEmail', () => {
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('No matching email template was found');
     });
@@ -439,6 +487,7 @@ describe('sendBatchRandomDifferentEmail', () => {
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times different-email batch');
     });
@@ -460,6 +509,7 @@ describe('sendBatchRandomDifferentEmail', () => {
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times different-email batch');
     });

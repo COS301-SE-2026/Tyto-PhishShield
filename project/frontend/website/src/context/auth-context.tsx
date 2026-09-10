@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('access_token');
     localStorage.removeItem('token_expiry');
     setUser(null);
-    window.location.href = '/login';
+    window.location.href = import.meta.env.BASE_URL ?? '/' + 'login';
   };
 
   const hasRole = (roles: UserRole | UserRole[]): boolean => {

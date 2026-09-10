@@ -1,7 +1,16 @@
 # Demo 2 documents archive
 
+[Demo 2 SRS documents](./README%20copy.md)
+
+[Demo 2 Design spec MD](./design-specifications-document.md)
+
+[Demo 2 plocies and standards](./standards-and-policies/README.md)
+
+[Demo 2 Brand style guide](./PhishShield-Brand-Style-Guide.pdf)
 
 # Demo 2 Video
+
+[Slides](./Demo%202%20slides.pdf)
 
 [Video folder](https://drive.google.com/drive/folders/10Y1lEcmk7wfp3HCWWZjnnqrf9gLC6ggJ?usp=sharing)
 

@@ -16,7 +16,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
-import { User } from '../dto/user.dto';
+import { EventUser } from '@phishshield/dto';
 
 @Injectable()
 export class AccountsService {
@@ -27,7 +27,7 @@ export class AccountsService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async createUser(user: User): Promise<void> {
+  async createUser(user: EventUser): Promise<void> {
     try {
       await this.userRepository
         .createQueryBuilder()
@@ -51,5 +51,9 @@ export class AccountsService {
         `Failed to create or update user ${user.auth0Id}`,
       );
     }
+  }
+
+  async deleteUser(user: EventUser) {
+    await this.userRepository.delete({ auth0Id: user.auth0Id });
   }
 }

@@ -231,7 +231,6 @@ export function AdminTraining({
             onNavigate={onNavigate}
             title="Training"
             subtitle="Add questions and view question bank"
-            securityScore={72}
         >
             <div style={pageStyle}>
                 <Card style={cardStyle}>
@@ -246,6 +245,7 @@ export function AdminTraining({
                             </label>
 
                             <textarea
+                                id='question-text'
                                 style={textAreaStyle}
                                 value={questionText}
                                 rows={3}
@@ -259,6 +259,7 @@ export function AdminTraining({
                         <div style={optionGridStyle}>
                                 {options.map((option, optionIndex) => (
                                     <Input
+                                        // eslint-disable-next-line react-x/no-array-index-key -- fixed 4-slot answer form, positions never reorder
                                         key={optionIndex}
                                         label={`Option${String.fromCharCode(65 + optionIndex)}`} 
                                         value={option}
@@ -326,7 +327,7 @@ export function AdminTraining({
                                     {question.options.map(
                                         (option, optionIndex) => (
                                             <div
-                                                key={`${question.id}-${optionIndex}`}
+                                                key={`${question.id}-${option}`}
                                                 style={optionStyle}
                                             >
                                                 <span style={letterOptionStyle}>

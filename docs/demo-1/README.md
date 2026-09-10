@@ -5,6 +5,8 @@
 
 # Demo 1 Video
 
+[Slides](./demo-1-slides.pdf)
+
 [Introduction](https://drive.google.com/file/d/1fcCHZhL1ddqOoqvRYDASmLVRjItIozIU/view?usp=sharing) 
 
 [Live Demo Part 1](https://drive.google.com/file/d/1NrbaF-hISlNQb5au5KJtHsi2c3RWppoY/view?usp=sharing)

@@ -166,7 +166,7 @@ export class XpService {
     try {
       const xp_entry = this.xpRepository.create({
         userId: user.id,
-        amount: -40,
+        amount: -15,
         reason: XpReason.COMPROMISED,
       });
 
@@ -188,6 +188,23 @@ export class XpService {
       } catch (publishError) {
         this.logger.error(
           `Failed to publish xp.given event for user ${user.auth0Id}`,
+          publishError,
+        );
+      }
+
+      try {
+        await this.amqpConnection.publish(
+          'xp-event-exchange',
+          'xp.link_clicked',
+          {
+            auth0Id: user.auth0Id,
+            amount: saved.amount,
+            reason: XpReason.COMPROMISED,
+          },
+        );
+      } catch (publishError) {
+        this.logger.error(
+          `Failed to publish xp.link_clicked event for user ${user.auth0Id}`,
           publishError,
         );
       }

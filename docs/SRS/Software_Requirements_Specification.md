@@ -90,6 +90,9 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
 -	**OFR 6.1**: The system autonomously gathers publicly available user or company data (e.g. LinkedIn profiles or company websites) for phishing simulation generation. 
 -    **OFR 6.2**: The system will generate personalised phishing attacks using AI without requiring manual admin input. 
 -    **OFR 6.3**: The system shall allow admins to enable or disable autonomous red team mode for campaigns.
+-    **OFR 6.4**: The system will gather company data from the company communication platforms with the company's authorization.
+-    **OFR 6.5**: The system will generate a graph showing how employees in a company are connected with one another. 
+note that wow factor 1 is the option we will be working towards for demo 4 the other wow factors will most likely not be implemented but we keep them for now incase we do decide to implement them.
 
 **OFR7**: Battle Royale **(Wow Factor 2)**
 -	**OFR 7.1**: The system shall support organization-wide time-limited phishing simulation events. 
@@ -107,41 +110,32 @@ Tyto-PhishShield aims to provide a gamified experience to employees to enhance u
  -   **OFR 9.2**: The system will let the user take a test to learn how to detect phishing content.
  -   **OFR 9.3**: The system will allow the user to earn XP points based on how well the user did in the test.
  -   **OFR 9.4**: The system will allow admins to create or generate educational material with the LLM.
+
 ## Non-Functional Requirements
 **NFR 1**: Security
--	**NFR 1.1**: The system shall authenticate and authorize all protected API requests using Role-Based Access Control (RBAC) enforced at the API gateway layer with server-side validation on 100% of protected endpoints.
--	**NFR 1.2**: The system shall encrypt all data in transit using TLS 1.3 and encrypt sensitive data at rest using AES-256 encryption standards.
+-	**NFR 1.1**: The system must reject 100% or requests to protected API endpoints that have invalid or expired authentication tokens.
+-	**NFR 1.2**: The system must enforce that 100% of the protected API endpoints can only be accessed by users with an appropriate role.
 
 **NFR 2**: Performance
--	**NFR 2.1**: The system shall handle XP transactions and leader board updates within 500ms of user action.
-- **NFR 2.2**: The system shall load “Teachable moment” screens within 1s of clicking a link on a phishing email.
--	**NFR 2.3**: The system shall display confirmation toasts in the Outlook Add-in feature within 300ms.
-- **NFR 2.4**: The admin dashboard shall update live analytics and leaderboard data within 2 seconds of receiving new event data through WebSocket communication.
+-	**NFR 2.1**: The system shall handle XP transactions and leader board updates within 1s of user action.
+- **NFR 2.2**: The admin dashboard shall update live analytics and leaderboard data within **3 seconds** of receiving new event data through WebSocket communication.
+-	**NFR 2.3**: The system must maintain a server error rate of less than 0.1% when subjected to a load up to 500 concurrent users.
+- **NFR 2.4**: The system must maintain a 95th percentile response time of under 2 seconds for all API requests when subjected to a load up to 500 concurrent users.
 
 **NFR 3**: Portability and Compatibility
--	**NFR 3.1**: The system’s admin dashboard shall support standard desktop resolutions and maintain usability across commonly used screen sizes including resolutions from 1280px to 1920px+ . 
--	**NFR 3.2**: The system’s “report phish” button must appear on the Outlook ribbon on Desktop, Web, and Mobile.
-- **NFR 3.3**: The platform shall be deployable on Ubuntu Server environments using Docker and Docker Compose without requiring platform-specific modifications.
+-	**NFR 3.1**: The system shall deploy the complete system from the Docker/Docker Compose configuration on the target Ubuntu environment without modifying application source code.
 
 **NFR 4**: Usability
--	**NFR 4.1**: The system’s “report phish” button must follow the Microsoft Fluent UI design system.
-- **NFR 4.2**: The system shall comply with WCAG 2.1 AA accessibility guidelines for all user-facing dashboards and interfaces.
-- **NFR 4.3**: The system shall provide immediate visual feedback for all critical user actions including reporting phishing emails, completing simulations, and earning XP rewards.
+-	**NFR 4.1**: The system shall comply with **WCAG 2.1 AA accessibility** guidelines for all user-facing dashboards and interfaces.
 
 **NFR 5**: Reliability and Availability
 -	**NFR 5.1**: The system must have 99.9% uptime.
-- **NFR 5.2**: In the event of an AI provider failure, the system shall automatically switch to the fallback Llama-3 model within 30 seconds.
 
 **NFR 6**: Scalability:
--	**NFR 6.1**: The system must be able to scale to handle 500 concurrent users.
-- **NFR 6.2**: The microservices architecture shall support horizontal scaling of the AI Engine, Analytics, and Authentication services independently.
+-	**NFR 6.1**: The system must be able to scale up to 500 concurrent users without any of the core services becoming unresponsive. 
 
 **NFR 7**: Maintainability
--	**NFR 7.1**: The system shall make use of the microservices architecture to increase the maintainability of each subsystem.
--	**NFR 7.2**: The complete application stack shall be fully containerized using Docker and orchestrated through Docker Compose for deployment handoff.
-- **NFR 7.3**: All backend endpoints shall be documented using OpenAPI 3.0 documentation standards.
-- **NFR 7.4**: The CI/CD pipeline shall automatically execute unit and integration tests on every push to the main development branches through GitHub Actions.
-- **NFR 7.5**: The system shall achieve a minimum automated backend test coverage of 80%.The system shall achieve a minimum automated backend test coverage of 80%.
+-	**NFR 7.1**: The system shall achieve a minimum automated backend test coverage of 80%.
 
 ## User Characteristics
 The system will make use of three types of users: Admin, Analyst, and Employee.
@@ -169,6 +163,7 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **UC-14**   | Admin can create and import accounts.                          | As an admin, I want to be able to add the users in my company to the system, so that they can easily access the system under my company.                                                     |
 | **UC-15**   | Admin can create educational material.                         | As an admin, I want to be able to create educational material for users manually or automatically with the AI engine.                                                                        |
 | **UC-16**   | Admin can manage user states.                                  | As an admin, I want to be able to activate or deactivate user accounts to manage user access to the system.                                                                                  |
+| **UC-17**   | Admin can import company data.                                 | As an admin, I want to be able to add the company data, such as employee information to the system.                                                                                  |
 
 ## Use Case Diagrams
 
@@ -180,9 +175,11 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 
 ![Analystic Use Cases](<../images/Analystic Use Cases.jpg>)
 
+![Company Use Cases](<../images/Company Use Cases.jpg>)
+
 ## Requirements Use Case Traceability Matrix
 
-|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 | UC-15 | **UC-16** |
+|              | Priority Weight | UC-01  | UC-02  | UC-03 | UC-04 | UC-05 | UC-06  | UC-07 | UC-08 | UC-09 | UC-10 | UC-11 | UC-12 | UC-13 | UC-14 | UC-15 | UC-16 |
 | ------------ | --------------- | ------ | ------ | ----- | ----- | ----- | ------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | --------- |
 | **FR 1.1**   | 2               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
 | **FR 1.2**   | 1               | X      |        |       |       |       |        |       |       |       |       |       |       |       |       |       |           |
@@ -212,7 +209,7 @@ The system will make use of three types of users: Admin, Analyst, and Employee.
 | **FR 5.3**   | 2               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
 | **FR 5.4**   | 1               |        |        | X     |       |       |        | X     |       |       |       |       |       |       |       |       |           |
 | **FR 5.4.1** | 1               |        |        |       |       |       |        | X     |       |       |       |       |       |       |       |       |           |
-| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | 7     | 4     | 5         |
+| **Score**    |                 | **12** | **10** | **7** | **5** | **9** | **10** | **4** | **5** | **2** | **8** | **4** | **2** | **9** | **7**     | **4**     | **5**         |
 ## Domain Model
 ![Domain model](<../images/Domain Model.jpg>)
 

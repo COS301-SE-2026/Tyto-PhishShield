@@ -23,6 +23,10 @@ export interface CreateEmailTemplateRequest {
     difficulty: EmailDifficulty;
 }
 
+export interface DeleteEmailTemplateResponse {
+    affected?: number;
+}
+
 export type UpdateEmailTemplateRequest = Partial<CreateEmailTemplateRequest>;
 
 async function readResponse<T>(
@@ -76,8 +80,8 @@ export async function createEmailTemplate(request: CreateEmailTemplateRequest): 
 }
 
 export async function updateEmailTemplate(
-    referenceNumber: 
-    string, request: UpdateEmailTemplateRequest
+    referenceNumber: string, 
+    request: UpdateEmailTemplateRequest
 ): Promise<EmailTemplate> {
     const response = await authFetch(
         `${EMAIL_BASE}/${encodeURIComponent(referenceNumber)}`,
@@ -90,5 +94,21 @@ export async function updateEmailTemplate(
     return readResponse<EmailTemplate>(
         response,
         'Failed to update email template',
+    );
+}
+
+export async function deleteEmailTemplate(
+    referenceNumber: string,
+): Promise<DeleteEmailTemplateResponse> {
+    const response = await authFetch(
+        `${EMAIL_BASE}/${encodeURIComponent(referenceNumber)}`,
+        {
+            method: 'DELETE',
+        },
+    );
+
+    return readResponse<DeleteEmailTemplateResponse>(
+        response,
+        'Failed to delete email template',
     );
 }

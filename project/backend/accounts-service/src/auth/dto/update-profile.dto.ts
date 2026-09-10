@@ -1,5 +1,5 @@
+import { Department } from '@phishshield/dto';
 import { IsString, IsOptional, IsEnum } from 'class-validator';
-import { Department } from '../../users/entities/user.entity';
 
 export class UpdateProfileDto {
   @IsString()

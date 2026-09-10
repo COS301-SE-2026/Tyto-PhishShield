@@ -38,6 +38,23 @@ export class EducationController {
     await this.educationService.createAssignment(payload.auth0Id);
   }
 
+  @RabbitSubscribe({
+    exchange: 'xp-event-exchange',
+    routingKey: 'xp.link_clicked',
+    queue: 'education-service-link-clicked-queue',
+  })
+  async handleLinkClicked(payload: { auth0Id: string }) {
+    this.logger.log(`Received xp.link_clicked for user ${payload.auth0Id}`);
+    try {
+      await this.educationService.createAssignment(payload.auth0Id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error';
+      this.logger.warn(
+        `Could not create assignment for ${payload.auth0Id}: ${message}`,
+      );
+    }
+  }
+
   @Post('questions') // ok if this works we shoulb de good.
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -1,0 +1,2 @@
+- To view coding standards: [Coding standards](./coding-standards.md)
+- To view testing policies: [Testing policies](./testing-policy.md)

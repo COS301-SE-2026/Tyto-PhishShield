@@ -26,13 +26,13 @@ import {
 import { Request } from 'express';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { UpdateRoleDto } from '../auth/dto/update-role.dto';
 import { AuthService } from '../auth/auth.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
 import { UpdateActiveDto } from '../auth/dto/update-active.dto';
+import { UserRole } from '@phishshield/dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;

@@ -21,9 +21,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import { EventProducerService } from '../event-producer/event-producer.service';
-import { Department } from './entities/user.entity';
+import { Department, UserRole } from '@phishshield/dto';
 
 export interface CreateUserInput {
   auth0Id: string;
@@ -53,7 +53,8 @@ export class UsersService {
         auth0Id: savedUser.auth0Id,
         name: savedUser.name,
         email: savedUser.email,
-        department: input.department ?? '',
+        department: input.department ?? Department.HR,
+        role: savedUser.role,
       })
       .catch((err) =>
         console.error('Failed to publish user.created event', err),
@@ -94,6 +95,7 @@ export class UsersService {
         name: saved.name,
         email: saved.email,
         department: saved.department,
+        role: saved.role,
       })
       .catch((err) =>
         console.error('Failed to publish user.updated event', err),
@@ -120,6 +122,7 @@ export class UsersService {
         name: saved.name,
         email: saved.email,
         department: saved.department,
+        role: saved.role,
       })
       .catch((err) =>
         console.error('Failed to publish user.updated event', err),

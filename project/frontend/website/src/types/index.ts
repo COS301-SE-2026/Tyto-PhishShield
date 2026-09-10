@@ -11,10 +11,6 @@ export interface User {
   updatedAt: string;
   xp: number;
   rank: number;
-  // Extended profile fields below (maybe for Demo2?)
-  //streak?: number;
-  //reportsField?: number;
-  //securityScore?: number;
 }
 
 export interface AuthenticatedUser {
@@ -35,6 +31,7 @@ export interface RegisterDto {
   password: string;
   name?: string;
   department?: string;
+  employeeId?: string;
 }
 
 export interface LoginResponse {

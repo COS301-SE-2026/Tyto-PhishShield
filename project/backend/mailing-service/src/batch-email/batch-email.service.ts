@@ -462,7 +462,10 @@ export class BatchEmailService {
     let subject: string = email.subject;
     let content_text: string = email.content;
 
-    if (email.difficulty === EmailDifficulty.MEDIUM) {
+    if (
+      email.difficulty === EmailDifficulty.MEDIUM ||
+      email.difficulty === EmailDifficulty.EASY
+    ) {
       subject = this.replaceMediumVariables(email.subject, user);
       content_text = this.replaceMediumVariables(email.content, user);
     } else if (email.difficulty === EmailDifficulty.HARD) {

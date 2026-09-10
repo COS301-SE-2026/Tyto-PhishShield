@@ -1,5 +1,4 @@
 import {
-  ArrayNotEmpty,
   IsArray,
   IsEnum,
   IsInt,
@@ -86,7 +85,6 @@ export class DifficultyLlmGenerationDto {
     example: [TemplateVariable.NAME, TemplateVariable.DEPARTMENT],
   })
   @IsArray()
-  @ArrayNotEmpty()
   @IsEnum(TemplateVariable, { each: true })
   templateVariable!: TemplateVariable[];
 

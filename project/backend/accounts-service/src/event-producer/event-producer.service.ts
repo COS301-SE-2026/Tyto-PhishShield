@@ -3,7 +3,7 @@
  */
 import { Injectable } from '@nestjs/common';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { EventUser } from './dto/event-user.dto';
+import { EventUser } from '@phishshield/dto';
 
 @Injectable()
 export class EventProducerService {

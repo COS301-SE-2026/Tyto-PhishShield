@@ -187,6 +187,7 @@ services:
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
+      - VERSION=local-version
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
@@ -579,7 +580,7 @@ services:
       - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
       - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-
+      - LOCAL_LLM_URL=http://ollama:11434
     ports:
       - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
 
@@ -594,6 +595,8 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    networks:
+      - local-llm
 
   company_db:
     image: postgres:15-alpine
@@ -664,7 +667,7 @@ services:
       context: ../../
       dockerfile: project/frontend/website/Dockerfile
       args:
-        VITE_API_GATEWAY_URL: "https://localhost/"
+        VITE_API_GATEWAY_URL: "https://localhost"
         VITE_BASE_PATH: "/"
     restart: on-failure
     container_name: website
@@ -719,7 +722,7 @@ services:
       resources:
         limits:
           cpus: '0.5'
-          memory: 192M
+          memory: 512M
 
   caddy:
     image: caddy:2.11.3
@@ -760,3 +763,8 @@ volumes:
   pgadmin_data:
   rabbitmq_data:
     driver: local
+
+networks:
+  local-llm:
+    external: true
+    name: local-llm

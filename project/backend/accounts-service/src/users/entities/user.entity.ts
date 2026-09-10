@@ -3,6 +3,7 @@
  *
  * - Defines persisted fields for a registered user and role information.
  */
+import { Department, UserRole } from '@phishshield/dto';
 import {
   Entity,
   Column,
@@ -10,21 +11,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
-export enum UserRole {
-  ADMIN = 'admin',
-  ANALYST = 'analyst',
-  USER = 'user',
-}
-
-export enum Department {
-  IT_SECURITY = 'IT & Security',
-  FINANCE = 'Finance',
-  HR = 'Human Resources',
-  LEGAL_COMPLIANCE = 'Legal & Compliance',
-  OPERATIONS = 'Operations',
-  EXECUTIVE = 'Executive',
-}
 
 @Entity('users')
 export class User {
