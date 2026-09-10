@@ -12,7 +12,7 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { VerifiedDevice } from './otp/otp.entity';
+import { VerifiedDevice } from './otp/device.entity';
 import { EventProducerModule } from './event-producer/event-producer.module';
 import { UserSyncService } from './users/user-sync.service';
 

@@ -20,7 +20,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import type { User } from '../users/entities/user.entity';
 import type { AxiosResponse } from 'axios';
-import { OtpService } from '../otp/otp.service';
+import { DeviceService } from '../otp/device.service';
 import { UserSyncService } from '../users/user-sync.service';
 import { koaJwtSecret } from 'jwks-rsa';
 import { UserRole } from '@phishshield/dto';
@@ -56,7 +56,7 @@ let httpService: {
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: jest.Mocked<UsersService>;
-  let otpService: jest.Mocked<OtpService>;
+  let otpService: jest.Mocked<DeviceService>;
   let consoleErrorSpy: jest.SpyInstance;
 
   beforeAll(() => {
@@ -113,7 +113,7 @@ describe('AuthService', () => {
           },
         },
         {
-          provide: OtpService,
+          provide: DeviceService,
           useValue: { generateAndSend: jest.fn(), verify: jest.fn(), verifyDevice: jest.fn() },
         },
         {
@@ -125,7 +125,7 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
     usersService = module.get(UsersService);
-    otpService = module.get(OtpService);
+    otpService = module.get(DeviceService);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -141,7 +141,6 @@ describe('AuthService', () => {
         of(axiosOf({ user_id: 'auth0|abc123', email: 'test@example.com', name: 'Test User' })),
       );
       usersService.create.mockResolvedValue(makeUser());
-      otpService.generateAndSend.mockResolvedValue(undefined);
 
       const result = await service.register({
         email: 'test@example.com',
