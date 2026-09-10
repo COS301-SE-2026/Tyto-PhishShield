@@ -360,6 +360,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${COMPANY_DB_NAME}
       - RABBITMQ_URL=amqp://prod_rabbitmq:5672
+      - LOCAL_LLM_URL=http://ollama:11434
     deploy:
       resources:
         limits:
@@ -368,6 +369,7 @@ services:
     networks:
       - green
       - infrastructure
+      - local-llm
 
 networks:
   proxy:
@@ -379,3 +381,6 @@ networks:
   infrastructure:
     external: true
     name: infrastructure
+  local-llm:
+    external: true
+    name: local-llm
