@@ -490,6 +490,7 @@ services:
       - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
       - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - LOCAL_LLM_URL=http://ollama:11434
     deploy:
       resources:
         limits:
@@ -501,6 +502,8 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    networks:
+      - local-llm
 
   company_db:
     image: postgres:15-alpine
@@ -630,3 +633,8 @@ volumes:
   caddy_logs:
   rabbitmq_data:
     driver: local
+
+networks:
+  local-llm:
+    external: true
+    name: local-llm

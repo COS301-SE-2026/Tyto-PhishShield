@@ -301,6 +301,7 @@ services:
       - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
       - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://prod_rabbitmq:5672
+      - LOCAL_LLM_URL=http://ollama:11434
     deploy:
       resources:
         limits:
@@ -309,6 +310,7 @@ services:
     networks:
       - blue
       - infrastructure
+      - local-llm
     
   company_app:
     image: fiveguys301/company:a484af3ba51228f541fb9bfdb0b57284e7e9dffa
@@ -367,3 +369,6 @@ networks:
   infrastructure:
     external: true
     name: infrastructure
+  local-llm:
+    external: true
+    name: local-llm

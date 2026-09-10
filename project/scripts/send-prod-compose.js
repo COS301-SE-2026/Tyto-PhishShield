@@ -17,6 +17,7 @@ const possibleProdFiles = new Set ([
     'prod-compose.yml',
     'prod-green.yml',
     'prod-infrastructure.yml',
+    'ollama-compose.yml'
 ]);
 
 if (!possibleProdFiles.has(input)) {
@@ -30,6 +31,7 @@ switch(input) {
     case 'prod-compose.yml': { file =  'prod-compose.yml'; break; }
     case 'prod-green.yml': { file =  'prod-green.yml'; break; }
     case 'prod-infrastructure.yml': { file = 'prod-infrastructure.yml'; break; }
+    case 'ollama-compose.yml': { file = 'ollama-compose.yml'; break; }
     default: throw new Error('bad input');
 };
 
