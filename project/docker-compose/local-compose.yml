@@ -593,9 +593,12 @@ services:
     depends_on:
       llm_db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
     networks:
+      - default
       - local-llm
 
   company_db:
@@ -657,6 +660,8 @@ services:
 
     depends_on:
       company_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./src:/app/src

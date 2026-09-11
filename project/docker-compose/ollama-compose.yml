@@ -12,8 +12,8 @@ services:
         limits:
           cpus: '1'
           memory: '512M'
-      networks:
-        - local-llm
+    networks:
+      - local-llm
 
 # downloads model
   ollama-pull-model:
