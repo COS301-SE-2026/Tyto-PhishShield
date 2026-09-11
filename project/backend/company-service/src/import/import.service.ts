@@ -189,6 +189,7 @@ export class ImportService {
         managerId: parsedMap?.managerId,
         employeeStatus: parsedMap?.employeeStatus,
         externalId: parsedMap?.externalId,
+        title: parsedMap?.title,
       };
 
       return validMap;
@@ -222,6 +223,7 @@ export class ImportService {
         ? row[mapping.employeeStatus]
         : undefined,
       externalId: mapping.externalId ? row[mapping.externalId] : undefined,
+      title: mapping.title ? row[mapping.title] : undefined,
     };
   }
 }
