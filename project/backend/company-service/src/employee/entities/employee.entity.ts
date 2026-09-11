@@ -43,6 +43,12 @@ export class Employee {
   @Column({ default: false })
   registered!: boolean;
 
+  @Column({nullable: true})
+  auth0Id?: string;
+
+  @Column({nullable: true})
+  title?: string;
+
   @CreateDateColumn()
   dateImported!: Date;
 

@@ -104,7 +104,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/mailing-service/dist:/app/dist
 
   # accounts db sets up the accounts service's postgres database
   accounts_db:
@@ -177,7 +177,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/accounts-service/dist:/app/dist
 
   # api app builds the api service from the api's dockerfile
   api_app:
@@ -240,6 +240,7 @@ services:
           memory: 128M
     volumes:
       - api_gateway_logs_v2:/var/log/api-gateway
+      - ../backend/api-gateway/dist:/app/dist
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -315,7 +316,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/report-service/dist:/app/dist
 
   # xp db sets up the xp service's postgres database
   xp_db:
@@ -386,7 +387,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/xp-service/dist:/app/dist
 
 # education db sets up the education service's postgres database
   education_db:
@@ -458,7 +459,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/education-service/dist:/app/dist
 
   analytics_db:
     image: postgres:15-alpine
@@ -529,7 +530,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/analytics-service/dist:/app/dist
 
   llm_db:
     image: postgres:15-alpine
@@ -596,7 +597,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/llm-service/dist:/app/dist
     networks:
       - default
       - local-llm
@@ -664,7 +665,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/company-service/dist:/app/dist
   
   # builds the website using the website's dockerfile
   website:
