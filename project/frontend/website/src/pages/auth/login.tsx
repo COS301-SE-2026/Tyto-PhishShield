@@ -79,7 +79,7 @@ function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
 }
 
 export function Login({ onNavigate }: LoginProps) {
-  const { login, twoFactorAuth } = useAuth();
+  const { login, twoFactorAuth, resendOTP } = useAuth();
   const { addToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -139,10 +139,14 @@ export function Login({ onNavigate }: LoginProps) {
 
   const handleResendOtp = async () => {
     try {
-      await authApi.resendOtp(email);
+      await resendOTP(email);
       addToast({ type: 'info', title: 'Code resent', message: `A new code has been sent to ${email}.` });
-    } catch {
-      addToast({ type: 'error', title: 'Could not resend', message: 'Please try again in a moment.' });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        addToast({ type: 'error', title: 'Could not resend', message: err.message + '\nPlease try again in a moment.' });
+      } else {
+        addToast({ type: 'error', title: 'Could not resend', message: 'Please try again in a moment.' });
+      }
     }
   };
 
