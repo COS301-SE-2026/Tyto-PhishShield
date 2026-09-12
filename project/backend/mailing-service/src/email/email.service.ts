@@ -1,5 +1,3 @@
-// sendEmail & scheduleSendEmail might get removed in the future.
-
 /**
  * Service: mailing-service
  *
@@ -31,6 +29,9 @@ import { Resend } from 'resend';
 import { EmailsDto } from '../dto/emails.dto';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { VariableResolverService } from '../shared-services/variable-resolver.service';
+import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { SenderResolverService } from '../shared-services/sender-resolver.service';
 
 @Injectable()
 export class EmailService {
@@ -44,6 +45,9 @@ export class EmailService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     private readonly amqpConnection: AmqpConnection,
+    private readonly variableResolver: VariableResolverService,
+    private readonly senderResolver: SenderResolverService,
+    private readonly trackingLinkService: TrackingLinkService,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
@@ -159,6 +163,8 @@ export class EmailService {
   async sendEmail(
     referenceNumber: string,
     auth0Id: string,
+    senderName?: string,
+    alias?: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     try {
       const user = await this.userRepository.findOne({ where: { auth0Id } });
@@ -170,22 +176,39 @@ export class EmailService {
 
       const email = await this.getEmailByReference(referenceNumber);
 
-      const fromString = email.alias
-        ? `${email.alias} <${email.sender}>`
-        : email.sender;
+      const subject = this.variableResolver.substitute(
+        email.subject,
+        referenceNumber,
+        user,
+      );
+
+      const substitutedContent = this.variableResolver.substitute(
+        email.content,
+        referenceNumber,
+        user,
+      );
+      const { content, token } =
+        this.trackingLinkService.replace(substitutedContent);
+
+      const fromString = await this.senderResolver.resolveFromAddress(
+        email,
+        auth0Id,
+        senderName,
+        alias,
+      );
 
       const { data, error } = await this.resend.emails.send({
         from: fromString,
         to: user.email,
-        subject: email.subject,
-        html: email.content,
+        subject,
+        html: content,
       });
 
       if (error) {
         throw new InternalServerErrorException(error.message);
       }
 
-      this.logger.log(`Email successfully dispatched from ${email.sender}`);
+      this.logger.log(`Email successfully dispatched from ${fromString}`);
 
       try {
         const date = new Date();
@@ -195,9 +218,10 @@ export class EmailService {
           {
             emailId: data.id,
             recipient: user.email,
-            referenceNumber: referenceNumber,
+            referenceNumber,
             scheduledAt: date.toISOString(),
             auth0Id: auth0Id,
+            token,
           },
         );
       } catch (publishError) {
@@ -223,6 +247,8 @@ export class EmailService {
     referenceNumber: string,
     auth0Id: string,
     scheduledAt: Date,
+    senderName?: string,
+    alias?: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     try {
       const user = await this.userRepository.findOne({ where: { auth0Id } });
@@ -234,15 +260,33 @@ export class EmailService {
 
       const email = await this.getEmailByReference(referenceNumber);
 
-      const fromString = email.alias
-        ? `${email.alias} <${email.sender}>`
-        : email.sender;
+      const subject = this.variableResolver.substitute(
+        email.subject,
+        referenceNumber,
+        user,
+      );
+
+      const substitutedContent = this.variableResolver.substitute(
+        email.content,
+        referenceNumber,
+        user,
+      );
+
+      const { content, token } =
+        this.trackingLinkService.replace(substitutedContent);
+
+      const fromString = await this.senderResolver.resolveFromAddress(
+        email,
+        auth0Id,
+        senderName,
+        alias,
+      );
 
       const { data, error } = await this.resend.emails.send({
         from: fromString,
         to: user.email,
-        subject: email.subject,
-        html: email.content,
+        subject,
+        html: content,
         scheduledAt: scheduledAt.toISOString(),
       });
 
@@ -260,10 +304,11 @@ export class EmailService {
           'mailing.schedule',
           {
             emailId: data.id,
-            referenceNumber: referenceNumber,
+            referenceNumber,
             recipient: user.email,
             scheduledAt: scheduledAt.toISOString(),
-            auth0Id: auth0Id,
+            auth0Id,
+            token,
           },
         );
       } catch (publishError) {

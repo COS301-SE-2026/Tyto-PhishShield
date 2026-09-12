@@ -1,5 +1,3 @@
-// sendEmail & scheduleSendEmail might get removed in the future.
-
 /**
  * Service: mailing-service
  *
@@ -82,6 +80,8 @@ export class EmailController {
     const result = await this.sendMailService.sendEmail(
       emailReferenceNumber,
       sendSingleEmailDto.auth0Id,
+      sendSingleEmailDto.senderName,
+      sendSingleEmailDto.alias,
     );
 
     return new MailingPostReturnDto({
@@ -101,6 +101,8 @@ export class EmailController {
       referenceNumber,
       scheduledSingleEmailDto.auth0Id,
       scheduledSingleEmailDto.scheduledAt,
+      scheduledSingleEmailDto.senderName,
+      scheduledSingleEmailDto.alias,
     );
 
     return new MailingPostReturnDto({
