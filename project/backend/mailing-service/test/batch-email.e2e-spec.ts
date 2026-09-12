@@ -18,11 +18,11 @@ import {
   EmailDifficulty,
   EmailTemplateEntity,
 } from '../src/entities/email-template.entity';
-import { UserEntity } from '../src/entities/user.entity';
+import { Department, UserEntity } from '../src/entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { WaveEntity } from '../src/entities/wave.entity';
-const TEST_SENDER = `test@${process.env.DOMAIN}`;
+const TEST_SENDER = process.env.DOMAIN;
 const TEST_RECIPIENT_EMAIL = process.env.RESEND_EMAIL_DELIVERED;
 const TEST_RECIPIENTS = [
   TEST_RECIPIENT_EMAIL,
@@ -64,6 +64,7 @@ describe('BatchEmail service integration tests', () => {
         auth0Id,
         name: 'Batch E2E Test User',
         email: TEST_RECIPIENT_EMAIL,
+        department: Department.FINANCE,
       })),
     );
 
@@ -74,7 +75,6 @@ describe('BatchEmail service integration tests', () => {
     // Email template seed
     const res = await request(app.getHttpServer()).post('/emails').send({
       sender: TEST_SENDER,
-      alias: 'Batch E2E Tester',
       subject: 'Batch E2E Test',
       content: '<p>Batch e2e test email</p>',
       difficulty: EmailDifficulty.MEDIUM,
@@ -260,5 +260,61 @@ describe('BatchEmail service integration tests', () => {
         randomisedTimes: false,
       })
       .expect(400);
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should send with an explicit sender and alias`, () => {
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${testReferenceNumber}/send-batch-with-reference`)
+      .send({
+        auth0Id: TEST_AUTH0_IDS,
+        senderName: 'batch-e2e-sender',
+        alias: 'Batch E2E Sender',
+      })
+      .expect(200)
+      .expect((res) => expect(res.body.success).toBe(true));
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 404 when senderDepartment has no sender available`, async () => {
+    const createRes = await request(app.getHttpServer()).post('/emails').send({
+      sender: TEST_SENDER,
+      subject: 'Batch E2E No Eligible Sender',
+      content: '<p>Test</p>',
+      difficulty: EmailDifficulty.MEDIUM,
+      senderDepartment: Department.LEGAL_COMPLIANCE,
+    }).expect(201);
+
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
+      .send({ auth0Id: TEST_AUTH0_IDS })
+      .expect(404);
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should substitute supported variables and send successfully`, async () => {
+    const createRes = await request(app.getHttpServer()).post('/emails').send({
+      sender: TEST_SENDER,
+      subject: 'Hi {{name}}',
+      content: '<p>Hello {{name}} from {{department}} at {{business_name}}. Click {{tracking_link}}.</p>',
+      difficulty: EmailDifficulty.MEDIUM,
+    }).expect(201);
+
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
+      .send({ auth0Id: TEST_AUTH0_IDS, senderName: 'batch-e2e-sender' })
+      .expect(200)
+      .expect((res) => expect(res.body.success).toBe(true));
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should fail when the template contains an unsupported variable`, async () => {
+    const createRes = await request(app.getHttpServer()).post('/emails').send({
+      sender: TEST_SENDER,
+      subject: 'Test',
+      content: '<p>Hello {{favoriteColor}}</p>',
+      difficulty: EmailDifficulty.MEDIUM,
+    }).expect(201);
+
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
+      .send({ auth0Id: TEST_AUTH0_IDS, senderName: 'batch-e2e-sender' })
+      .expect(500);
   });
 });
