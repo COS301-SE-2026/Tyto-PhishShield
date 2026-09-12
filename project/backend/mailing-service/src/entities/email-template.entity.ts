@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   Index,
 } from 'typeorm';
+import { Department } from './user.entity';
 
 export enum EmailDifficulty {
   EASY = 'easy',
@@ -24,8 +25,8 @@ export class EmailTemplateEntity {
   @Column()
   sender: string;
 
-  @Column({ nullable: true })
-  alias?: string;
+  @Column({ type: 'enum', enum: Department, nullable: true })
+  senderDepartment?: Department;
 
   @Column()
   subject: string;
