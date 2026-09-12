@@ -38,6 +38,8 @@ export class BatchEmailController {
     const result = await this.batchEmailService.sendBatchWithReference(
       referenceNumber,
       sendBatchEmail.auth0Id,
+      sendBatchEmail.senderName,
+      sendBatchEmail.alias,
     );
 
     return new BatchPostReturnDto({
@@ -59,6 +61,8 @@ export class BatchEmailController {
       sendBatchRandom.randomisedTimes,
       sendBatchRandom.waveName,
       sendBatchRandom.referenceNumber,
+      sendBatchRandom.senderName,
+      sendBatchRandom.alias,
     );
 
     return new BatchPostReturnDto({
@@ -79,6 +83,8 @@ export class BatchEmailController {
       sendBatchRandom.scheduledTo,
       sendBatchRandom.randomisedTimes,
       sendBatchRandom.waveName,
+      sendBatchRandom.senderName,
+      sendBatchRandom.alias,
     );
 
     return new BatchPostReturnDto({
