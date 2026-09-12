@@ -6,10 +6,19 @@
  * Elements: recipient, emailReferenceNumber
  */
 
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
 export class SendSingleEmailDto {
   @IsNotEmpty()
   @IsString()
   auth0Id: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^[^@\s]+$/)
+  senderName?: string;
+
+  @IsString()
+  @IsOptional()
+  alias?: string;
 }

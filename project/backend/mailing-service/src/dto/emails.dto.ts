@@ -1,12 +1,10 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { EmailDifficulty } from '../entities/email-template.entity';
+import { Department } from '@phishshield/dto';
 
 export class EmailsDto {
   @IsEmail()
   sender: string;
-
-  @IsOptional()
-  alias?: string;
 
   @IsNotEmpty()
   subject: string;
@@ -16,4 +14,8 @@ export class EmailsDto {
 
   @IsEnum(EmailDifficulty)
   difficulty: EmailDifficulty;
+
+  @IsEnum(Department)
+  @IsOptional()
+  senderDepartment?: Department;
 }
