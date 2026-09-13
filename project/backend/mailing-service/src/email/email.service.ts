@@ -190,9 +190,12 @@ export class EmailService {
       const { content, token } =
         this.trackingLinkService.replace(substitutedContent);
 
-      const fromString = await this.senderResolver.resolveFromAddress(
+      const senderPool = senderName ? [] : await this.userRepository.find();
+
+      const fromString = this.senderResolver.resolveFromAddress(
         email,
         auth0Id,
+        senderPool,
         senderName,
         alias,
       );
@@ -275,9 +278,12 @@ export class EmailService {
       const { content, token } =
         this.trackingLinkService.replace(substitutedContent);
 
-      const fromString = await this.senderResolver.resolveFromAddress(
+      const senderPool = senderName ? [] : await this.userRepository.find();
+
+      const fromString = this.senderResolver.resolveFromAddress(
         email,
         auth0Id,
+        senderPool,
         senderName,
         alias,
       );

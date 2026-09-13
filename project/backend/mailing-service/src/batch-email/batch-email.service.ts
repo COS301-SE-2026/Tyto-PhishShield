@@ -311,13 +311,14 @@ export class BatchEmailService {
       recipients.map((recipient) => [recipient.auth0Id, recipient]),
     );
 
-    const built = await Promise.all(
-      dispatches.map((dispatch) =>
-        this.buildResendItem(
-          dispatch,
-          emailsByReference.get(dispatch.referenceNumber),
-          recipientMap.get(dispatch.auth0Id),
-        ),
+    const senderPool = await this.getSenderPool(dispatches);
+
+    const built = dispatches.map((dispatch) =>
+      this.buildResendItem(
+        dispatch,
+        emailsByReference.get(dispatch.referenceNumber),
+        recipientMap.get(dispatch.auth0Id),
+        senderPool,
       ),
     );
 
@@ -334,6 +335,20 @@ export class BatchEmailService {
     );
 
     return { emailsIds, tokens, recipientEmails };
+  }
+
+  private async getSenderPool(
+    dispatches: BatchRecipientDto[],
+  ): Promise<UserEntity[]> {
+    const needsRandomSender = dispatches.some(
+      (dispatch) => !dispatch.senderName,
+    );
+
+    if (!needsRandomSender) {
+      return [];
+    }
+
+    return this.userRepository.find();
   }
 
   private routingKey(dispatches: BatchRecipientDto[]): string {
@@ -422,11 +437,12 @@ export class BatchEmailService {
     }
   }
 
-  private async buildResendItem(
+  private buildResendItem(
     dispatch: BatchRecipientDto,
     email: EmailTemplateEntity,
     user?: UserEntity,
-  ): Promise<{ dto: ResendBatchItemDto; token: string }> {
+    senderPool: UserEntity[] = [],
+  ): { dto: ResendBatchItemDto; token: string } {
     try {
       if (!user) {
         throw new NotFoundException(
@@ -437,9 +453,10 @@ export class BatchEmailService {
       const { subject, content, token } = this.formatEmailContent(email, user);
 
       const item: ResendBatchItemDto = {
-        from: await this.senderResolver.resolveFromAddress(
+        from: this.senderResolver.resolveFromAddress(
           email,
           dispatch.auth0Id,
+          dispatch.senderName ? [] : senderPool,
           dispatch.senderName,
           dispatch.alias,
         ),

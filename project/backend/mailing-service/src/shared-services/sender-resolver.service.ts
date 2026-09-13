@@ -1,38 +1,27 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Department, UserEntity } from '../entities/user.entity';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class SenderResolverService {
-  constructor(
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
-  ) {}
-
   private extractLocalPart(email: string): string {
     const [localPart] = email.split('@');
     return localPart;
   }
 
-  private async pickRandomSenderLocalPart(
+  private pickRandomSenderLocalPart(
     recipientAuth0Id: string,
+    senderPool: UserEntity[],
     department?: Department,
-  ): Promise<string> {
-    const query = this.userRepository
-      .createQueryBuilder('user')
-      .where('user.auth0Id != :recipientAuth0Id', { recipientAuth0Id })
-      .orderBy('RANDOM()')
-      .limit(1);
+  ): string {
+    const eligible = senderPool.filter(
+      (user) =>
+        user.auth0Id !== recipientAuth0Id &&
+        (!department || user.department === department),
+    );
 
-    if (department) {
-      query.andWhere('user.department = :department', { department });
-    }
-
-    const chosen = await query.getOne();
-
-    if (!chosen) {
+    if (eligible.length === 0) {
       throw new NotFoundException(
         department
           ? `No eligible sender found in department: ${department}`
@@ -40,21 +29,24 @@ export class SenderResolverService {
       );
     }
 
+    const chosen = eligible[crypto.randomInt(eligible.length)];
     return this.extractLocalPart(chosen.email);
   }
 
-  async resolveFromAddress(
+  resolveFromAddress(
     email: EmailTemplateEntity,
     recipientAuth0Id: string,
+    senderPool: UserEntity[],
     senderName?: string,
     alias?: string,
-  ): Promise<string> {
+  ): string {
     const localPart =
       senderName ??
-      (await this.pickRandomSenderLocalPart(
+      this.pickRandomSenderLocalPart(
         recipientAuth0Id,
+        senderPool,
         email.senderDepartment,
-      ));
+      );
 
     const address = `${localPart}@${email.sender}`;
     return alias ? `${alias} <${address}>` : address;
