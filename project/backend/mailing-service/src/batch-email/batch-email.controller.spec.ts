@@ -62,6 +62,8 @@ describe('BatchEmailController', () => {
     const referenceNumber = 'PHISH-001';
     const body: SendBatchEmailDto = {
       auth0Id: ['auth0|1', 'auth0|2'],
+      senderName: 'it-support',
+      alias: 'IT Support',
     };
 
     it('should delegate to sendBatchWithReference', async () => {
@@ -75,6 +77,8 @@ describe('BatchEmailController', () => {
       expect(service.sendBatchWithReference).toHaveBeenCalledWith(
         referenceNumber,
         body.auth0Id,
+        body.senderName,
+        body.alias,
       );
     });
 
@@ -102,6 +106,8 @@ describe('BatchEmailController', () => {
       randomisedTimes: false,
       waveName: 'Test wave',
       referenceNumber: 'PHISH-001',
+      senderName: 'it-support',
+      alias: 'IT Support',
     };
 
     it('should delegate to sendBatchRandomSameEmail', async () => {
@@ -120,6 +126,8 @@ describe('BatchEmailController', () => {
         body.randomisedTimes,
         body.waveName,
         body.referenceNumber,
+        body.senderName,
+        body.alias,
       );
     });
 
@@ -146,6 +154,8 @@ describe('BatchEmailController', () => {
       scheduledTo,
       randomisedTimes: true,
       waveName: 'Test wave',
+      senderName: 'it-support',
+      alias: 'IT Support',
     };
 
     it('should call service.sendBatchRandomDifferentEmail with all DTO fields', async () => {
@@ -163,6 +173,8 @@ describe('BatchEmailController', () => {
         body.scheduledTo,
         body.randomisedTimes,
         body.waveName,
+        body.senderName,
+        body.alias,
       );
     });
 
