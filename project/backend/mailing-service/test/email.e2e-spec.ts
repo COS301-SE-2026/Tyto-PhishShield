@@ -43,14 +43,16 @@ describe('Email service integration test', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
-    
+
     userRepository = moduleFixture.get<Repository<UserEntity>>(
       getRepositoryToken(UserEntity),
-    )
+    );
 
-    emailTemplateRepository = moduleFixture.get<Repository<EmailTemplateEntity>>(
-      getRepositoryToken(EmailTemplateEntity),
-    )
+    emailTemplateRepository = moduleFixture.get<
+      Repository<EmailTemplateEntity>
+    >(getRepositoryToken(EmailTemplateEntity));
+
+    await emailTemplateRepository.delete({ sender: TEST_SENDER_DOMAIN });
 
     await userRepository.save([
       userRepository.create({
@@ -64,13 +66,15 @@ describe('Email service integration test', () => {
         name: 'E2e Test sender',
         email: `sender@${TEST_SENDER_DOMAIN}`,
         department: Department.IT_SECURITY,
-      })
+      }),
     ]);
   }, 30000);
 
   afterAll(async () => {
-    await emailTemplateRepository.delete({ sender: TEST_SENDER_AUTH0_ID });
-    await userRepository.delete({ auth0Id: In([TEST_SENDER_AUTH0_ID, TEST_AUTH0_ID ]) });
+    await emailTemplateRepository.delete({ sender: TEST_SENDER_DOMAIN });
+    await userRepository.delete({
+      auth0Id: In([TEST_SENDER_AUTH0_ID, TEST_AUTH0_ID]),
+    });
     await app.close();
   });
 
@@ -81,7 +85,7 @@ describe('Email service integration test', () => {
         sender: TEST_SENDER_DOMAIN,
         subject: 'E2E Test',
         content: '<p>This is a test</p>',
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
       })
       .expect(201)
       .expect((res) => {
@@ -187,7 +191,7 @@ describe('Email service integration test', () => {
     const futureDate = new Date();
     futureDate.setMinutes(futureDate.getMinutes() + 1);
     return request(app.getHttpServer())
-      .post(`/emails/${testReferenceNumber}/send-single`)
+      .post(`/emails/${testReferenceNumber}/schedule-send-single`)
       .send({ auth0Id: TEST_AUTH0_ID, scheduledAt: futureDate.toISOString() })
       .expect(200)
       .expect((res) => {
@@ -216,7 +220,7 @@ describe('Email service integration test', () => {
       sender: TEST_SENDER_DOMAIN,
       subject: 'Hi {{name}}',
       content: '<p>Hello {{name}} from {{department}} at {{business_name}}. Click {{tracking_link}}.</p>',
-      difficulty: EmailDifficulty.MEDIUM,
+      difficulty: EmailDifficulty.HARD,
     })
     .expect(201);
 
@@ -234,7 +238,7 @@ describe('Email service integration test', () => {
         sender: TEST_SENDER_DOMAIN,
         subject: 'Test',
         content: '<p>Hello {{incorrectVariable}}</p>',
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
       })
       .expect(201);
 
@@ -251,7 +255,7 @@ describe('Email service integration test', () => {
         sender: TEST_SENDER_DOMAIN,
         subject: 'Test',
         content: '<p>Test</p>',
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         senderDepartment: Department.LEGAL_COMPLIANCE,
       })
       .expect(201);

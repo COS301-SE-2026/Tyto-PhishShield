@@ -59,6 +59,9 @@ describe('BatchEmail service integration tests', () => {
       Repository<EmailTemplateEntity>
     >(getRepositoryToken(EmailTemplateEntity));
 
+    await emailTemplateRepository.delete({ sender: TEST_SENDER });
+    await waveRepository.delete({ waveName: 'Wave Name' });
+
     await userRepository.save(
       TEST_AUTH0_IDS.map((auth0Id) => ({
         auth0Id,
@@ -77,7 +80,7 @@ describe('BatchEmail service integration tests', () => {
       sender: TEST_SENDER,
       subject: 'Batch E2E Test',
       content: '<p>Batch e2e test email</p>',
-      difficulty: EmailDifficulty.MEDIUM,
+      difficulty: EmailDifficulty.HARD,
     });
 
     if (res.status !== 201 && res.status !== 200) {
@@ -124,7 +127,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/send-batch-random-same-email`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
@@ -145,7 +148,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/send-batch-random-same-email`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         scheduledFrom: scheduledAt.toISOString(),
         scheduledTo: scheduledAt.toISOString(),
         randomisedTimes: false,
@@ -166,7 +169,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/send-batch-random-same-email`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
@@ -190,7 +193,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/send-batch-random-same-email`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: false,
@@ -206,7 +209,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/send-batch-random-different-email`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         scheduledFrom: scheduledAtIso,
         scheduledTo: scheduledAtIso,
         randomisedTimes: false,
@@ -230,7 +233,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/send-batch-random-different-email`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: true,
@@ -254,7 +257,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/send-batch-random-different-email`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        difficulty: EmailDifficulty.MEDIUM,
+        difficulty: EmailDifficulty.HARD,
         scheduledFrom: scheduledFrom.toISOString(),
         scheduledTo: scheduledTo.toISOString(),
         randomisedTimes: false,
@@ -279,7 +282,7 @@ describe('BatchEmail service integration tests', () => {
       sender: TEST_SENDER,
       subject: 'Batch E2E No Eligible Sender',
       content: '<p>Test</p>',
-      difficulty: EmailDifficulty.MEDIUM,
+      difficulty: EmailDifficulty.HARD,
       senderDepartment: Department.LEGAL_COMPLIANCE,
     }).expect(201);
 
@@ -294,7 +297,7 @@ describe('BatchEmail service integration tests', () => {
       sender: TEST_SENDER,
       subject: 'Hi {{name}}',
       content: '<p>Hello {{name}} from {{department}} at {{business_name}}. Click {{tracking_link}}.</p>',
-      difficulty: EmailDifficulty.MEDIUM,
+      difficulty: EmailDifficulty.HARD,
     }).expect(201);
 
     return request(app.getHttpServer())
@@ -309,7 +312,7 @@ describe('BatchEmail service integration tests', () => {
       sender: TEST_SENDER,
       subject: 'Test',
       content: '<p>Hello {{favoriteColor}}</p>',
-      difficulty: EmailDifficulty.MEDIUM,
+      difficulty: EmailDifficulty.HARD,
     }).expect(201);
 
     return request(app.getHttpServer())
