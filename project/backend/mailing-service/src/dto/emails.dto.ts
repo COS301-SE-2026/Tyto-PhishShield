@@ -3,7 +3,7 @@ import { EmailDifficulty } from '../entities/email-template.entity';
 import { Department } from '@phishshield/dto';
 
 export class EmailsDto {
-  @IsEmail()
+  @IsNotEmpty()
   sender: string;
 
   @IsNotEmpty()
