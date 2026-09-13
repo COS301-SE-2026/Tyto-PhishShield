@@ -77,6 +77,7 @@
 		"lint:company": "pnpm --filter company-service lint",
 		"test:company": "pnpm --filter company-service test",
 		"int:test:company": "pnpm --filter company-service test:e2e",
+		"build:backend": "pnpm build:accounts && pnpm build:analytics && pnpm build:company && pnpm build:education && pnpm build:llm && pnpm build:mailing && pnpm build:report && pnpm build:xp",
 		"test:backend": "pnpm test:accounts && pnpm test:api && pnpm test:mailing && pnpm test:report && pnpm test:xp && pnpm test:analytics && pnpm test:education && pnpm test:llm && pnpm test:company",
 		"build:design-spec": "pnpm --filter design-spec-preview build",
 		"dev:design-spec": "pnpm --filter design-spec-preview dev",

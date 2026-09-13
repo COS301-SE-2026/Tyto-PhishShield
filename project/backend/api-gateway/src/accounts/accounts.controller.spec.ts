@@ -7,6 +7,7 @@ import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { AccountsService } from './accounts.service';
 import { LoginDto } from '../dto/login.dto';
 import { RouteResolver } from '../proxy/proxy.routes';
+import { Request } from 'express';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
@@ -104,9 +105,12 @@ describe('AccountsController', () => {
         email: 'test email',
         password: 'test password'
       }
+      const mockReq: Request = {
+        url: 'domain/url',
+      } as unknown as Request;
 
       try {
-        await controller.login(loginDto);
+        await controller.login(mockReq, loginDto);
       } catch {
 
       }
