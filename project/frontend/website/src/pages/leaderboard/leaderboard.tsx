@@ -43,39 +43,28 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<LoadError>(null);
     const [xpEntries, setXpEntries] = useState<XpNetEntry[] | null>(null);
-  
+
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
-        setLoadError(null);
-        fetchLeaderboardXp()
-            .then(data => { if (!cancelled) setXpEntries(data); })
-            .catch(() => {
-                if (cancelled) {
+        const loadLeaderboard = async (): Promise<void> => {
+            setLoading(true);
+            setLoadError(null);
+            try {
+                const data = await fetchLeaderboardXp();
+                if (!cancelled) setXpEntries(data);
+            } catch {
+                if (!cancelled) {
                     setLoadError('other');
                     addToast({ type: 'error', title: 'Could not load leaderboard', message: 'Please try again.' });
                 }
-            })
-            .finally(() => { if (!cancelled) setLoading(false); });
-        return () => { cancelled = true; };
-    }, []);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
 
-    //Supplementary XP, no role restriction, live updates
-    useEffect(() => {
-        let cancelled = false;
-        setLoading(true);
-        setLoadError(null);
-        fetchLeaderboardXp()
-            .then(data => { if (!cancelled) setXpEntries(data); })
-            .catch(() => {
-                if (!cancelled) {
-                    setLoadError('other');
-                    addToast({ type: 'error', title: 'Could not load leaderboard', message: 'Please try again shortly.' });
-                }
-            })
-            .finally(() => { if (!cancelled) setLoading(false); });
+        void loadLeaderboard();
         return () => { cancelled = true; };
-    }, []);
+    }, [addToast]);
 
     // Live updates
     useEffect(() => {
@@ -146,7 +135,7 @@ export default function Leaderboard({onNavigate, activePath}: Readonly<Leaderboa
     }, [departmentGroups, sizeFilter, departmentRankMode, search]);
 
     return(
-        <AppLayout activePath={activePath} onNavigate={onNavigate} title='Leaderboard' securityScore={72}> 
+        <AppLayout activePath={activePath} onNavigate={onNavigate} title='Leaderboard'> 
             <main style={{ background: 'var(--bg-page)', minHeight: '100%', padding: 24 }}>
                 <section style={{width: '100%'}}>
                     <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>

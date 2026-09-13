@@ -22,10 +22,10 @@ import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
 import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
 import { UsersService } from '../src/users/users.service';
-import { UserRole } from '../src/users/entities/user.entity';
 import type { User } from '../src/users/entities/user.entity';
 import { UserSyncService } from '../src/users/user-sync.service';
-import { OtpService } from '../src/otp/otp.service';
+import { Department, UserRole } from '@phishshield/dto';
+import { DeviceService } from '../src/otp/device.service';
 
 const mockUser: User = {
   id: 'uuid-123',
@@ -35,6 +35,9 @@ const mockUser: User = {
   role: UserRole.USER,
   createdAt: new Date(),
   updatedAt: new Date(),
+  isActive: true,
+  department: Department.HR,
+  isVerified: true,
 };
 
 const mockUsersService = {
@@ -48,9 +51,9 @@ const mockUserSyncService = {//problem initially. will hear with Josua.
   syncUserOnLogin: jest.fn().mockResolvedValue(undefined),
 };
 
-const mockOtpService = {
-  generateOtp: jest.fn(),
-  verifyOtp: jest.fn(),
+const mockDeviceService = {
+  generateDeviceToken: jest.fn(),
+  verifyDevice: jest.fn(),
 };
 
 const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
@@ -93,7 +96,7 @@ describe('Application (integration)', () => {
         JwtStrategy,
         { provide: UsersService, useValue: mockUsersService },
         { provide: UserSyncService, useValue: mockUserSyncService },
-        { provide: OtpService, useValue: mockOtpService },
+        { provide: DeviceService, useValue: mockDeviceService },
       ],
     }).compile();
 

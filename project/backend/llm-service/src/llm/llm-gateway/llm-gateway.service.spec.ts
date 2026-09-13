@@ -15,6 +15,7 @@ describe('LlmGatewayService', () => {
     getOrThrow: jest.fn((key: string) => {
       if (key === 'LLM_GATEWAY_KEY') return 'test-api-key';
       if (key === 'LLM_GATEWAY_URL') return 'https://api.gateway.com';
+      if (key === 'LOCAL_LLM_URL') return 'http://local-llm';
       return 'default';
     }),
   };
@@ -104,7 +105,7 @@ describe('LlmGatewayService', () => {
         ok: false,
         statusText: 'Too Many Requests',
         json: jest.fn().mockResolvedValueOnce(errorResponse),
-      } as unknown as Response);
+      });
 
       await expect(service.send(requestBody)).rejects.toEqual(errorResponse);
     });

@@ -30,6 +30,10 @@ University of Pretoria • Tyto Insights • DNS Business
 
 ---
 
+<h1 align="center"><a href="https://capstone-five-guys.dns.net.za/">➡️ 🚀Deployed System🚀 ⬅️</a> </h1>
+
+---
+
 <h1 align="center">ℹ️Description</h1>
 Tyto-PhishShield is an AI-powered phishing awareness and simulation platform. 
 The platform gives employees the chance to encounter realistic phishing attacks in a controlled simulated environment. 
@@ -164,6 +168,7 @@ All project documentation can be found in our
 |-----------|
 | 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
 | 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
 | { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
 | 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
@@ -176,19 +181,39 @@ All project documentation can be found in our
 
 <h2 align="center"> 📁 Documentation Archive<h2>
 <details style="font-size: 14px;">
+<summary>Demo 3 Documentation</summary>
+
+| Documents |
+|-----------|
+| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 📐 [Software Architecture Specification (SAS) NFR Test](docs/SRS/Software-Architecture-Specification.md#quality-requirements-based-off-of-nfr) |
+| 📐 [Software Architecture Specification (SAS) NFR Tracability matrix](docs/SRS/Software-Architecture-Specification.md#nfr-quality-requirement-matrix) |
+| 📐 [Software Architecture Specification (SAS) Deployment](docs/SRS/Software-Architecture-Specification.md#deployment) |
+| 📐 [Software Architecture Specification (SAS) Service Contracts](docs/SRS/Software-Architecture-Specification.md#api-service-contracts) |
+| 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
+| 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
+| 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
+| 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
+| 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
+| 🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
+| 🎬 [Demo 3 videos](https://drive.google.com/drive/u/1/folders/1KzNlCSQ1aX3uWdeu567TElWooIkOOStt) |
+
+</details> 
+<details style="font-size: 14px;">
 <summary>Demo 2 Documentation</summary>
 
 | Documents |
 |-----------|
 | 📁 [Root Archive: ](docs/demo-2/README.md) |
-| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
-| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
-| { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
-| 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
+| 📋 [Software Requirements Specification (SRS)](docs/demo-2/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/demo-2/Software-Architecture-Specification.md) |
+| { }&ensp; [Coding Standards](docs/demo-2/standards-and-policies/coding-standards.md) |
+| 🧪 [Testing Policy](docs/demo-2/standards-and-policies/testing-policy.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
-| 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
+| 🎨 [Design Specification Document](docs/demo-2/PhishShield-Brand-Style-Guide.pdf) |
 | 🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
 | 🎬 [Demo 2 videos](https://drive.google.com/drive/folders/10Y1lEcmk7wfp3HCWWZjnnqrf9gLC6ggJ?usp=sharing) |
 

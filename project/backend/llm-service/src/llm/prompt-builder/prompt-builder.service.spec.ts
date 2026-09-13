@@ -52,11 +52,9 @@ describe('PromptBuilderService', () => {
       expect(result).toContain(TYPE_PROMPTS[MessageType.ANNOUNCEMENT]);
       expect(result).toContain(LINK_INSTRUCTIONS);
       expect(result).toContain(OUTPUT_FORMAT);
-
       expect(result).toContain(
         'Do not include any personalization placeholders',
       );
-
       expect(result).not.toContain(BUSINESS_NAME_CONTEXT);
     });
 
@@ -73,7 +71,6 @@ describe('PromptBuilderService', () => {
 
       expect(result).toContain(DIFFICULTY_PROMPTS[Difficulty.MEDIUM]);
       expect(result).toContain(BUSINESS_NAME_CONTEXT);
-
       expect(result).not.toContain(
         'Do not include any personalization placeholders',
       );
@@ -81,7 +78,7 @@ describe('PromptBuilderService', () => {
 
     it('should correctly map and include requested variables and their contexts', () => {
       const dto: DifficultyLlmGenerationDto = {
-        difficulty: Difficulty.EASY,
+        difficulty: Difficulty.MEDIUM,
         tone: MessageTone.NEUTRAL,
         messageType: MessageType.QUESTION,
         templateVariable: [TemplateVariable.NAME, TemplateVariable.DEPARTMENT],
@@ -92,7 +89,6 @@ describe('PromptBuilderService', () => {
 
       expect(result).toContain('{{name}}');
       expect(result).toContain('{{department}}');
-
       expect(result).toContain(VARIABLE_CONTEXT_PROMPTS[TemplateVariable.NAME]);
       expect(result).toContain(
         VARIABLE_CONTEXT_PROMPTS[TemplateVariable.DEPARTMENT],

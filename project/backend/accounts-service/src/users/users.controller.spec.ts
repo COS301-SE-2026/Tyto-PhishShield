@@ -9,9 +9,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthService } from '../auth/auth.service';
-import { UserRole, Department } from './entities/user.entity';
 import { NotFoundException } from '@nestjs/common';
 import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
+import { Department, UserRole } from '@phishshield/dto';
 
 const makeUser = (overrides = {}) =>
   ({

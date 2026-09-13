@@ -18,3 +18,6 @@ function seed(container, database, sqlFile) {
 
 seed('education_db', 'education_db', 'project/backend/databases-seeds/education/seed.sql');
 seed('mailing_db', 'mailing_db', 'project/backend/databases-seeds/mailing/seed.sql');
+seed('accounts_db', 'accounts_db', 'project/backend/databases-seeds/accounts/seed.sql');
+seed('xp_db', 'xp_db', 'project/backend/databases-seeds/xp/seed.sql');
+seed('analytics_db', 'analytics_db', 'project/backend/databases-seeds/analytics/seed.sql');

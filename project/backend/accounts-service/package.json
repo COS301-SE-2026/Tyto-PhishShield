@@ -25,6 +25,7 @@
     }
   },
   "dependencies": {
+    "@phishshield/dto": "workspace:*",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/typeorm": "^11.0.1",
     "@golevelup/nestjs-rabbitmq": "^9.0.2",

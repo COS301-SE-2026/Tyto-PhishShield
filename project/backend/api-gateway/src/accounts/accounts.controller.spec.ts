@@ -7,6 +7,7 @@ import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { AccountsService } from './accounts.service';
 import { LoginDto } from '../dto/login.dto';
 import { RouteResolver } from '../proxy/proxy.routes';
+import { Request } from 'express';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
@@ -34,7 +35,18 @@ describe('AccountsController', () => {
             }),
           },
         },
-        { provide: AccountsService, useValue: { login: jest.fn() } },
+        { 
+          provide: AccountsService, useValue: { 
+            login: jest.fn(), 
+            updateEmployeeAsRegistered: jest.fn(), 
+            validateEmployeeId: jest.fn((employeeId: string, employeeEmail: string) => {
+              if (employeeId === '1' && employeeEmail === 'test@example.com') {
+                return true;
+              }
+              return false;
+            })
+          } 
+        },
       ],
     }).compile();
 
@@ -50,8 +62,9 @@ describe('AccountsController', () => {
   // ===========================================================================
 
   describe('register()', () => {
+    const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User', employeeId: '1' };
     it('should forward the request to the accounts service and return the result', async () => {
-      const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User' };
+      const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User', employeeId: '1' };
       const expected = { message: 'Registration successful', userId: 'uuid-123' };
       proxyService.forward.mockResolvedValue(expected);
 
@@ -69,7 +82,7 @@ describe('AccountsController', () => {
       proxyService.forward.mockRejectedValue(new HttpException('Conflict', 409));
 
       await expect(
-        controller.register({ email: 'taken@example.com', password: 'Password123!' }),
+        controller.register(body),
       ).rejects.toThrow(HttpException);
     });
 
@@ -77,7 +90,7 @@ describe('AccountsController', () => {
       proxyService.forward.mockRejectedValue(new Error('Could not reach downstream service'));
 
       await expect(
-        controller.register({ email: 'test@example.com', password: 'Password123!' }),
+        controller.register(body),
       ).rejects.toThrow('Could not reach downstream service');
     });
   });
@@ -92,9 +105,12 @@ describe('AccountsController', () => {
         email: 'test email',
         password: 'test password'
       }
+      const mockReq: Request = {
+        url: 'domain/url',
+      } as unknown as Request;
 
       try {
-        await controller.login(loginDto);
+        await controller.login(mockReq, loginDto);
       } catch {
 
       }

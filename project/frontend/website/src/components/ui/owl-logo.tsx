@@ -34,7 +34,7 @@ export function LogoLockup({ size = 32, dark = false }: { size?: number; dark?: 
         <div style={{
           fontFamily: 'Inter, system-ui, sans-serif',
           fontWeight: 500, fontSize: size * 0.28,
-          color: dark ? 'rgba(255,255,255,0.35)' : 'var(--text-muted)',
+          color: dark ? 'var(--sidebar-text)' : 'var(--text-muted)',
           letterSpacing: '0.8px', textTransform: 'uppercase', lineHeight: 1.4,
         }}>
           by Tyto

@@ -14,8 +14,7 @@ import {
   type EmailTemplate,
 } from "../../services/email-template";
 import { sendBatchWithReference } from "../../services/send-batch-email";
-
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
+import { getUsers, type User } from "../../services/user";
 
 interface SendEmailProps {
   onNavigate: (path: string) => void;
@@ -25,17 +24,6 @@ interface SendEmailProps {
 interface FormErrors {
   referenceNumber?: string;
   recipients?: string;
-}
-
-function parseRecipients(value: string): string[] {
-  return [
-    ...new Set(
-      value
-        .split(/[,;]+/) //recipients email addresses can be seperated by a comma or a semicolon
-        .map((recipient) => recipient.trim())
-        .filter(Boolean),
-    ),
-  ];
 }
 
 function formatSender(template: EmailTemplate): string {
@@ -69,23 +57,38 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
   const [selectedEmail, setSelectedEmail] = useState<EmailTemplate | null>(
     null,
   );
-  const [recipientsInput, setRecipientsInput] = useState("");
   const [sending, setSending] = useState(false);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedAuth0Ids, setSelectedAuth0Ids] = useState<string[]>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [userLoading, setUserLoading] = useState(true);
 
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const parsedRecipients = useMemo(
-    () => parseRecipients(recipientsInput),
-    [recipientsInput],
-  );
+  const fetchUsers = useCallback(async () => {
+    setUserLoading(true);
 
-  const invalidRecipients = useMemo(
-    () =>
-      parsedRecipients.filter((recipient) => !EMAIL_PATTERN.test(recipient)),
-    [parsedRecipients],
-  );
+    try{
+      const availableUsers = await getUsers();
+
+      setUsers(
+        availableUsers.filter((user) => user.isActive)
+      );
+    } catch (error) {
+      console.error(error);
+
+      addToast({
+        type: 'error',
+        title: 'Could not load users',
+        message: error instanceof Error ? error.message : 'Users could not be loaded',
+      });
+    } finally {
+      setUserLoading(false);
+    }
+  }, [addToast]);
 
   const templateOptions = useMemo(
     () => [
@@ -132,9 +135,10 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
     }
   }, [addToast]);
 
-  useEffect(() => {
+  useEffect(() => {//call both on page load
     void fetchEmailTemplates();
-  }, [fetchEmailTemplates]);
+    void fetchUsers();
+  }, [fetchEmailTemplates, fetchUsers]);
 
   const handleTemplateSelection = (referenceNumber: string) => {
     setSelectedReference(referenceNumber);
@@ -167,6 +171,22 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
 
     setSelectedEmail(template);
   };
+
+  const departments = useMemo(
+    () =>
+    [...new Set(
+      users.map((user) => user.department).filter((department): department is string => Boolean(department))
+    )].sort((a, b) => a.localeCompare(b)),
+    [users],
+  );
+
+  const filteredUsers = useMemo(() => {
+    const search = userSearch.trim().toLowerCase();
+
+    return users.filter((user) => 
+      !search || user.name.toLowerCase().includes(search) || user.email.toLowerCase().includes(search) || user.auth0Id.toLowerCase().includes(search)
+    );
+  }, [users, userSearch]);
 
   const handleReferenceLookup = async () => {
     const cleanedReference = referenceInput.trim().toUpperCase();
@@ -234,6 +254,41 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
     }
   };
 
+  const toggleUserSelection = (auth0Id: string) => {
+    setSelectedAuth0Ids((previous) => previous.includes(auth0Id) 
+      ? previous.filter((id) => id !== auth0Id)
+      : [...previous, auth0Id]
+    );
+
+    setErrors((previous) => ({
+      ...previous,
+      recipients: undefined,
+    }));
+  };
+
+  const selectDepartmentUsers = () => {
+    if (!selectedDepartment) {
+      return;
+    }
+
+    const departmentAuth0Ids = users.filter((user) => user.department === selectedDepartment).map((user) => user.auth0Id);
+
+    setSelectedAuth0Ids((previous) => [
+      ...new Set([...previous, ...departmentAuth0Ids]),
+    ]);
+
+    setSelectedDepartment('');
+
+    setErrors((previous) => ({
+      ...previous,
+      recipients: undefined,
+    }));
+  };
+
+  const clearRecipients = () => {
+    setSelectedAuth0Ids([]);
+  };
+
   const validateForm = (): boolean => {
     const nextErrors: FormErrors = {};
 
@@ -241,12 +296,8 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
       nextErrors.referenceNumber = "Select or find an email template.";
     }
 
-    if (parsedRecipients.length === 0) {
-      nextErrors.recipients = "Enter at least one recipient email address.";
-    } else if (invalidRecipients.length > 0) {
-      nextErrors.recipients = `Invalid email address${
-        invalidRecipients.length === 1 ? "" : "es"
-      }: ${invalidRecipients.join(", ")}`;
+    if (selectedAuth0Ids.length === 0) {
+      nextErrors.recipients = "Select at least one recipient.";
     }
 
     setErrors(nextErrors);
@@ -264,13 +315,13 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
     try {
       await sendBatchWithReference(
         selectedEmail.referenceNumber,
-        parsedRecipients,
+        selectedAuth0Ids,
       );
 
       addToast({
         type: "success",
         title: "Email sent",
-        message: `${selectedEmail.referenceNumber} was sent to ${parsedRecipients.length} recipient${parsedRecipients.length === 1 ? "" : "s"}.`,
+        message: `${selectedEmail.referenceNumber} was sent to ${selectedAuth0Ids.length} recipient${selectedAuth0Ids.length === 1 ? "" : "s"}.`,
       });
     } catch (error) {
       console.error(error);
@@ -342,7 +393,6 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
           label: "Send Existing Email",
         },
       ]}
-      securityScore={72}
     >
       <div
         style={{
@@ -479,73 +529,147 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
             <div style={{ marginBottom: 16 }}>
               <h2 style={sectionHeadingStyle}>Recipients</h2>
               <p style={sectionTextStyle}>
-                Separate addresses with commas or semicolons.
+                Search for users or select recipients by department.
               </p>
             </div>
 
-            <textarea
-              id="recipients"
-              rows={5}
-              placeholder="user1@example.com, user2@example.com"
-              value={recipientsInput}
-              onChange={(event) => {
-                setRecipientsInput(event.target.value);
-
-                setErrors((previous) => ({
-                  ...previous,
-                  recipients: undefined,
-                }));
-              }}
-              style={{
-                display: "block",
-                width: "100%",
-                minHeight: 150,
-                padding: "10px 12px",
-                border: `1.5px solid ${
-                  errors.recipients ? "var(--color-danger)" : "var(--border)"
-                }`,
-                borderRadius: 8,
-                outline: "none",
-                resize: "vertical",
-                background: "var(--bg-input)",
-                color: "var(--text-primary)",
-                fontSize: 13,
-                lineHeight: 1.6,
-                fontFamily: "Inter, system-ui, sans-serif",
-              }}
-            />
-
-            {errors.recipients && <p style={errorStyle}>{errors.recipients}</p>}
-
-            {parsedRecipients.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginTop: 16,
-                }}
-              >
-                <Badge
-                  variant={invalidRecipients.length > 0 ? "danger" : "success"}
+                <div
+                  style={{
+                    display:'flex',
+                    flexDirection: 'column',
+                    gap: 16,
+                  }}
                 >
-                  {parsedRecipients.length}{" "}
-                  {parsedRecipients.length === 1 ? "recipient" : "recipients"}
-                </Badge>
-
-                {invalidRecipients.length > 0 && (
-                  <span
+                  <div
                     style={{
-                      fontSize: 11,
-                      color: "var(--color-danger)",
+                      display:'grid',
+                      gridTemplateColumns: 'minmax(180px, 1fr) auto',
+                      gap: 12,
+                      alignItems: 'end',
                     }}
                   >
-                    {invalidRecipients.length} invalid
-                  </span>
-                )}
-              </div>
-            )}
+                    <Select
+                      label="Department"
+                      value={selectedDepartment}
+                      onChange={(event) => setSelectedDepartment(event.target.value)}
+                      disabled={userLoading}
+                      options={[
+                        { value: "", label: "All departments" },
+                        ...departments.map((department) => ({
+                          value: department,
+                          label: department,
+                        })),
+                      ]}
+                    />
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!selectedDepartment || userLoading}
+                      onClick={selectDepartmentUsers}
+                    >
+                      Select Department
+                    </Button>
+                  </div>
+
+                  <Input
+                    label="Search users"
+                    placeholder="Search by name, email or auth0Id"
+                    value={userSearch}
+                    onChange={(event) => setUserSearch(event.target.value)}
+                    disabled={userLoading}
+                  />
+
+                  {errors.recipients && <p style={errorStyle}>{errors.recipients}</p>}
+
+                  <div
+                    style={{
+                      display:'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                    }}
+                  >
+                    <Badge variant={selectedAuth0Ids.length > 0 ? 'success': 'neutral'}>
+                      {selectedAuth0Ids.length}{" "}
+                      {selectedAuth0Ids.length === 1 ? "recipient" : "recipients"} selected
+                    </Badge>
+
+                    {selectedAuth0Ids.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearRecipients}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      maxHeight: 280,
+                      overflowY: 'auto',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                    }}
+                  >
+                    {userLoading ? (
+                      <p style={{...sectionTextStyle, padding: 16}}>
+                        Loading users...
+                      </p>
+                    ) : filteredUsers.length === 0 ? (
+                      <p style={{...sectionTextStyle, padding: 16}}>
+                        No users found.
+                      </p>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <label
+                          key={user.auth0Id}
+                          aria-label={`Select ${user.name}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: 12,
+                            borderBottom: '1px solid var(--border)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedAuth0Ids.includes(user.auth0Id)}
+                            onChange={() => toggleUserSelection(user.auth0Id)}
+                          />
+
+                          <div style={{minWidth: 0}}>
+                            <div
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: 'var(--text-primary)'
+                              }}
+                            >
+                              {user.name}
+                            </div>
+
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: 'var(--text-secondary)',
+                                marginTop:4,
+                              }}
+                            >
+                              {user.email}
+                              {user.department && `  -${user.department}`}
+                            </div>
+                          </div>
+                        </label>
+                      ))
+                    )
+                    }
+                  </div>
+                </div>
           </Card>
 
           <div
@@ -575,8 +699,8 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
                 sending ||
                 templateLoading ||
                 !selectedEmail ||
-                parsedRecipients.length === 0 ||
-                invalidRecipients.length > 0
+                userLoading ||
+                selectedAuth0Ids.length === 0
               }
               onClick={() => void handleSend()}
               style={{

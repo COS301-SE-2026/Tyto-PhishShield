@@ -44,7 +44,7 @@ describe('getUsers', () => {
                 auth0Id: 'auth0|user2',
                 email: 'user2@example.com',
                 name: 'User Two',
-                department: 'null',
+                department: null,
                 role: 'admin',
                 isVerified: true,
                 isActive: true,

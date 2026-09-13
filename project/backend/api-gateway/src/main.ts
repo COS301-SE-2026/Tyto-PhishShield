@@ -13,6 +13,7 @@ import { rateLimit } from 'express-rate-limit';
 import { logger } from './logger/logger.service';
 import { requestIdMiddleware } from './middleware';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -52,6 +53,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  app.use(cookieParser());
   app.use(requestIdMiddleware);
   app.use(
     '/api',
@@ -74,7 +76,10 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
 
-    SwaggerModule.setup('api-docs', app, document);
+    SwaggerModule.setup('api-docs', app, document, {
+      jsonDocumentUrl: 'api/json',
+      yamlDocumentUrl: 'api/yaml',
+    });
   }
 
   await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
