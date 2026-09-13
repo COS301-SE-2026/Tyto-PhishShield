@@ -449,23 +449,22 @@ export class AnalyticsService {
   }
 
   async recordClickFromEmailId(emailId: string): Promise<void> {
-    const send = await this.sendRepo.findOne({
-      where: { emailId },
-
-    });
-
+    const existing = await this.clickRepo.findOne({ where: { emailId } });
+    if (existing) {
+      this.logger.warn(`Click already recorded for emailId: ${emailId}, skipping`);
+      return;
+    }
+    const send = await this.sendRepo.findOne({ where: { emailId } });
     if (!send) {
       this.logger.warn(`Click received for unknown emailId: ${emailId}`);
       return;
     }
-
     const click = this.clickRepo.create({
       referenceNumber: send.referenceNumber,
-
       auth0Id: send.auth0Id,
       campaignId: send.campaignId,
+      emailId,
     });
-
     await this.clickRepo.save(click);
   }
   //similar to overview, but fo phase 2/3 of the analytics service as discussed with Frikkie.
