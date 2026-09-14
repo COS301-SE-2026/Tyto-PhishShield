@@ -16,12 +16,13 @@
  * @function {@link EmployeeService#mapEmployeesManagers} - ensures employee manager links uses the employeeId field
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Employee } from './entities/employee.entity';
 import { QueryFailedError, Repository } from 'typeorm';
-import { EmployeeDto } from '@phishshield/dto';
+import { EmployeeDto, EventEmployee } from '@phishshield/dto';
+import { EVENT_EXCHANGE, EventProducerService } from '@phishshield/eventhandler';
 
 @Injectable()
 export class EmployeeService {
@@ -29,6 +30,7 @@ export class EmployeeService {
   constructor(
     @InjectRepository(Employee)
     private readonly db: Repository<Employee>,
+    @Inject() private readonly event: EventProducerService,
   ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto) {
@@ -73,6 +75,10 @@ export class EmployeeService {
       existingEmployee.registered = validEmployee.registered ?? false;
       existingEmployee.title = validEmployee.title;
       existingEmployee.auth0Id = validEmployee.auth0Id;
+
+      if (existingEmployee.auth0Id) {
+        this.sendEmployeeInfo(existingEmployee);
+      }
 
       return await this.db.save(existingEmployee);
     } catch (err) {
@@ -199,5 +205,23 @@ export class EmployeeService {
 
   async deleteUser(auth0Id: string) {
     await this.db.delete({ auth0Id });
+  }
+
+  async sendEmployeeInfo(employee: EmployeeDto) {
+    let managerAuth0Id: string | undefined;
+    if (employee.managerId) {
+      const manager = await this.findOne(employee.managerId);
+      managerAuth0Id = manager?.auth0Id;
+    }
+    if (managerAuth0Id === null || managerAuth0Id === undefined) {
+      managerAuth0Id = '';
+    }
+    const body: EventEmployee = {
+      auth0Id: employee.auth0Id || '',
+      managerId: managerAuth0Id,
+      jobTitle: employee.jobTitle,
+      title: employee.title,
+    }
+    this.event.publishEvent(EVENT_EXCHANGE.company, 'company.employeeInfo', body);
   }
 }
