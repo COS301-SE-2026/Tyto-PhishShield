@@ -163,7 +163,8 @@ export class EmailService {
   async sendEmail(
     referenceNumber: string,
     auth0Id: string,
-    senderName?: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
     alias?: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     try {
@@ -190,13 +191,11 @@ export class EmailService {
       const { content, token } =
         this.trackingLinkService.replace(substitutedContent);
 
-      const senderPool = senderName ? [] : await this.userRepository.find();
-
-      const fromString = this.senderResolver.resolveFromAddress(
+      const fromString = await this.senderResolver.resolveFromAddress(
         email,
         auth0Id,
-        senderPool,
-        senderName,
+        senderCustomName,
+        senderAuth0Id,
         alias,
       );
 
@@ -250,7 +249,8 @@ export class EmailService {
     referenceNumber: string,
     auth0Id: string,
     scheduledAt: Date,
-    senderName?: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
     alias?: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     try {
@@ -278,13 +278,11 @@ export class EmailService {
       const { content, token } =
         this.trackingLinkService.replace(substitutedContent);
 
-      const senderPool = senderName ? [] : await this.userRepository.find();
-
-      const fromString = this.senderResolver.resolveFromAddress(
+      const fromString = await this.senderResolver.resolveFromAddress(
         email,
         auth0Id,
-        senderPool,
-        senderName,
+        senderCustomName,
+        senderAuth0Id,
         alias,
       );
 
