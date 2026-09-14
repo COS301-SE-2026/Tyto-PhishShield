@@ -65,7 +65,7 @@ describe('AccountsController', () => {
     const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User', employeeId: '1' };
     it('should forward the request to the accounts service and return the result', async () => {
       const body = { email: 'test@example.com', password: 'Password123!', name: 'Test User', employeeId: '1' };
-      const expected = { message: 'Registration successful', userId: 'uuid-123' };
+      const expected = { message: 'Registration successful', response: 'uuid-123' };
       proxyService.forward.mockResolvedValue(expected);
 
       const result = await controller.register(body);
