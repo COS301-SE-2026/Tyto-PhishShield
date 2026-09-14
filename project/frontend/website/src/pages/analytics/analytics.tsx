@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge, ComingSoon } from '../../components/ui';
+import { Card, Badge, ComingSoon, Spinner } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
 import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, fetchByDepartment, fetchAtRiskUsers, fetchCampaigns, getPeriodRange,
   type Period, type AnalyticsSummary, type TimeSeriesPoint, type LeaderboardEntry, type DepartmentBreakdown, type AtRiskUser, type Campaign, } from './analytics.service';
+import { fetchAllUsers, type AccountUser } from './reports.service';
+import { computePredictedRisk } from './predictive-risk';
 
 interface AnalyticsProps { onNavigate: (path: string) => void; activePath: string; }
 
@@ -20,6 +22,21 @@ function buildLinePath(values: number[], width: number, height: number, max: num
       return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(' ');
+}
+
+function riskTint(value: number, higherIsBetter: boolean): string {
+  const clamped = Math.max(0, Math.min(100, value));
+  const goodness = higherIsBetter ? clamped : 100 - clamped;
+  const hue = (goodness / 100) * 120; // 0 = red, 120 = green
+  return `hsla(${hue}, 70%, 45%, 0.22)`;
+}
+
+function SectionSpinner() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
+      <Spinner size={28} />
+    </div>
+  );
 }
 
 function DeltaBadge({ delta, suffix = '%' }: { readonly delta: number; readonly suffix?: string }) {
@@ -39,6 +56,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
   const [departments, setDepartments] = useState<DepartmentBreakdown[] | null>(null);
   const [atRiskUsers, setAtRiskUsers] = useState<AtRiskUser[] | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
+  const [users, setUsers] = useState<AccountUser[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,13 +65,14 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       setLoading(true);
       const { from, to } = getPeriodRange(period);
       try {
-        const [summaryData, seriesData, leaderboardData, departmentData, atRiskData, campaignData] = await Promise.all([
+        const [summaryData, seriesData, leaderboardData, departmentData, atRiskData, campaignData, usersData] = await Promise.all([
           fetchAnalyticsSummary(period),
           fetchTimeSeries(from, to),
           fetchLeaderboard(5),
           fetchByDepartment(period),
           fetchAtRiskUsers(period, 5),
           fetchCampaigns(),
+          fetchAllUsers(),
         ]);
         if (cancelled) return;
         setSummary(summaryData);
@@ -62,6 +81,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         setDepartments(departmentData);
         setAtRiskUsers(atRiskData);
         setCampaigns(campaignData);
+        setUsers(usersData);
       } catch {
         if (!cancelled) addToast({ type: 'error', title: 'Analytics failed to load', message: 'Unable to fetch analytics data.' });
       } finally {
@@ -74,6 +94,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
   }, [period, addToast]);
 
   const maxSeriesValue = series?.length ? Math.max(...series.flatMap(p => [p.reports, p.emailsSent])) : 0;
+  const predictedRisk = users && departments ? computePredictedRisk(users, departments, atRiskUsers ?? []) : [];
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Analytics"
@@ -147,7 +168,9 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Activity Over Time</h2>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{PERIOD_LABEL[period]}</span>
         </div>
-        {!loading && series?.length === 0 ? (
+        {loading ? (
+          <SectionSpinner />
+        ) : series?.length === 0 ? (
           <ComingSoon label="No activity recorded in this period yet." />
         ) : (
           <svg viewBox="0 0 700 160" style={{ width: '100%', height: 160 }}>
@@ -184,29 +207,55 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         )}
       </Card>
 
-      {/* Department breakdown + Top reporters */}
+      {/* Departmental risk heatmap */}
+      <Card style={{ padding: '20px 22px', marginBottom: 16 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Departmental Risk Heatmap</h2>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Greener is safer, redder needs attention — shaded by detection rate and click rate.</p>
+        {loading ? (
+          <SectionSpinner />
+        ) : departments?.length === 0 ? (
+          <ComingSoon label="No department activity recorded in this period yet." />
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DEPARTMENT</th>
+                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>SENT</th>
+                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>REPORTED</th>
+                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DETECTION RATE</th>
+                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>CLICK RATE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {departments?.map(d => (
+                  <tr key={d.department} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.department}</td>
+                    <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.sent}</td>
+                    <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.reported}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <div style={{ background: riskTint(d.detectionRate, true), borderRadius: 6, padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'inline-block', minWidth: 48, textAlign: 'center' }}>
+                        {Math.round(d.detectionRate)}%
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <div style={{ background: riskTint(d.clickRate, false), borderRadius: 6, padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'inline-block', minWidth: 48, textAlign: 'center' }}>
+                        {Math.round(d.clickRate)}%
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {/* Top reporters + Predicted at-risk */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
         <Card style={{ padding: '20px 22px' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Detection Rate by Department</h2>
-          {!loading && departments?.length === 0 && (
-            <ComingSoon label="No department activity recorded in this period yet." />
-          )}
-          {departments?.map(d => (
-            <div key={d.department} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '8px 0', borderBottom: '1px solid var(--border)',
-            }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.department}</div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.sent} sent · {d.reported} reported</div>
-              </div>
-              <Badge variant={d.detectionRate >= 50 ? 'success' : 'warning'}>{Math.round(d.detectionRate)}% detection</Badge>
-            </div>
-          ))}
-        </Card>
-
-        <Card style={{ padding: '20px 22px' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Top Reporters</h2>
+          {loading && <SectionSpinner />}
           {!loading && topReporters?.length === 0 && (
             <ComingSoon label="No confirmed reports yet." />
           )}
@@ -226,6 +275,27 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
             </div>
           ))}
         </Card>
+
+        <Card style={{ padding: '20px 22px' }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Predicted At-Risk (Next Wave)</h2>
+          <p style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Users with no click history yet, scored on their department's track record.</p>
+          {loading && <SectionSpinner />}
+          {!loading && predictedRisk.length === 0 && (
+            <ComingSoon label="Not enough department history yet to predict risk for untested users." />
+          )}
+          {predictedRisk.map(u => (
+            <div key={u.auth0Id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 0', borderBottom: '1px solid var(--border)',
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.department ?? 'No department'}</div>
+              </div>
+              <Badge variant={u.predictedRisk >= 30 ? 'warning' : 'neutral'}>{u.predictedRisk}% predicted</Badge>
+            </div>
+          ))}
+        </Card>
       </div>
 
       {/* At-risk users */}
@@ -233,7 +303,9 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Users Most At Risk</h2>
         </div>
-        {!loading && atRiskUsers?.length === 0 ? (
+        {loading ? (
+          <SectionSpinner />
+        ) : atRiskUsers?.length === 0 ? (
           <ComingSoon label="No users currently meet the at-risk click-rate threshold." />
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -266,7 +338,9 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Phishing Wave Performance Summary</h2>
         </div>
-        {campaigns && campaigns.length > 0 ? (
+        {loading ? (
+          <SectionSpinner />
+        ) : campaigns && campaigns.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
