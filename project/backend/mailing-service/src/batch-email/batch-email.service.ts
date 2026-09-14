@@ -50,16 +50,24 @@ export class BatchEmailService {
   async sendBatchWithReference(
     referenceNumber: string,
     auth0Ids: string[],
-    senderName?: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
     alias?: string,
   ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     const now = new Date();
 
     const dispatches: BatchRecipientDto[] = auth0Ids.map((auth0Id) => ({
       auth0Id,
       referenceNumber: referenceNumber,
       scheduledAt: now,
-      senderName,
+      senderCustomName,
+      senderAuth0Id,
       alias,
     }));
 
@@ -91,9 +99,16 @@ export class BatchEmailService {
     randomisedTimes: boolean,
     waveName: string,
     referenceNumber: string,
-    senderName?: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
     alias?: string,
   ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     // Makes sure scheduledFrom <= scheduledTo
     this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
@@ -112,7 +127,8 @@ export class BatchEmailService {
       auth0Id,
       referenceNumber,
       scheduledAt: scheduledAts[index],
-      senderName,
+      senderCustomName,
+      senderAuth0Id,
       alias,
     }));
 
@@ -136,9 +152,16 @@ export class BatchEmailService {
     scheduledTo: Date,
     randomisedTimes: boolean,
     waveName: string,
-    senderName?: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
     alias?: string,
   ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     // Makes sure scheduledFrom <= scheduledTo
     this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
@@ -163,7 +186,8 @@ export class BatchEmailService {
       auth0Id,
       referenceNumber: referenceNumbers[index],
       scheduledAt: scheduledAts[index],
-      senderName,
+      senderCustomName,
+      senderAuth0Id,
       alias,
     }));
 
@@ -311,14 +335,13 @@ export class BatchEmailService {
       recipients.map((recipient) => [recipient.auth0Id, recipient]),
     );
 
-    const senderPool = await this.getSenderPool(dispatches);
-
-    const built = dispatches.map((dispatch) =>
-      this.buildResendItem(
-        dispatch,
-        emailsByReference.get(dispatch.referenceNumber),
-        recipientMap.get(dispatch.auth0Id),
-        senderPool,
+    const built = await Promise.all(
+      dispatches.map((dispatch) =>
+        this.buildResendItem(
+          dispatch,
+          emailsByReference.get(dispatch.referenceNumber),
+          recipientMap.get(dispatch.auth0Id),
+        ),
       ),
     );
 
@@ -335,20 +358,6 @@ export class BatchEmailService {
     );
 
     return { emailsIds, tokens, recipientEmails };
-  }
-
-  private async getSenderPool(
-    dispatches: BatchRecipientDto[],
-  ): Promise<UserEntity[]> {
-    const needsRandomSender = dispatches.some(
-      (dispatch) => !dispatch.senderName,
-    );
-
-    if (!needsRandomSender) {
-      return [];
-    }
-
-    return this.userRepository.find();
   }
 
   private routingKey(dispatches: BatchRecipientDto[]): string {
@@ -437,12 +446,11 @@ export class BatchEmailService {
     }
   }
 
-  private buildResendItem(
+  private async buildResendItem(
     dispatch: BatchRecipientDto,
     email: EmailTemplateEntity,
     user?: UserEntity,
-    senderPool: UserEntity[] = [],
-  ): { dto: ResendBatchItemDto; token: string } {
+  ): Promise<{ dto: ResendBatchItemDto; token: string }> {
     try {
       if (!user) {
         throw new NotFoundException(
@@ -453,11 +461,11 @@ export class BatchEmailService {
       const { subject, content, token } = this.formatEmailContent(email, user);
 
       const item: ResendBatchItemDto = {
-        from: this.senderResolver.resolveFromAddress(
+        from: await this.senderResolver.resolveFromAddress(
           email,
           dispatch.auth0Id,
-          dispatch.senderName ? [] : senderPool,
-          dispatch.senderName,
+          dispatch.senderCustomName,
+          dispatch.senderAuth0Id,
           dispatch.alias,
         ),
         to: [user.email],

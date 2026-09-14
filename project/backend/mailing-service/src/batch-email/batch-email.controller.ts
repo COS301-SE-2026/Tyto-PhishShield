@@ -22,9 +22,9 @@ import {
 } from '@nestjs/common';
 import { BatchEmailService } from './batch-email.service';
 import { BatchPostReturnDto } from '../dto/batch-post-return.dto';
-import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
-import { SendBatchDto } from '../dto/send-batch.dto';
-import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
+import { SendBatchRandomDto } from '@phishshield/dto';
+import { SendBatchDto } from '@phishshield/dto';
+import { SendBatchEmailDto } from '@phishshield/dto';
 
 @Controller('batch-emails')
 export class BatchEmailController {
@@ -39,7 +39,8 @@ export class BatchEmailController {
     const result = await this.batchEmailService.sendBatchWithReference(
       referenceNumber,
       sendBatchEmail.auth0Id,
-      sendBatchEmail.senderName,
+      sendBatchEmail.senderCustomName,
+      sendBatchEmail.senderAuth0Id,
       sendBatchEmail.alias,
     );
 
@@ -62,7 +63,8 @@ export class BatchEmailController {
       sendBatchRandom.randomisedTimes,
       sendBatchRandom.waveName,
       sendBatchRandom.referenceNumber,
-      sendBatchRandom.senderName,
+      sendBatchRandom.senderCustomName,
+      sendBatchRandom.senderAuth0Id,
       sendBatchRandom.alias,
     );
 
@@ -84,7 +86,8 @@ export class BatchEmailController {
       sendBatchRandom.scheduledTo,
       sendBatchRandom.randomisedTimes,
       sendBatchRandom.waveName,
-      sendBatchRandom.senderName,
+      sendBatchRandom.senderCustomName,
+      sendBatchRandom.senderAuth0Id,
       sendBatchRandom.alias,
     );
 
