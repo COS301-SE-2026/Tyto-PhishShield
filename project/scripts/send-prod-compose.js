@@ -6,18 +6,36 @@ const server = ` ${process.env.SERVER_USER}@${process.env.SERVER_IP}:./`;
 
 const folder = 'prod/';
 
-const prodFile = process.argv[2];
+const input = process.argv[2];
+
+if (!input) {
+    throw 'Production file needs to be specified';
+}
 
 const possibleProdFiles = new Set ([
     'prod-blue.yml',
     'prod-compose.yml',
     'prod-green.yml',
     'prod-infrastructure.yml',
+    'ollama-compose.yml'
 ]);
 
-if (!possibleProdFiles.has(prodFile)) {
-    throw 'file listed may not be uploaded to the server';
+if (!possibleProdFiles.has(input)) {
+    throw new Error('file listed is not a production related file');
 }
+
+let file = '';
+//for security reasons
+switch(input) {
+    case 'prod-blue.yml': { file = 'prod-blue.yml'; break; }
+    case 'prod-compose.yml': { file =  'prod-compose.yml'; break; }
+    case 'prod-green.yml': { file =  'prod-green.yml'; break; }
+    case 'prod-infrastructure.yml': { file = 'prod-infrastructure.yml'; break; }
+    case 'ollama-compose.yml': { file = 'ollama-compose.yml'; break; }
+    default: throw new Error('bad input');
+};
+
+const prodFile = file;
 
 const commands = [
     `scp -P ${process.env.SSH_PORT} ./project/docker-compose/.env.prod ${server}${folder}`,

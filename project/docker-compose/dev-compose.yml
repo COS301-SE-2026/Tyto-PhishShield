@@ -75,6 +75,8 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - BUSINESS_NAME=${BUSINESS_NAME}
+      - TRACKING_LINK=${TRACKING_LINK}
 
     # ports:
     #   - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
@@ -204,6 +206,7 @@ services:
       - SERVER_DOMAIN=${DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=dev
+      - LOG_DIR=/var/log/api-gateway
     # ports:
     #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     deploy:
@@ -424,6 +427,8 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${ANALYTICS_DB_NAME}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
     # ports:
@@ -469,9 +474,6 @@ services:
 
     volumes:
       - llm_pgdata:/var/lib/postgresql/data
-
-    ports:
-      - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
       
 # Main service app container
   llm_app:
@@ -488,10 +490,7 @@ services:
       - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
       - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-
-    ports:
-      - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
-
+      - LOCAL_LLM_URL=http://ollama:11434
     deploy:
       resources:
         limits:
@@ -503,6 +502,8 @@ services:
         condition: service_healthy
     volumes:
       - ./src:/app/src
+    networks:
+      - local-llm
 
   company_db:
     image: postgres:15-alpine
@@ -531,9 +532,6 @@ services:
 
     volumes:
       - company_pgdata:/var/lib/postgresql/data
-
-    ports:
-      - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
       
 # Main service app container
   company_app:
@@ -548,9 +546,6 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${COMPANY_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-
-    ports:
-      - "${COMPANY_SERVICE_PORT}:${COMPANY_SERVICE_PORT}"
 
     deploy:
       resources:
@@ -578,8 +573,6 @@ services:
     image: fiveguys301/addin:latest
     restart: on-failure
     container_name: addin
-    ports:
-      - '3000:8080'
     deploy:
       resources:
         limits:
@@ -640,3 +633,8 @@ volumes:
   caddy_logs:
   rabbitmq_data:
     driver: local
+
+networks:
+  local-llm:
+    external: true
+    name: local-llm

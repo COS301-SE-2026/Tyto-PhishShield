@@ -164,10 +164,13 @@ export class AccountsController {
       },
     },
   })
-  login(@Body() body: LoginDto) {
+  login(@Req() req: Request, @Body() body: LoginDto) {
     //Login now happens in the api gateway.
-    //none functional checks happen in the accounts service.
-    return this.accountsService.login(body);
+    const loginBody: LoginDto = {
+      ...body,
+      deviceToken: req.cookies?.device_token as string,
+    };
+    return this.accountsService.login(loginBody);
   }
 
   @Post('auth/logout')

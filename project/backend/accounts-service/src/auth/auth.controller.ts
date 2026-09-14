@@ -29,18 +29,14 @@ import {
   HttpCode,
   Param,
   NotFoundException,
-  Res,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from '@phishshield/dto';
-import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
-import { ExtendedVerifyOtpDto, VerifyOtpDto } from './dto/verify-otp.dto';
-import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 interface AuthenticatedRequest extends Request {
@@ -57,14 +53,6 @@ export class AuthController {
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
-  }
-
-  //Deprecated
-  @Post('login')
-  @HttpCode(200)
-  login(@Req() req: Request, @Body() dto: LoginDto) {
-    dto.deviceToken = (req.cookies as Record<string, string>)?.device_token;
-    return this.authService.login(dto);
   }
 
   @Post('logout')
@@ -114,38 +102,6 @@ export class AuthController {
       role: user.role,
       name: user.name,
     };
-  }
-
-  //Deprecated
-  @Post('verify-otp')
-  @HttpCode(200)
-  async verifyOtp(
-    @Req() req: Request,
-    @Body() dto: VerifyOtpDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const extendedDto: ExtendedVerifyOtpDto = {
-      email: dto.email,
-      code: dto.code,
-      userAgent: req.header('user-agent') ?? '',
-      ip: req.ip,
-    };
-    const { message, deviceToken } =
-      await this.authService.verifyOtp(extendedDto);
-    res.cookie('device_token', deviceToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 60 * 24 * 60 * 60 * 1000,
-    });
-    return { message };
-  }
-
-  //Deprecated
-  @Post('resend-otp')
-  @HttpCode(200)
-  resendOtp(@Body() dto: ResendOtpDto) {
-    return this.authService.resendOtp(dto);
   }
 
   @Get('is-active')

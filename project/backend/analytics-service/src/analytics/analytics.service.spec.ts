@@ -371,6 +371,11 @@ describe('AnalyticsService', () => {
         .mockResolvedValueOnce(xpEvents as any)
         .mockResolvedValueOnce(confirmedReports as any);
 
+      userRepo.find.mockResolvedValue([
+        { auth0Id: 'user1', email: 'u1@example.com' },
+        { auth0Id: 'user2', email: 'u2@example.com' },
+      ] as any);
+
       const result = await service.getLeaderboard(2);
 
       expect(result).toEqual([
@@ -400,6 +405,8 @@ describe('AnalyticsService', () => {
         .mockResolvedValueOnce(xpEvents as any)
         .mockResolvedValueOnce(confirmedReports as any);
 
+      userRepo.find.mockResolvedValue([] as any);
+
       const result = await service.getLeaderboard(10);
 
       expect(result).toHaveLength(1);
@@ -415,6 +422,8 @@ describe('AnalyticsService', () => {
       repo.find
         .mockResolvedValueOnce(xpEvents as any)
         .mockResolvedValueOnce([] as any);
+
+      userRepo.find.mockResolvedValue([] as any);
 
       const result = await service.getLeaderboard();
 

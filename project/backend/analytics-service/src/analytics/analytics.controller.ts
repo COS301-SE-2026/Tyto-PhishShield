@@ -41,6 +41,7 @@ import { MessagePattern } from '@nestjs/microservices';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsEventType } from './entities/analytics-event.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { EventUser } from '@phishshield/dto';
 
 //payload shapes, could move to shared types later, but for now just here.
 
@@ -59,6 +60,7 @@ interface XpPayload {
 interface EducationPayload {
   auth0Id: string;
   email?: string;
+  source?: string;
 
   assignmentId?: string;
   reportId?: string;
@@ -122,11 +124,20 @@ export class AnalyticsController {
   //exchange and routing keys are hardcoded here, but could be moved to config/env if needed in future.
   @RabbitSubscribe({
     exchange: 'xp-event-exchange',
-    routingKey: ['xp.give', 'xp.given'],
+    routingKey: 'xp.given',
 
     queue: 'analytics-xp-queue',
   })
   async onXpGiven(payload: XpPayload) {
+    const duplicate = await this.analyticsService.isRecentDuplicate(
+      AnalyticsEventType.XP_GIVEN,
+      payload.auth0Id,
+      payload as unknown as Record<string, unknown>,
+      60_000,
+    );
+    if (duplicate) {
+      return; // already processed this exact event
+    }
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.XP_GIVEN,
       auth0Id: payload.auth0Id,
@@ -151,7 +162,7 @@ export class AnalyticsController {
   // rabbitmq subscribers for education assigned, email sent/scheduled/batch, user created/updated/deleted, wave create/delete
   @RabbitSubscribe({
     exchange: 'education-event-exchange',
-    routingKey: 'education.assigned',
+    routingKey: 'education.assign',
     queue: 'analytics-education-assigned-queue',
   })
   async onEducationAssigned(payload: EducationPayload) {
@@ -165,8 +176,24 @@ export class AnalyticsController {
 
     // Whenever education is assigned, it's because the user reported a real phishing email(false positive)
     // so we count that as a false positive report.
+    if (!payload.source || payload.source === 'report-service') {
+      await this.analyticsService.recordEvent({
+        eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+        auth0Id: payload.auth0Id,
+        email: payload.email,
+        payload: payload as unknown as Record<string, unknown>,
+      });
+    }
+  }
+
+  @RabbitSubscribe({
+    exchange: 'education-event-exchange',
+    routingKey: 'education.completed',
+    queue: 'analytics-education-completed-queue',
+  })
+  async onEducationCompleted(payload: EducationPayload) {
     await this.analyticsService.recordEvent({
-      eventType: AnalyticsEventType.REPORT_FALSE_POSITIVE,
+      eventType: AnalyticsEventType.EDUCATION_COMPLETED,
       auth0Id: payload.auth0Id,
       email: payload.email,
       payload: payload as unknown as Record<string, unknown>,
@@ -308,7 +335,7 @@ export class AnalyticsController {
     routingKey: 'user.deleted',
     queue: 'analytics-user-deleted-queue',
   })
-  async onUserDeleted(payload: AccountUserPayload) {
+  async onUserDeleted(payload: EventUser) {
     await this.analyticsService.deleteUser(payload.auth0Id);
   }
 

@@ -190,7 +190,7 @@ export class AccountsService {
           email: email,
           deviceToken: deviceToken,
         },
-        headers: { Authorization: token },
+        headers: { Authorization: `Bearer ${token}` },
       });
       return valid;
     } catch {

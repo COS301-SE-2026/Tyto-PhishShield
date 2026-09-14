@@ -89,7 +89,7 @@ export function LinkClicked({ onNavigate }: LinkClickedProps) {
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20, fontFamily: 'Inter, system-ui, sans-serif' }}>
             This link was part of a phishing awareness test run by your organisation, no real harm was done.
-            As a result, <strong>40 XP</strong> has been deducted from your account and new training has been assigned to help you spot the warning signs next time.
+            As a result, <strong>15 XP</strong> has been deducted from your account and new training has been assigned to help you spot the warning signs next time.
           </p>
           <Button fullWidth size="lg" onClick={() => onNavigate('/login')}
             style={{ width: '100%', padding: '13px 20px', fontSize: 13, fontWeight: 700, borderRadius: 8 }}>
