@@ -444,7 +444,9 @@ export class AnalyticsService {
   async recordClickFromEmailId(emailId: string): Promise<void> {
     const existing = await this.clickRepo.findOne({ where: { emailId } });
     if (existing) {
-      this.logger.warn(`Click already recorded for emailId: ${emailId}, skipping`);
+      this.logger.warn(
+        `Click already recorded for emailId: ${emailId}, skipping`,
+      );
       return;
     }
     const send = await this.sendRepo.findOne({ where: { emailId } });

@@ -18,13 +18,17 @@ export class EmailStatusService {
     private readonly statusRepository: Repository<EmailStatusEntity>,
   ) {}
 
-  async createStatus(body: StatusCreateDto): Promise<{ entity: EmailStatusEntity; isNew: boolean }> {
+  async createStatus(
+    body: StatusCreateDto,
+  ): Promise<{ entity: EmailStatusEntity; isNew: boolean }> {
     try {
       const entity = await this.statusRepository.findOne({
         where: { webhookEventId: body.webhookEventId },
       });
       if (entity) {
-        this.logger.warn(`Entity with webhookEventId: ${body.webhookEventId} already exists`);
+        this.logger.warn(
+          `Entity with webhookEventId: ${body.webhookEventId} already exists`,
+        );
         return { entity, isNew: false };
       }
       const newStatus = this.statusRepository.create({
@@ -36,7 +40,9 @@ export class EmailStatusService {
         occurredAt: body.occurredAt ? new Date(body.occurredAt) : undefined,
       });
       const saved = await this.statusRepository.save(newStatus);
-      this.logger.log(`Status of email: ${body.emailId}, was successfully created`);
+      this.logger.log(
+        `Status of email: ${body.emailId}, was successfully created`,
+      );
       return { entity: saved, isNew: true };
     } catch (error) {
       this.logger.error(`Failed to create status`, error);
