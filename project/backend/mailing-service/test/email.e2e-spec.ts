@@ -134,7 +134,7 @@ describe('Email service integration test', () => {
       .post(`/emails/${testReferenceNumber}/send-single`)
       .send({
         auth0Id: TEST_AUTH0_ID,
-        senderName: 'E2e-sender',
+        senderCustomName: 'E2e-sender',
         alias: 'E2e Tester',
       })
       .expect((res) => {
@@ -175,7 +175,7 @@ describe('Email service integration test', () => {
       .send({
         auth0Id: TEST_AUTH0_ID,
         scheduledAt: futureDate.toISOString(),
-        senderName: 'E2e-sender',
+        senderCustomName: 'E2e-sender',
         alias: 'E2e tester',
       })
       .expect(200)
@@ -226,7 +226,7 @@ describe('Email service integration test', () => {
 
   return request(app.getHttpServer())
     .post(`/emails/${createRes.body.referenceNumber}/send-single`)
-    .send({ auth0Id: TEST_AUTH0_ID, senderName: 'e2e-sender' })
+    .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
     .expect(200)
     .expect((res) => expect(res.body.success).toBe(true));
 });
@@ -244,7 +244,7 @@ describe('Email service integration test', () => {
 
     return request(app.getHttpServer())
       .post(`/emails/${createRes.body.referenceNumber}/send-single`)
-      .send({ auth0Id: TEST_AUTH0_ID, senderName: 'e2e-sender' })
+      .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
       .expect(500);
   });
 

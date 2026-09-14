@@ -270,7 +270,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/${testReferenceNumber}/send-batch-with-reference`)
       .send({
         auth0Id: TEST_AUTH0_IDS,
-        senderName: 'batch-e2e-sender',
+        senderCustomName: 'batch-e2e-sender',
         alias: 'Batch E2E Sender',
       })
       .expect(200)
@@ -302,7 +302,7 @@ describe('BatchEmail service integration tests', () => {
 
     return request(app.getHttpServer())
       .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
-      .send({ auth0Id: TEST_AUTH0_IDS, senderName: 'batch-e2e-sender' })
+      .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
       .expect(200)
       .expect((res) => expect(res.body.success).toBe(true));
   });
@@ -317,7 +317,7 @@ describe('BatchEmail service integration tests', () => {
 
     return request(app.getHttpServer())
       .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
-      .send({ auth0Id: TEST_AUTH0_IDS, senderName: 'batch-e2e-sender' })
+      .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
       .expect(500);
   });
 });
