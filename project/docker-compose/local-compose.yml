@@ -666,6 +666,75 @@ services:
         condition: service_healthy
     volumes:
       - ../backend/company-service/dist:/app/dist
+
+  comms_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${COMMS_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${COMMS_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${COMMS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - comms_pgdata:/var/lib/postgresql/data
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    ports:
+      # Left side must be unique
+      - "${COMMS_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  comms_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/comms-tracking/Dockerfile
+
+      # Must be unique
+    container_name: ${COMMS_APP_CONTAINER}
+    environment:
+      - PORT=${COMMS_TRACKING_PORT}
+      - TCP_PORT=${COMMS_TCP_PORT}
+      - DB_HOST=${COMMS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMMS_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+
+    ports:
+      # Left side must be unique
+      - "${COMMS_TRACKING_PORT}:${COMMS_TRACKING_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+
+    depends_on:
+      <service>_db:
+        condition: service_healthy
+    volumes:
+      - ../backend/comms-tracking/dist:/app/dist
   
   # builds the website using the website's dockerfile
   website:
@@ -766,6 +835,7 @@ volumes:
   analytics_pgdata:
   llm_pgdata:
   company_pgdata:
+  comms_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local
