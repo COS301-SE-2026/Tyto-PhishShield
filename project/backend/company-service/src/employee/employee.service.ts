@@ -22,7 +22,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Employee } from './entities/employee.entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { EmployeeDto, EventEmployee } from '@phishshield/dto';
-import { EVENT_EXCHANGE, EventProducerService } from '@phishshield/eventhandler';
+import {
+  EVENT_EXCHANGE,
+  EventProducerService,
+} from '@phishshield/eventhandler';
 
 @Injectable()
 export class EmployeeService {
@@ -221,7 +224,11 @@ export class EmployeeService {
       managerId: managerAuth0Id,
       jobTitle: employee.jobTitle,
       title: employee.title,
-    }
-    this.event.publishEvent(EVENT_EXCHANGE.company, 'company.employeeInfo', body);
+    };
+    this.event.publishEvent(
+      EVENT_EXCHANGE.company,
+      'company.employeeInfo',
+      body,
+    );
   }
 }

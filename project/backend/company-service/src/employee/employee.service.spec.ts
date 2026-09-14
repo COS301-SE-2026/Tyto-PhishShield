@@ -4,6 +4,7 @@ import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { Employee } from './entities/employee.entity';
 import { EmployeeController } from './employee.controller';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { EventProducerService } from '@phishshield/eventhandler';
 
 describe('EmployeeService', () => {
   let service: EmployeeService;
@@ -22,6 +23,12 @@ describe('EmployeeService', () => {
         providers: [
           EmployeeService,
           { provide: getRepositoryToken(Employee), useValue: repo },
+          {
+            provide: EventProducerService,
+            useValue: {
+              publishEvent: jest.fn(),
+            },
+          },
         ],
     }).compile();
 

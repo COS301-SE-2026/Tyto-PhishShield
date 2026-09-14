@@ -37,7 +37,7 @@ export class EmployeeController {
     return this.employeeService.remove(emplyeeId);
   }
 
-   @RabbitSubscribe({
+  @RabbitSubscribe({
     exchange: 'accounts-event-exchange',
     routingKey: 'user.created',
     queue: 'company.queue',

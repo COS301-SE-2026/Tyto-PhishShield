@@ -261,7 +261,7 @@ export class AccountsService {
     return true;
   }
 
-  async updateEmployeeAsRegistered(employeeId: string,  auth0Id: string) {
+  async updateEmployeeAsRegistered(employeeId: string, auth0Id: string) {
     const employee = (await this.proxy.sendTcpMessage(
       this.proxy.companyClient,
       'employees.get.one',

@@ -20,7 +20,7 @@ import {
 
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { response, type Request, type Response } from 'express';
+import { type Request, type Response } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
@@ -100,7 +100,10 @@ export class AccountsController {
           data: accountsRegister,
         });
       if (register.response === 'ok')
-        await this.accountsService.updateEmployeeAsRegistered(body.employeeId, register.auth0Id);
+        await this.accountsService.updateEmployeeAsRegistered(
+          body.employeeId,
+          register.auth0Id,
+        );
 
       return { response: register.response, message: register.message };
     }
