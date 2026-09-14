@@ -82,7 +82,7 @@ describe('EmailStatusService', () => {
       });
       expect(mockRepository.create).toHaveBeenCalledWith(expectedCreatedData);
       expect(mockRepository.save).toHaveBeenCalledWith(mockEmailStatus);
-      expect(result).toEqual(mockEmailStatus);
+      expect(result).toEqual({ entity: mockEmailStatus, isNew: true });
     });
 
     it('should return the existing entry without creating a new one on a duplicate webhookEventId', async () => {
@@ -95,7 +95,7 @@ describe('EmailStatusService', () => {
       });
       expect(mockRepository.create).not.toHaveBeenCalled();
       expect(mockRepository.save).not.toHaveBeenCalled();
-      expect(result).toEqual(mockEmailStatus);
+      expect(result).toEqual({ entity: mockEmailStatus, isNew: false });
     });
 
     it('should throw InternalServerErrorException if save fails', async () => {

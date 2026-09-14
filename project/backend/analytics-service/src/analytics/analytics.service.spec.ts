@@ -48,6 +48,7 @@ const mockClickRepo = {
   save: jest.fn(),
   count: jest.fn(),
   find: jest.fn(),
+  findOne: jest.fn(),
 };
 
 const mockSendRepo = {
@@ -237,7 +238,7 @@ describe('AnalyticsService', () => {
       const result = await service.getMailingStats();
 
       expect(result.totalSent).toBe(21); // 15 + 6
-      expect(result.scheduled).toBe(8); // 4 + 4 (batch_schedule also EMAIL_SCHEDULED)
+      expect(result.scheduled).toBe(4); // single count now
     });
 
     it('returns zeros when no mailing events', async () => {
@@ -604,16 +605,21 @@ describe('AnalyticsService', () => {
         auth0Id: 'auth0|1',
         campaignId: 'wave-1',
       };
+      clickRepo.findOne.mockResolvedValue(null); // no existing click
       sendRepo.findOne.mockResolvedValue(send as any);
       clickRepo.create.mockReturnValue({
         referenceNumber: send.referenceNumber,
         auth0Id: send.auth0Id,
         campaignId: send.campaignId,
+        emailId: send.emailId,
       } as any);
       clickRepo.save.mockResolvedValue({} as any);
 
       await service.recordClickFromEmailId('email-123');
 
+      expect(clickRepo.findOne).toHaveBeenCalledWith({
+        where: { emailId: 'email-123' },
+      });
       expect(sendRepo.findOne).toHaveBeenCalledWith({
         where: { emailId: 'email-123' },
       });
@@ -621,11 +627,13 @@ describe('AnalyticsService', () => {
         referenceNumber: 'PHISH-ABC',
         auth0Id: 'auth0|1',
         campaignId: 'wave-1',
+        emailId: 'email-123',
       });
       expect(clickRepo.save).toHaveBeenCalled();
     });
 
-    it('logs warning and does nohing when send not found', async () => {
+    it('logs warning and does nothing when send not found', async () => {
+      clickRepo.findOne.mockResolvedValue(null);
       sendRepo.findOne.mockResolvedValue(null);
       const warnSpy = jest
         .spyOn(Logger.prototype, 'warn')
@@ -633,6 +641,20 @@ describe('AnalyticsService', () => {
 
       await service.recordClickFromEmailId('unknown-email');
 
+      expect(clickRepo.create).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('skips when a click already exists for the emailId', async () => {
+      clickRepo.findOne.mockResolvedValue({ id: 'existing' } as any);
+      const warnSpy = jest
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => {});
+
+      await service.recordClickFromEmailId('email-123');
+
+      expect(sendRepo.findOne).not.toHaveBeenCalled();
       expect(clickRepo.create).not.toHaveBeenCalled();
       expect(warnSpy).toHaveBeenCalled();
       warnSpy.mockRestore();
