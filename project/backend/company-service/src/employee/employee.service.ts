@@ -62,7 +62,6 @@ export class EmployeeService {
       if (!existingEmployee) {
         throw new Error('Employee not found');
       }
-      console.log(validEmployee);
       existingEmployee.email = validEmployee.email;
       existingEmployee.firstName = validEmployee.firstName;
       existingEmployee.lastName = validEmployee.lastName;
@@ -73,6 +72,7 @@ export class EmployeeService {
       existingEmployee.externalId = validEmployee.externalId;
       existingEmployee.registered = validEmployee.registered ?? false;
       existingEmployee.title = validEmployee.title;
+      existingEmployee.auth0Id = validEmployee.auth0Id;
 
       return await this.db.save(existingEmployee);
     } catch (err) {

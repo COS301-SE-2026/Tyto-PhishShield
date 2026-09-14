@@ -20,7 +20,7 @@ import {
 
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { type Request, type Response } from 'express';
+import { response, type Request, type Response } from 'express';
 import { ProxyService } from '../proxy/proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
@@ -93,16 +93,16 @@ export class AccountsController {
     );
     if (valid) {
       const accountsRegister = body as RegisterDto;
-      const register: { response: string; message: string } =
+      const register: { response: string; auth0Id: string; message: string } =
         await this.proxy.forward({
           url: `${this.accountsServiceUrl}/api/auth/register`,
           method: 'POST',
           data: accountsRegister,
         });
       if (register.response === 'ok')
-        await this.accountsService.updateEmployeeAsRegistered(body.employeeId);
+        await this.accountsService.updateEmployeeAsRegistered(body.employeeId, register.auth0Id);
 
-      return register;
+      return { response: register.response, message: register.message };
     }
     throw new BadRequestException(
       'Could not register employee. If this issue presists please contact the admin.',
