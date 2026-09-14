@@ -1018,6 +1018,9 @@ importers:
 
   project/backend/packages/dto:
     dependencies:
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
       class-validator:
         specifier: ^0.15.1
         version: 0.15.1
