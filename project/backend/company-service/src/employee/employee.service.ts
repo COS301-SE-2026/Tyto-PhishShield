@@ -16,18 +16,24 @@
  * @function {@link EmployeeService#mapEmployeesManagers} - ensures employee manager links uses the employeeId field
  */
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Employee } from './entities/employee.entity';
-import { Repository } from 'typeorm';
-import { EmployeeDto } from '@phishshield/dto';
+import { QueryFailedError, Repository } from 'typeorm';
+import { EmployeeDto, EventEmployee } from '@phishshield/dto';
+import {
+  EVENT_EXCHANGE,
+  EventProducerService,
+} from '@phishshield/eventhandler';
 
 @Injectable()
 export class EmployeeService {
+  private readonly logger = new Logger(EmployeeService.name);
   constructor(
     @InjectRepository(Employee)
     private readonly db: Repository<Employee>,
+    @Inject() private readonly event: EventProducerService,
   ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto) {
@@ -61,7 +67,6 @@ export class EmployeeService {
       if (!existingEmployee) {
         throw new Error('Employee not found');
       }
-      console.log(validEmployee);
       existingEmployee.email = validEmployee.email;
       existingEmployee.firstName = validEmployee.firstName;
       existingEmployee.lastName = validEmployee.lastName;
@@ -71,6 +76,12 @@ export class EmployeeService {
       existingEmployee.employeeStatus = validEmployee.employeeStatus;
       existingEmployee.externalId = validEmployee.externalId;
       existingEmployee.registered = validEmployee.registered ?? false;
+      existingEmployee.title = validEmployee.title;
+      existingEmployee.auth0Id = validEmployee.auth0Id;
+
+      if (existingEmployee.auth0Id) {
+        this.sendEmployeeInfo(existingEmployee);
+      }
 
       return await this.db.save(existingEmployee);
     } catch (err) {
@@ -132,9 +143,8 @@ export class EmployeeService {
 
   async addEmployees(employees: CreateEmployeeDto[]) {
     const mappedEmployees = this.mapEmployeesManagers(employees);
-    console.log(mappedEmployees);
     for (const employee of mappedEmployees) {
-      console.log(await this.create(employee));
+      await this.create(employee);
     }
   }
 
@@ -165,5 +175,60 @@ export class EmployeeService {
         managerId: manager?.employeeId,
       };
     });
+  }
+
+  async upsertUser(user: {
+    auth0Id: string;
+    email?: string;
+    department?: string;
+  }) {
+    try {
+      const existing = await this.db.findOne({
+        where: { auth0Id: user.auth0Id },
+      });
+      if (existing) {
+        Object.assign(existing, user);
+        return await this.db.save(existing);
+      }
+      const newUser = this.db.create(user);
+      return await this.db.save(newUser);
+    } catch (err: unknown) {
+      if (err instanceof QueryFailedError) {
+        const driverError = err.driverError as { code?: string } | undefined;
+        if (driverError?.code === '23505') {
+          this.logger.warn(
+            `Duplicate user event for ${user.auth0Id}, ignoring`,
+          );
+          return;
+        }
+      }
+      throw err;
+    }
+  }
+
+  async deleteUser(auth0Id: string) {
+    await this.db.delete({ auth0Id });
+  }
+
+  async sendEmployeeInfo(employee: EmployeeDto) {
+    let managerAuth0Id: string | undefined;
+    if (employee.managerId) {
+      const manager = await this.findOne(employee.managerId);
+      managerAuth0Id = manager?.auth0Id;
+    }
+    if (managerAuth0Id === null || managerAuth0Id === undefined) {
+      managerAuth0Id = '';
+    }
+    const body: EventEmployee = {
+      auth0Id: employee.auth0Id || '',
+      managerId: managerAuth0Id,
+      jobTitle: employee.jobTitle,
+      title: employee.title,
+    };
+    this.event.publishEvent(
+      EVENT_EXCHANGE.company,
+      'company.employeeInfo',
+      body,
+    );
   }
 }

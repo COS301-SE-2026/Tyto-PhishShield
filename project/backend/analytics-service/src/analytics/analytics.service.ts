@@ -163,17 +163,13 @@ export class AnalyticsService {
   async getMailingStats(from?: string, to?: string) {
     const where = this.makeWhere(from, to);
 
-    const [sent, scheduled, batchSent, batchScheduled] = await Promise.all([
+    const [sent, batchSent, scheduled] = await Promise.all([
       this.repo.count({
         where: { eventType: AnalyticsEventType.EMAIL_SENT, ...where },
       }),
       this.repo.count({
-        where: { eventType: AnalyticsEventType.EMAIL_SCHEDULED, ...where },
-      }),
-      this.repo.count({
         where: { eventType: AnalyticsEventType.EMAIL_BATCH_SENT, ...where },
       }),
-      // batch_schedule stored as EMAIL_SCHEDULED with a batch flag.
       this.repo.count({
         where: { eventType: AnalyticsEventType.EMAIL_SCHEDULED, ...where },
       }),
@@ -181,7 +177,7 @@ export class AnalyticsService {
 
     return {
       totalSent: sent + batchSent,
-      scheduled: scheduled + batchScheduled,
+      scheduled, // single count now
     };
   }
   //per use stuff, thsi might be moved to accounts service later.
@@ -446,22 +442,24 @@ export class AnalyticsService {
   }
 
   async recordClickFromEmailId(emailId: string): Promise<void> {
-    const send = await this.sendRepo.findOne({
-      where: { emailId },
-    });
-
+    const existing = await this.clickRepo.findOne({ where: { emailId } });
+    if (existing) {
+      this.logger.warn(
+        `Click already recorded for emailId: ${emailId}, skipping`,
+      );
+      return;
+    }
+    const send = await this.sendRepo.findOne({ where: { emailId } });
     if (!send) {
       this.logger.warn(`Click received for unknown emailId: ${emailId}`);
       return;
     }
-
     const click = this.clickRepo.create({
       referenceNumber: send.referenceNumber,
-
       auth0Id: send.auth0Id,
       campaignId: send.campaignId,
+      emailId,
     });
-
     await this.clickRepo.save(click);
   }
   //similar to overview, but fo phase 2/3 of the analytics service as discussed with Frikkie.

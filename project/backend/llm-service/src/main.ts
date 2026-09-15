@@ -28,8 +28,8 @@ async function bootstrap() {
     });
   }
 
-  await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3000);
+  await app.startAllMicroservices();
   console.log('llm-service listening on port: ' + process.env.PORT);
   console.log('llm tcp service listening on port: ' + process.env.TCP_PORT);
 }

@@ -9,3 +9,4 @@ export * from './mailing/send-batch-email.dto';
 export * from './mailing/schedule-single-email.dto';
 export * from './mailing/send-batch.dto';
 export * from './mailing/send-single-email.dto';
+export * from './events/event-employee.dto';

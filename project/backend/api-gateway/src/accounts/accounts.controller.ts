@@ -93,16 +93,19 @@ export class AccountsController {
     );
     if (valid) {
       const accountsRegister = body as RegisterDto;
-      const register: { response: string; message: string } =
+      const register: { response: string; auth0Id: string; message: string } =
         await this.proxy.forward({
           url: `${this.accountsServiceUrl}/api/auth/register`,
           method: 'POST',
           data: accountsRegister,
         });
       if (register.response === 'ok')
-        await this.accountsService.updateEmployeeAsRegistered(body.employeeId);
+        await this.accountsService.updateEmployeeAsRegistered(
+          body.employeeId,
+          register.auth0Id,
+        );
 
-      return register;
+      return { response: register.response, message: register.message };
     }
     throw new BadRequestException(
       'Could not register employee. If this issue presists please contact the admin.',
@@ -164,10 +167,13 @@ export class AccountsController {
       },
     },
   })
-  login(@Body() body: LoginDto) {
+  login(@Req() req: Request, @Body() body: LoginDto) {
     //Login now happens in the api gateway.
-    //none functional checks happen in the accounts service.
-    return this.accountsService.login(body);
+    const loginBody: LoginDto = {
+      ...body,
+      deviceToken: req.cookies?.device_token as string,
+    };
+    return this.accountsService.login(loginBody);
   }
 
   @Post('auth/logout')

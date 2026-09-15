@@ -10,6 +10,7 @@ interface AuthContextValue {
   twoFactoredAuth: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   twoFactorAuth: (email: string, code: string) => Promise<void>;
+  resendOTP: (email: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: UserRole | UserRole[]) => boolean;
   canAccess: (minRole: UserRole) => boolean;
@@ -45,14 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      // const response: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-      // if (!response.ok) throw new Error('Token verification failed');
       const me: AuthenticatedUser = await authApi.getMe();
       setUser(me);
     } catch {
@@ -68,12 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   //Returns boolean value indicating whether OTP will be needed
   const login = async (email: string, password: string): Promise<boolean> => {
-    // const response: Response = await fetch(`${BASE_URL}/accounts/auth/login`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ email, password }),
-    // });
-    // if (!response.ok) { throw new Error('Invalid email or password.'); }
     const loginResponse: LoginResponse = await authApi.login({email, password});
     if (!loginResponse.requiresOTP) {
       setTwoFactoredAuth(true);
@@ -93,16 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const twoFactorAuth = async (email: string, code: string) => {
-    // const response: Response = await fetch(`${BASE_URL}/accounts/auth/verify-otp`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-    //   }, 
-    //   body: JSON.stringify({email, code}),
-    // });
-
-    // if (!response.ok) throw new Error('Invalid OTP or email');
     let message = '';
     try {
       localStorage.setItem('access_token', token?.access_token ?? '');
@@ -116,18 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTwoFactoredAuth(true);
     localStorage.setItem('access_token', token?.access_token ?? '');
     localStorage.setItem('token_expiry', String(token?.tokenExpiry));
-    // const meResponse: Response = await fetch(`${BASE_URL}/accounts/auth/me`, {
-    //   method: 'GET',
-    //   headers: {
-    //     'Authorization': `Bearer  ${localStorage.getItem('access_token')}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    // });
-    //if (meResponse.ok) {
-        const me: AuthenticatedUser = await authApi.getMe();
-        setUser(me);
-    //}
+    const me: AuthenticatedUser = await authApi.getMe();
+    setUser(me);
   };
+
+  const resendOTP = async (email: string) => {
+    localStorage.setItem('access_token', token?.access_token ?? '');
+    localStorage.setItem('token_expiry', String(token?.tokenExpiry));
+    await authApi.resendOtp(email);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('token_expiry');
+  }
 
   const logout = () => {
     localStorage.removeItem('access_token');
@@ -149,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, isLoading, twoFactoredAuth, isAuthenticated: !!user,
+      user, isLoading, twoFactoredAuth, resendOTP, isAuthenticated: !!user,
       login, twoFactorAuth, logout, hasRole, canAccess, refreshUser,
     }}>
       {children}
