@@ -34,6 +34,7 @@ const TEST_AUTH0_IDS = [
   'auth0|batch-e2e-2',
   'auth0|batch-e2e-3',
 ];
+const TEST_SENDER_AUTH0_ID = 'auth0|batch-e2e-sender';
 
 describe('BatchEmail service integration tests', () => {
   let app: INestApplication;
@@ -71,6 +72,13 @@ describe('BatchEmail service integration tests', () => {
       })),
     );
 
+    await userRepository.save({
+      auth0Id: TEST_SENDER_AUTH0_ID,
+      name: 'Batch E2E Test Sender',
+      email: `sender@${TEST_SENDER}`,
+      department: Department.IT_SECURITY,
+    });
+
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     await app.init();
@@ -95,7 +103,7 @@ describe('BatchEmail service integration tests', () => {
   afterAll(async () => {
 
     await waveRepository.delete({ waveName: 'Wave Name' });
-    await userRepository.delete({ auth0Id: In(TEST_AUTH0_IDS) });
+    await userRepository.delete({ auth0Id: In([...TEST_AUTH0_IDS, TEST_SENDER_AUTH0_ID]) });
     await emailTemplateRepository.delete({ sender: TEST_SENDER });
     await app.close();
   });
@@ -319,5 +327,24 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
       .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
       .expect(500);
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should send using an explicit senderAuth0Id`, () => {
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${testReferenceNumber}/send-batch-with-reference`)
+      .send({ auth0Id: TEST_AUTH0_IDS, senderAuth0Id: TEST_SENDER_AUTH0_ID })
+      .expect(200)
+      .expect((res) => expect(res.body.success).toBe(true));
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 400 when both senderCustomName and senderAuth0Id are provided`, () => {
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${testReferenceNumber}/send-batch-with-reference`)
+      .send({
+        auth0Id: TEST_AUTH0_IDS,
+        senderCustomName: 'batch-e2e-sender',
+        senderAuth0Id: TEST_SENDER_AUTH0_ID,
+      })
+      .expect(400);
   });
 });

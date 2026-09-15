@@ -166,6 +166,28 @@ describe('Email service integration test', () => {
       .expect(500);
   });
 
+  it('/emails/:referenceNumber/send-single (POST) - should send using an explicit senderAuth0Id', () => {
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/send-single`)
+      .send({ auth0Id: TEST_AUTH0_ID, senderAuth0Id: TEST_SENDER_AUTH0_ID })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.success).toBe(true);
+        expect(res.body.deliveryId).toBeDefined();
+      });
+  });
+
+  it('/emails/:referenceNumber/send-single (POST) - should return 400 when both senderCustomName and senderAuth0Id are provided', () => {
+    return request(app.getHttpServer())
+      .post(`/emails/${testReferenceNumber}/send-single`)
+      .send({
+        auth0Id: TEST_AUTH0_ID,
+        senderCustomName: 'e2e-sender',
+        senderAuth0Id: TEST_SENDER_AUTH0_ID,
+      })
+      .expect(500);
+  });
+
   it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule email via Resend', () => {
     const futureDate = new Date();
     futureDate.setMinutes(futureDate.getMinutes() + 1);
