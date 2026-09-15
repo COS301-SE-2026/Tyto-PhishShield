@@ -198,12 +198,6 @@ export class ImportService {
     }
   }
 
-  // private validateRequiredFields(headers: string[]) {
-  //   if(!headers.includes(Object.keys(MappingDto)[0])) {
-  //     throw new BadRequestException
-  //   }
-  // }
-
   private mapEmployeeRow(
     row: Record<string, string>,
     mapping: MappingDto,
