@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { EmailDifficulty } from '../entities/email-template.entity';
 import { Department } from '@phishshield/dto';
 
