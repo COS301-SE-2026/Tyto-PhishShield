@@ -1,24 +1,29 @@
+/**
+ * schedule-single-email.dto.ts
+ *
+ * This DTO is used as the Body of the schedule-send-single POST request.
+ *
+ * Elements: recipient, scheduledAt
+ */
+
 import {
-  IsDate,
   IsNotEmpty,
-  IsOptional,
+  IsDate,
   IsString,
+  IsOptional,
   Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class BatchRecipientDto {
+export class ScheduleSingleEmailDto {
   @IsNotEmpty()
   @IsString()
-  auth0Id: string;
+  auth0Id!: string;
 
   @IsNotEmpty()
-  @IsString()
-  referenceNumber: string;
-
   @IsDate()
   @Type(() => Date)
-  scheduledAt: Date;
+  scheduledAt!: Date;
 
   @IsString()
   @IsOptional()

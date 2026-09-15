@@ -10,41 +10,41 @@ import {
   IsString,
   Matches,
 } from 'class-validator';
-import { EmailDifficulty } from '../entities/email-template.entity';
 import { Type } from 'class-transformer';
+import { EmailDifficulty } from "./emails.dto";
 
 export class SendBatchDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
   @IsString({ each: true })
-  auth0Id: string[];
+  auth0Id!: string[];
 
   @IsNotEmpty()
   @IsEnum(EmailDifficulty)
-  difficulty: EmailDifficulty;
+  difficulty!: EmailDifficulty;
 
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  scheduledFrom: Date;
+  scheduledFrom!: Date;
 
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  scheduledTo: Date;
+  scheduledTo!: Date;
 
   @IsBoolean()
   @IsOptional()
-  randomisedTimes: boolean = true;
+  randomisedTimes?: boolean = true;
 
   @IsString()
   @IsNotEmpty()
-  waveName: string;
+  waveName!: string;
 
   @IsString()
   @IsOptional()
-  referenceNumber: string;
+  referenceNumber?: string;
 
   @IsString()
   @IsOptional()

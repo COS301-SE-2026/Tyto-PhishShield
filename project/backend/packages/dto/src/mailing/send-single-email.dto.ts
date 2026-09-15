@@ -11,7 +11,7 @@ import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 export class SendSingleEmailDto {
   @IsNotEmpty()
   @IsString()
-  auth0Id: string;
+  auth0Id!: string;
 
   @IsString()
   @IsOptional()
