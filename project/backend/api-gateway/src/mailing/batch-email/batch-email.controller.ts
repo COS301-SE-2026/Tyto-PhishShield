@@ -30,9 +30,9 @@ import {
 } from '@nestjs/swagger';
 import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { SendBatchDto } from '../dto/send-batch.dto';
-import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
-import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { SendBatchDto } from '@phishshield/dto';
+import { SendBatchEmailDto } from '@phishshield/dto';
+import { SendBatchRandomDto } from '@phishshield/dto';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 

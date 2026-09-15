@@ -62,6 +62,7 @@ class uploadDataDto {
       lastName: 'Surname Field',
       department: 'Department Field',
       jobTitle: 'Job-Title Field',
+      title: 'Title Field for Mr, Mrs, etc',
       managerEmail: 'Manager-Email Field',
       managerId: 'Manager-ID Field',
       employeeStatus: 'Employment-Status Field',

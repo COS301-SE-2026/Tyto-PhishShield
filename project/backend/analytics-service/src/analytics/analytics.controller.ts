@@ -64,6 +64,7 @@ interface EducationPayload {
 
   assignmentId?: string;
   reportId?: string;
+  passed?: boolean;
 }
 
 interface MailingPayload {
@@ -167,6 +168,16 @@ export class AnalyticsController {
   })
   async onEducationAssigned(payload: EducationPayload) {
     //console.log('edu completed', payload); //debugging
+    if (
+      await this.analyticsService.isRecentDuplicate(
+        AnalyticsEventType.EDUCATION_ASSIGNED,
+        payload.auth0Id,
+        payload as unknown as Record<string, unknown>,
+        60_000,
+      )
+    ) {
+      return;
+    }
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.EDUCATION_ASSIGNED,
       auth0Id: payload.auth0Id,
@@ -192,6 +203,20 @@ export class AnalyticsController {
     queue: 'analytics-education-completed-queue',
   })
   async onEducationCompleted(payload: EducationPayload) {
+    if (payload.passed !== true) {
+      return;
+    }
+
+    if (
+      await this.analyticsService.isRecentDuplicate(
+        AnalyticsEventType.EDUCATION_COMPLETED,
+        payload.auth0Id,
+        payload as unknown as Record<string, unknown>,
+        60_000,
+      )
+    ) {
+      return;
+    }
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.EDUCATION_COMPLETED,
       auth0Id: payload.auth0Id,

@@ -94,7 +94,7 @@ export class AuthService {
 
   async register(
     dto: RegisterDto,
-  ): Promise<{ response: string; message: string }> {
+  ): Promise<{ response: string; auth0Id: string; message: string }> {
     const mgmtToken = await this.getManagementToken();
 
     let auth0User: Auth0UserResponse;
@@ -134,6 +134,7 @@ export class AuthService {
 
     return {
       response: 'ok',
+      auth0Id: auth0User.user_id,
       message:
         'Registration successful. Please verify your email with the verifcation sent to you.',
     };
