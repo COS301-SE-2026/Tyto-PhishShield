@@ -185,13 +185,14 @@ All project documentation can be found in our
 
 | Documents |
 |-----------|
-| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
-| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
-| 📐 [Software Architecture Specification (SAS) NFR Test](docs/SRS/Software-Architecture-Specification.md#quality-requirements-based-off-of-nfr) |
-| 📐 [Software Architecture Specification (SAS) NFR Tracability matrix](docs/SRS/Software-Architecture-Specification.md#nfr-quality-requirement-matrix) |
-| 📐 [Software Architecture Specification (SAS) Deployment](docs/SRS/Software-Architecture-Specification.md#deployment) |
-| 📐 [Software Architecture Specification (SAS) Service Contracts](docs/SRS/Software-Architecture-Specification.md#api-service-contracts) |
-| 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
+| 📁 [Root Archive: ](docs/demo-3/README.md) |
+| 📋 [Software Requirements Specification (SRS)](docs/demo-3/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/demo-3/Software-Architecture-Specification.md) |
+| 📐 [Software Architecture Specification (SAS) NFR Test](docs/demo-3/Software-Architecture-Specification.md#quality-requirements-based-off-of-nfr) |
+| 📐 [Software Architecture Specification (SAS) NFR Tracability matrix](docs/demo-3/Software-Architecture-Specification.md#nfr-quality-requirement-matrix) |
+| 📐 [Software Architecture Specification (SAS) Deployment](docs/demo-3/Software-Architecture-Specification.md#deployment) |
+| 📐 [Software Architecture Specification (SAS) Service Contracts](docs/demo-3/Software-Architecture-Specification.md#api-service-contracts) |
+| 📐 [API service contract](docs/demo-3/service-contracts/api-service-contract.md) |
 | 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
 | 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
