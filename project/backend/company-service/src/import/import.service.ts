@@ -35,6 +35,20 @@ export class ImportService {
     private readonly db: Repository<Import>,
     private readonly employeeService: EmployeeService,
   ) {}
+  private readonly fullMap: MappingDto = {
+    employeeId: 'employeeId',
+    email: 'email',
+    firstName: 'firstName',
+    lastName: 'lastName',
+    department: 'department',
+    jobTitle: 'jobTitle',
+    managerEmail: 'managerEmail',
+    managerId: 'managerId',
+    employeeStatus: 'employeeStatus',
+    externalId: 'externalId',
+    title: 'title',
+    auth0Id: 'auth0Id',
+  }
 
   async create(createImportDto: CreateImportDto, file: Express.Multer.File) {
     const extension = path.extname(file.originalname).toLowerCase();
@@ -90,6 +104,12 @@ export class ImportService {
         throw new BadRequestException(
           `CSV column "${csvField}" specified for "${systemField}" does not exist`,
         );
+      }
+    }
+
+    for (const [systemField, csvField] of Object.entries(this.fullMap)) {
+      if (!parsedMap[systemField as keyof MappingDto] && csvField && headers.includes(csvField)) {
+        parsedMap = {...parsedMap, [systemField]: csvField};
       }
     }
 
@@ -190,6 +210,7 @@ export class ImportService {
         employeeStatus: parsedMap?.employeeStatus,
         externalId: parsedMap?.externalId,
         title: parsedMap?.title,
+        auth0Id: parsedMap?.auth0Id,
       };
 
       return validMap;
@@ -218,6 +239,7 @@ export class ImportService {
         : undefined,
       externalId: mapping.externalId ? row[mapping.externalId] : undefined,
       title: mapping.title ? row[mapping.title] : undefined,
+      auth0Id: mapping.auth0Id ? row[mapping.auth0Id] : undefined,
     };
   }
 }
