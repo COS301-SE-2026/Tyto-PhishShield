@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, JSX } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay } from '../../components/ui';
+import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay, Spinner } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { fetchXpNet, computeMyXpRank, type XpNetEntry } from './dashboard.service';
@@ -245,7 +245,7 @@ function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => 
         </div>
         {loading || !chart.line ? (
           <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            {loading ? 'Loading…' : 'No data for this period.'}
+            {loading ? <Spinner size={28} /> : 'No data for this period.'}
           </div>
         ) : (
           <svg viewBox="0 0 600 120" style={{ width: '100%', height: 120 }}>
@@ -274,7 +274,7 @@ function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => 
           </div>
           <div style={{ overflowX: 'auto' }}>
             {loading ? (
-              <div style={{ padding: '20px 18px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading waves…</div>
+              <div style={{ padding: '24px 18px', display: 'flex', justifyContent: 'center' }}><Spinner size={28} /></div>
             ) : waves.length === 0 ? (
               <div style={{ padding: '20px 18px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>No phishing waves found.</div>
             ) : (
@@ -495,7 +495,7 @@ function UserDashboard({ onNavigate, onXpGained }: { onNavigate: (p: string) => 
           <button onClick={() => onNavigate('/training')} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif' }}>View all</button>
         </div>
         {assignment === null ? (
-          <div style={{ padding: '16px 18px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading…</div>
+          <div style={{ padding: '20px 18px', display: 'flex', justifyContent: 'center' }}><Spinner size={28} /></div>
         ) : assignment === 'none' ? (
           <div style={{ padding: '16px 18px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>No training currently assigned.</div>
         ) : (

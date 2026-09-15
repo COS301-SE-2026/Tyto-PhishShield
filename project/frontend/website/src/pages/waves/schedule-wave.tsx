@@ -1,6 +1,6 @@
 import { useState, useMemo, type CSSProperties, useEffect, useCallback } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
-import { Button, Card, Input, Select, Badge } from "../../components/ui";
+import { Button, Card, Input, Select, Badge, Spinner } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
 import {
   sendBatchRandomDifferentEmail,
@@ -760,9 +760,9 @@ export function ScheduleWave({
                   }}
                 >
                   {userLoading ? (
-                    <p style={{...supportingTextStyle, padding: 16}}>
-                      Loading users...
-                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: 16 }}>
+                      <Spinner size={24} />
+                    </div>
                   ) : filteredUsers.length === 0 ? (
                     <p style={{...supportingTextStyle, padding: 16}}>
                       No users found.
