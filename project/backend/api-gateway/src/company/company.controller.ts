@@ -221,4 +221,29 @@ export class CompanyController {
       'company.fields',
     );
   }
+
+  @Get('imports/errors')
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Fetches erronious error records from service',
+  })
+  @ApiBearerAuth()
+  fetchErrors() {
+    return this.proxy.sendTcpMessage(this.proxy.companyClient, 'errors.get');
+  }
+
+  @Delete('imports/error/:errorId')
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Deletes an erronious error record from service',
+  })
+  @ApiBearerAuth()
+  @ApiParam({ name: 'errorId', type: 'string', example: '23493' })
+  deleteError(@Param('errorId') errorId: string) {
+    return this.proxy.sendTcpMessage(
+      this.proxy.companyClient,
+      'errors.delete',
+      errorId,
+    );
+  }
 }
