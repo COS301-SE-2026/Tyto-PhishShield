@@ -63,14 +63,16 @@ describe('EmailController', () => {
 
   const mockSendSingleEmail: SendSingleEmailDto = {
     auth0Id: 'auth0|1',
-    senderName: 'it-support',
+    senderCustomName: 'it-support',
+    senderAuth0Id: undefined,
     alias: 'IT Support',
   };
 
   const mockScheduleSingleEmail: ScheduleSingleEmailDto = {
     auth0Id: 'auth0|1',
     scheduledAt: new Date('2026-05-25T14:30:00.000Z'),
-    senderName: 'it-support',
+    senderCustomName: 'it-support',
+    senderAuth0Id: undefined,
     alias: 'IT Support',
   };
 
@@ -149,7 +151,8 @@ describe('EmailController', () => {
       expect(service.sendEmail).toHaveBeenCalledWith(
         'PHISH-001',
         mockSendSingleEmail.auth0Id,
-        mockSendSingleEmail.senderName,
+        mockSendSingleEmail.senderCustomName,
+        mockSendSingleEmail.senderAuth0Id,
         mockSendSingleEmail.alias,
       );
       expect(result).toEqual(serviceResponse);
@@ -161,7 +164,7 @@ describe('EmailController', () => {
 
       await controller.sendEmail('PHISH-001', minimalDto);
 
-      expect(service.sendEmail).toHaveBeenCalledWith('PHISH-001', 'auth0|1', undefined, undefined);
+      expect(service.sendEmail).toHaveBeenCalledWith('PHISH-001', 'auth0|1', undefined, undefined, undefined);
     });
   });
 
@@ -180,7 +183,8 @@ describe('EmailController', () => {
         'PHISH-001',
         mockScheduleSingleEmail.auth0Id,
         mockScheduleSingleEmail.scheduledAt,
-        mockScheduleSingleEmail.senderName,
+        mockScheduleSingleEmail.senderCustomName,
+        mockScheduleSingleEmail.senderAuth0Id,
         mockScheduleSingleEmail.alias,
       );
       expect(result).toEqual(serviceResponse);

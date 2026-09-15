@@ -20,6 +20,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   NotFoundException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
@@ -90,6 +91,7 @@ describe('EmailService', () => {
     subject: 'Action Required',
     content: '<p>Click here</p>',
     difficulty: EmailDifficulty.HARD,
+    senderDepartment: undefined as Department | undefined,
   };
 
   const mockUser = {
@@ -142,6 +144,7 @@ describe('EmailService', () => {
     mockVariableResolverService.substitute.mockImplementation((text: string) => text);
     mockSenderResolverService.resolveFromAddress.mockReturnValue('resolved-sender@domain.com');
     mockTrackingLinkService.replace.mockImplementation((content: string) => ({ content, token: 'mock-token' }));
+    mockEmail.senderDepartment = undefined;
   });
 
   it('should be defined', () => {
@@ -230,7 +233,7 @@ describe('EmailService', () => {
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
       mockSenderResolverService.resolveFromAddress.mockReturnValue('IT Support <it-support@domain.com>');
 
-      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id, 'it-support', 'IT Support');
+      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id, 'it-support', undefined ,'IT Support');
 
       expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(mockEmail.subject, 'PHISH-001', mockUser);
       expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(mockEmail.content, 'PHISH-001', mockUser);
@@ -238,8 +241,8 @@ describe('EmailService', () => {
       expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
         mockEmail,
         mockUser.auth0Id,
-        [],
         'it-support',
+        undefined,
         'IT Support',
       );
       expect(mockResendSend).toHaveBeenCalledWith(
@@ -250,26 +253,42 @@ describe('EmailService', () => {
       expect(result.deliveryId).toBe('mock-resend-id');
     });
 
-    it('should fetch a sender pool from the user repository when senderName is not provided', async () => {
+    it('should delegate to the resolver with undefined sender fields when none are provided', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
-      mockUserRepository.find.mockResolvedValue([mockUser]);
 
       await service.sendEmail('PHISH-001', mockUser.auth0Id);
 
-      expect(mockUserRepository.find).toHaveBeenCalled();
       expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
-        mockEmail, mockUser.auth0Id, [mockUser], undefined, undefined,
+        mockEmail, mockUser.auth0Id, undefined, undefined, undefined,
       );
     });
 
-    it('should not fetch a sender pool when senderName is provided', async () => {
+    it('should pass senderAuth0Id through to the resolver when provided', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
 
-      await service.sendEmail('PHISH-001', mockUser.auth0Id, 'it-support');
+      await service.sendEmail(
+        'PHISH-001',
+        mockUser.auth0Id,
+        undefined,
+        'auth0|sender-1',
+      );
 
-      expect(mockUserRepository.find).not.toHaveBeenCalled();
+      expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
+        mockEmail, mockUser.auth0Id, undefined, 'auth0|sender-1', undefined,
+      );
+    });
+
+    it('should pass the template senderDepartment through to the resolver', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+
+      await service.sendEmail('PHISH-001', mockUser.auth0Id);
+
+      expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
+        mockEmail, mockUser.auth0Id, undefined, undefined, undefined,
+      );
     });
 
     it('should throw an InternalServerErrorException if resend API fails', async () => {
@@ -334,6 +353,7 @@ describe('EmailService', () => {
         mockUser.auth0Id,
         targetDate,
         'it-support',
+        undefined,
         'IT Support',
       );
 
@@ -399,16 +419,6 @@ describe('EmailService', () => {
 
       expect(result.success).toBe(true);
       expect(result.deliveryId).toBe('mock-resend-id');
-    });
-
-    it('should fetch a sender pool when senderName is not provided', async () => {
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
-      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
-      mockUserRepository.find.mockResolvedValue([mockUser]);
-
-      await service.scheduleSendEmail('PHISH-001', mockUser.auth0Id, new Date());
-
-      expect(mockUserRepository.find).toHaveBeenCalled();
     });
   });
 
