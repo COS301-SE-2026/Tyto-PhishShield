@@ -22,6 +22,7 @@ import { WaveService } from '../wave/wave.service';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { Department } from '@phishshield/dto';
 
 const mockResendBatchSend = jest.fn().mockResolvedValue({
   data: {
@@ -88,6 +89,7 @@ describe('BatchEmailService', () => {
     subject: 'Action Required',
     content: '<p>Click here to track: {{ tracking_link }}</p>',
     difficulty: EmailDifficulty.MEDIUM,
+    senderDepartment: undefined as Department | undefined,
   };
 
   const mockVariableResolverService = { substitute: jest.fn((text: string) => text) };
@@ -121,6 +123,7 @@ describe('BatchEmailService', () => {
       { auth0Id: 'auth0|1', email: 'test@example.com', name: 'Test User 1', department: 'IT' },
       { auth0Id: 'auth0|2', email: 'test@example.com', name: 'Test User 2', department: 'HR' },
     ]);
+    mockEmail.senderDepartment = undefined;
   });
 
   it('should be defined', () => {
@@ -133,11 +136,11 @@ describe('BatchEmailService', () => {
     it('should send a batch, resolve the sender via the resolver, and publish an event', async () => {
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
 
-      const result = await service.sendBatchWithReference('PHISH-001', auth0Ids, 'it-support', 'IT Support');
+      const result = await service.sendBatchWithReference('PHISH-001', auth0Ids, 'it-support', undefined,'IT Support');
 
       expect(mockEmailRepository.find).toHaveBeenCalled();
       expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
-        mockEmail, expect.any(String), [], 'it-support', 'IT Support',
+        mockEmail, expect.any(String), 'it-support', undefined, 'IT Support',
       );
       expect(mockResendBatchSend).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ from: 'resolved-sender@domain.com', to: ['test@example.com'] })]),
@@ -149,14 +152,14 @@ describe('BatchEmailService', () => {
       expect(result.message).toContain('PHISH-001');
     });
 
-    it('should fetch a sender pool when no dispatch has a senderName', async () => {
+    it('should delegate to the resolver with undefined sender fields when none are provided', async () => {
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
 
       await service.sendBatchWithReference('PHISH-001', auth0Ids);
 
       expect(mockUserRepository.find).toHaveBeenCalled();
       expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
-        mockEmail, expect.any(String), expect.any(Array), undefined, undefined,
+        mockEmail, expect.any(String), undefined, undefined, undefined,
       );
     });
 
@@ -240,19 +243,19 @@ describe('BatchEmailService', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should pass senderName and alias through to every recipient dispatch', async () => {
+    it('should pass senderCustomName, senderAuth0Id, and alias through to every recipient dispatch', async () => {
       mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
       mockEmailRepository.find.mockResolvedValue([mockEmail]);
 
       await service.sendBatchRandomSameEmail(
         auth0Ids, EmailDifficulty.MEDIUM, FUTURE_DATE_FROM, FUTURE_DATE_TO, false, 'Test wave', undefined,
-        'it-support', 'IT Support',
+        'it-support', undefined,'IT Support',
       );
 
       expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledTimes(auth0Ids.length);
       auth0Ids.forEach((auth0Id) => {
         expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
-          expect.any(Object), auth0Id, [], 'it-support', 'IT Support',
+          expect.any(Object), auth0Id, 'it-support', undefined, 'IT Support',
         );
       });
     });
