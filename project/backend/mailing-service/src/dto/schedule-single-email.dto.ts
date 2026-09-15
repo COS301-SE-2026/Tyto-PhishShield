@@ -28,7 +28,11 @@ export class ScheduleSingleEmailDto {
   @IsString()
   @IsOptional()
   @Matches(/^[^@\s]+$/)
-  senderName?: string;
+  senderCustomName?: string;
+
+  @IsString()
+  @IsOptional()
+  senderAuth0Id?: string;
 
   @IsString()
   @IsOptional()
