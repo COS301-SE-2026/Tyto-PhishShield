@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Badge, ComingSoon, Spinner } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
@@ -37,6 +37,17 @@ function SectionSpinner() {
       <Spinner size={28} />
     </div>
   );
+}
+
+function SectionState({ loading, isEmpty, emptyLabel, children }: {
+  readonly loading: boolean;
+  readonly isEmpty: boolean;
+  readonly emptyLabel: string;
+  readonly children: ReactNode;
+}) {
+  if (loading) return <SectionSpinner />;
+  if (isEmpty) return <ComingSoon label={emptyLabel} />;
+  return <>{children}</>;
 }
 
 function DeltaBadge({ delta, suffix = '%' }: { readonly delta: number; readonly suffix?: string }) {
@@ -168,11 +179,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Activity Over Time</h2>
           <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>{PERIOD_LABEL[period]}</span>
         </div>
-        {loading ? (
-          <SectionSpinner />
-        ) : series?.length === 0 ? (
-          <ComingSoon label="No activity recorded in this period yet." />
-        ) : (
+        <SectionState loading={loading} isEmpty={series?.length === 0} emptyLabel="No activity recorded in this period yet.">
           <svg viewBox="0 0 700 160" style={{ width: '100%', height: 160 }}>
             <defs>
               <linearGradient id="reportsGrad" x1="0" y1="0" x2="0" y2="1">
@@ -204,18 +211,14 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
             <circle cx="150" cy="150" r="5" fill="#F59E0B"/>
             <text x="160" y="154" fontSize="10" fill="var(--text-secondary)" fontFamily="Inter, system-ui, sans-serif">Emails sent</text>
           </svg>
-        )}
+        </SectionState>
       </Card>
 
       {/* Departmental risk heatmap */}
       <Card style={{ padding: '20px 22px', marginBottom: 16 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Departmental Risk Heatmap</h2>
         <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Greener is safer, redder needs attention — shaded by detection rate and click rate.</p>
-        {loading ? (
-          <SectionSpinner />
-        ) : departments?.length === 0 ? (
-          <ComingSoon label="No department activity recorded in this period yet." />
-        ) : (
+        <SectionState loading={loading} isEmpty={departments?.length === 0} emptyLabel="No department activity recorded in this period yet.">
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -248,7 +251,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
               </tbody>
             </table>
           </div>
-        )}
+        </SectionState>
       </Card>
 
       {/* Top reporters + Predicted at-risk */}
@@ -303,11 +306,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Users Most At Risk</h2>
         </div>
-        {loading ? (
-          <SectionSpinner />
-        ) : atRiskUsers?.length === 0 ? (
-          <ComingSoon label="No users currently meet the at-risk click-rate threshold." />
-        ) : (
+        <SectionState loading={loading} isEmpty={atRiskUsers?.length === 0} emptyLabel="No users currently meet the at-risk click-rate threshold.">
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -330,7 +329,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
               </tbody>
             </table>
           </div>
-        )}
+        </SectionState>
       </Card>
 
       {/* Wave performance table */}
@@ -338,9 +337,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Phishing Wave Performance Summary</h2>
         </div>
-        {loading ? (
-          <SectionSpinner />
-        ) : campaigns && campaigns.length > 0 ? (
+        <SectionState loading={loading} isEmpty={!campaigns?.length} emptyLabel="No waves have been created yet, this table will populate automatically once a wave is launched.">
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -352,7 +349,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
                 </tr>
               </thead>
               <tbody>
-                {campaigns.map(c => (
+                {campaigns?.map(c => (
                   <tr key={c.id} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{c.name ?? c.id}</td>
                     <td style={{ padding: '10px 16px' }}><Badge variant={c.status === 'completed' ? 'neutral' : 'success'}>{c.status ?? 'unknown'}</Badge></td>
@@ -363,9 +360,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
               </tbody>
             </table>
           </div>
-        ) : (
-          <ComingSoon label="No waves have been created yet, this table will populate automatically once a wave is launched." />
-        )}
+        </SectionState>
       </Card>
     </AppLayout>
   );
