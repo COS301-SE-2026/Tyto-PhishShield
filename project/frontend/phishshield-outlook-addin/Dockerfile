@@ -27,7 +27,7 @@ RUN pnpm build
 
 USER appuser
 
-FROM nginxinc/nginx-unprivileged:alpine
+FROM nginxinc/nginx-unprivileged:alpine@sha256:19c132c9ab02d3b783f478743dafc7a7f42e27aa7d2bdcbec1bb1128ca8f2a07
 
 COPY --from=builder /app/project/frontend/phishshield-outlook-addin/dist /usr/share/nginx/html
 
