@@ -1,4 +1,4 @@
-services:
+services: 
   # rabbitmq is used to handle the event messaging between services
   rabbitmq:
     image: rabbitmq:3-management
@@ -8,6 +8,7 @@ services:
     hostname: rabbitmq-server
     ports:
       - "5672:5672"
+      - "5671:5671" # AMQPS Secure Port
       - "15672:15672"
     deploy:
       resources:
@@ -20,6 +21,11 @@ services:
 
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - internal_certs:/etc/rabbitmq/certs:ro
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
@@ -90,7 +96,10 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/mailing_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/mailing_app.key
       - BUSINESS_NAME=${BUSINESS_NAME}
       - TRACKING_LINK=${TRACKING_LINK}
 
@@ -104,6 +113,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/mailing-service/dist:/app/dist
 
   # accounts db sets up the accounts service's postgres database
@@ -158,12 +168,14 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=local
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/accounts_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/accounts_app.key
     ports:
       - '${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}'
     deploy:
@@ -177,6 +189,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/accounts-service/dist:/app/dist
 
   # api app builds the api service from the api's dockerfile
@@ -221,7 +234,10 @@ services:
       - AUTH0_M2M_CLIENT_SECRET=${AUTH0_M2M_CLIENT_SECRET}
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/api_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/api_app.key
       - SERVER_DOMAIN=${SERVER_DOMAIN}
       - OUTLOOK_ADDIN_CORS=
       - LOG_DIR=/var/log/api-gateway
@@ -240,6 +256,7 @@ services:
           memory: 128M
     volumes:
       - api_gateway_logs_v2:/var/log/api-gateway
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/api-gateway/dist:/app/dist
     depends_on:
       rabbitmq:
@@ -299,7 +316,10 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN} 
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/report_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/report_app.key
     deploy:
       resources:
         limits:
@@ -316,6 +336,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/report-service/dist:/app/dist
 
   # xp db sets up the xp service's postgres database
@@ -366,7 +387,10 @@ services:
       - XP_TCP_PORT=${XP_TCP_PORT}
       - XP_DB_CONTAINER=${XP_DB_CONTAINER}
       - INTERNAL_DB_PORT=${INTERNAL_DB_PORT}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/xp_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/xp_app.key
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - XP_DB_NAME=${XP_DB_NAME}
@@ -387,6 +411,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/xp-service/dist:/app/dist
 
 # education db sets up the education service's postgres database
@@ -442,7 +467,10 @@ services:
       - DB_NAME=${EDUCATION_DB_NAME}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/education_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/education_app.key
 
     ports:
       # Left side must be unique
@@ -459,6 +487,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/education-service/dist:/app/dist
 
   analytics_db:
@@ -513,7 +542,10 @@ services:
       - DB_NAME=${ANALYTICS_DB_NAME}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/analytics_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/analytics.key
 
     ports:
       # Left side must be unique
@@ -530,6 +562,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/analytics-service/dist:/app/dist
 
   llm_db:
@@ -580,7 +613,10 @@ services:
       - DB_NAME=${LLM_DB_NAME}
       - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
       - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/llm_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/llm_app.key
       - LOCAL_LLM_URL=http://ollama:11434
     ports:
       - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
@@ -597,6 +633,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/llm-service/dist:/app/dist
     networks:
       - default
@@ -648,7 +685,10 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${COMPANY_DB_NAME}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/company_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/company_app.key
 
     ports:
       - "${COMPANY_SERVICE_PORT}:${COMPANY_SERVICE_PORT}"
@@ -665,6 +705,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/company-service/dist:/app/dist
   
   # builds the website using the website's dockerfile
@@ -742,6 +783,7 @@ services:
       - caddy_logs:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
+      - internal_certs:/etc/caddy/certs:ro
     deploy:
       resources:
         limits:
@@ -750,6 +792,75 @@ services:
         reservations:
           cpus: '0.25'
           memory: 32M
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
+
+  step-ca:
+    image: smallstep/step-ca:0.30.2
+    container_name: step-ca
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      DOCKER_STEPCA_INIT_NAME: "Internal Microservice CA"
+      DOCKER_STEPCA_INIT_DNS_NAMES: "step-ca,localhost"
+      DOCKER_STEPCA_INIT_PROVISIONER_NAME: ${PROVISIONER_NAME}
+      DOCKER_STEPCA_INIT_PASSWORD_FILE: "/usr/share/step/secrets/password"
+      DOCKER_STEPCA_INIT_PROVISIONER_PASSWORD_FILE: "/usr/share/step/secrets/provisioner_password"
+    command: step-ca /home/step/config/ca.json --password-file=/usr/share/step/secrets/password
+    volumes:
+      - step_ca_data:/home/step
+      - ./secrets:/usr/share/step/secrets:ro
+    healthcheck:
+      test: ["CMD", "step", "ca", "health", "--ca-url", "https://localhost:9000", "--root", "/home/step/certs/root_ca.crt"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  cert-init:
+    image: smallstep/step-cli:0.30.6
+    container_name: cert-init
+    depends_on:
+      step-ca:
+        condition: service_healthy
+    volumes:
+      - internal_certs:/certs
+      - step_ca_data:/ca-root:ro
+      - ./secrets:/secrets:ro
+    entrypoint: >
+      /bin/sh -c "
+        set -e
+        # Fetch Root CA
+        FP=$$(step certificate fingerprint /ca-root/certs/root_ca.crt)
+        
+        step ca root /certs/root_ca.crt --ca-url https://step-ca:9000 --fingerprint $$FP --force
+
+        # Issue certs for internal services & RabbitMQ
+        step ca certificate rabbitmq /certs/rabbitmq.crt /certs/rabbitmq.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san rabbitmq-server --san rabbitmq --force
+        
+        step ca certificate api_app /certs/api_app.crt /certs/api_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san api_app --san api-gateway --force
+
+        step ca certificate accounts_app /certs/accounts_app.crt /certs/accounts_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san accounts_app --force
+
+        step ca certificate mailing_app /certs/mailing_app.crt /certs/mailing_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san mailing_app --force
+
+        step ca certificate report_app /certs/report_app.crt /certs/report_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san report_app --force
+
+        step ca certificate education_app /certs/education_app.crt /certs/education_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san education_app --force
+
+        step ca certificate analytics_app /certs/analytics_app.crt /certs/analytics_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san analytics_app --force
+
+        step ca certificate xp_app /certs/xp_app.crt /certs/xp_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san xp_app --force
+
+        step ca certificate llm_app /certs/llm_app.crt /certs/llm_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san llm_app --force
+
+        step ca certificate company_app /certs/company_app.crt /certs/company_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san company_app --force
+
+        # Grant permissions so database/service containers can read certs
+        chmod -R 755 /certs
+        echo 'Certificates successfully generated!'
+      "
 
 volumes:
   # Must be same as volume name for db
@@ -769,6 +880,8 @@ volumes:
   pgadmin_data:
   rabbitmq_data:
     driver: local
+  step_ca_data:
+  internal_certs:
 
 networks:
   local-llm:

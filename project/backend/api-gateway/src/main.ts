@@ -14,9 +14,19 @@ import { logger } from './logger/logger.service';
 import { requestIdMiddleware } from './middleware';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import * as fs from 'fs';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  if (!process.env.NODE_EXTRA_CA_CERTS || !process.env.TLS_CERT_PATH || !process.env.TLS_KEY_PATH) {
+    throw new Error('Undefined https options!');
+  }
+  const httpsOptions = {
+    key: fs.readFileSync(process.env.TLS_KEY_PATH),
+    cert: fs.readFileSync(process.env.TLS_CERT_PATH),
+    ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS),
+  };
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { httpsOptions });
 
   if (process.env.ENVIRONMENT != 'local') {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);

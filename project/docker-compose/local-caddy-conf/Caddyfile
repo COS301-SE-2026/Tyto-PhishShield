@@ -28,18 +28,28 @@ localhost, phishshield.local {
     }
 
     handle /socket.io/* {
-        reverse_proxy api-gateway:3001
+        reverse_proxy https://api-gateway:3001 {
+            transport http {
+                tls_trust_pool file /etc/caddy/certs/root_ca.crt
+            }
+        }
     }
 
     handle /api/* {
-        reverse_proxy api-gateway:3001 {
+        reverse_proxy https://api-gateway:3001 {
             header_up X-Request-ID {http.request.header.X-Request-ID}
+            transport http {
+                tls_trust_pool file /etc/caddy/certs/root_ca.crt
+            }
         }
     }
 
     handle /api-docs/* {
-        reverse_proxy api-gateway:3001 {
+        reverse_proxy https://api-gateway:3001 {
             header_up X-Request-ID {http.request.header.X-Request-ID}
+            transport http {
+                tls_trust_pool file /etc/caddy/certs/root_ca.crt
+            }
         }
     }
 
