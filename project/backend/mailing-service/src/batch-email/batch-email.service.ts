@@ -20,18 +20,16 @@ import { BatchSendResultDto } from '../dto/batch-send-result.dto';
 import { ResendBatchItemDto } from '../dto/resend-batch-item.dto';
 import { BatchRecipientDto } from '../dto/batch-recipient.dto';
 import { WaveService } from '../wave/wave.service';
+import { VariableResolverService } from '../shared-services/variable-resolver.service';
+import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { TrackingLinkService } from '../shared-services/tracking-link.service';
 
 const MAILING_EVENT_EXCHANGE = 'mailing-event-exchange';
-
-// To find variables marked as {{_}}
-const VARIABLE_PATTERN = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
 
 @Injectable()
 export class BatchEmailService {
   private readonly resend: Resend;
   private readonly logger = new Logger(BatchEmailService.name);
-  private readonly businessName: string;
-  private readonly trackingLink: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -41,29 +39,36 @@ export class BatchEmailService {
     private readonly userRepository: Repository<UserEntity>,
     private readonly waveService: WaveService,
     private readonly amqpConnection: AmqpConnection,
+    private readonly variableResolver: VariableResolverService,
+    private readonly senderResolver: SenderResolverService,
+    private readonly trackingLinkService: TrackingLinkService,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
-    this.businessName = this.configService.get<string>(
-      'BUSINESS_NAME',
-      'FiveGuys',
-    );
-    this.trackingLink = this.configService.get<string>(
-      'TRACKING_LINK',
-      'http://localhost:5050',
-    );
   }
 
   async sendBatchWithReference(
     referenceNumber: string,
     auth0Ids: string[],
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
   ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     const now = new Date();
 
     const dispatches: BatchRecipientDto[] = auth0Ids.map((auth0Id) => ({
       auth0Id,
       referenceNumber: referenceNumber,
       scheduledAt: now,
+      senderCustomName,
+      senderAuth0Id,
+      alias,
     }));
 
     const { emailsIds, tokens, recipientEmails } = await this.sendEmails(
@@ -94,7 +99,16 @@ export class BatchEmailService {
     randomisedTimes: boolean,
     waveName: string,
     referenceNumber: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
   ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     // Makes sure scheduledFrom <= scheduledTo
     this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
@@ -113,6 +127,9 @@ export class BatchEmailService {
       auth0Id,
       referenceNumber,
       scheduledAt: scheduledAts[index],
+      senderCustomName,
+      senderAuth0Id,
+      alias,
     }));
 
     return this.dispatchBatch(
@@ -135,7 +152,16 @@ export class BatchEmailService {
     scheduledTo: Date,
     randomisedTimes: boolean,
     waveName: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
   ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     // Makes sure scheduledFrom <= scheduledTo
     this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
@@ -160,6 +186,9 @@ export class BatchEmailService {
       auth0Id,
       referenceNumber: referenceNumbers[index],
       scheduledAt: scheduledAts[index],
+      senderCustomName,
+      senderAuth0Id,
+      alias,
     }));
 
     return this.dispatchBatch(
@@ -306,11 +335,13 @@ export class BatchEmailService {
       recipients.map((recipient) => [recipient.auth0Id, recipient]),
     );
 
-    const built = dispatches.map((dispatch) =>
-      this.buildResendItem(
-        dispatch,
-        emailsByReference.get(dispatch.referenceNumber),
-        recipientMap.get(dispatch.auth0Id),
+    const built = await Promise.all(
+      dispatches.map((dispatch) =>
+        this.buildResendItem(
+          dispatch,
+          emailsByReference.get(dispatch.referenceNumber),
+          recipientMap.get(dispatch.auth0Id),
+        ),
       ),
     );
 
@@ -403,10 +434,6 @@ export class BatchEmailService {
     }
   }
 
-  private formatFromAddress(email: EmailTemplateEntity): string {
-    return email.alias ? `${email.alias} <${email.sender}>` : email.sender;
-  }
-
   private isImmediate(scheduledAt: Date): boolean {
     return scheduledAt.getTime() - Date.now() <= 5 * 60 * 1000;
   }
@@ -419,11 +446,11 @@ export class BatchEmailService {
     }
   }
 
-  private buildResendItem(
+  private async buildResendItem(
     dispatch: BatchRecipientDto,
     email: EmailTemplateEntity,
     user?: UserEntity,
-  ): { dto: ResendBatchItemDto; token: string } {
+  ): Promise<{ dto: ResendBatchItemDto; token: string }> {
     try {
       if (!user) {
         throw new NotFoundException(
@@ -434,7 +461,13 @@ export class BatchEmailService {
       const { subject, content, token } = this.formatEmailContent(email, user);
 
       const item: ResendBatchItemDto = {
-        from: this.formatFromAddress(email),
+        from: await this.senderResolver.resolveFromAddress(
+          email,
+          dispatch.auth0Id,
+          dispatch.senderCustomName,
+          dispatch.senderAuth0Id,
+          dispatch.alias,
+        ),
         to: [user.email],
         subject,
         html: content,
@@ -459,120 +492,21 @@ export class BatchEmailService {
     email: EmailTemplateEntity,
     user: UserEntity,
   ): { subject: string; content: string; token: string } {
-    let subject: string = email.subject;
-    let content_text: string = email.content;
-
-    if (
-      email.difficulty === EmailDifficulty.MEDIUM ||
-      email.difficulty === EmailDifficulty.EASY
-    ) {
-      subject = this.replaceMediumVariables(email.subject, user);
-      content_text = this.replaceMediumVariables(email.content, user);
-    } else if (email.difficulty === EmailDifficulty.HARD) {
-      subject = this.replaceHardVariables(email.subject, user);
-      content_text = this.replaceHardVariables(email.content, user);
-    }
-
-    const { content, token } = this.replaceTrackingLinkVariables(content_text);
-
-    this.checkForExtraVariables(email.referenceNumber, subject, content);
-
-    return { subject, content, token };
-  }
-
-  private replaceTrackingLinkVariables(content: string): {
-    content: string;
-    token: string;
-  } {
-    let returning = content;
-
-    const trackingToken = crypto.randomBytes(6).toString('hex').toUpperCase();
-    returning = returning.replace(
-      /{{\s*tracking_link\s*}}/g,
-      this.trackingLink + `/${trackingToken}`,
+    const subject = this.variableResolver.substitute(
+      email.subject,
+      email.referenceNumber,
+      user,
+    );
+    const substitutedContent = this.variableResolver.substitute(
+      email.content,
+      email.referenceNumber,
+      user,
     );
 
-    return { content: returning, token: trackingToken };
-  }
+    const { content, token } =
+      this.trackingLinkService.replace(substitutedContent);
 
-  private replaceMediumVariables(text: string, user: UserEntity): string {
-    if (!text) {
-      return text;
-    }
-
-    let returning = text;
-
-    if (user.name) {
-      const firstName: string = user.name.split(' ')[0];
-      returning = returning.replace(/{{\s*name\s*}}/g, firstName);
-    }
-
-    if (user.department) {
-      returning = returning.replace(/{{\s*department\s*}}/g, user.department);
-    }
-
-    if (this.businessName) {
-      returning = returning.replace(
-        /{{\s*business_name\s*}}/g,
-        this.businessName,
-      );
-    }
-
-    return returning;
-  }
-
-  private replaceHardVariables(text: string, user: UserEntity): string {
-    if (!text) {
-      return text;
-    }
-
-    let returning = text;
-
-    if (user.name) {
-      const firstName: string = user.name.split(' ')[0];
-      returning = returning.replace(/{{\s*name\s*}}/g, firstName);
-    }
-
-    if (user.department) {
-      returning = returning.replace(/{{\s*department\s*}}/g, user.department);
-    }
-
-    if (this.businessName) {
-      returning = returning.replace(
-        /{{\s*business_name\s*}}/g,
-        this.businessName,
-      );
-    }
-
-    return returning;
-  }
-
-  private checkForExtraVariables(
-    referenceNumber: string,
-    subject: string,
-    content: string,
-  ): void {
-    const extraVariables = new Set<string>();
-
-    for (const text of [subject, content]) {
-      VARIABLE_PATTERN.lastIndex = 0;
-
-      let match: RegExpExecArray | null;
-
-      while ((match = VARIABLE_PATTERN.exec(text)) !== null) {
-        extraVariables.add(match[1]);
-      }
-    }
-
-    if (extraVariables.size > 0) {
-      const variableList = [...extraVariables].join(', ');
-      this.logger.error(
-        `Template "${referenceNumber}" has extra variable(s): ${variableList}`,
-      );
-      throw new InternalServerErrorException(
-        `Template "${referenceNumber}" contains extra variable(s): ${variableList}`,
-      );
-    }
+    return { subject, content, token };
   }
 
   private async sendResendBatch(

@@ -1,50 +1,46 @@
 import {
-  ArrayMaxSize,
-  ArrayMinSize,
   IsArray,
-  IsBoolean,
-  IsDate,
-  IsEnum,
+  ArrayMinSize,
+  ArrayMaxSize,
   IsNotEmpty,
+  IsDate,
+  IsBoolean,
+  IsEnum,
   IsOptional,
   IsString,
   Matches,
 } from 'class-validator';
-import { EmailDifficulty } from '../entities/email-template.entity';
 import { Type } from 'class-transformer';
+import { EmailDifficulty } from './emails.dto'
 
-export class SendBatchDto {
+export class SendBatchRandomDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
   @IsString({ each: true })
-  auth0Id: string[];
+  auth0Id!: string[];
 
   @IsNotEmpty()
   @IsEnum(EmailDifficulty)
-  difficulty: EmailDifficulty;
+  difficulty!: EmailDifficulty;
 
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  scheduledFrom: Date;
+  scheduledFrom!: Date;
 
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  scheduledTo: Date;
+  scheduledTo!: Date;
 
   @IsBoolean()
   @IsOptional()
-  randomisedTimes: boolean = true;
+  randomisedTimes?: boolean = true;
 
   @IsString()
   @IsNotEmpty()
-  waveName: string;
-
-  @IsString()
-  @IsOptional()
-  referenceNumber: string;
+  waveName!: string;
 
   @IsString()
   @IsOptional()

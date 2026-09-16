@@ -12,7 +12,7 @@ export class SendBatchEmailDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
   @IsString({ each: true })
-  auth0Id: string[];
+  auth0Id!: string[];
 
   @IsString()
   @IsOptional()
