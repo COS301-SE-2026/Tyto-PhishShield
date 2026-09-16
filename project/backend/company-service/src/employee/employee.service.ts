@@ -26,6 +26,7 @@ import {
   EVENT_EXCHANGE,
   EventProducerService,
 } from '@phishshield/eventhandler';
+import { FailedImport } from './entities/failed-import.entity';
 
 @Injectable()
 export class EmployeeService {
@@ -33,6 +34,8 @@ export class EmployeeService {
   constructor(
     @InjectRepository(Employee)
     private readonly db: Repository<Employee>,
+    @InjectRepository(FailedImport)
+    private readonly invalidDb: Repository<FailedImport>,
     @Inject() private readonly event: EventProducerService,
   ) {}
 
@@ -43,8 +46,9 @@ export class EmployeeService {
       const validEmployee = this.createValidEmployee(createEmployeeDto);
       const employee = this.db.create(validEmployee);
       return await this.db.save(employee);
-    } catch {
-      //save in invalid employee table
+    } catch (err) {
+      const error = err as Error;
+      return await this.saveError(createEmployeeDto, error);
     }
   }
 
@@ -85,9 +89,33 @@ export class EmployeeService {
 
       return await this.db.save(existingEmployee);
     } catch (err) {
-      //save in invalid employee table
-      console.log(err);
+      const error = err as Error;
+      return await this.saveError(updateEmployeeDto, error);
     }
+  }
+
+  async saveError(data: any, error: Error) {
+    return await this.invalidDb.save({
+      data: JSON.stringify(data),
+      errorMessage: error.message,
+    });
+  }
+
+  async getErrors() {
+    return await this.invalidDb.find();
+  }
+
+  async deleteError(id: string) {
+    const error = await this.invalidDb.find({
+      where: {
+        id: id,
+      },
+    });
+    if (!error) {
+      return false;
+    }
+    await this.invalidDb.remove(error);
+    return true;
   }
 
   async remove(id: string) {
