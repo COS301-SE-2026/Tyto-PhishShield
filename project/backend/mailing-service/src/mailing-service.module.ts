@@ -11,6 +11,8 @@ import { AccountsModule } from './accounts/accounts.module';
 import { WaveEntity } from './entities/wave.entity';
 import { WaveRecipientEntity } from './entities/wave-recipient.entity';
 import { WaveModule } from './wave/wave.module';
+import { EmployeeInfoModule } from './employee-info/employee-info.module';
+import { EmployeeInfoEntity } from './entities/employee-info.entity';
 
 @Module({
   imports: [
@@ -34,6 +36,7 @@ import { WaveModule } from './wave/wave.module';
           UserEntity,
           WaveEntity,
           WaveRecipientEntity,
+          EmployeeInfoEntity,
         ],
         autoLoadEntities: true,
       }),
@@ -47,6 +50,7 @@ import { WaveModule } from './wave/wave.module';
     BatchEmailModule,
     AccountsModule,
     WaveModule,
+    EmployeeInfoModule,
   ],
   controllers: [MailingServiceController],
 })
