@@ -23,6 +23,7 @@ import { WaveService } from '../wave/wave.service';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 const MAILING_EVENT_EXCHANGE = 'mailing-event-exchange';
 
@@ -37,6 +38,8 @@ export class BatchEmailService {
     private readonly emailTemplateRepository: Repository<EmailTemplateEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(EmployeeInfoEntity)
+    private readonly employeeInfoRepository: Repository<EmployeeInfoEntity>,
     private readonly waveService: WaveService,
     private readonly amqpConnection: AmqpConnection,
     private readonly variableResolver: VariableResolverService,
@@ -335,12 +338,21 @@ export class BatchEmailService {
       recipients.map((recipient) => [recipient.auth0Id, recipient]),
     );
 
+    const employeeInfos = await this.employeeInfoRepository.find({
+      where: { auth0Id: In(auth0Ids) },
+    });
+
+    const employeeInfoMap = new Map(
+      employeeInfos.map((info) => [info.auth0Id, info]),
+    );
+
     const built = await Promise.all(
       dispatches.map((dispatch) =>
         this.buildResendItem(
           dispatch,
           emailsByReference.get(dispatch.referenceNumber),
           recipientMap.get(dispatch.auth0Id),
+          employeeInfoMap.get(dispatch.auth0Id),
         ),
       ),
     );
@@ -450,6 +462,7 @@ export class BatchEmailService {
     dispatch: BatchRecipientDto,
     email: EmailTemplateEntity,
     user?: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
   ): Promise<{ dto: ResendBatchItemDto; token: string }> {
     try {
       if (!user) {
@@ -458,7 +471,11 @@ export class BatchEmailService {
         );
       }
 
-      const { subject, content, token } = this.formatEmailContent(email, user);
+      const { subject, content, token } = this.formatEmailContent(
+        email,
+        user,
+        employeeInfo,
+      );
 
       const item: ResendBatchItemDto = {
         from: await this.senderResolver.resolveFromAddress(
@@ -491,16 +508,19 @@ export class BatchEmailService {
   private formatEmailContent(
     email: EmailTemplateEntity,
     user: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
   ): { subject: string; content: string; token: string } {
     const subject = this.variableResolver.substitute(
       email.subject,
       email.referenceNumber,
       user,
+      employeeInfo,
     );
     const substitutedContent = this.variableResolver.substitute(
       email.content,
       email.referenceNumber,
       user,
+      employeeInfo,
     );
 
     const { content, token } =
