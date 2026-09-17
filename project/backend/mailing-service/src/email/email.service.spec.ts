@@ -33,6 +33,7 @@ import { Department, UserEntity } from '../entities/user.entity';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 const mockResendSend = jest.fn().mockResolvedValue({
   data: { id: 'mock-resend-id' },
@@ -77,6 +78,10 @@ describe('EmailService', () => {
 
   const mockAmqpConnection = {
     publish: jest.fn().mockResolvedValue(undefined),
+  }
+
+  const mockEmployeeInfoRepository = {
+    findOne: jest.fn().mockResolvedValue(null),
   }
 
   const mockVariableResolverService = { substitute: jest.fn((text: string) => text) };
@@ -133,6 +138,10 @@ describe('EmailService', () => {
           provide: TrackingLinkService,
           useValue: mockTrackingLinkService,
         },
+        {
+          provide: getRepositoryToken(EmployeeInfoEntity),
+          useValue: mockEmployeeInfoRepository,
+        },
       ],
     }).compile();
 
@@ -144,6 +153,7 @@ describe('EmailService', () => {
     mockVariableResolverService.substitute.mockImplementation((text: string) => text);
     mockSenderResolverService.resolveFromAddress.mockReturnValue('resolved-sender@domain.com');
     mockTrackingLinkService.replace.mockImplementation((content: string) => ({ content, token: 'mock-token' }));
+    mockEmployeeInfoRepository.findOne.mockResolvedValue(null);
     mockEmail.senderDepartment = undefined;
   });
 
@@ -235,8 +245,18 @@ describe('EmailService', () => {
 
       const result = await service.sendEmail('PHISH-001', mockUser.auth0Id, 'it-support', undefined ,'IT Support');
 
-      expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(mockEmail.subject, 'PHISH-001', mockUser);
-      expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(mockEmail.content, 'PHISH-001', mockUser);
+      expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(
+        mockEmail.subject,
+        'PHISH-001',
+        mockUser,
+        undefined,
+      );
+      expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(
+        mockEmail.content,
+        'PHISH-001',
+        mockUser,
+        undefined,
+      );
       expect(mockTrackingLinkService.replace).toHaveBeenCalledWith(mockEmail.content);
       expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
         mockEmail,
