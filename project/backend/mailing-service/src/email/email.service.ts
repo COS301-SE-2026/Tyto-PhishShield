@@ -32,6 +32,7 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 @Injectable()
 export class EmailService {
@@ -44,6 +45,8 @@ export class EmailService {
     private readonly emailTemplateRepository: Repository<EmailTemplateEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(EmployeeInfoEntity)
+    private readonly employeeInfoRepository: Repository<EmployeeInfoEntity>,
     private readonly amqpConnection: AmqpConnection,
     private readonly variableResolver: VariableResolverService,
     private readonly senderResolver: SenderResolverService,
@@ -175,18 +178,24 @@ export class EmailService {
         throw new NotFoundException(`User: ${auth0Id}, not found in db.`);
       }
 
+      const employeeInfo = await this.employeeInfoRepository.findOne({
+        where: { auth0Id },
+      });
+
       const email = await this.getEmailByReference(referenceNumber);
 
       const subject = this.variableResolver.substitute(
         email.subject,
         referenceNumber,
         user,
+        employeeInfo ?? undefined,
       );
 
       const substitutedContent = this.variableResolver.substitute(
         email.content,
         referenceNumber,
         user,
+        employeeInfo ?? undefined,
       );
       const { content, token } =
         this.trackingLinkService.replace(substitutedContent);
@@ -261,18 +270,24 @@ export class EmailService {
         throw new NotFoundException(`User: ${auth0Id}, not found in db.`);
       }
 
+      const employeeInfo = await this.employeeInfoRepository.findOne({
+        where: { auth0Id },
+      });
+
       const email = await this.getEmailByReference(referenceNumber);
 
       const subject = this.variableResolver.substitute(
         email.subject,
         referenceNumber,
         user,
+        employeeInfo ?? undefined,
       );
 
       const substitutedContent = this.variableResolver.substitute(
         email.content,
         referenceNumber,
         user,
+        employeeInfo ?? undefined,
       );
 
       const { content, token } =
