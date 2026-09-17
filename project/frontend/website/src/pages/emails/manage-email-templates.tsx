@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, type CSSProperties, useRef } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
-import { Button, Card, Input, Select, Badge } from '../../components/ui';
+import { Button, Card, Input, Select, Badge, Spinner } from '../../components/ui';
+import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../context/toast-context";
 import { deleteEmailTemplate, getEmailTemplates, updateEmailTemplate, type EmailTemplate, type UpdateEmailTemplateRequest } from "../../services/email-template";
 import type { EmailDifficulty } from "../../services/send-batch-email";
@@ -34,6 +35,8 @@ export function ManageEmailTemplates({
     activePath,
 }: ManageEmailTemplatesProps){
     const { addToast } = useToast();
+    const { hasRole } = useAuth();
+    const isAdmin = hasRole('admin');
     const [templates, setTemplates] = useState<EmailTemplate[]>([]);
     const [selectedReference, setSelectedReference] = useState('');
     const [form, setForm] = useState<TemplateForm | null>(null);
@@ -349,11 +352,13 @@ export function ManageEmailTemplates({
                                 Refresh
                             </Button>
 
-                            <Button
-                                onClick={() => onNavigate('/emails/create-email')}
-                            >
-                                Create New Template
-                            </Button>
+                            {isAdmin && (
+                                <Button
+                                    onClick={() => onNavigate('/emails/create-email')}
+                                >
+                                    Create New Template
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </Card>
@@ -417,12 +422,14 @@ export function ManageEmailTemplates({
                                     label="Sender email"
                                     value={form.sender}
                                     error={errors.sender}
+                                    disabled={!isAdmin}
                                     onChange={(event) => setField('sender', event.target.value)}
 
                                 />
                                 <Input
                                     label='Display name (Optional)'
                                     value={form.alias}
+                                    disabled={!isAdmin}
                                     onChange={(event) => setField('alias', event.target.value)}
                                 />
                             </div>
@@ -431,6 +438,7 @@ export function ManageEmailTemplates({
                                 label="Email subject"
                                 value={form.subject}
                                 error={errors.subject}
+                                disabled={!isAdmin}
                                 onChange={(event) => setField('subject', event.target.value)}
                                 required
                             />
@@ -470,6 +478,7 @@ export function ManageEmailTemplates({
                                             key={placeholder.value}
                                             type="button"
                                             size="sm"
+                                            disabled={!isAdmin}
                                             onClick={() => insertPlaceholder(placeholder.value)}
                                         >
                                             {placeholder.label}
@@ -481,6 +490,7 @@ export function ManageEmailTemplates({
                                     ref={contentRef}
                                     rows={12}
                                     value={form.content}
+                                    readOnly={!isAdmin}
                                     onChange={(event) => setField('content', event.target.value)}
                                     style={{
                                         width: '100%',
@@ -488,7 +498,7 @@ export function ManageEmailTemplates({
                                         border: `1.5px solid ${errors.content ? "var(--color-danger)" : "var(--border)"}`,
                                         borderRadius: 8,
                                         outline: 'none',
-                                        background: 'var(--bg-input)',
+                                        background: isAdmin ? 'var(--bg-input)' : 'var(--bg-hover)',
                                         color: 'var(--text-primary)',
                                         resize: 'vertical',
                                         fontSize: 13,
@@ -508,10 +518,18 @@ export function ManageEmailTemplates({
                                 label="Difficulty"
                                 value={form.difficulty}
                                 options={DIFFICULTY_OPTIONS}
+                                disabled={!isAdmin}
                                 onChange={(event) => setField('difficulty', event.target.value as EmailDifficulty)}
                             />
                         </div>
 
+                        {!isAdmin && (
+                            <p style={{ marginTop: 16, fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                View-only — contact an admin to make changes to this template.
+                            </p>
+                        )}
+
+                        {isAdmin && (
                         <div
                             style={{
                                 display: 'flex',
@@ -540,18 +558,25 @@ export function ManageEmailTemplates({
                                 Save Changes
                             </Button>
                         </div>
+                        )}
                     </Card>
                 ) : (
                     <Card style={{padding: 24}}>
-                        <div
-                            style={{
-                                textAlign: 'center',
-                                color: 'var(--text-muted)',
-                                padding: 24,
-                            }}
-                        >
-                            {loading ? 'Loading email templates...' : 'Select an email template above to edit or delete it.'}
-                        </div>
+                        {loading ? (
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 24px' }}>
+                                <Spinner size={28} />
+                            </div>
+                        ) : (
+                            <div
+                                style={{
+                                    textAlign: 'center',
+                                    color: 'var(--text-muted)',
+                                    padding: 24,
+                                }}
+                            >
+                                Select an email template above to edit or delete it.
+                            </div>
+                        )}
                     </Card>
                 )}
             </div>

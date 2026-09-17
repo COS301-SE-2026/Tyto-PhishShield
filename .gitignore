@@ -75,3 +75,10 @@ jest-cache/
 project/docker-compose/dc.ps1
 project/docker-compose/local-compose.override.yml
 root.crt
+project/docker-compose/local-compose.yml
+project/docker-compose/local-caddy-conf/Caddyfile
+project/docker-compose/local-caddy-conf/Caddyfile
+project/backend/databases-seeds/analytics/seed.sql
+/project/backend/databases-seeds/analytics
+project/backend/databases-seeds/analytics/seed.sql
+project/backend/databases-seeds/analytics/seed.sql

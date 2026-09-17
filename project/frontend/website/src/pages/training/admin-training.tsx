@@ -1,6 +1,6 @@
 import {useEffect, useState, type CSSProperties} from "react";
 import { AppLayout } from "../../components/layout/app-layout";
-import { Badge, Card, Button, Input, Select } from "../../components/ui";
+import { Badge, Card, Button, Input, Select, Spinner } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
 import { createQuestion, getAllQuestions, type Question } from "../../services/education";
 
@@ -186,12 +186,6 @@ export function AdminTraining({
         gap: 16,
     };
 
-    const messageStyle: CSSProperties = {
-        padding: 24,
-        textAlign: 'center',
-        color: 'var(--text-muted)',
-    };
-
     const questionStyle: CSSProperties = {
         padding: 16,
         background: 'var(--bg-hover)',
@@ -305,9 +299,9 @@ export function AdminTraining({
                     </div>
 
                     {loading ? (
-                        <p style={messageStyle}>
-                            Loading questions...
-                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+                            <Spinner size={28} />
+                        </div>
                     ) : questions.length === 0 ? (
                         <p>
                             No questions have been added.
