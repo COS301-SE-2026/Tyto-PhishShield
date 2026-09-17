@@ -1,30 +1,54 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+
+import { CommsModule } from './comms/comms.module';
+import { SlackModule } from './comms/providers/slack/slack.module';
+import { UsersMirrorModule } from './users/users-mirror.module';
+import { AuthModule } from './auth/auth.module';
+
+import { Communication } from './comms/entities/communication.entity';
+import { Connection } from './comms/entities/connection.entity';
+import { CommsUser } from './comms/entities/comms-user.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get<string>('DB_HOST', 'localhost'),
+        host: config.get('DB_HOST', 'localhost'),
         port: config.get<number>('DB_PORT', 5432),
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
-        database: config.get('DB_NAME'),
-        entities: [
-          /* any entities in the service */
-        ],
-        synchronize: true,
+        database: config.get('DB_NAME', 'comms_tracking'),
+        entities: [Communication, Connection, CommsUser],
+        synchronize: true, // dev only
       }),
     }),
+
+    RabbitMQModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
+        exchanges: [
+          { name: 'comms-event-exchange', type: 'topic' },
+          { name: 'accounts-event-exchange', type: 'topic' },
+        ],
+        enableControllerDiscovery: true,
+        connectionInitOptions: { wait: false },
+      }),
+    }),
+
+    AuthModule,
+    CommsModule,
+    SlackModule,
+    UsersMirrorModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
