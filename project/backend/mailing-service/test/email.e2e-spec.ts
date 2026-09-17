@@ -23,6 +23,7 @@ import {
 import { In, Repository } from 'typeorm';
 import { Department, UserEntity } from '../src/entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { EmployeeInfoEntity } from '../src/entities/employee-info.entity';
 
 const TEST_SENDER_DOMAIN = process.env.DOMAIN;
 const TEST_RECIPIENT = process.env.RESEND_EMAIL_DELIVERED;
@@ -34,6 +35,7 @@ describe('Email service integration test', () => {
   let testReferenceNumber: string;
   let userRepository: Repository<UserEntity>;
   let emailTemplateRepository: Repository<EmailTemplateEntity>;
+  let employeeInfoRepository: Repository<EmployeeInfoEntity>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -52,6 +54,10 @@ describe('Email service integration test', () => {
       Repository<EmailTemplateEntity>
     >(getRepositoryToken(EmailTemplateEntity));
 
+    employeeInfoRepository = moduleFixture.get<
+      Repository<EmployeeInfoEntity>
+    >(getRepositoryToken(EmployeeInfoEntity));
+
     await emailTemplateRepository.delete({ sender: TEST_SENDER_DOMAIN });
 
     await userRepository.save([
@@ -68,12 +74,28 @@ describe('Email service integration test', () => {
         department: Department.IT_SECURITY,
       }),
     ]);
+
+  await employeeInfoRepository.save([
+    employeeInfoRepository.create({
+      auth0Id: TEST_AUTH0_ID,
+      jobTitle: 'Engineer',
+      title: 'Mr',
+    }),
+    employeeInfoRepository.create({
+      auth0Id: TEST_SENDER_AUTH0_ID,
+      jobTitle: 'Manager',
+      title: 'Mrs',
+    }),
+  ]);
   }, 30000);
 
   afterAll(async () => {
     await emailTemplateRepository.delete({ sender: TEST_SENDER_DOMAIN });
     await userRepository.delete({
       auth0Id: In([TEST_SENDER_AUTH0_ID, TEST_AUTH0_ID]),
+    });
+    await employeeInfoRepository.delete({
+      auth0Id: In([TEST_AUTH0_ID, TEST_SENDER_AUTH0_ID]),
     });
     await app.close();
   });
@@ -251,7 +273,25 @@ describe('Email service integration test', () => {
     .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
     .expect(200)
     .expect((res) => expect(res.body.success).toBe(true));
-});
+  });
+
+  it('/emails/:referenceNumber/send-single (POST) - should substitute employee info variables and send successfully', async () => {
+  const createRes = await request(app.getHttpServer())
+    .post('/emails')
+    .send({
+      sender: TEST_SENDER_DOMAIN,
+      subject: 'Hi {{name}}, {{title}}',
+      content: '<p>Your role is {{job_title}} in {{department}} at {{business_name}}.</p>',
+      difficulty: EmailDifficulty.HARD,
+    })
+    .expect(201);
+
+  return request(app.getHttpServer())
+    .post(`/emails/${createRes.body.referenceNumber}/send-single`)
+    .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
+    .expect(200)
+    .expect((res) => expect(res.body.success).toBe(true));
+  });
 
   it('/emails/:referenceNumber/send-single (POST) - should fail when the template contains an unsupported variable', async () => {
     const createRes = await request(app.getHttpServer())
