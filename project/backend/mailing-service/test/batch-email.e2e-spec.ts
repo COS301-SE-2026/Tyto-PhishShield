@@ -22,6 +22,8 @@ import { Department, UserEntity } from '../src/entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { WaveEntity } from '../src/entities/wave.entity';
+import { EmployeeInfoEntity } from '../src/entities/employee-info.entity';
+
 const TEST_SENDER = process.env.DOMAIN;
 const TEST_RECIPIENT_EMAIL = process.env.RESEND_EMAIL_DELIVERED;
 const TEST_RECIPIENTS = [
@@ -41,6 +43,7 @@ describe('BatchEmail service integration tests', () => {
   let testReferenceNumber: string;
   let userRepository: Repository<UserEntity>;
   let waveRepository: Repository<WaveEntity>;
+  let employeeInfoRepository: Repository<EmployeeInfoEntity>;
   let emailTemplateRepository: Repository<EmailTemplateEntity>;
 
   beforeAll(async () => {
@@ -59,6 +62,10 @@ describe('BatchEmail service integration tests', () => {
     emailTemplateRepository = moduleFixture.get<
       Repository<EmailTemplateEntity>
     >(getRepositoryToken(EmailTemplateEntity));
+    
+    employeeInfoRepository = moduleFixture.get<
+      Repository<EmployeeInfoEntity>
+    >(getRepositoryToken(EmployeeInfoEntity));
 
     await emailTemplateRepository.delete({ sender: TEST_SENDER });
     await waveRepository.delete({ waveName: 'Wave Name' });
@@ -78,6 +85,14 @@ describe('BatchEmail service integration tests', () => {
       email: `sender@${TEST_SENDER}`,
       department: Department.IT_SECURITY,
     });
+
+  await employeeInfoRepository.save(
+    TEST_AUTH0_IDS.map((auth0Id) => ({
+      auth0Id,
+      jobTitle: 'Engineer',
+      title: 'Mr',
+    })),
+  );
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -105,6 +120,7 @@ describe('BatchEmail service integration tests', () => {
     await waveRepository.delete({ waveName: 'Wave Name' });
     await userRepository.delete({ auth0Id: In([...TEST_AUTH0_IDS, TEST_SENDER_AUTH0_ID]) });
     await emailTemplateRepository.delete({ sender: TEST_SENDER });
+    await employeeInfoRepository.delete({ auth0Id: In(TEST_AUTH0_IDS) });
     await app.close();
   });
 
@@ -313,6 +329,21 @@ describe('BatchEmail service integration tests', () => {
       .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
       .expect(200)
       .expect((res) => expect(res.body.success).toBe(true));
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should substitute employee info variables and send successfully`, async () => {
+  const createRes = await request(app.getHttpServer()).post('/emails').send({
+    sender: TEST_SENDER,
+    subject: 'Hi {{name}}, {{title}}',
+    content: '<p>Your role is {{job_title}} in {{department}} at {{business_name}}.</p>',
+    difficulty: EmailDifficulty.HARD,
+  }).expect(201);
+
+  return request(app.getHttpServer())
+    .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
+    .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
+    .expect(200)
+    .expect((res) => expect(res.body.success).toBe(true));
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should fail when the template contains an unsupported variable`, async () => {
