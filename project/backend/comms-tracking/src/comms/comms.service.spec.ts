@@ -10,7 +10,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { Logger } from '@nestjs/common';
 import { CommsService } from './comms.service';
 import { Communication, CommsSource } from './entities/communication.entity';
 import { Connection } from './entities/connection.entity';

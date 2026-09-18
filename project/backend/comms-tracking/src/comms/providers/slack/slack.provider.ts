@@ -6,9 +6,25 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { App } from '@slack/bolt';
+import type { WebClient } from '@slack/web-api';
 import { CommsService } from '../../comms.service';
 import { SlackUserMapper } from './slack-user-mapper';
 import { CommsSource } from '../../entities/communication.entity';
+
+/**
+ * The subset of fields we read off a Slack `message` event.
+ * Slack's runtime payload is a union of many subtypes; we narrow
+ * to the fields we care about and guard the rest at runtime.
+ */
+interface SlackMessageEvent {
+  user?: string;
+  text?: string;
+  ts: string;
+  channel: string;
+  thread_ts?: string;
+  subtype?: string;
+  bot_id?: string;
+}
 
 @Injectable()
 export class SlackProvider implements OnModuleInit, OnModuleDestroy {
@@ -48,7 +64,9 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
       }
     });
 
-    this.app.error(async (err) => this.logger.error('Slack error', err));
+    this.app.error((err) => {
+      this.logger.error('Slack error', err);
+    });
 
     await this.app.start();
     this.logger.log('Slack provider started (Socket Mode)');
@@ -58,13 +76,16 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
     if (this.app) await this.app.stop();
   }
 
-  private async handleMessage(event: any, client: any): Promise<void> {
+  private async handleMessage(
+    event: SlackMessageEvent,
+    client: WebClient,
+  ): Promise<void> {
     // Ignore bots, edits, joins, and other subtypes — only real user messages.
     if (!event.user) return;
     if (event.subtype) return;
     if (event.bot_id) return;
 
-    const text: string = event.text ?? '';
+    const text = event.text ?? '';
     const mentionedSlackIds = this.extractMentions(text);
 
     const senderAuth0Id = await this.userMapper.toAuth0Id(event.user, client);
@@ -78,11 +99,12 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
     }
 
     // Reply detection: thread_ts set and different from this message's ts.
-    const isReply = !!event.thread_ts && event.thread_ts !== event.ts;
-    if (isReply) {
+    const threadTs = event.thread_ts;
+    const isReply = !!threadTs && threadTs !== event.ts;
+    if (isReply && threadTs) {
       const parentSlackId = await this.userMapper.getThreadParentAuthor(
         event.channel,
-        event.thread_ts,
+        threadTs,
         client,
       );
       if (parentSlackId && parentSlackId !== event.user) {
@@ -106,14 +128,19 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
       receiverAuth0Ids,
       channelExternalId: event.channel,
       isReply,
-      parentExternalId: event.thread_ts,
+      parentExternalId: threadTs,
       occurredAt: new Date(Number(event.ts.split('.')[0]) * 1000),
     });
   }
 
   private extractMentions(text: string): string[] {
-    // Matches <@U123> and <@U123|name>
-    const matches = text.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/g) ?? [];
-    return matches.map((m) => m.replace(/<@|\|[^>]+>|>/g, ''));
+    // Matches <@U123> and <@U123|name>, capturing the ID.
+    const regex = /<@([A-Z0-9]+)(?:\|[^>]+)?>/g;
+    const ids: string[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(text)) !== null) {
+      ids.push(match[1]);
+    }
+    return ids;
   }
 }

@@ -23,4 +23,4 @@ async function bootstrap() {
   console.log('comms-tracking listening on port: ' + process.env.PORT);
   console.log('comms-tracking TCP listening on port: ' + process.env.TCP_PORT);
 }
-bootstrap();
+void bootstrap();

@@ -172,7 +172,7 @@ describe('Comms (integration)', () => {
 
       await request(app.getHttpServer()).get('/comms/graph').expect(200);
 
-      const call = connRepo.find.mock.calls[0][0] as any;
+      const call = connRepo.find.mock.calls[0][0];
       const cutoff: Date = call.where.lastInteractionAt.value;
       const expected = before - 30 * 86400000;
       expect(Math.abs(cutoff.getTime() - expected)).toBeLessThan(2000);
@@ -186,7 +186,7 @@ describe('Comms (integration)', () => {
         .get('/comms/graph?period=7d')
         .expect(200);
 
-      const call = connRepo.find.mock.calls[0][0] as any;
+      const call = connRepo.find.mock.calls[0][0];
       const cutoff: Date = call.where.lastInteractionAt.value;
       const expected = before - 7 * 86400000;
       expect(Math.abs(cutoff.getTime() - expected)).toBeLessThan(2000);
@@ -200,7 +200,7 @@ describe('Comms (integration)', () => {
         .get('/comms/graph?period=90d')
         .expect(200);
 
-      const call = connRepo.find.mock.calls[0][0] as any;
+      const call = connRepo.find.mock.calls[0][0];
       const cutoff: Date = call.where.lastInteractionAt.value;
       const expected = before - 90 * 86400000;
       expect(Math.abs(cutoff.getTime() - expected)).toBeLessThan(2000);
@@ -214,7 +214,7 @@ describe('Comms (integration)', () => {
         .get('/comms/graph?period=banana')
         .expect(200);
 
-      const call = connRepo.find.mock.calls[0][0] as any;
+      const call = connRepo.find.mock.calls[0][0];
       const cutoff: Date = call.where.lastInteractionAt.value;
       const expected = before - 30 * 86400000;
       expect(Math.abs(cutoff.getTime() - expected)).toBeLessThan(2000);
@@ -225,7 +225,7 @@ describe('Comms (integration)', () => {
 
       await request(app.getHttpServer()).get('/comms/graph').expect(200);
 
-      const call = connRepo.find.mock.calls[0][0] as any;
+      const call = connRepo.find.mock.calls[0][0];
       expect(call.order).toEqual({ lastInteractionAt: 'DESC' });
     });
   });
