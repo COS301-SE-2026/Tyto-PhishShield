@@ -115,6 +115,36 @@ describe('BatchEmail service integration tests', () => {
     testReferenceNumber = res.body.referenceNumber;
   }, 30000);
 
+  // Helper Function to create an email template
+  function createEmailTemplate(overrides: Partial<{
+    sender: string;
+    subject: string;
+    content: string;
+    difficulty: EmailDifficulty;
+    senderDepartment: Department;
+  }> = {}) {
+    return request(app.getHttpServer())
+      .post('/emails')
+      .send({
+        sender: TEST_SENDER,
+        subject: 'Batch E2E Test',
+        content: '<p>Batch e2e test email</p>',
+        difficulty: EmailDifficulty.HARD,
+        ...overrides,
+      });
+  }
+
+  // Helper Function to expect success
+  function expectSuccess(res: request.Response) {
+    expect(res.body.success).toBe(true);
+  }
+
+  // Helper Function to expect success and to see all recipients got sent emails
+  function expectSuccessForAllRecipients(res: request.Response) {
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toContain(`${TEST_RECIPIENTS.length}`);
+  }
+
   afterAll(async () => {
 
     await waveRepository.delete({ waveName: 'Wave Name' });
@@ -159,10 +189,7 @@ describe('BatchEmail service integration tests', () => {
         referenceNumber: testReferenceNumber,
       })
       .expect(200)
-      .expect((res) => {
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toContain(`${TEST_RECIPIENTS.length}`);
-      });
+      .expect(expectSuccessForAllRecipients);
   });
 
   it(`/batch-emails/send-batch-random-same-email (POST) - should return 404 if the provided referenceNumber does not exist`, () => {
@@ -200,10 +227,7 @@ describe('BatchEmail service integration tests', () => {
         waveName: 'Wave Name',
       })
       .expect(200)
-      .expect((res) => {
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toContain(`${TEST_RECIPIENTS.length}`);
-      });
+      .expect(expectSuccessForAllRecipients);
   });
 
   it(`/batch-emails/send-batch-random-same-email (POST) - should return 400 when scheduledTo is before scheduledFrom`, () => {
@@ -240,10 +264,7 @@ describe('BatchEmail service integration tests', () => {
         waveName: 'Wave Name',
       })
       .expect(200)
-      .expect((res) => {
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toContain(`${TEST_RECIPIENTS.length}`);
-      });
+      .expect(expectSuccessForAllRecipients);
   });
 
   it(`/batch-emails/send-batch-random-different-email (POST) - should schedule each recipient at an independent random time with different templates`, () => {
@@ -264,10 +285,7 @@ describe('BatchEmail service integration tests', () => {
         waveName: 'Wave Name',
       })
       .expect(200)
-      .expect((res) => {
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toContain(`${TEST_RECIPIENTS.length}`);
-      });
+      .expect(expectSuccessForAllRecipients);
   });
 
   it(`/batch-emails/send-batch-random-different-email (POST) - should return 400 when scheduledTo is before scheduledFrom`, () => {
@@ -298,15 +316,13 @@ describe('BatchEmail service integration tests', () => {
         alias: 'Batch E2E Sender',
       })
       .expect(200)
-      .expect((res) => expect(res.body.success).toBe(true));
+      .expect(expectSuccess);
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 404 when senderDepartment has no sender available`, async () => {
-    const createRes = await request(app.getHttpServer()).post('/emails').send({
-      sender: TEST_SENDER,
+    const createRes = await createEmailTemplate({
       subject: 'Batch E2E No Eligible Sender',
       content: '<p>Test</p>',
-      difficulty: EmailDifficulty.HARD,
       senderDepartment: Department.LEGAL_COMPLIANCE,
     }).expect(201);
 
@@ -317,41 +333,35 @@ describe('BatchEmail service integration tests', () => {
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should substitute supported variables and send successfully`, async () => {
-    const createRes = await request(app.getHttpServer()).post('/emails').send({
-      sender: TEST_SENDER,
+    const createRes = await createEmailTemplate({
       subject: 'Hi {{name}}',
       content: '<p>Hello {{name}} from {{department}} at {{business_name}}. Click {{tracking_link}}.</p>',
-      difficulty: EmailDifficulty.HARD,
     }).expect(201);
 
     return request(app.getHttpServer())
       .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
       .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
       .expect(200)
-      .expect((res) => expect(res.body.success).toBe(true));
+      .expect(expectSuccess);
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should substitute employee info variables and send successfully`, async () => {
-  const createRes = await request(app.getHttpServer()).post('/emails').send({
-    sender: TEST_SENDER,
-    subject: 'Hi {{name}}, {{title}}',
-    content: '<p>Your role is {{job_title}} in {{department}} at {{business_name}}.</p>',
-    difficulty: EmailDifficulty.HARD,
-  }).expect(201);
+    const createRes = await createEmailTemplate({
+      subject: 'Hi {{name}}, {{title}}',
+      content: '<p>Your role is {{job_title}} in {{department}} at {{business_name}}.</p>',
+    }).expect(201);
 
-  return request(app.getHttpServer())
-    .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
-    .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
-    .expect(200)
-    .expect((res) => expect(res.body.success).toBe(true));
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
+      .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
+      .expect(200)
+      .expect(expectSuccess);
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should fail when the template contains an unsupported variable`, async () => {
-    const createRes = await request(app.getHttpServer()).post('/emails').send({
-      sender: TEST_SENDER,
+    const createRes = await createEmailTemplate({
       subject: 'Test',
       content: '<p>Hello {{favoriteColor}}</p>',
-      difficulty: EmailDifficulty.HARD,
     }).expect(201);
 
     return request(app.getHttpServer())
@@ -365,7 +375,7 @@ describe('BatchEmail service integration tests', () => {
       .post(`/batch-emails/${testReferenceNumber}/send-batch-with-reference`)
       .send({ auth0Id: TEST_AUTH0_IDS, senderAuth0Id: TEST_SENDER_AUTH0_ID })
       .expect(200)
-      .expect((res) => expect(res.body.success).toBe(true));
+      .expect(expectSuccess);
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 400 when both senderCustomName and senderAuth0Id are provided`, () => {
