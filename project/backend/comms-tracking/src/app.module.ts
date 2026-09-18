@@ -6,7 +6,6 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { CommsModule } from './comms/comms.module';
 import { SlackModule } from './comms/providers/slack/slack.module';
 import { UsersMirrorModule } from './users/users-mirror.module';
-import { AuthModule } from './auth/auth.module';
 
 import { Communication } from './comms/entities/communication.entity';
 import { Connection } from './comms/entities/connection.entity';
@@ -44,8 +43,6 @@ import { CommsUser } from './comms/entities/comms-user.entity';
         connectionInitOptions: { wait: false },
       }),
     }),
-
-    AuthModule,
     CommsModule,
     SlackModule,
     UsersMirrorModule,
