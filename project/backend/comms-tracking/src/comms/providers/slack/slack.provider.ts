@@ -56,20 +56,20 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
     });
 
     // Fires for `message.channels` and `message.im`.
-    this.app.event('message', async ({ event, client }) => {
-      try {
-        await this.handleMessage(event, client);
-      } catch (err) {
-        this.logger.error('Error handling Slack message', err);
-      }
-    });
+  this.app.event('message', async ({ event, client }) => {
+    try {
+      await this.handleMessage(event, client);
+    } catch (err) {
+      this.logger.error('Error handling Slack message', err);
+    }
+  });
 
-    this.app.error((err) => {
-      this.logger.error('Slack error', err);
-    });
+  this.app.error(async (err) => {
+    this.logger.error(`Slack error: ${err.message}`, err.stack);
+  });
 
-    await this.app.start();
-    this.logger.log('Slack provider started (Socket Mode)');
+  await this.app.start();
+  this.logger.log('Slack provider started (Socket Mode)');
   }
 
   async onModuleDestroy(): Promise<void> {
