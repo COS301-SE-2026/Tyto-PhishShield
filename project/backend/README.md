@@ -219,7 +219,7 @@ Step 6: update the compose `local-compose.yml`:
       <service>_db:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ../backend/<service-name>/dist:/app/dist
 
 # under volumes if using db
 volumes:

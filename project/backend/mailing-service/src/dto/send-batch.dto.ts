@@ -8,6 +8,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
 } from 'class-validator';
 import { EmailDifficulty } from '../entities/email-template.entity';
 import { Type } from 'class-transformer';
@@ -44,4 +45,17 @@ export class SendBatchDto {
   @IsString()
   @IsOptional()
   referenceNumber: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^[^@\s]+$/)
+  senderCustomName?: string;
+
+  @IsString()
+  @IsOptional()
+  senderAuth0Id?: string;
+
+  @IsString()
+  @IsOptional()
+  alias?: string;
 }

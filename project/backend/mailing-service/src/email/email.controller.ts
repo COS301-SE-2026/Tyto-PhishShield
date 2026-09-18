@@ -1,5 +1,3 @@
-// sendEmail & scheduleSendEmail might get removed in the future.
-
 /**
  * Service: mailing-service
  *
@@ -28,11 +26,11 @@ import {
   Delete,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
-import { EmailsDto } from '../dto/emails.dto';
+import { EmailsDto } from '@phishshield/dto';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
-import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
+import { ScheduleSingleEmailDto } from '@phishshield/dto';
 import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
-import { SendSingleEmailDto } from '../dto/send-single-email.dto';
+import { SendSingleEmailDto } from '@phishshield/dto';
 import { DeleteResult } from 'typeorm';
 
 @Controller('emails')
@@ -82,6 +80,9 @@ export class EmailController {
     const result = await this.sendMailService.sendEmail(
       emailReferenceNumber,
       sendSingleEmailDto.auth0Id,
+      sendSingleEmailDto.senderCustomName,
+      sendSingleEmailDto.senderAuth0Id,
+      sendSingleEmailDto.alias,
     );
 
     return new MailingPostReturnDto({
@@ -101,6 +102,9 @@ export class EmailController {
       referenceNumber,
       scheduledSingleEmailDto.auth0Id,
       scheduledSingleEmailDto.scheduledAt,
+      scheduledSingleEmailDto.senderCustomName,
+      scheduledSingleEmailDto.senderAuth0Id,
+      scheduledSingleEmailDto.alias,
     );
 
     return new MailingPostReturnDto({

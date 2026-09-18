@@ -50,7 +50,7 @@ export class WebhookController {
     @Body() payload: ResendWebhookPayload,
   ) {
     return this.proxy.forward({
-      url: `${this.analyticsServiceUrl}/email-status/create`,
+      url: `${this.analyticsServiceUrl}/api/email-status/create`,
       method: 'POST',
       data: {
         emailId: payload.data.email_id,

@@ -59,7 +59,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
     if (!best || item.path.length > best.path.length) return item;
   return best;
   }, null);  
-  const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--color-danger)';
+  const scoreColor = securityScore >= 70 ? 'var(--color-success)' : securityScore >= 40 ? 'var(--color-warning)' : 'var(--sidebar-danger)';
   const scoreLabel = securityScore >= 70 ? 'Good' : securityScore >= 40 ? 'Fair' : 'At Risk';
   return (
     <aside style={{
@@ -97,7 +97,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
             <div key={section}>
               {!collapsed && (
                 <div style={{
-                  fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.22)',
+                  fontSize: 9, fontWeight: 600, color: 'var(--sidebar-text)',
                   letterSpacing: '1px', padding: '0 10px', margin: '10px 0 7px',
                   fontFamily: 'Inter, system-ui, sans-serif',
                 }}>
@@ -147,7 +147,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
             background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 9, padding: '11px 13px',
           }}>
-            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 600, marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>
+            <div style={{ color: 'var(--sidebar-text)', fontSize: 11, fontWeight: 600, marginBottom: 6, fontFamily: 'Inter, system-ui, sans-serif' }}>
               Security Score
             </div>
             <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 20, height: 5, marginBottom: 5 }}>
@@ -157,7 +157,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
               }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Inter, system-ui, sans-serif' }}>
-              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10 }}>{securityScore} / 100</span>
+              <span style={{ color: 'var(--sidebar-text)', fontSize: 10 }}>{securityScore} / 100</span>
               <span style={{ color: scoreColor, fontSize: 10, fontWeight: 600 }}>{scoreLabel}</span>
             </div>
           </div>
@@ -171,11 +171,11 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
           style={{
             display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
             gap: 9, width: '100%', padding: '8px 11px', borderRadius: 7, border: 'none',
-            background: 'transparent', color: 'rgba(255,255,255,0.35)', fontSize: 12,
+            background: 'transparent', color: 'var(--sidebar-text)', fontSize: 12,
             cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif',
           }}
           onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.35)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--sidebar-text)'}
         >
           <LogOut size={15} />
           {!collapsed && 'Sign out'}

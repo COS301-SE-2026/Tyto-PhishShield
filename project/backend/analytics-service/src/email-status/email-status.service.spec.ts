@@ -58,21 +58,31 @@ describe('EmailStatusService', () => {
       messageId: 'test-message-id',
       status: EmailStatusEnum.SENT,
       webhookEventId: 'test-webhook-event-id',
-      occurredAt: new Date(),
+      occurredAt: '2026-09-02T10:00:00.000Z', // string, as the gateway sends
     } as StatusCreateDto;
 
     it('should create a new status entry', async () => {
+      const expectedCreatedData = {
+        emailId: 'test-email-id',
+        messageId: 'test-message-id',
+        status: EmailStatusEnum.SENT,
+        reason: null,
+        webhookEventId: 'test-webhook-event-id',
+        occurredAt: new Date('2026-09-02T10:00:00.000Z'),
+      };
+
       mockRepository.findOne.mockResolvedValue(null);
       mockRepository.create.mockReturnValue(mockEmailStatus);
       mockRepository.save.mockResolvedValue(mockEmailStatus);
 
       const result = await service.createStatus(statusCreateDto);
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { webhookEventId: statusCreateDto.webhookEventId },
       });
-      expect(mockRepository.create).toHaveBeenCalledWith(statusCreateDto);
+      expect(mockRepository.create).toHaveBeenCalledWith(expectedCreatedData);
       expect(mockRepository.save).toHaveBeenCalledWith(mockEmailStatus);
-      expect(result).toEqual(mockEmailStatus);
+      expect(result).toEqual({ entity: mockEmailStatus, isNew: true });
     });
 
     it('should return the existing entry without creating a new one on a duplicate webhookEventId', async () => {
@@ -85,7 +95,7 @@ describe('EmailStatusService', () => {
       });
       expect(mockRepository.create).not.toHaveBeenCalled();
       expect(mockRepository.save).not.toHaveBeenCalled();
-      expect(result).toEqual(mockEmailStatus);
+      expect(result).toEqual({ entity: mockEmailStatus, isNew: false });
     });
 
     it('should throw InternalServerErrorException if save fails', async () => {

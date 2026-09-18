@@ -473,3 +473,8 @@ volumes:
   prod_caddy_logs:
   prod_rabbitmq_data:
     driver: local
+
+networks:
+  local-llm:
+    external: true
+    name: local-llm

@@ -10,6 +10,7 @@ import { ThemeProvider } from './context/theme-context';
 import { AccessibilityProvider } from './context/accessibility-context';
 import { AuthProvider } from './context/auth-context';
 import { ToastProvider } from './context/toast-context';
+import { NotificationProvider } from './context/notification-context';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,9 +18,11 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <AccessibilityProvider>
           <AuthProvider>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
+            <NotificationProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </NotificationProvider>
           </AuthProvider>
         </AccessibilityProvider>
       </ThemeProvider>

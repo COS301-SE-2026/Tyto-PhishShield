@@ -17,6 +17,11 @@ interface RandomBatchRequest {
   scheduledFrom: string;
   scheduledTo: string;
   randomisedTimes: boolean;
+  waveName: string;
+}
+
+interface RandomSameBatchRequest extends RandomBatchRequest {
+  referenceNumber?: string;
 }
 
 async function postBatchEmail(
@@ -79,13 +84,17 @@ export async function sendBatchRandomSameEmail(
     scheduledFrom: string, 
     scheduledTo: string, 
     randomisedTimes: boolean,
+    waveName: string,
+    referenceNumber?: string,
 ): Promise<BatchEmailResponse> {
-  const request: RandomBatchRequest = {
+  const request: RandomSameBatchRequest = {
     auth0Id: auth0Ids,
     difficulty,
     scheduledFrom,
     scheduledTo,
-    randomisedTimes
+    randomisedTimes,
+    waveName,
+    ...(referenceNumber ? {referenceNumber} : {}),
   };
 
   return postBatchEmail(
@@ -101,13 +110,15 @@ export async function sendBatchRandomDifferentEmail(
     scheduledFrom: string, 
     scheduledTo: string, 
     randomisedTimes: boolean,
+    waveName: string,
 ): Promise<BatchEmailResponse> {
   const request: RandomBatchRequest = {
     auth0Id: auth0Ids,
     difficulty,
     scheduledFrom,
     scheduledTo,
-    randomisedTimes
+    randomisedTimes,
+    waveName,
   };
 
   return postBatchEmail(

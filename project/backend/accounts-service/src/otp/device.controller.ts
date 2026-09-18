@@ -1,16 +1,16 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
-import { OtpService } from './otp.service';
+import { DeviceService } from './device.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('auth/device')
 export class DeviceController {
-  constructor(readonly otpService: OtpService) {}
+  constructor(readonly deviceService: DeviceService) {}
 
   @Post('verify')
   @UseGuards(JwtAuthGuard)
   @HttpCode(200)
   verifyDevice(@Body() device: { email: string; deviceToken: string }) {
-    return this.otpService.verifyDevice(device.email, device.deviceToken);
+    return this.deviceService.verifyDevice(device.email, device.deviceToken);
   }
 
   @Post('generate')
@@ -19,7 +19,7 @@ export class DeviceController {
   generateDevice(
     @Body() device: { email: string; userAgent: string; ipCreated: string },
   ) {
-    return this.otpService.generateDeviceToken(
+    return this.deviceService.generateDeviceToken(
       device.email,
       device.userAgent,
       device.ipCreated,

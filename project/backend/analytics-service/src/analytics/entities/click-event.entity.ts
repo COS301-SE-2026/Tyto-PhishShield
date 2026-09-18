@@ -22,6 +22,10 @@ export class ClickEvent {
   @Column({ nullable: true })
   campaignId?: string;
 
+  @Index({ unique: true })
+  @Column({ nullable: true })
+  emailId?: string;
+
   @CreateDateColumn()
   clickedAt!: Date;
 }

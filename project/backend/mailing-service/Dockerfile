@@ -10,13 +10,18 @@ RUN chown -R appuser:phishshield /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/mailing-service/package.json ./project/backend/mailing-service/package.json
+COPY project/backend/packages/dto/package.json ./project/backend/packages/dto/package.json
 
 RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-retry-mintimeout 10000 -g \
  && pnpm config set fetch-retry-maxtimeout 120000 -g \
  && pnpm config set fetch-timeout 120000 -g \
- && pnpm config set network-concurrency 8 -g   \
+ && pnpm config set network-concurrency 8 -g \
  && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+
+COPY project/backend/packages/dto/ ./project/backend/packages/dto/
+
+RUN pnpm --filter @phishshield/dto build
 
 COPY project/backend/mailing-service/ ./project/backend/mailing-service/
 

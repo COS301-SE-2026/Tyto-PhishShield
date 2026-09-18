@@ -196,7 +196,8 @@ export class ProxyService implements OnModuleInit {
 
       requestLogger.error('Proxy request failed', {
         url: options.url,
-        downstream,
+        response: downstream.response?.status,
+        message: downstream.message,
       });
 
       if (downstream.response?.status) {

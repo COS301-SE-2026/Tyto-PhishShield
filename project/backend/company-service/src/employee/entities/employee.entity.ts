@@ -40,6 +40,15 @@ export class Employee {
   @Column({ nullable: true })
   externalId?: string;
 
+  @Column({ default: false })
+  registered!: boolean;
+
+  @Column({ nullable: true })
+  auth0Id?: string;
+
+  @Column({ nullable: true })
+  title?: string;
+
   @CreateDateColumn()
   dateImported!: Date;
 
