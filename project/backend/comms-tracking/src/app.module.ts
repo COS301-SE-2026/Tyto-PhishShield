@@ -10,6 +10,7 @@ import { UsersMirrorModule } from './users/users-mirror.module';
 import { Communication } from './comms/entities/communication.entity';
 import { Connection } from './comms/entities/connection.entity';
 import { CommsUser } from './comms/entities/comms-user.entity';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CommsUser } from './comms/entities/comms-user.entity';
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME', 'comms_tracking'),
         entities: [Communication, Connection, CommsUser],
+        namingStrategy: new SnakeNamingStrategy(),
         synchronize: true, // dev only
       }),
     }),

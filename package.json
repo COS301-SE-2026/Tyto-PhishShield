@@ -121,7 +121,7 @@
 		"dc:up:prod-green": "docker compose -p green -f project/docker-compose/prod-green.yml --env-file ./project/docker-compose/.env.prod up",
 		"dc:down:prod-green": "docker compose -p green -f project/docker-compose/prod-green.yml --env-file ./project/docker-compose/.env.prod down",
 		"dc:up:ollama": "docker compose -f project/docker-compose/ollama-compose.yml up",
-		"dc:down:ollama":"docker compose -f project/docker-compose/ollama-compose.yml down",
+		"dc:down:ollama": "docker compose -f project/docker-compose/ollama-compose.yml down",
 		"db:seed": "pnpm dc:up && node ./project/scripts/seed.js",
 		"server:update:dev": "node ./project/scripts/send-dev-compose.js",
 		"server:update:prod": "node ./project/scripts/send-prod-compose.js prod-infrastructure.yml",
@@ -147,5 +147,8 @@
 		"dotenv-cli": "^11.0.0",
 		"js-yaml": "^5.4.1",
 		"ngrok": "5.0.0-beta.2"
+	},
+	"dependencies": {
+		"typeorm-naming-strategies": "^4.1.0"
 	}
 }
