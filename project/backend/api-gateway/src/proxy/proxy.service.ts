@@ -105,6 +105,7 @@ export class ProxyService implements OnModuleInit {
     @Inject('ANALYTICS_SERVICE') public readonly analyticsClient: ClientProxy,
     @Inject('LLM_SERVICE') public readonly llmClient: ClientProxy,
     @Inject('COMPANY_SERVICE') public readonly companyClient: ClientProxy,
+    @Inject('COMMS_SERVICE') public readonly commsClient: ClientProxy,
   ) {
     this.proxy.on('error', () => {
       throw new InternalServerErrorException(
@@ -128,6 +129,7 @@ export class ProxyService implements OnModuleInit {
     await this.connectService(this.analyticsClient, 'Analytics');
     await this.connectService(this.llmClient, 'llm');
     await this.connectService(this.companyClient, 'company');
+    await this.connectService(this.commsClient, 'comms');
   }
 
   private async connectService(client: ClientProxy, serviceName: string) {
