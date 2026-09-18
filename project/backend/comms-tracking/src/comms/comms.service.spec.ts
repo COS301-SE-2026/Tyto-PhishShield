@@ -97,9 +97,7 @@ describe('CommsService', () => {
       expect(commRepo.create).not.toHaveBeenCalled();
       expect(commRepo.save).not.toHaveBeenCalled();
       expect(dataSource.query).not.toHaveBeenCalled();
-      expect(
-        eventProducer.publishCommunicationRecorded,
-      ).not.toHaveBeenCalled();
+      expect(eventProducer.publishCommunicationRecorded).not.toHaveBeenCalled();
     });
 
     it('persists the communication, upserts each edge, and publishes the event', async () => {
@@ -135,9 +133,7 @@ describe('CommsService', () => {
         baseMessage.occurredAt,
       ]);
 
-      expect(
-        eventProducer.publishCommunicationRecorded,
-      ).toHaveBeenCalledWith({
+      expect(eventProducer.publishCommunicationRecorded).toHaveBeenCalledWith({
         source: CommsSource.SLACK,
         senderAuth0Id: baseMessage.senderAuth0Id,
         receiverAuth0Ids: baseMessage.receiverAuth0Ids,
@@ -161,11 +157,7 @@ describe('CommsService', () => {
 
       expect(dataSource.query).toHaveBeenCalledTimes(3);
       const receivers = dataSource.query.mock.calls.map((c) => c[1][1]);
-      expect(receivers).toEqual([
-        'auth0|bob',
-        'auth0|carol',
-        'auth0|dave',
-      ]);
+      expect(receivers).toEqual(['auth0|bob', 'auth0|carol', 'auth0|dave']);
     });
 
     it('still succeeds when the event publisher throws', async () => {
@@ -268,7 +260,7 @@ describe('CommsService', () => {
 
       await service.getGraph(7);
 
-      const call = connRepo.find.mock.calls[0][0] as any;
+      const call = connRepo.find.mock.calls[0][0];
       const cutoff: Date = call.where.lastInteractionAt.value;
       const expectedCutoff = before - 7 * 86400000;
       // Within a couple of seconds of the expected cutoff

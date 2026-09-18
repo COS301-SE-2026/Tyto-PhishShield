@@ -1,10 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, MoreThanOrEqual, DataSource } from 'typeorm';
-import {
-  Communication,
-  CommsSource,
-} from './entities/communication.entity';
+import { Communication, CommsSource } from './entities/communication.entity';
 import { Connection } from './entities/connection.entity';
 import { CommsUser } from './entities/comms-user.entity';
 import { NormalizedMessage } from './providers/comms-provider.interface';

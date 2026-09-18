@@ -38,7 +38,9 @@ export class SlackUserMapper {
 
       const byEmail = await this.userRepo.findOne({ where: { email } });
       if (!byEmail) {
-        this.logger.warn(`No local user with email ${email} (Slack ${slackId})`);
+        this.logger.warn(
+          `No local user with email ${email} (Slack ${slackId})`,
+        );
         return null;
       }
 
