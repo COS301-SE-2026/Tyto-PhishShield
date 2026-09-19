@@ -91,12 +91,13 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
     const senderAuth0Id = await this.userMapper.toAuth0Id(event.user, client);
     if (!senderAuth0Id) return;
 
-    const receiverAuth0Ids: string[] = [];
+    const receiverSet = new Set<string>();
     for (const slackId of mentionedSlackIds) {
       if (slackId === event.user) continue;
       const id = await this.userMapper.toAuth0Id(slackId, client);
-      if (id) receiverAuth0Ids.push(id);
+      if (id) receiverSet.add(id);
     }
+    const receiverAuth0Ids: string[] = [...receiverSet];
 
     // Reply detection: thread_ts set and different from this message's ts.
     const threadTs = event.thread_ts;
