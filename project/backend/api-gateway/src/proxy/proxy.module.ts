@@ -9,10 +9,28 @@ import { ProxyService } from './proxy.service';
 import { RouteResolver } from './proxy.routes';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import * as https from 'https';
+import * as fs from 'fs';
+
+if (!process.env.NODE_EXTRA_CA_CERTS || !process.env.TLS_CERT_PATH || !process.env.TLS_KEY_PATH) {
+  throw new Error('Undefined https options!');
+}
+
+const tlsOptions = {
+  ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS),
+  key: fs.readFileSync(process.env.TLS_KEY_PATH ),
+  cert: fs.readFileSync(process.env.TLS_CERT_PATH),
+  rejectUnauthorized: true,
+};
 
 @Module({
   imports: [
-    HttpModule,
+    HttpModule.register({
+      httpsAgent: new https.Agent({
+        ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS),
+        rejectUnauthorized: true,
+      }),
+    }),
     ConfigModule,
     // Register each microservice tcp client to the api-gateway
     ClientsModule.register([
@@ -22,6 +40,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         options: {
           host: process.env.ACCOUNTS_HOST ?? 'accounts_app',
           port: Number(process.env.ACCOUNTS_TCP_PORT ?? 4001),
+          tlsOptions,
         },
       },
       {

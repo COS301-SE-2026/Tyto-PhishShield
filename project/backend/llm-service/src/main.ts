@@ -1,9 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
+import * as fs from 'fs';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  if (!process.env.NODE_EXTRA_CA_CERTS || !process.env.TLS_CERT_PATH || !process.env.TLS_KEY_PATH) {
+    throw new Error('Undefined https options!');
+  }
+  const httpsOptions = {
+    key: fs.readFileSync(process.env.TLS_KEY_PATH),
+    cert: fs.readFileSync(process.env.TLS_CERT_PATH),
+    ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS),
+    requestCert: true,
+    rejectUnauthorized: true,
+  };
+  const app = await NestFactory.create(AppModule, { httpsOptions });
 
   app.setGlobalPrefix('api');
 
@@ -12,6 +23,7 @@ async function bootstrap() {
     options: {
       host: '0.0.0.0',
       port: Number(process.env.TCP_PORT ?? 3000),
+      tlsOptions: httpsOptions,
     },
   });
 
