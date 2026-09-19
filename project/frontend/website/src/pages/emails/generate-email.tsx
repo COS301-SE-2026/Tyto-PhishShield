@@ -2,8 +2,9 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Button, Card, Badge, Input, Select } from '../../components/ui';
 import { useState, type CSSProperties } from 'react';
 import { useToast } from '../../context/toast-context';
-import { createEmailTemplate } from '../../services/email-template';
+import { createEmailTemplate, type Department as EmailTemplateDepartment } from '../../services/email-template';
 import { generateTemplates, type Difficulty, type Department, type MessageType, type MessageTone, type TemplateVariable, type GeneratedTemplate } from '../../services/llm-template';
+import { SenderDomainSelect } from "../../components/email/sender-domain-select";
 
 interface GenerateEmailProps {
   readonly onNavigate: (path: string) => void;
@@ -24,8 +25,6 @@ interface FormErrors {
   sender?: string;
   templateVariable?: string;
 }
-
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
 
 const DIFFICULTY_OPTIONS = [
     { value: 'easy', label: 'Easy'},
@@ -64,13 +63,22 @@ const DEPARTMENT_OPTIONS = [
     { value: 'executive', label: 'Executive' },
 ];
 
+const EMAIL_TEMPLATE_DEPARTMENT_MAP : Record<Department, EmailTemplateDepartment> = {
+  'it_&_security': 'IT & Security',
+  finance: 'Finance',
+  human_resources: 'Human Resources',
+  'legal_&_compliance': 'Legal & Compliance',
+  operations: 'Operations',
+  executive: 'Executive',
+}
+
 const COUNT_OPTIONS = Array.from({length: 6 }, (_, index) => ({
   value: String(index + 1),
   label: `${index + 1} template${index === 0 ? '' : 's'}`
 }));
 
 const INITIAL_FORM: GenerateEmailForm = {
-  sender: '',
+  sender: 'capstone-five-guys.dns.net.za',
   alias: '',
   difficulty: 'easy',
   tone: 'professional',
@@ -126,9 +134,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
     const nextErrors: FormErrors = {};
 
     if (!form.sender.trim()) {
-      nextErrors.sender = 'Sender email required.';
-    }else if (!EMAIL_PATTERN.test(form.sender.trim())) {
-      nextErrors.sender = 'Enter a valid sender email address.';
+      nextErrors.sender = 'Sender domain is required.'
     }
 
     setErrors(nextErrors);
@@ -212,6 +218,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
             subject: template.subject,
             content: template.body,
             difficulty: generatedDifficulty ?? form.difficulty,
+            senderDepartment: form.senderDepartment ? EMAIL_TEMPLATE_DEPARTMENT_MAP[form.senderDepartment] : undefined,
           }),
         )
       );
@@ -343,14 +350,10 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                 gap: 12,
               }}
             >
-              <Input
-                label='Sender email'
-                type='email'
-                placeholder='test@capstone-five-guys.dns.net.za'
+              <SenderDomainSelect
                 value={form.sender}
+                onChange={(value) => setField('sender', value)}
                 error={errors.sender}
-                required
-                onChange={(event) => setField('sender', event.target.value)}
               />
 
               <Input
