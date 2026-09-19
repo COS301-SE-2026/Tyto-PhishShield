@@ -4,10 +4,11 @@ import { LlmService } from './llm.service';
 import { PromptBuilderService } from './prompt-builder/prompt-builder.service';
 import { LlmGatewayModule } from './llm-gateway/llm-gateway.module';
 import { ConfigModule } from '@nestjs/config';
+import { ClassificationService } from './classification/classification.service';
 
 @Module({
   imports: [LlmGatewayModule, ConfigModule],
   controllers: [LlmController],
-  providers: [LlmService, PromptBuilderService],
+  providers: [LlmService, PromptBuilderService, ClassificationService],
 })
 export class LlmModule {}
