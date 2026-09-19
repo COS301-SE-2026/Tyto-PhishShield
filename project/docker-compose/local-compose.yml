@@ -731,7 +731,7 @@ services:
           memory: '128M'
 
     depends_on:
-      <service>_db:
+      comms_db:
         condition: service_healthy
     volumes:
       - ../backend/comms-tracking/dist:/app/dist
