@@ -1,34 +1,26 @@
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
     options: {
       host: '0.0.0.0',
-      port: Number(process.env.TCP_PORT ?? 3000),
+      port: Number(process.env.TCP_PORT ?? 4009),
     },
   });
 
-  if (process.env.RABBITMQ_URL) {
-    app.connectMicroservice<MicroserviceOptions>({
-      transport: Transport.RMQ,
-      options: {
-        urls: [process.env.RABBITMQ_URL],
-        queue: 'comms.queue',
-        queueOptions: {
-          durable: true,
-        },
-      },
-    });
-  }
-
+  app.setGlobalPrefix('api');
   await app.startAllMicroservices();
-  await app.listen(process.env.PORT ?? 3000);
-  console.log('Comms tracking listening on port: ' + process.env.PORT);
-  console.log('Comms tracking TCP listening on port: ' + process.env.TCP_PORT);
+  await app.listen(process.env.PORT ?? 3008);
+
+  console.log('comms-tracking listening on port: ' + process.env.PORT);
+  console.log('comms-tracking TCP listening on port: ' + process.env.TCP_PORT);
 }
-bootstrap();
+void bootstrap();

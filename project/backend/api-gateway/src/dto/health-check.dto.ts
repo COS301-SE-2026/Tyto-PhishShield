@@ -7,6 +7,7 @@ export class HealthServices {
   analyticsService?: string;
   llmService?: string;
   companyService?: string;
+  commsService?: string;
 }
 
 export class Health {
