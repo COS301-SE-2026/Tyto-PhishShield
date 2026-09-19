@@ -23,6 +23,7 @@ import { VariableResolverService } from '../shared-services/variable-resolver.se
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { Department } from '@phishshield/dto';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 const mockResendBatchSend = jest.fn().mockResolvedValue({
   data: {
@@ -92,6 +93,10 @@ describe('BatchEmailService', () => {
     senderDepartment: undefined as Department | undefined,
   };
 
+  const mockEmployeeInfoRepository = {
+    find: jest.fn().mockResolvedValue([]),
+  };
+
   const mockVariableResolverService = { substitute: jest.fn((text: string) => text) };
   const mockSenderResolverService = { resolveFromAddress: jest.fn().mockReturnValue('resolved-sender@domain.com') };
   const mockTrackingLinkService = { replace: jest.fn((content: string) => ({ content, token: 'mock-token' })) };
@@ -108,6 +113,7 @@ describe('BatchEmailService', () => {
         { provide: VariableResolverService, useValue: mockVariableResolverService },
         { provide: SenderResolverService, useValue: mockSenderResolverService },
         { provide: TrackingLinkService, useValue: mockTrackingLinkService },
+        { provide: getRepositoryToken(EmployeeInfoEntity), useValue: mockEmployeeInfoRepository},
       ],
     }).compile();
 
@@ -123,6 +129,7 @@ describe('BatchEmailService', () => {
       { auth0Id: 'auth0|1', email: 'test@example.com', name: 'Test User 1', department: 'IT' },
       { auth0Id: 'auth0|2', email: 'test@example.com', name: 'Test User 2', department: 'HR' },
     ]);
+    mockEmployeeInfoRepository.find.mockReturnValue([]);
     mockEmail.senderDepartment = undefined;
   });
 
