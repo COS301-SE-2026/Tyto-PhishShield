@@ -5,6 +5,7 @@ import { useToast } from "../../context/toast-context";
 import type { EmailDifficulty } from "../../services/send-batch-email";
 import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate } from '../../services/email-template';
 import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
+import { SenderDomainSelect } from "../../components/email/sender-domain-select";
 
 interface CreateEmailProps {
     onNavigate: (path: string) => void;
@@ -36,10 +37,8 @@ const DIFFICULTY_OPTIONS = [
     },
 ];
 
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
-
 const initialForm: EmailForm = {
-    sender: '',
+    sender: 'capstone-five-guys.dns.net.za',
     alias: '',
     subject: '',
     content: '',
@@ -97,10 +96,8 @@ export function CreateEmail({
     const validateForm = (): boolean =>{
         const nextErrors: EmailFormErrors = {};
 
-        if (!form.sender.trim()){
-            nextErrors.sender = 'Sender email is required. eg. test@capstone-five-guys.dns.net.za';
-        } else if (!EMAIL_PATTERN.test(form.sender.trim())) {
-            nextErrors.sender = 'Enter a valid sender email address.';
+        if (!form.sender.trim()) {
+            nextErrors.sender = 'Sender domain is required'
         }
 
         if (!form.subject.trim()){
@@ -264,16 +261,10 @@ export function CreateEmail({
                     gap: 12,
                     }}
                 >
-                    <Input
-                    label='Sender email'
-                    type="email"
-                    placeholder="eg. test@capstone-five-guys.dns.net.za"
-                    value={form.sender}
-                    onChange={(event) =>
-                        setField('sender', event.target.value)
-                    }
-                    error={errors.sender}
-                    required
+                    <SenderDomainSelect
+                        value={form.sender}
+                        onChange={(value) => setField('sender', value)}
+                        error={errors.sender}
                     />
 
                     <Input
@@ -520,10 +511,12 @@ export function CreateEmail({
                     value: createdTemplate.subject,
                     },
                     {
-                    label: 'Sender',
-                    value: createdTemplate.alias
-                        ? `${createdTemplate.alias} <${createdTemplate.sender}>`
-                        : createdTemplate.sender,
+                    label: "Sender domain",
+                    value: `@${createdTemplate.sender}`,
+                    },
+                    {
+                    label: "Display name",
+                    value: createdTemplate.alias || "None",
                     },
                     {
                     label: 'Difficulty',
