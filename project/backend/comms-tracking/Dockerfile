@@ -10,6 +10,8 @@ RUN chown -R appuser:phishshield /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/comms-tracking/package.json ./project/backend/comms-tracking/package.json
+COPY project/backend/packages/dto/package.json ./project/backend/packages/dto/package.json
+COPY project/backend/packages/eventHandler/package.json ./project/backend/packages/eventHandler/package.json
 
 RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-retry-mintimeout 10000 -g \
@@ -17,6 +19,12 @@ RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-timeout 120000 -g \
  && pnpm config set network-concurrency 8 -g \
  && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+
+COPY project/backend/packages/eventHandler/ ./project/backend/packages/eventHandler/
+
+COPY project/backend/packages/dto/ ./project/backend/packages/dto/
+
+RUN pnpm build:shared
 
 COPY project/backend/comms-tracking/ ./project/backend/comms-tracking/
 
