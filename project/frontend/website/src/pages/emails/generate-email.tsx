@@ -130,6 +130,12 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
     );
   }
 
+  const selectAllTemplates = (): void => {
+    setSelectedTemplateIds(
+      templates.map((template) => template.id)
+    )
+  }
+
   const validateForm = (): boolean => {
     const nextErrors: FormErrors = {};
 
@@ -159,7 +165,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
       });
 
       setTemplates(result.templates);
-      setSelectedTemplateIds(result.templates.map((template) => template.id));
+      setSelectedTemplateIds([]);
       setGeneratedDifficulty(form.difficulty);
 
       if (result.failed > 0) {
@@ -642,10 +648,10 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
             >
               <Button
                 variant='ghost'
-                disabled={saving}
-                onClick={() => setSelectedTemplateIds([])}
+                disabled={saving || selectedTemplateIds.length === templates.length}
+                onClick={selectAllTemplates}
               >
-                Clear Selection
+                Select All
               </Button>
 
               <Button
