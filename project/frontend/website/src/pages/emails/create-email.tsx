@@ -516,7 +516,7 @@ export function CreateEmail({
                     },
                     {
                     label: "Display name",
-                    value: createdTemplate.alias || "None",
+                    value: createdTemplate.alias ?? "None",
                     },
                     {
                     label: 'Difficulty',
