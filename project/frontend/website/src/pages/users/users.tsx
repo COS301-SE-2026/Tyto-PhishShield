@@ -312,7 +312,7 @@ function ImportUsersModal({ isOpen, onClose, onImported }: {
       addToast({
         type: 'success',
         title: 'Import Started',
-        message: 'Employees are being added.'
+        message: 'Employees are being added. Please refresh shortly to see imported users.'
       });
 
       resetImport();
