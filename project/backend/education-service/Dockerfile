@@ -11,6 +11,7 @@ RUN chown -R appuser:phishshield /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/education-service/package.json ./project/backend/education-service/package.json
 COPY project/backend/packages/dto/package.json ./project/backend/packages/dto/package.json
+COPY project/backend/packages/eventHandler/package.json ./project/backend/packages/eventHandler/package.json
 
 RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-retry-mintimeout 10000 -g \
@@ -19,9 +20,11 @@ RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set network-concurrency 8 -g \
  && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
+COPY project/backend/packages/eventHandler/ ./project/backend/packages/eventHandler/
+
 COPY project/backend/packages/dto/ ./project/backend/packages/dto/
 
-RUN pnpm --filter @phishshield/dto build
+RUN pnpm build:shared
 
 COPY project/backend/education-service/ ./project/backend/education-service/
 
