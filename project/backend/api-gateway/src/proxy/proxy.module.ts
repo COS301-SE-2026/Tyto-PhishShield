@@ -99,6 +99,14 @@ const tlsOptions = {
           port: Number(process.env.COMPANY_TCP_PORT ?? 4008),
         },
       },
+      {
+        name: 'COMMS_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.COMMS_HOST ?? 'comms_app',
+          port: Number(process.env.COMMS_TCP_PORT ?? 4009),
+        },
+      }
     ]),
   ],
   providers: [ProxyService, RouteResolver],

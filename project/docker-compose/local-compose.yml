@@ -212,6 +212,7 @@ services:
       - ANALYTICS_SERVICE_URL=https://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - LLM_SERVICE_URL=https://${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
       - COMPANY_SERVICE_URL=https://${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - COMMS_SERVICE_URL=https://${COMMS_APP_CONTAINER}:${COMMS_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
@@ -220,6 +221,7 @@ services:
       - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
       - LLM_HOST=${LLM_APP_CONTAINER}
       - COMPANY_HOST=${COMPANY_APP_CONTAINER}
+      - COMMS_HOST=${COMMS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -228,6 +230,7 @@ services:
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - LLM_TCP_PORT=${LLM_TCP_PORT}
       - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
+      - COMMS_TCP_PORT=${COMMS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
@@ -707,6 +710,81 @@ services:
     volumes:
       - internal_certs:/etc/ssl/certs:ro
       - ../backend/company-service/dist:/app/dist
+
+  comms_db:
+    image: postgres:15-alpine
+    restart: always
+
+    # Must have own name
+    container_name: ${COMMS_DB_CONTAINER}
+
+    # Env variables, must be unique
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${COMMS_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${COMMS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+    volumes:
+      - comms_pgdata:/var/lib/postgresql/data
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+
+    ports:
+      # Left side must be unique
+      - "${COMMS_DB_PORT}:${INTERNAL_DB_PORT}"
+      
+# Main service app container
+  comms_app:
+    build:
+      context: ../../
+      dockerfile: project/backend/comms-tracking/Dockerfile
+
+      # Must be unique
+    container_name: ${COMMS_APP_CONTAINER}
+    environment:
+      - PORT=${COMMS_SERVICE_PORT}
+      - TCP_PORT=${COMMS_TCP_PORT}
+      - DB_HOST=${COMMS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMMS_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+
+
+    ports:
+      # Left side must be unique
+      - "${COMMS_SERVICE_PORT}:${COMMS_SERVICE_PORT}"
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+
+    depends_on:
+      comms_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ../backend/comms-tracking/dist:/app/dist
   
   # builds the website using the website's dockerfile
   website:
@@ -877,6 +955,7 @@ volumes:
   analytics_pgdata:
   llm_pgdata:
   company_pgdata:
+  comms_pgdata:
   pgadmin_data:
   rabbitmq_data:
     driver: local

@@ -23,6 +23,7 @@ import {
 import { In, Repository } from 'typeorm';
 import { Department, UserEntity } from '../src/entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { EmployeeInfoEntity } from '../src/entities/employee-info.entity';
 
 const TEST_SENDER_DOMAIN = process.env.DOMAIN;
 const TEST_RECIPIENT = process.env.RESEND_EMAIL_DELIVERED;
@@ -34,6 +35,7 @@ describe('Email service integration test', () => {
   let testReferenceNumber: string;
   let userRepository: Repository<UserEntity>;
   let emailTemplateRepository: Repository<EmailTemplateEntity>;
+  let employeeInfoRepository: Repository<EmployeeInfoEntity>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -52,6 +54,10 @@ describe('Email service integration test', () => {
       Repository<EmailTemplateEntity>
     >(getRepositoryToken(EmailTemplateEntity));
 
+    employeeInfoRepository = moduleFixture.get<
+      Repository<EmployeeInfoEntity>
+    >(getRepositoryToken(EmployeeInfoEntity));
+
     await emailTemplateRepository.delete({ sender: TEST_SENDER_DOMAIN });
 
     await userRepository.save([
@@ -68,6 +74,19 @@ describe('Email service integration test', () => {
         department: Department.IT_SECURITY,
       }),
     ]);
+
+  await employeeInfoRepository.save([
+    employeeInfoRepository.create({
+      auth0Id: TEST_AUTH0_ID,
+      jobTitle: 'Engineer',
+      title: 'Mr',
+    }),
+    employeeInfoRepository.create({
+      auth0Id: TEST_SENDER_AUTH0_ID,
+      jobTitle: 'Manager',
+      title: 'Mrs',
+    }),
+  ]);
   }, 30000);
 
   afterAll(async () => {
@@ -75,8 +94,41 @@ describe('Email service integration test', () => {
     await userRepository.delete({
       auth0Id: In([TEST_SENDER_AUTH0_ID, TEST_AUTH0_ID]),
     });
+    await employeeInfoRepository.delete({
+      auth0Id: In([TEST_AUTH0_ID, TEST_SENDER_AUTH0_ID]),
+    });
     await app.close();
   });
+
+  // Helper Function to create email template
+  function createEmailTemplate(overrides: Partial<{
+    sender: string;
+    subject: string;
+    content: string;
+    difficulty: EmailDifficulty;
+    senderDepartment: Department;
+  }> = {}) {
+    return request(app.getHttpServer())
+      .post('/emails')
+      .send({
+        sender: TEST_SENDER_DOMAIN,
+        subject: 'E2E Test',
+        content: '<p>This is a test</p>',
+        difficulty: EmailDifficulty.HARD,
+        ...overrides,
+      });
+  }
+
+  // Helper Function to expect success
+  function expectSuccess(res: request.Response) {
+    expect(res.body.success).toBe(true);
+  }
+
+  // Helper Function to expect success and deliveredId to be defined
+  function expectSuccessWithDeliveryId(res: request.Response) {
+    expect(res.body.success).toBe(true);
+    expect(res.body.deliveryId).toBeDefined();
+  }
 
   it('/emails (POST) - should create a new email', () => {
     return request(app.getHttpServer())
@@ -153,10 +205,7 @@ describe('Email service integration test', () => {
     .post(`/emails/${testReferenceNumber}/send-single`)
     .send({ auth0Id: TEST_AUTH0_ID })
     .expect(200)
-    .expect((res) => {
-      expect(res.body.success).toBe(true);
-      expect(res.body.deliveryId).toBeDefined();
-    });
+    .expect(expectSuccessWithDeliveryId);
   });
 
   it('/emails/:referneceNumber/send-single (POST) - should throw error if user auth0Id does not exist', () => {
@@ -171,10 +220,7 @@ describe('Email service integration test', () => {
       .post(`/emails/${testReferenceNumber}/send-single`)
       .send({ auth0Id: TEST_AUTH0_ID, senderAuth0Id: TEST_SENDER_AUTH0_ID })
       .expect(200)
-      .expect((res) => {
-        expect(res.body.success).toBe(true);
-        expect(res.body.deliveryId).toBeDefined();
-      });
+      .expect(expectSuccessWithDeliveryId);
   });
 
   it('/emails/:referenceNumber/send-single (POST) - should return 400 when both senderCustomName and senderAuth0Id are provided', () => {
@@ -216,10 +262,7 @@ describe('Email service integration test', () => {
       .post(`/emails/${testReferenceNumber}/schedule-send-single`)
       .send({ auth0Id: TEST_AUTH0_ID, scheduledAt: futureDate.toISOString() })
       .expect(200)
-      .expect((res) => {
-        expect(res.body.success).toBe(true);
-        expect(res.body.deliveryId).toBeDefined();
-      });
+      .expect(expectSuccessWithDeliveryId);
   });
 
   it('/emails/:referneceNumber/schedule-send-single (POST) - should throw error if user auth0Id does not exist', () => {
@@ -236,33 +279,36 @@ describe('Email service integration test', () => {
   });
 
   it('/emails/:referenceNumber/send-single (POST) - should substitute supported variables and send successfully', async () => {
-  const createRes = await request(app.getHttpServer())
-    .post('/emails')
-    .send({
-      sender: TEST_SENDER_DOMAIN,
+    const createRes = await createEmailTemplate({
       subject: 'Hi {{name}}',
       content: '<p>Hello {{name}} from {{department}} at {{business_name}}. Click {{tracking_link}}.</p>',
-      difficulty: EmailDifficulty.HARD,
-    })
-    .expect(201);
+    }).expect(201);
 
-  return request(app.getHttpServer())
-    .post(`/emails/${createRes.body.referenceNumber}/send-single`)
-    .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
-    .expect(200)
-    .expect((res) => expect(res.body.success).toBe(true));
-});
+    return request(app.getHttpServer())
+      .post(`/emails/${createRes.body.referenceNumber}/send-single`)
+      .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
+      .expect(200)
+      .expect(expectSuccess);
+  });
+
+  it('/emails/:referenceNumber/send-single (POST) - should substitute employee info variables and send successfully', async () => {
+    const createRes = await createEmailTemplate({
+      subject: 'Hi {{name}}, {{title}}',
+      content: '<p>Your role is {{job_title}} in {{department}} at {{business_name}}.</p>',
+    }).expect(201);
+
+    return request(app.getHttpServer())
+      .post(`/emails/${createRes.body.referenceNumber}/send-single`)
+      .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
+      .expect(200)
+      .expect(expectSuccess);
+  });
 
   it('/emails/:referenceNumber/send-single (POST) - should fail when the template contains an unsupported variable', async () => {
-    const createRes = await request(app.getHttpServer())
-      .post('/emails')
-      .send({
-        sender: TEST_SENDER_DOMAIN,
-        subject: 'Test',
-        content: '<p>Hello {{incorrectVariable}}</p>',
-        difficulty: EmailDifficulty.HARD,
-      })
-      .expect(201);
+    const createRes = await createEmailTemplate({
+      subject: 'Test',
+      content: '<p>Hello {{incorrectVariable}}</p>',
+    }).expect(201);
 
     return request(app.getHttpServer())
       .post(`/emails/${createRes.body.referenceNumber}/send-single`)
@@ -271,16 +317,11 @@ describe('Email service integration test', () => {
   });
 
   it('/emails/:referenceNumber/send-single (POST) - should fail when senderDepartment has no sender available', async () => {
-    const createRes = await request(app.getHttpServer())
-      .post('/emails')
-      .send({
-        sender: TEST_SENDER_DOMAIN,
-        subject: 'Test',
-        content: '<p>Test</p>',
-        difficulty: EmailDifficulty.HARD,
-        senderDepartment: Department.LEGAL_COMPLIANCE,
-      })
-      .expect(201);
+    const createRes = await createEmailTemplate({
+      subject: 'Test',
+      content: '<p>Test</p>',
+      senderDepartment: Department.LEGAL_COMPLIANCE,
+    }).expect(201);
 
     return request(app.getHttpServer())
       .post(`/emails/${createRes.body.referenceNumber}/send-single`)

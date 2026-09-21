@@ -5,11 +5,10 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserEntity } from '../entities/user.entity';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 // Looks for a variable like {{...}}, for example, {{name}}.
 const VARIABLE_PATTERN = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
-
-type UserVariableResolver = (user: UserEntity) => string | undefined;
 
 @Injectable()
 export class VariableResolverService {
@@ -17,29 +16,19 @@ export class VariableResolverService {
   private readonly businessName: string;
   private readonly reservedVariables = new Set(['tracking_link']);
 
-  private readonly staticVariableResolvers: Record<
-    string,
-    () => string | undefined
-  >;
-
-  // Add new variables here.
-  private readonly userVariableResolvers: Record<string, UserVariableResolver> =
-    {
-      name: (user) => user.name?.split(' ')[0],
-      department: (user) => user.department,
-    };
-
   constructor(private readonly configService: ConfigService) {
     this.businessName = this.configService.get<string>(
       'BUSINESS_NAME',
       'FiveGuys',
     );
-    this.staticVariableResolvers = {
-      business_name: () => this.businessName,
-    };
   }
 
-  substitute(text: string, referenceNumber: string, user: UserEntity): string {
+  substitute(
+    text: string,
+    referenceNumber: string,
+    user: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
+  ): string {
     if (!text) {
       return text;
     }
@@ -49,20 +38,45 @@ export class VariableResolverService {
         return match;
       }
 
-      const value =
-        this.staticVariableResolvers[variableName]?.() ??
-        this.userVariableResolvers[variableName]?.(user);
+      const value = this.resolveVariable(variableName, user, employeeInfo);
 
       if (value === undefined) {
         this.logger.error(
           `Template "${referenceNumber}" uses an unsupported or unavailable variable: ${variableName}`,
         );
         throw new InternalServerErrorException(
-          `Template "${referenceNumber}" contains an unsupported or unavailable variable: {{${variableName}}}`,
+          `Template "${referenceNumber}" contains an unsupported or unavailable variable: ${variableName}`,
         );
       }
 
       return value;
     });
+  }
+
+  // Add new variables here.
+  private resolveVariable(
+    variableName: string,
+    user: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
+  ): string | undefined {
+    switch (variableName) {
+      case 'business_name':
+        return this.businessName;
+
+      case 'name':
+        return user.name?.split(' ')[0];
+
+      case 'department':
+        return user.department;
+
+      case 'job_title':
+        return employeeInfo?.jobTitle;
+
+      case 'title':
+        return employeeInfo?.title;
+
+      default:
+        return undefined;
+    }
   }
 }
