@@ -39,6 +39,14 @@ services:
 
     # Must have own name
     container_name: ${MAILING_DB_CONTAINER}
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/mailing_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/mailing_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     deploy:
       resources:
         limits:
@@ -47,6 +55,9 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
 
     # Env variables, must be unique
     environment:
@@ -65,7 +76,8 @@ services:
       # This must be hard coded
       - mailing_pgdata:/var/lib/postgresql/data
       - ../backend/mailing-service/init-db:/docker-entrypoint-initdb.d
-
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     ports:
       # Left side must be unique
       - "${MAILING_DB_PORT}:${INTERNAL_DB_PORT}"
@@ -131,6 +143,14 @@ services:
       retries: 5
       start_period: 30s
     container_name: ${ACCOUNTS_DB_CONTAINER}
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/accounts_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/accounts_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     deploy:
       resources:
         limits:
@@ -141,8 +161,13 @@ services:
           memory: 64M
     volumes:
       - accounts_pgdata:/var/lib/postgresql/data
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     ports:
       - '${ACCOUNTS_DB_PORT}:${INTERNAL_DB_PORT}'
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
 
   # accounts app builds the account service from the account's dockerfile
   accounts_app:
@@ -272,7 +297,14 @@ services:
 
     # Must have own name
     container_name: ${REPORT_DB_CONTAINER}
-
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/report_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/report_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     # Env variables, must be unique
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -292,10 +324,14 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
 
     volumes:
       - report_pgdata:/var/lib/postgresql/data
-
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     ports:
       # Left side must be unique
       - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
@@ -349,7 +385,14 @@ services:
 
     # Must have own name
     container_name: ${XP_DB_CONTAINER}
-
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/xp_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/xp_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     # Env variables, must be unique
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -369,10 +412,14 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
 
     volumes:
       - xp_pgdata:/var/lib/postgresql/data
-
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     ports:
       # Left side must be unique
       - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
@@ -424,7 +471,14 @@ services:
 
     # Must have own name
     container_name: ${EDUCATION_DB_CONTAINER}
-
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/education_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/education_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     # Env variables, must be unique
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -439,7 +493,8 @@ services:
 
     volumes:
       - education_pgdata:/var/lib/postgresql/data
-
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     ports:
       # Left side must be unique
       - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
@@ -451,6 +506,9 @@ services:
         reservations:
           cpus: '0.10'
           memory: 64M
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
       
 # Main service app container
   education_app:
@@ -499,7 +557,14 @@ services:
 
     # Must have own name
     container_name: ${ANALYTICS_DB_CONTAINER}
-
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/analytics_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/analytics_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     # Env variables, must be unique
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -514,6 +579,8 @@ services:
 
     volumes:
       - analytics_pgdata:/var/lib/postgresql/data
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     deploy:
       resources:
         limits:
@@ -522,6 +589,9 @@ services:
         reservations:
           cpus: '0.15'
           memory: 64M
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
 
     ports:
       # Left side must be unique
@@ -573,6 +643,14 @@ services:
     restart: always
 
     container_name: ${LLM_DB_CONTAINER}
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/llm_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/llm_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -595,9 +673,13 @@ services:
 
     volumes:
       - llm_pgdata:/var/lib/postgresql/data
-
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     ports:
       - "${LLM_DB_PORT}:${INTERNAL_DB_PORT}"
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
       
 # Main service app container
   llm_app:
@@ -647,6 +729,14 @@ services:
     restart: always
 
     container_name: ${COMPANY_DB_CONTAINER}
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/company_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/company_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -669,9 +759,13 @@ services:
 
     volumes:
       - company_pgdata:/var/lib/postgresql/data
-
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
     ports:
       - "${COMPANY_DB_PORT}:${INTERNAL_DB_PORT}"
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
       
 # Main service app container
   company_app:
@@ -717,7 +811,14 @@ services:
 
     # Must have own name
     container_name: ${COMMS_DB_CONTAINER}
-
+    entrypoint: >
+      /bin/sh -c "
+        cp /etc/ssl/certs/comms_db.key /tmp/db.key && \
+        cp /etc/ssl/certs/comms_db.crt /tmp/db.crt && \
+        chmod 600 /tmp/db.key && \
+        chown postgres:postgres /tmp/db.key /tmp/db.crt && \
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/postgres-ssl.conf
+      "
     # Env variables, must be unique
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -732,6 +833,11 @@ services:
 
     volumes:
       - comms_pgdata:/var/lib/postgresql/data
+      - internal_certs:/etc/ssl/certs:ro
+      - ./postgres-ssl.conf:/etc/postgresql/postgres-ssl.conf:ro
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
 
     deploy:
       resources:
@@ -903,6 +1009,7 @@ services:
   cert-init:
     image: smallstep/step-cli:0.30.6
     container_name: cert-init
+    user: "1000:1000"
     depends_on:
       step-ca:
         condition: service_healthy
@@ -917,6 +1024,17 @@ services:
         FP=$$(step certificate fingerprint /ca-root/certs/root_ca.crt)
         
         step ca root /certs/root_ca.crt --ca-url https://step-ca:9000 --fingerprint $$FP --force
+
+        # Issue certs for postgresql databases
+        step ca certificate mailing_db /certs/mailing_db.crt /certs/mailing_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san mailing_db --san ${MAILING_DB_CONTAINER} --force
+        step ca certificate accounts_db /certs/accounts_db.crt /certs/accounts_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san accounts_db --san ${ACCOUNTS_DB_CONTAINER} --force
+        step ca certificate analytics_db /certs/analytics_db.crt /certs/analytics_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san analytics_db --san ${ANALYTICS_DB_CONTAINER} --force
+        step ca certificate comms_db /certs/comms_db.crt /certs/comms_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san comms_db --san ${COMMS_DB_CONTAINER} --force
+        step ca certificate company_db /certs/company_db.crt /certs/company_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san company_db --san ${COMPANY_DB_CONTAINER} --force
+        step ca certificate education_db /certs/education_db.crt /certs/education_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san education_db --san ${EDUCATION_DB_CONTAINER} --force
+        step ca certificate llm_db /certs/llm_db.crt /certs/llm_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san llm_db --san ${LLM_DB_CONTAINER} --force
+        step ca certificate report_db /certs/report_db.crt /certs/report_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san report_db --san ${REPORT_DB_CONTAINER} --force
+        step ca certificate xp_db /certs/xp_db.crt /certs/xp_db.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san xp_db --san ${XP_DB_CONTAINER} --force
 
         # Issue certs for internal services & RabbitMQ
         step ca certificate rabbitmq /certs/rabbitmq.crt /certs/rabbitmq.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san rabbitmq-server --san rabbitmq --force
@@ -942,7 +1060,7 @@ services:
         step ca certificate comms_app /certs/comms_app.crt /certs/comms_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san ${COMMS_APP_CONTAINER} --force
 
         # Grant permissions so database/service containers can read certs
-        chmod -R 755 /certs
+        chmod 644 /certs/*
         echo 'Certificates successfully generated!'
       "
 
