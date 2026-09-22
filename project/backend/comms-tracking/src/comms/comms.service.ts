@@ -10,7 +10,9 @@ import { EventProducerService } from '../events/event-producer.service';
 @Injectable()
 export class CommsService {
   private readonly logger = new Logger(CommsService.name);
-
+  private static readonly STRONG_CONNECTION_THRESHOLDS = [
+    2, 5, 10, 25, 50, 100,
+  ];
   constructor(
     @InjectRepository(Communication)
     private readonly commRepo: Repository<Communication>,
@@ -79,8 +81,9 @@ export class CommsService {
     receiverAuth0Id: string,
     when: Date,
   ): Promise<void> {
-    await this.dataSource.query(
-      `
+    const result: Array<{ message_count: string | number }> =
+      await this.dataSource.query(
+        `
       INSERT INTO connections
         (id, sender_auth0_id, receiver_auth0_id, message_count,
          first_interaction_at, last_interaction_at, updated_at)
@@ -89,9 +92,66 @@ export class CommsService {
       SET message_count       = connections.message_count + 1,
           last_interaction_at = EXCLUDED.last_interaction_at,
           updated_at          = NOW()
+      RETURNING message_count
       `,
-      [senderAuth0Id, receiverAuth0Id, when],
+        [senderAuth0Id, receiverAuth0Id, when],
+      );
+
+    const newCount = Number(result[0]?.message_count ?? 0);
+    const crossed = CommsService.STRONG_CONNECTION_THRESHOLDS.find(
+      (t) => newCount === t,
     );
+
+    if (crossed !== undefined) {
+      await this.publishStrongConnection(
+        senderAuth0Id,
+        receiverAuth0Id,
+        newCount,
+        crossed,
+        when,
+      );
+    }
+  }
+
+  /**
+   * Enriches the edge with user records and publishes the event.
+   * Best-effort: failures are logged but never bubble up, so a broken
+   * downstream consumer never blocks message recording.
+   */
+  private async publishStrongConnection(
+    senderAuth0Id: string,
+    receiverAuth0Id: string,
+    messageCount: number,
+    threshold: number,
+    when: Date,
+  ): Promise<void> {
+    try {
+      const users = await this.userRepo.find({
+        where: { auth0Id: In([senderAuth0Id, receiverAuth0Id]) },
+      });
+      const byId = new Map(users.map((u) => [u.auth0Id, u]));
+      const sender = byId.get(senderAuth0Id);
+      const receiver = byId.get(receiverAuth0Id);
+
+      await this.eventProducer.publishStrongConnection({
+        senderAuth0Id,
+        senderEmail: sender?.email ?? null,
+        senderName: sender?.name ?? null,
+        receiverAuth0Id,
+        receiverEmail: receiver?.email ?? null,
+        receiverName: receiver?.name ?? null,
+        messageCount,
+        threshold,
+        lastInteractionAt: when.toISOString(),
+      });
+
+      this.logger.log(
+        `Published comms.connection.strong (threshold ${threshold}) ` +
+          `${senderAuth0Id} → ${receiverAuth0Id} (weight ${messageCount})`,
+      );
+    } catch (err) {
+      this.logger.error('Failed to publish comms.connection.strong', err);
+    }
   }
 
   // ────────────── Graph endpoint ──────────────
