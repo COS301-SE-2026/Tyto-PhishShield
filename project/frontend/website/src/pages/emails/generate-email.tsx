@@ -1,5 +1,5 @@
 import { AppLayout } from '../../components/layout/app-layout';
-import { Button, Card, Badge, Input, Select } from '../../components/ui';
+import { Button, Card, Badge, Select } from '../../components/ui';
 import { useState, type CSSProperties } from 'react';
 import { useToast } from '../../context/toast-context';
 import { createEmailTemplate, type Department as EmailTemplateDepartment } from '../../services/email-template';
@@ -96,6 +96,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
   const [generatedDifficulty, setGeneratedDifficulty] = useState<Difficulty | null>(null);
+  const [generatedDepartment, setGeneratedDepartment] = useState<Department | ''>('');
 
   const setField = <K extends keyof GenerateEmailForm>(field: K, value: GenerateEmailForm[K]): void => {
     setForm((previous) => ({
@@ -165,6 +166,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
       setTemplates(result.templates);
       setSelectedTemplateIds([]);
       setGeneratedDifficulty(form.difficulty);
+      setGeneratedDepartment(form.senderDepartment);
 
       if (result.failed > 0) {
         addToast({
@@ -221,7 +223,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
             subject: template.subject,
             content: template.body,
             difficulty: generatedDifficulty ?? form.difficulty,
-            senderDepartment: form.senderDepartment ? EMAIL_TEMPLATE_DEPARTMENT_MAP[form.senderDepartment] : undefined,
+            senderDepartment: generatedDepartment ? EMAIL_TEMPLATE_DEPARTMENT_MAP[generatedDepartment] : undefined,
           }),
         )
       );
