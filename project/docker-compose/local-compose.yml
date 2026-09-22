@@ -764,8 +764,8 @@ services:
       - DB_NAME=${COMMS_DB_NAME}
       - RABBITMQ_URL=amqps://rabbitmq:5671
       - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
-      - TLS_CERT_PATH=/etc/ssl/certs/company_app.crt
-      - TLS_KEY_PATH=/etc/ssl/certs/company_app.key
+      - TLS_CERT_PATH=/etc/ssl/certs/comms_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/comms_app.key
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
