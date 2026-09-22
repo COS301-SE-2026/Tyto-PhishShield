@@ -199,6 +199,7 @@ services:
       - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - LLM_SERVICE_URL=http://${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
       - COMPANY_SERVICE_URL=http://${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - COMMS_SERVICE_URL=http://${COMMS_APP_CONTAINER}:${COMMS_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
@@ -207,6 +208,7 @@ services:
       - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
       - LLM_HOST=${LLM_APP_CONTAINER}
       - COMPANY_HOST=${COMPANY_APP_CONTAINER}
+      - COMMS_HOST=${COMMS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -215,6 +217,7 @@ services:
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - LLM_TCP_PORT=${LLM_TCP_PORT}
       - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
+      - COMMS_TCP_PORT=${COMMS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
@@ -711,7 +714,7 @@ services:
       # Must be unique
     container_name: ${COMMS_APP_CONTAINER}
     environment:
-      - PORT=${COMMS_TRACKING_PORT}
+      - PORT=${COMMS_SERVICE_PORT}
       - TCP_PORT=${COMMS_TCP_PORT}
       - DB_HOST=${COMMS_DB_CONTAINER}
       - DB_PORT=${INTERNAL_DB_PORT}
@@ -719,10 +722,14 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${COMMS_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+
 
     ports:
       # Left side must be unique
-      - "${COMMS_TRACKING_PORT}:${COMMS_TRACKING_PORT}"
+      - "${COMMS_SERVICE_PORT}:${COMMS_SERVICE_PORT}"
 
     deploy:
       resources:
@@ -731,7 +738,9 @@ services:
           memory: '128M'
 
     depends_on:
-      <service>_db:
+      comms_db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ../backend/comms-tracking/dist:/app/dist
