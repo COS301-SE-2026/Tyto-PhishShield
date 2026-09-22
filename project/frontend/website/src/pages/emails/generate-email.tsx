@@ -607,6 +607,20 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                           dangerouslySetInnerHTML={{ __html: template.body, }} 
                         />
                       </div>
+
+                      <p
+                        style={{
+                          marginTop: 16,
+                          marginBottom: 8,
+                          fontSize: 11,
+                          lineHeight: 1.5,
+                          fontWeight: 600,
+                          color: 'var(--text-muted)'
+                        }}
+                      >
+                        Raw HTML
+                      </p>
+
                       <div
                         style={{
                           padding: 12,
@@ -627,7 +641,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                             lineHeight: 1.5,
                             whiteSpace: 'pre-wrap',
                             overflowWrap: 'anywhere',
-                            fontFamily: 'Inter, system-ui, sans-serif'
+                            fontFamily: 'monospace'
                           }}
                         >
                           {template.body}
