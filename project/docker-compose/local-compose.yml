@@ -762,7 +762,10 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${COMMS_DB_NAME}
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqps://rabbitmq:5671
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/root_ca.crt
+      - TLS_CERT_PATH=/etc/ssl/certs/company_app.crt
+      - TLS_KEY_PATH=/etc/ssl/certs/company_app.key
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
       - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
@@ -784,6 +787,7 @@ services:
       rabbitmq:
         condition: service_healthy
     volumes:
+      - internal_certs:/etc/ssl/certs:ro
       - ../backend/comms-tracking/dist:/app/dist
   
   # builds the website using the website's dockerfile
@@ -934,6 +938,8 @@ services:
         step ca certificate llm_app /certs/llm_app.crt /certs/llm_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san ${LLM_APP_CONTAINER} --force
 
         step ca certificate company_app /certs/company_app.crt /certs/company_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san ${COMPANY_APP_CONTAINER} --force
+
+        step ca certificate comms_app /certs/comms_app.crt /certs/comms_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san ${COMMS_APP_CONTAINER} --force
 
         # Grant permissions so database/service containers can read certs
         chmod -R 755 /certs
