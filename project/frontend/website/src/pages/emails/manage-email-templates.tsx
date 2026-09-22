@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, type CSSProperties, useRef }
 import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select, Badge } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
-import { deleteEmailTemplate, getEmailTemplates, updateEmailTemplate, type EmailTemplate, type UpdateEmailTemplateRequest } from "../../services/email-template";
+import { deleteEmailTemplate, getEmailTemplates, updateEmailTemplate, type EmailTemplate, type UpdateEmailTemplateRequest, type Department } from "../../services/email-template";
 import type { EmailDifficulty } from "../../services/send-batch-email";
 import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
 import { SenderDomainSelect } from "../../components/email/sender-domain-select";
@@ -14,7 +14,7 @@ interface ManageEmailTemplatesProps {
 
 interface TemplateForm {
     sender: string;
-    alias: string;
+    senderDepartment: Department | '';
     subject: string;
     content: string;
     difficulty: EmailDifficulty;
@@ -26,6 +26,16 @@ const DIFFICULTY_OPTIONS = [
     { value: 'easy', label: 'Easy' },
     { value: 'medium', label: 'Medium' },
     { value: 'hard', label: 'Hard' },
+];
+
+const DEPARTMENT_OPTIONS = [
+  { value: '', label: 'No sender department' },
+  { value: 'IT & Security', label: 'IT & Security' },
+  { value: 'Finance', label: 'Finance' },
+  { value: 'Human Resources', label: 'Human Resources' },
+  { value: 'Legal & Compliance', label: 'Legal & Compliance' },
+  { value: 'Operations', label: 'Operations' },
+  { value: 'Executive', label: 'Executive' },
 ];
 
 export function ManageEmailTemplates({
@@ -124,7 +134,7 @@ export function ManageEmailTemplates({
 
         setForm({
             sender: template.sender,
-            alias: template.alias ?? '',
+            senderDepartment: template.senderDepartment ?? '',
             subject: template.subject,
             content: template.content,
             difficulty: template.difficulty,
@@ -182,7 +192,7 @@ export function ManageEmailTemplates({
         try {
             const request: UpdateEmailTemplateRequest = {
                 sender: form.sender.trim(),
-                alias: form.alias.trim() || undefined,
+                senderDepartment: form.senderDepartment || undefined,
                 subject: form.subject.trim(),
                 content: form.content.trim(),
                 difficulty: form.difficulty,
@@ -201,7 +211,7 @@ export function ManageEmailTemplates({
 
             setForm({
                 sender: updated.sender,
-                alias: updated.alias ?? '',
+                senderDepartment: updated.senderDepartment ?? '',
                 subject: updated.subject,
                 content: updated.content,
                 difficulty: updated.difficulty,
@@ -416,10 +426,11 @@ export function ManageEmailTemplates({
                                     error={errors.sender}
                                 />
 
-                                <Input
-                                    label='Display name (Optional)'
-                                    value={form.alias}
-                                    onChange={(event) => setField('alias', event.target.value)}
+                                <Select
+                                    label="Sender department (Optional)"
+                                    value={form.senderDepartment}
+                                    options={DEPARTMENT_OPTIONS}
+                                    onChange={(event) => setField('senderDepartment', event.target.value as Department | '')}
                                 />
                             </div>
 

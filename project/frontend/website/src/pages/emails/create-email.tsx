@@ -3,7 +3,7 @@ import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
 import type { EmailDifficulty } from "../../services/send-batch-email";
-import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate } from '../../services/email-template';
+import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate, type Department } from '../../services/email-template';
 import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
 import { SenderDomainSelect } from "../../components/email/sender-domain-select";
 
@@ -14,7 +14,7 @@ interface CreateEmailProps {
 
 interface EmailForm {
     sender: string;
-    alias: string;
+    senderDepartment: Department | '',
     subject: string;
     content: string;
     difficulty: EmailDifficulty;
@@ -37,9 +37,19 @@ const DIFFICULTY_OPTIONS = [
     },
 ];
 
+const DEPARTMENT_OPTIONS = [
+  { value: '', label: 'No sender department' },
+  { value: 'IT & Security', label: 'IT & Security' },
+  { value: 'Finance', label: 'Finance' },
+  { value: 'Human Resources', label: 'Human Resources' },
+  { value: 'Legal & Compliance', label: 'Legal & Compliance' },
+  { value: 'Operations', label: 'Operations' },
+  { value: 'Executive', label: 'Executive' },
+];
+
 const initialForm: EmailForm = {
     sender: 'capstone-five-guys.dns.net.za',
-    alias: '',
+    senderDepartment: '',
     subject: '',
     content: '',
     difficulty: 'medium',
@@ -122,7 +132,7 @@ export function CreateEmail({
         try{
             const request: CreateEmailTemplateRequest = {
                 sender: form.sender.trim(),
-                alias: form.alias.trim() || undefined,
+                senderDepartment: form.senderDepartment || undefined,
                 subject: form.subject.trim(),
                 content: form.content.trim(),
                 difficulty: form.difficulty,
@@ -256,8 +266,7 @@ export function CreateEmail({
                 <div
                     style={{
                     display: 'grid',
-                    gridTemplateColumns:
-                        'repeat(auto-fit, minmax(220px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                     gap: 12,
                     }}
                 >
@@ -267,13 +276,11 @@ export function CreateEmail({
                         error={errors.sender}
                     />
 
-                    <Input
-                    label="Display name (optional)"
-                    placeholder="Alias"
-                    value={form.alias}
-                    onChange={(event) =>
-                        setField('alias', event.target.value)
-                    }
+                    <Select
+                        label="Sender department (Optional)"
+                        value={form.senderDepartment}
+                        options={DEPARTMENT_OPTIONS}
+                        onChange={(event) => setField('senderDepartment', event.target.value as Department | '')}
                     />
                 </div>
 
@@ -515,8 +522,8 @@ export function CreateEmail({
                     value: `@${createdTemplate.sender}`,
                     },
                     {
-                    label: "Display name",
-                    value: createdTemplate.alias ?? "None",
+                    label: "Sender department",
+                    value: createdTemplate.senderDepartment ?? "None",
                     },
                     {
                     label: 'Difficulty',
