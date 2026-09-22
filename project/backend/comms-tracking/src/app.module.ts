@@ -13,6 +13,7 @@ import { CommsUser } from './comms/entities/comms-user.entity';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -31,6 +32,10 @@ import { AppService } from './app.service';
         entities: [Communication, Connection, CommsUser],
         namingStrategy: new SnakeNamingStrategy(),
         synchronize: true, // dev only
+        ssl: {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+        },
       }),
     }),
 

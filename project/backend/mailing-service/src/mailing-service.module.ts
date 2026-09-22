@@ -13,6 +13,7 @@ import { WaveRecipientEntity } from './entities/wave-recipient.entity';
 import { WaveModule } from './wave/wave.module';
 import { EmployeeInfoModule } from './employee-info/employee-info.module';
 import { EmployeeInfoEntity } from './entities/employee-info.entity';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -39,6 +40,10 @@ import { EmployeeInfoEntity } from './entities/employee-info.entity';
           EmployeeInfoEntity,
         ],
         autoLoadEntities: true,
+        ssl: {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+        },
       }),
     }),
     TypeOrmModule.forFeature([EmailTemplateEntity]),

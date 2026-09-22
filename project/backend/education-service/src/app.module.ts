@@ -7,6 +7,7 @@ import { EducationModule } from './education/education.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -23,6 +24,10 @@ import { AppService } from './app.service';
         database: config.get('DB_NAME'),
         entities: [Question, Assignment],
         synchronize: true,
+        ssl: {
+        rejectUnauthorized: true,
+        ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+      },
       }),
     }),
     EducationModule,

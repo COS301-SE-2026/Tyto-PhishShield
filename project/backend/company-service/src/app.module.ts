@@ -7,6 +7,7 @@ import { EmployeeModule } from './employee/employee.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Import } from './import/entities/import.entity';
 import { Employee } from './employee/entities/employee.entity';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -23,6 +24,10 @@ import { Employee } from './employee/entities/employee.entity';
         database: config.get('DB_NAME'),
         entities: [Import, Employee],
         synchronize: true,
+        ssl: {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+        },
       }),
     }),
     ImportModule,

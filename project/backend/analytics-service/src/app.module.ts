@@ -12,6 +12,7 @@ import { Campaign } from './analytics/entities/campaign.entity';
 import { ClickEvent } from './analytics/entities/click-event.entity';
 import { SimulationSend } from './analytics/entities/simulation-send.entity';
 import { EmailStatusEntity } from './email-status/entities/email-status.entity';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -35,6 +36,10 @@ import { EmailStatusEntity } from './email-status/entities/email-status.entity';
           EmailStatusEntity,
         ],
         synchronize: true,
+        ssl: {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+        },
       }),
     }),
     AnalyticsModule,

@@ -15,6 +15,7 @@ import { AppService } from './app.service';
 import { VerifiedDevice } from './otp/device.entity';
 import { EventProducerModule } from './event-producer/event-producer.module';
 import { UserSyncService } from './users/user-sync.service';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -31,6 +32,10 @@ import { UserSyncService } from './users/user-sync.service';
         database: config.get('DB_NAME'),
         entities: [User, VerifiedDevice],
         synchronize: true, //this will auto create tables based on entities, but this is for development only.
+        ssl: {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+        },
       }),
     }),
     AuthModule,

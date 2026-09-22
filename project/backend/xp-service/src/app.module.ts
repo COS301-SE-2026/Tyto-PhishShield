@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { XpEntity } from './entities/xp.entity';
 import { EmailDetailsEntity } from './entities/email-details.entity';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -28,6 +29,10 @@ import { EmailDetailsEntity } from './entities/email-details.entity';
         synchronize: configService.get<string>('DB_SYNC', 'true') === 'true',
         entities: [UserEntity, XpEntity, EmailDetailsEntity],
         autoLoadEntities: true,
+        ssl: {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+        },
       }),
     }),
     TypeOrmModule.forFeature([UserEntity, XpEntity, EmailDetailsEntity]),

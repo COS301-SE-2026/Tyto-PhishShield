@@ -9,6 +9,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountsModule } from './accounts/accounts.module';
 import { Reportable } from './report/entities/reportable.entity';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -27,6 +28,10 @@ import { Reportable } from './report/entities/reportable.entity';
         database: config.get('DB_NAME'),
         entities: [Report, Reportable],
         synchronize: true,
+        ssl: {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+        },
       }),
     }),
     ReportModule,
