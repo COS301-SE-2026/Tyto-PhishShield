@@ -197,6 +197,26 @@ export class AnalyticsController {
     });
   }
 
+  @Get('department-risk-heatmap')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Departmental risk heatmap for the admin dashboard',
+  })
+  @ApiQuery({ name: 'period', required: false, example: '30d' })
+  getDepartmentRiskHeatmap(
+    @Req() req: AuthenticatedRequest,
+    @Query('period') period?: string,
+  ) {
+    const qs = period ? `?period=${period}` : '';
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/department-risk-heatmap${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
   @Get('at-risk-users')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'analyst')
