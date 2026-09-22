@@ -21,7 +21,6 @@ export interface EmailTemplate {
     difficulty: EmailDifficulty;
     senderDepartment?: Department;
     createdAt: string;
-    alias?: string;
 }
 
 export interface CreateEmailTemplateRequest {
@@ -30,7 +29,6 @@ export interface CreateEmailTemplateRequest {
     content: string;
     difficulty: EmailDifficulty;
     senderDepartment?: Department;
-    alias?: string;
 }
 
 export interface DeleteEmailTemplateResponse {
