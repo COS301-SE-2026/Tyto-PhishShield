@@ -13,7 +13,6 @@ interface GenerateEmailProps {
 
 interface GenerateEmailForm {
   sender: string;
-  alias: string;
   difficulty: Difficulty;
   tone: MessageTone;
   messageType: MessageType;
@@ -79,7 +78,6 @@ const COUNT_OPTIONS = Array.from({length: 6 }, (_, index) => ({
 
 const INITIAL_FORM: GenerateEmailForm = {
   sender: 'capstone-five-guys.dns.net.za',
-  alias: '',
   difficulty: 'easy',
   tone: 'professional',
   messageType: 'announcement',
@@ -220,7 +218,6 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
         selectedTemplates.map((template) => 
           createEmailTemplate({
             sender: form.sender.trim(),
-            alias: form.alias.trim() || undefined,
             subject: template.subject,
             content: template.body,
             difficulty: generatedDifficulty ?? form.difficulty,
@@ -349,26 +346,11 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
               gap: 16,
             }}
           >
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: 12,
-              }}
-            >
-              <SenderDomainSelect
-                value={form.sender}
-                onChange={(value) => setField('sender', value)}
-                error={errors.sender}
-              />
-
-              <Input
-                label='Display name (Optional)'
-                placeholder='IT Support'
-                value={form.alias}
-                onChange={(event) => setField('alias', event.target.value)}
-              />
-            </div>
+            <SenderDomainSelect
+              value={form.sender}
+              onChange={(value) => setField('sender', value)}
+              error={errors.sender}
+            />
 
             <div
               style={{
