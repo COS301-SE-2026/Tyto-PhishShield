@@ -67,6 +67,23 @@ export interface AtRiskUser {
   riskLevel: 'high' | 'medium';
 }
 
+export interface DepartmentRiskRow {
+  department: string;
+  totalUsers: number;
+  sent: number;
+  clicked: number;
+  reported: number;
+  confirmed: number;
+  clickRate: number;
+  detectionRate: number;
+  trainingAssigned: number;
+  trainingCompleted: number;
+  trainingCompletionRate: number;
+  totalXp: number;
+  atRiskUsers: number;
+  riskScore: number;
+}
+
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
@@ -731,6 +748,179 @@ export class AnalyticsService {
       detectionRate: d.reported > 0 ? (d.confirmed / d.reported) * 100 : 0,
       clickRate: d.sent > 0 ? (d.clicked / d.sent) * 100 : 0,
     }));
+  }
+
+  /**
+ * Department risk heatmap: one row per department with all the inputs
+ * needed to render a heatmap on the frontend. Rows are sorted by
+ * riskScore descending so the riskiest department appears first.
+ *
+ * Risk score formula (0 = safe, 100 = very risky):
+ *   0.4 * clickRate            (higher clicks = riskier)
+ *   0.3 * (100 - detectionRate)(lower detection = riskier)
+ *   0.2 * (100 - trainingRate) (lower training completion = riskier)
+ *   0.1 * atRiskUserPercentage (more at-risk users = riskier)
+ *
+ * When a department has no reports or no training assigned, that
+ * component uses a neutral 50 rather than 0, so newly onboarded
+ * departments aren't unfairly flagged as risky.
+ */
+  async getDepartmentRiskHeatmap(periodDays = 30): Promise<{
+    period: number;
+    departments: DepartmentRiskRow[];
+  }> {
+    const start = new Date(Date.now() - periodDays * 86400000);
+
+    // 1. Build the department mapping from mirrored users
+    const users = await this.userRepo.find();
+    const authToDept = new Map<string, string | undefined>();
+    const deptUserCount = new Map<string, number>();
+
+    for (const u of users) {
+      authToDept.set(u.auth0Id, u.department);
+      if (u.department) {
+        deptUserCount.set(
+          u.department,
+          (deptUserCount.get(u.department) ?? 0) + 1,
+        );
+      }
+    }
+
+    // 2. Load events, sends, and clicks in parallel
+    const [events, sends, clicks] = await Promise.all([
+      this.repo.find({ where: { occurredAt: MoreThanOrEqual(start) } }),
+      this.sendRepo.find({ where: { sentAt: MoreThanOrEqual(start) } }),
+      this.clickRepo.find({ where: { clickedAt: MoreThanOrEqual(start) } }),
+    ]);
+
+    // 3. Aggregate per-department stats
+    interface DeptAgg {
+      sent: number;
+      clicked: number;
+      reported: number;
+      confirmed: number;
+      trainingAssigned: number;
+      trainingCompleted: number;
+      totalXp: number;
+    }
+
+    const deptMap = new Map<string, DeptAgg>();
+
+    const ensureDept = (dept: string): DeptAgg => {
+      let d = deptMap.get(dept);
+      if (!d) {
+        d = {
+          sent: 0,
+          clicked: 0,
+          reported: 0,
+          confirmed: 0,
+          trainingAssigned: 0,
+          trainingCompleted: 0,
+          totalXp: 0,
+        };
+        deptMap.set(dept, d);
+      }
+      return d;
+    };
+
+    // Seed empty rows so departments with no activity still appear
+    for (const dept of deptUserCount.keys()) ensureDept(dept);
+
+    for (const s of sends) {
+      const dept = s.auth0Id ? authToDept.get(s.auth0Id) : undefined;
+      if (!dept) continue;
+      ensureDept(dept).sent++;
+    }
+
+    for (const c of clicks) {
+      const dept = c.auth0Id ? authToDept.get(c.auth0Id) : undefined;
+      if (!dept) continue;
+      ensureDept(dept).clicked++;
+    }
+
+    for (const e of events) {
+      const dept = e.auth0Id ? authToDept.get(e.auth0Id) : undefined;
+      if (!dept) continue;
+      const d = ensureDept(dept);
+
+      if (e.eventType === AnalyticsEventType.REPORT_SUBMITTED) d.reported++;
+      if (e.eventType === AnalyticsEventType.REPORT_CONFIRMED) d.confirmed++;
+      if (e.eventType === AnalyticsEventType.EDUCATION_ASSIGNED)
+        d.trainingAssigned++;
+      if (e.eventType === AnalyticsEventType.EDUCATION_COMPLETED)
+        d.trainingCompleted++;
+      if (e.eventType === AnalyticsEventType.XP_GIVEN) {
+        const amt = e.payload?.['amount'];
+        if (typeof amt === 'number') d.totalXp += amt;
+      }
+    }
+
+    // 4. At-risk users per department (click rate >= 30%)
+    const userSends = new Map<string, number>();
+    const userClicks = new Map<string, number>();
+    for (const s of sends) {
+      if (s.auth0Id)
+        userSends.set(s.auth0Id, (userSends.get(s.auth0Id) ?? 0) + 1);
+    }
+    for (const c of clicks) {
+      if (c.auth0Id)
+        userClicks.set(c.auth0Id, (userClicks.get(c.auth0Id) ?? 0) + 1);
+    }
+
+    const deptAtRisk = new Map<string, number>();
+    for (const [auth0Id, clickCount] of userClicks.entries()) {
+      const sentCount = userSends.get(auth0Id) ?? 0;
+      if (sentCount === 0) continue;
+      if ((clickCount / sentCount) * 100 < 30) continue;
+      const dept = authToDept.get(auth0Id);
+      if (!dept) continue;
+      deptAtRisk.set(dept, (deptAtRisk.get(dept) ?? 0) + 1);
+    }
+
+    // 5. Compute rates and risk scores, then sort by risk descending
+    const rows: DepartmentRiskRow[] = [];
+    for (const [department, d] of deptMap.entries()) {
+      const totalUsers = deptUserCount.get(department) ?? 0;
+      const clickRate = d.sent > 0 ? (d.clicked / d.sent) * 100 : 0;
+      const detectionRate =
+        d.reported > 0 ? (d.confirmed / d.reported) * 100 : 0;
+      const trainingCompletionRate =
+        d.trainingAssigned > 0
+          ? (d.trainingCompleted / d.trainingAssigned) * 100
+          : 0;
+      const atRiskUsers = deptAtRisk.get(department) ?? 0;
+
+      const riskScore = this.calculateDepartmentRiskScore(
+        clickRate,
+        detectionRate,
+        trainingCompletionRate,
+        atRiskUsers,
+        totalUsers,
+        d.reported,
+        d.trainingAssigned,
+      );
+
+      rows.push({
+        department,
+        totalUsers,
+        sent: d.sent,
+        clicked: d.clicked,
+        reported: d.reported,
+        confirmed: d.confirmed,
+        clickRate: Math.round(clickRate),
+        detectionRate: Math.round(detectionRate),
+        trainingAssigned: d.trainingAssigned,
+        trainingCompleted: d.trainingCompleted,
+        trainingCompletionRate: Math.round(trainingCompletionRate),
+        totalXp: d.totalXp,
+        atRiskUsers,
+        riskScore,
+      });
+    }
+
+    rows.sort((a, b) => b.riskScore - a.riskScore);
+
+    return { period: periodDays, departments: rows };
   }
   // will use this in conjunction with resend webhook. Check the webhook with Darius to ensure this works well. This will be used to get the at risk users, which is defined as users with a click rate above 30% in the given period.
   async getAtRiskUsers(
