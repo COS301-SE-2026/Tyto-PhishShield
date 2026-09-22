@@ -49,6 +49,7 @@ const tlsOptions = {
         options: {
           host: process.env.MAILING_HOST ?? 'mailing_app',
           port: Number(process.env.MAILING_TCP_PORT ?? 4002),
+          tlsOptions,
         },
       },
       {
@@ -57,6 +58,7 @@ const tlsOptions = {
         options: {
           host: process.env.XP_HOST ?? 'xp_app',
           port: Number(process.env.XP_TCP_PORT ?? 4004),
+          tlsOptions,
         },
       },
       {
@@ -65,6 +67,7 @@ const tlsOptions = {
         options: {
           host: process.env.REPORT_HOST ?? 'report_app',
           port: Number(process.env.REPORT_TCP_PORT ?? 4003),
+          tlsOptions,
         },
       },
       {
@@ -73,6 +76,7 @@ const tlsOptions = {
         options: {
           host: process.env.EDUCATION_HOST ?? 'education_app',
           port: Number(process.env.EDUCATION_TCP_PORT ?? 4005),
+          tlsOptions,
         },
       },
       {
@@ -81,6 +85,7 @@ const tlsOptions = {
         options: {
           host: process.env.ANALYTICS_HOST ?? 'analytics_app',
           port: Number(process.env.ANALYTICS_TCP_PORT ?? 4006),
+          tlsOptions,
         },
       },
       {
@@ -89,6 +94,7 @@ const tlsOptions = {
         options: {
           host: process.env.LLM_HOST ?? 'llm_app',
           port: Number(process.env.LLM_TCP_PORT ?? 4007),
+          tlsOptions,
         },
       },
       {
@@ -97,6 +103,7 @@ const tlsOptions = {
         options: {
           host: process.env.COMPANY_HOST ?? 'company_app',
           port: Number(process.env.COMPANY_TCP_PORT ?? 4008),
+          tlsOptions,
         },
       },
       {
@@ -105,6 +112,7 @@ const tlsOptions = {
         options: {
           host: process.env.COMMS_HOST ?? 'comms_app',
           port: Number(process.env.COMMS_TCP_PORT ?? 4009),
+          tlsOptions,
         },
       }
     ]),
