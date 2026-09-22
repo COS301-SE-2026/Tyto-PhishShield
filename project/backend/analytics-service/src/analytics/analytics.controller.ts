@@ -482,7 +482,9 @@ export class AnalyticsController {
   @Get('department-risk-heatmap')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Departmental risk heatmap for the admin dashboard' })
+  @ApiOperation({
+    summary: 'Departmental risk heatmap for the admin dashboard',
+  })
   @ApiQuery({ name: 'period', required: false, example: '30d' })
   getDepartmentRiskHeatmap(@Query('period') period?: string) {
     const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;

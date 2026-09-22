@@ -751,20 +751,20 @@ export class AnalyticsService {
   }
 
   /**
- * Department risk heatmap: one row per department with all the inputs
- * needed to render a heatmap on the frontend. Rows are sorted by
- * riskScore descending so the riskiest department appears first.
- *
- * Risk score formula (0 = safe, 100 = very risky):
- *   0.4 * clickRate            (higher clicks = riskier)
- *   0.3 * (100 - detectionRate)(lower detection = riskier)
- *   0.2 * (100 - trainingRate) (lower training completion = riskier)
- *   0.1 * atRiskUserPercentage (more at-risk users = riskier)
- *
- * When a department has no reports or no training assigned, that
- * component uses a neutral 50 rather than 0, so newly onboarded
- * departments aren't unfairly flagged as risky.
- */
+   * Department risk heatmap: one row per department with all the inputs
+   * needed to render a heatmap on the frontend. Rows are sorted by
+   * riskScore descending so the riskiest department appears first.
+   *
+   * Risk score formula (0 = safe, 100 = very risky):
+   *   0.4 * clickRate            (higher clicks = riskier)
+   *   0.3 * (100 - detectionRate)(lower detection = riskier)
+   *   0.2 * (100 - trainingRate) (lower training completion = riskier)
+   *   0.1 * atRiskUserPercentage (more at-risk users = riskier)
+   *
+   * When a department has no reports or no training assigned, that
+   * component uses a neutral 50 rather than 0, so newly onboarded
+   * departments aren't unfairly flagged as risky.
+   */
   async getDepartmentRiskHeatmap(periodDays = 30): Promise<{
     period: number;
     departments: DepartmentRiskRow[];
@@ -941,13 +941,13 @@ export class AnalyticsService {
         : 50;
     const atRiskComponent =
       totalUsers > 0 ? Math.min(100, (atRiskUsers / totalUsers) * 100) : 0;
-  
+
     const score =
       0.4 * clickComponent +
       0.3 * detectionComponent +
       0.2 * trainingComponent +
       0.1 * atRiskComponent;
-  
+
     return Math.round(score);
   }
   // will use this in conjunction with resend webhook. Check the webhook with Darius to ensure this works well. This will be used to get the at risk users, which is defined as users with a click rate above 30% in the given period.
