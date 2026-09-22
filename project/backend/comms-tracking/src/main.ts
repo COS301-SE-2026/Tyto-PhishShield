@@ -30,7 +30,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   await app.startAllMicroservices();
-  await app.listen(process.env.PORT ?? 3008);
+  await app.listen(process.env.PORT ?? 3010);
 
   console.log('comms-tracking listening on port: ' + process.env.PORT);
   console.log('comms-tracking TCP listening on port: ' + process.env.TCP_PORT);

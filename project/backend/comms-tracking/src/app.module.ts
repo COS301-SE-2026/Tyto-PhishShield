@@ -11,6 +11,8 @@ import { Communication } from './comms/entities/communication.entity';
 import { Connection } from './comms/entities/connection.entity';
 import { CommsUser } from './comms/entities/comms-user.entity';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -49,5 +51,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
     SlackModule,
     UsersMirrorModule,
   ],
+  controllers: [ AppController ],
+  providers: [ AppService ],
 })
 export class AppModule {}
