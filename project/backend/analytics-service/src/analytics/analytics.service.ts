@@ -922,6 +922,34 @@ export class AnalyticsService {
 
     return { period: periodDays, departments: rows };
   }
+
+  private calculateDepartmentRiskScore(
+    clickRate: number,
+    detectionRate: number,
+    trainingCompletionRate: number,
+    atRiskUsers: number,
+    totalUsers: number,
+    reportedCount: number,
+    trainingAssignedCount: number,
+  ): number {
+    const clickComponent = Math.min(100, clickRate);
+    const detectionComponent =
+      reportedCount > 0 ? 100 - Math.min(100, detectionRate) : 50;
+    const trainingComponent =
+      trainingAssignedCount > 0
+        ? 100 - Math.min(100, trainingCompletionRate)
+        : 50;
+    const atRiskComponent =
+      totalUsers > 0 ? Math.min(100, (atRiskUsers / totalUsers) * 100) : 0;
+  
+    const score =
+      0.4 * clickComponent +
+      0.3 * detectionComponent +
+      0.2 * trainingComponent +
+      0.1 * atRiskComponent;
+  
+    return Math.round(score);
+  }
   // will use this in conjunction with resend webhook. Check the webhook with Darius to ensure this works well. This will be used to get the at risk users, which is defined as users with a click rate above 30% in the given period.
   async getAtRiskUsers(
     periodDays = 30,
