@@ -400,8 +400,8 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
       subtitle="Send a saved email to one or more recipients"
       breadcrumbs={[
         {
-          label: "Phishing Waves",
-          path: "/waves",
+          label: "Emails",
+          path: "/emails",
         },
         {
           label: "Send Existing Email",
