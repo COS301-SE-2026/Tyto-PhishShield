@@ -6,13 +6,17 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Question } from './entities/question.entity';
 import { Assignment, AssignmentStatus } from './entities/assignment.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import {
+  ACTIONABLE_MISTAKE_CATEGORIES,
+  MistakeCategory,
+} from './types/mistake-category.enum';
 //can change this at anytime to get more robust stuff this is for now, but I think more questions
 // would also be appropriate sinc e then we can do more with it.
 const QUESTIONS_PER_ASSIGNMENT = 3;
@@ -45,22 +49,26 @@ export class EducationService {
     return this.questionRepo.find({ order: { createdAt: 'DESC' } });
   }
 
-  async createAssignment(auth0Id: string): Promise<Assignment> {
+  async createAssignment(
+    auth0Id: string,
+    category?: MistakeCategory,
+  ): Promise<Assignment> {
     const existing = await this.assignmentRepo.findOne({
       where: { auth0Id, status: AssignmentStatus.PENDING },
     });
     if (existing) {
       throw new ConflictException('You already have existing assignment');
     }
-    // should this be await?.... yes, yes it should
-    const allQuestions = await this.questionRepo.find();
-    if (allQuestions.length === 0) {
+
+    const questionPool = await this.buildQuestionPool(category);
+
+    if (questionPool.length === 0) {
       throw new BadRequestException(
         'No questions available yet, please contact an admin',
       );
     }
 
-    const selected = this.randomSubset(allQuestions, QUESTIONS_PER_ASSIGNMENT); // no sonarqube stuff here for some reason, but thats nice.
+    const selected = this.randomSubset(questionPool, QUESTIONS_PER_ASSIGNMENT);
 
     const assignment = this.assignmentRepo.create({
       auth0Id,
@@ -69,6 +77,48 @@ export class EducationService {
     });
 
     return this.assignmentRepo.save(assignment);
+  }
+
+  /**
+   * Builds the pool of questions to draw from.
+   *
+   * - No category, or a non-actionable category → all questions.
+   * - Actionable category → category-specific questions first, then top up
+   *   with general (null category) questions if there aren't enough.
+   */
+  private async buildQuestionPool(
+    category?: MistakeCategory,
+  ): Promise<Question[]> {
+    const isActionable =
+      category !== undefined &&
+      ACTIONABLE_MISTAKE_CATEGORIES.includes(category);
+
+    if (!isActionable) {
+      return this.questionRepo.find();
+    }
+
+    const specific = await this.questionRepo.find({
+      where: { category },
+    });
+
+    if (specific.length >= QUESTIONS_PER_ASSIGNMENT) {
+      return specific;
+    }
+
+    // Not enough category-specific questions — pad with general ones.
+    const general = await this.questionRepo.find({
+      where: { category: IsNull() },
+    });
+
+    // Dedupe in case category-specific questions also match the general
+    // criteria (they won't with IsNull, but defensive against future
+    // schema changes).
+    const seen = new Set(specific.map((q) => q.id));
+    const combined = [...specific];
+    for (const q of general) {
+      if (!seen.has(q.id)) combined.push(q);
+    }
+    return combined;
   }
   //have to think about admin view since they wont have this which will take up most of the normal user stuff.
   async getMyAssignment(
