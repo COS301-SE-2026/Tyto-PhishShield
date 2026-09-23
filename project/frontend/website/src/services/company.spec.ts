@@ -32,6 +32,16 @@ function createMockResponse(
   } as unknown as Response;
 }
 
+function getRequestFormData(): FormData {
+  const [, requestOptions] = mockFetch.mock.calls[0];
+
+  if (!(requestOptions?.body instanceof FormData)) {
+    throw new Error('Expected request body to be FormData');
+  }
+
+  return requestOptions.body;
+}
+
 describe('fetchEmployees', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -125,21 +135,10 @@ describe('importEmployeesCsv', () => {
         headers: {
           Authorization: 'Bearer test-token',
         },
-        body: expect.any(FormData),
       }),
     );
 
-    const request = mockFetch.mock.calls[0]?.[1];
-
-    expect(request).toBeDefined();
-
-    const formData = request?.body;
-
-    expect(formData).toBeInstanceOf(FormData);
-
-    if (!(formData instanceof FormData)) {
-      throw new Error('Expected request body to be FormData');
-    }
+    const formData = getRequestFormData();
 
     expect(formData.get('file')).toBe(file);
     expect(formData.has('mapping')).toBe(false);
@@ -182,21 +181,10 @@ describe('importEmployeesCsv', () => {
         headers: {
           Authorization: 'Bearer test-token',
         },
-        body: expect.any(FormData),
       }),
     );
 
-    const request = mockFetch.mock.calls[0]?.[1];
-
-    expect(request).toBeDefined();
-
-    const formData = request?.body;
-
-    expect(formData).toBeInstanceOf(FormData);
-
-    if (!(formData instanceof FormData)) {
-      throw new Error('Expected request body to be FormData');
-    }
+    const formData = getRequestFormData();
 
     expect(formData.get('file')).toBe(file);
     expect(formData.get('mapping')).toBe(
