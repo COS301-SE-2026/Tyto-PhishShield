@@ -18,6 +18,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
         exchanges: [
           { name: 'xp-event-exchange', type: 'topic' },
           { name: 'education-event-exchange', type: 'topic' },
+          { name: 'llm-event-exchange', type: 'topic' },
         ],
         enableControllerDiscovery: true,
         connectionInitOptions: {
