@@ -55,7 +55,7 @@ export class AccountsController {
   ) {
     this.accountsServiceUrl = this.config.get<string>(
       'ACCOUNTS_SERVICE_URL',
-      'http://localhost:3002',
+      'https://localhost:3002',
     );
   }
 

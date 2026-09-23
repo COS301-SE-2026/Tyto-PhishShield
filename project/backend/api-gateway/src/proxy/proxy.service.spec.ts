@@ -7,6 +7,7 @@ import type { AxiosResponse } from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { RouteResolver } from './proxy.routes';
 import { ClientProxy } from '@nestjs/microservices';
+import * as fs from 'fs';
 
 const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   data,
@@ -14,6 +15,15 @@ const axiosOf = <T>(data: T): AxiosResponse<T> => ({
   statusText: 'OK',
   headers: {},
   config: {} as never,
+});
+
+jest.mock('fs', () => {
+  const actualFs = jest.requireActual<typeof import('fs')>('fs');
+
+  return {
+    ...actualFs,
+    readFileSync: jest.fn(() => Buffer.from('test certificate')),
+  };
 });
 
 describe('ProxyService', () => {
@@ -37,6 +47,9 @@ describe('ProxyService', () => {
               case 'COMPANY_SERVICE_URL': return 'company';
               case 'COMMS_SERVICE_URL': return 'comms';
               case 'SERVER_DOMAIN': return 'domain';
+              case 'NODE_EXTRA_CA_CERTS': return 'CA certs';
+              case 'TLS_CERT_PATH': return 'tls cert path';
+              case 'TLS_KEY_PATH': return 'tls key path';
               default: throw Error('unexpected key');
           }
       })
@@ -65,7 +78,10 @@ describe('ProxyService', () => {
     httpService = module.get(HttpService);
   });
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
 
   describe('forward()', () => {
     it('should return data from the downstream service', async () => {

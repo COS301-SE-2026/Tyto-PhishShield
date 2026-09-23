@@ -32,6 +32,8 @@ const tlsOptions = {
     HttpModule.register({
       httpsAgent: new https.Agent({
         ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS),
+        cert: fs.readFileSync(process.env.TLS_CERT_PATH),
+        key: fs.readFileSync(process.env.TLS_KEY_PATH),
         rejectUnauthorized: true,
       }),
     }),

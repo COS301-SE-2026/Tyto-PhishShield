@@ -19,6 +19,9 @@ import type { Request, Response } from 'express';
 import { ClientRequest } from 'http';
 import { RouteResolver } from './proxy.routes';
 import { ClientProxy } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
+import * as https from 'https';
+import * as fs from 'fs';
 
 interface ForwardOptions {
   url: string;
@@ -37,54 +40,6 @@ interface DownstreamErrorShape {
   message?: string;
 }
 
-// @Injectable()
-// export class ProxyService {
-//   constructor(private readonly http: HttpService) {}
-
-//   async forward<T>(options: ForwardOptions): Promise<T> {
-//     const config: AxiosRequestConfig = {
-//       url: options.url,
-//       method: options.method,
-//       data: options.data,
-//       headers: options.headers ?? {},
-//     };
-
-//     const requestLogger =
-//       options.logger || options.requestId
-//         ? logger.child({ requestId: options.requestId })
-//         : logger;
-
-//     try {
-//       requestLogger.info('Proxy forwarding request', {
-//         method: options.method,
-//         url: options.url,
-//       });
-
-//       const { data } = await firstValueFrom(this.http.request<T>(config));
-
-//       return data;
-//     } catch (err: unknown) {
-//       const downstream = err as DownstreamErrorShape;
-
-//       requestLogger.error('Proxy request failed', {
-//         url: options.url,
-//         downstream,
-//       });
-
-//       if (downstream.response?.status) {
-//         throw new HttpException(
-//           downstream.response.data ?? 'Downstream service error',
-//           downstream.response.status,
-//         );
-//       }
-
-//       throw new InternalServerErrorException(
-//         'Could not reach downstream service',
-//       );
-//     }
-//   }
-// }
-
 @Injectable()
 export class ProxyService implements OnModuleInit {
   private readonly proxy = httpProxy.createProxyServer({
@@ -93,10 +48,12 @@ export class ProxyService implements OnModuleInit {
     proxyTimeout: 30000,
     timeout: 30000,
   });
+  private readonly httpsAgent: https.Agent;
 
   constructor(
     private readonly http: HttpService,
     private readonly router: RouteResolver,
+    private readonly config: ConfigService,
     @Inject('ACCOUNTS_SERVICE') public readonly accountsClient: ClientProxy,
     @Inject('MAILING_SERVICE') public readonly mailingClient: ClientProxy,
     @Inject('XP_SERVICE') public readonly xpClient: ClientProxy,
@@ -107,6 +64,19 @@ export class ProxyService implements OnModuleInit {
     @Inject('COMPANY_SERVICE') public readonly companyClient: ClientProxy,
     @Inject('COMMS_SERVICE') public readonly commsClient: ClientProxy,
   ) {
+    this.httpsAgent = new https.Agent({
+      ca: fs.readFileSync(
+        this.config.getOrThrow<string>('NODE_EXTRA_CA_CERTS'),
+      ),
+      cert: fs.readFileSync(
+        this.config.getOrThrow<string>('TLS_CERT_PATH'),
+      ),
+      key: fs.readFileSync(
+        this.config.getOrThrow<string>('TLS_KEY_PATH'),
+      ),
+      rejectUnauthorized: true,
+    });
+
     this.proxy.on('error', () => {
       throw new InternalServerErrorException(
         'Could not reach downstream service',
@@ -168,7 +138,7 @@ export class ProxyService implements OnModuleInit {
   beterForward(req: Request, res: Response) {
     const route = this.router.resolve(req.originalUrl);
     req.url = req.url.replace(route.apiRoute, '');
-    this.proxy.web(req, res, { target: route.targetService });
+    this.proxy.web(req, res, { target: route.targetService, agent: this.httpsAgent, secure: true });
   }
 
   async forward<T>(options: ForwardOptions): Promise<T> {
