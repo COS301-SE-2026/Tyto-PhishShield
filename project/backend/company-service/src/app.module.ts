@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Import } from './import/entities/import.entity';
 import { Employee } from './employee/entities/employee.entity';
 import * as fs from 'fs';
+import { FailedImport } from './employee/entities/failed-import.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import * as fs from 'fs';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [Import, Employee],
+        entities: [Import, Employee, FailedImport],
         synchronize: true,
         ssl: {
           rejectUnauthorized: true,
