@@ -10,6 +10,7 @@ import {
   TemplateVariable,
 } from './dto/difficulty-llm-generation.dto';
 import { GeneratedTemplatesResponseDto } from './dto/generated-templates-response.dto';
+import { ClassificationService } from './classification/classification.service';
 
 describe('LlmController', () => {
   let controller: LlmController;
@@ -26,6 +27,10 @@ describe('LlmController', () => {
           provide: LlmService,
           useValue: mockLlmService,
         },
+        {
+          provide: ClassificationService,
+          useValue: jest.fn(),
+        }
       ],
     }).compile();
 

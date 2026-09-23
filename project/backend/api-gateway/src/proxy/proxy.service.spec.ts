@@ -33,6 +33,9 @@ describe('ProxyService', () => {
               case 'MAILING_SERVICE_URL': return 'mailing';
               case 'REPORT_SERVICE_URL': return 'report';
               case 'XP_SERVICE_URL': return 'xp';
+              case 'LLM_SERVICE_URL': return 'llm';
+              case 'COMPANY_SERVICE_URL': return 'company';
+              case 'COMMS_SERVICE_URL': return 'comms';
               case 'SERVER_DOMAIN': return 'domain';
               default: throw Error('unexpected key');
           }
@@ -54,6 +57,7 @@ describe('ProxyService', () => {
         { provide: 'ANALYTICS_SERVICE', useValue: mockClient() },
         { provide: 'LLM_SERVICE', useValue: mockClient() },
         { provide: 'COMPANY_SERVICE', useValue: mockClient() },
+        { provide: 'COMMS_SERVICE', useValue: mockClient() },
       ],
     }).compile();
 
