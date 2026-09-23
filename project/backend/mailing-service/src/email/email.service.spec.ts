@@ -20,6 +20,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   NotFoundException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
@@ -28,7 +29,11 @@ import {
 } from '../entities/email-template.entity';
 import { EmailsDto } from '../dto/emails.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { UserEntity } from '../entities/user.entity';
+import { Department, UserEntity } from '../entities/user.entity';
+import { VariableResolverService } from '../shared-services/variable-resolver.service';
+import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 const mockResendSend = jest.fn().mockResolvedValue({
   data: { id: 'mock-resend-id' },
@@ -60,6 +65,7 @@ describe('EmailService', () => {
 
   const mockUserRepository = {
     findOne: jest.fn(),
+    find: jest.fn().mockResolvedValue([]),
   }
 
   // Mock the getting the api key
@@ -74,21 +80,30 @@ describe('EmailService', () => {
     publish: jest.fn().mockResolvedValue(undefined),
   }
 
+  const mockEmployeeInfoRepository = {
+    findOne: jest.fn().mockResolvedValue(null),
+  }
+
+  const mockVariableResolverService = { substitute: jest.fn((text: string) => text) };
+  const mockSenderResolverService = { resolveFromAddress: jest.fn().mockReturnValue('resolved-sender@domain.com') };
+  const mockTrackingLinkService = { replace: jest.fn((content: string) => ({ content, token: 'mock-token' })) };
+
   // Mock email data
   const mockEmail = {
     email_id: 'uuid-1234',
     referenceNumber: 'PHISH-001',
-    sender: 'admin@domain.com',
-    alias: 'Admin',
+    sender: 'domain.com',
     subject: 'Action Required',
     content: '<p>Click here</p>',
     difficulty: EmailDifficulty.HARD,
+    senderDepartment: undefined as Department | undefined,
   };
 
   const mockUser = {
     auth0Id: 'auth0|1',
     name: 'Test User',
     email: 'test@example.com',
+    department: Department.IT_SECURITY,
   }
 
   beforeEach(async () => {
@@ -111,6 +126,22 @@ describe('EmailService', () => {
           provide: AmqpConnection,
           useValue: mockAmqpConnection,
         },
+        {
+          provide: VariableResolverService,
+          useValue: mockVariableResolverService,
+        },
+        {
+          provide: SenderResolverService,
+          useValue: mockSenderResolverService,
+        },
+        {
+          provide: TrackingLinkService,
+          useValue: mockTrackingLinkService,
+        },
+        {
+          provide: getRepositoryToken(EmployeeInfoEntity),
+          useValue: mockEmployeeInfoRepository,
+        },
       ],
     }).compile();
 
@@ -119,6 +150,11 @@ describe('EmailService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    mockVariableResolverService.substitute.mockImplementation((text: string) => text);
+    mockSenderResolverService.resolveFromAddress.mockReturnValue('resolved-sender@domain.com');
+    mockTrackingLinkService.replace.mockImplementation((content: string) => ({ content, token: 'mock-token' }));
+    mockEmployeeInfoRepository.findOne.mockResolvedValue(null);
+    mockEmail.senderDepartment = undefined;
   });
 
   it('should be defined', () => {
@@ -128,8 +164,7 @@ describe('EmailService', () => {
   describe('createEmail', () => {
     it('should generate a reference number and save the email', async () => {
       const createDto: EmailsDto = {
-        sender: 'admin@domain.com',
-        alias: 'Admin',
+        sender: 'domain.com',
         subject: 'Action Required',
         content: '<p>Click here</p>',
         difficulty: EmailDifficulty.HARD,
@@ -152,8 +187,7 @@ describe('EmailService', () => {
 
     it('should throw InternalServerErrorException when saving fails', async () => {
       const createDto: EmailsDto = {
-        sender: 'admin@domain.com',
-        alias: 'Admin',
+        sender: 'domain.com',
         subject: 'Action Required',
         content: '<p>Click here</p>',
         difficulty: EmailDifficulty.HARD,
@@ -204,40 +238,77 @@ describe('EmailService', () => {
   });
 
   describe('sendEmail', () => {
-    it('should successfully send an email and use alias', async () => {
+    it('should substitute variables, replace the tracking link, resolve the sender, and send', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockSenderResolverService.resolveFromAddress.mockReturnValue('IT Support <it-support@domain.com>');
 
-      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id);
+      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id, 'it-support', undefined ,'IT Support');
 
+      expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(
+        mockEmail.subject,
+        'PHISH-001',
+        mockUser,
+        undefined,
+      );
+      expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(
+        mockEmail.content,
+        'PHISH-001',
+        mockUser,
+        undefined,
+      );
+      expect(mockTrackingLinkService.replace).toHaveBeenCalledWith(mockEmail.content);
+      expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
+        mockEmail,
+        mockUser.auth0Id,
+        'it-support',
+        undefined,
+        'IT Support',
+      );
       expect(mockResendSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: mockUser.email,
-          from: `${mockEmail.alias} <${mockEmail.sender}>`,
-        }),
+        expect.objectContaining({ to: mockUser.email, from: 'IT Support <it-support@domain.com>' }),
       );
       expect(result.success).toBe(true);
       expect(result.message).toContain('sent instantly.');
       expect(result.deliveryId).toBe('mock-resend-id');
     });
 
-    it('should successfully send an email without an alias', async () => {
-      const emailWithoutAlias = { ...mockEmail };
-      delete emailWithoutAlias.alias;
-
+    it('should delegate to the resolver with undefined sender fields when none are provided', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      mockEmailRepository.findOne.mockResolvedValue(emailWithoutAlias);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
 
-      const result = await service.sendEmail('PHISH-001', mockUser.auth0Id);
+      await service.sendEmail('PHISH-001', mockUser.auth0Id);
 
-      expect(mockResendSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: emailWithoutAlias.sender,
-          to: mockUser.email,
-        }),
+      expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
+        mockEmail, mockUser.auth0Id, undefined, undefined, undefined,
       );
-      expect(result.success).toBe(true);
-      expect(result.deliveryId).toBe('mock-resend-id');
+    });
+
+    it('should pass senderAuth0Id through to the resolver when provided', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+
+      await service.sendEmail(
+        'PHISH-001',
+        mockUser.auth0Id,
+        undefined,
+        'auth0|sender-1',
+      );
+
+      expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
+        mockEmail, mockUser.auth0Id, undefined, 'auth0|sender-1', undefined,
+      );
+    });
+
+    it('should pass the template senderDepartment through to the resolver', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+
+      await service.sendEmail('PHISH-001', mockUser.auth0Id);
+
+      expect(mockSenderResolverService.resolveFromAddress).toHaveBeenCalledWith(
+        mockEmail, mockUser.auth0Id, undefined, undefined, undefined,
+      );
     });
 
     it('should throw an InternalServerErrorException if resend API fails', async () => {
@@ -269,6 +340,26 @@ describe('EmailService', () => {
         service.sendEmail('PHISH-001', 'unknown-auth0-id'),
       ).rejects.toThrow(InternalServerErrorException);
     });
+
+    it('should throw an InternalServerErrorException', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockSenderResolverService.resolveFromAddress.mockImplementation(() => {
+        throw new NotFoundException('No eligible sender found');
+      });
+
+      await expect(service.sendEmail('PHISH-001', mockUser.auth0Id)).rejects.toThrow(InternalServerErrorException);
+    });
+
+    it('should propagate an unsupported-variable error from the resolver', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockVariableResolverService.substitute.mockImplementationOnce(() => {
+        throw new InternalServerErrorException('contains an unsupported or unavailable variable');
+      });
+
+      await expect(service.sendEmail('PHISH-001', mockUser.auth0Id, 'it-support')).rejects.toThrow(InternalServerErrorException);
+    });
   });
 
   describe('scheduleSendEmail', () => {
@@ -281,6 +372,9 @@ describe('EmailService', () => {
         'PHISH-001',
         mockUser.auth0Id,
         targetDate,
+        'it-support',
+        undefined,
+        'IT Support',
       );
 
       expect(mockResendSend).toHaveBeenCalledWith(

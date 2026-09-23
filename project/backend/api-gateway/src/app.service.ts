@@ -39,6 +39,7 @@ export class AppService {
       ),
       llmService: await this.checkServiceHealth(this.proxy.llmClient),
       companyService: await this.checkServiceHealth(this.proxy.companyClient),
+      commsService: await this.checkServiceHealth(this.proxy.commsClient),
     };
 
     return healthServices;

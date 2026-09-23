@@ -22,11 +22,9 @@ RUN pnpm config set fetch-retries 8 -g \
 
 COPY project/backend/packages/eventHandler/ ./project/backend/packages/eventHandler/
 
-RUN pnpm --filter @phishshield/eventhandler build
-
 COPY project/backend/packages/dto/ ./project/backend/packages/dto/
 
-RUN pnpm --filter @phishshield/dto build
+RUN pnpm build:shared
 
 COPY project/backend/company-service/ ./project/backend/company-service/
 

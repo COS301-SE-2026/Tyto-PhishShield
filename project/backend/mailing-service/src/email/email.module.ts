@@ -13,14 +13,32 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { mailingRabbitMQModule } from '../rabbitmq.module';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { UserEntity } from '../entities/user.entity';
+import { VariableResolverService } from '../shared-services/variable-resolver.service';
+import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EmailTemplateEntity, UserEntity]),
+    TypeOrmModule.forFeature([
+      EmailTemplateEntity,
+      UserEntity,
+      EmployeeInfoEntity,
+    ]),
     mailingRabbitMQModule,
   ],
   controllers: [EmailController],
-  providers: [EmailService],
-  exports: [EmailService],
+  providers: [
+    EmailService,
+    VariableResolverService,
+    SenderResolverService,
+    TrackingLinkService,
+  ],
+  exports: [
+    EmailService,
+    VariableResolverService,
+    SenderResolverService,
+    TrackingLinkService,
+  ],
 })
 export class EmailModule {}

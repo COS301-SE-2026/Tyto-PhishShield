@@ -15,4 +15,4 @@ allowBuilds:
   unrs-resolver: true
   ngrok: true
   cpu-features: true
-  ssh2: false
+  ssh2: true
