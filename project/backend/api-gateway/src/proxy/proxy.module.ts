@@ -12,13 +12,17 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import * as https from 'https';
 import * as fs from 'fs';
 
-if (!process.env.NODE_EXTRA_CA_CERTS || !process.env.TLS_CERT_PATH || !process.env.TLS_KEY_PATH) {
+if (
+  !process.env.NODE_EXTRA_CA_CERTS ||
+  !process.env.TLS_CERT_PATH ||
+  !process.env.TLS_KEY_PATH
+) {
   throw new Error('Undefined https options!');
 }
 
 const tlsOptions = {
   ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS),
-  key: fs.readFileSync(process.env.TLS_KEY_PATH ),
+  key: fs.readFileSync(process.env.TLS_KEY_PATH),
   cert: fs.readFileSync(process.env.TLS_CERT_PATH),
   rejectUnauthorized: true,
 };
@@ -114,7 +118,7 @@ const tlsOptions = {
           port: Number(process.env.COMMS_TCP_PORT ?? 4009),
           tlsOptions,
         },
-      }
+      },
     ]),
   ],
   providers: [ProxyService, RouteResolver],

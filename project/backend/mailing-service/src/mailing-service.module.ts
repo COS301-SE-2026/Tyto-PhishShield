@@ -42,7 +42,11 @@ import * as fs from 'fs';
         autoLoadEntities: true,
         ssl: {
           rejectUnauthorized: true,
-          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+          ca: fs
+            .readFileSync(
+              process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt',
+            )
+            .toString(),
         },
       }),
     }),

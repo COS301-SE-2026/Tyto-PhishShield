@@ -25,9 +25,13 @@ import * as fs from 'fs';
         entities: [Question, Assignment],
         synchronize: true,
         ssl: {
-        rejectUnauthorized: true,
-        ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
-      },
+          rejectUnauthorized: true,
+          ca: fs
+            .readFileSync(
+              process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt',
+            )
+            .toString(),
+        },
       }),
     }),
     EducationModule,

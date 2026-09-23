@@ -34,7 +34,11 @@ import * as fs from 'fs';
         synchronize: true, // dev only
         ssl: {
           rejectUnauthorized: true,
-          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+          ca: fs
+            .readFileSync(
+              process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt',
+            )
+            .toString(),
         },
       }),
     }),
@@ -56,7 +60,7 @@ import * as fs from 'fs';
     SlackModule,
     UsersMirrorModule,
   ],
-  controllers: [ AppController ],
-  providers: [ AppService ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

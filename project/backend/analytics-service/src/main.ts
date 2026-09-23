@@ -5,7 +5,11 @@ import { ValidationPipe } from '@nestjs/common';
 import * as fs from 'fs';
 
 async function bootstrap() {
-  if (!process.env.NODE_EXTRA_CA_CERTS || !process.env.TLS_CERT_PATH || !process.env.TLS_KEY_PATH) {
+  if (
+    !process.env.NODE_EXTRA_CA_CERTS ||
+    !process.env.TLS_CERT_PATH ||
+    !process.env.TLS_KEY_PATH
+  ) {
     throw new Error('Undefined https options!');
   }
   const httpsOptions = {
@@ -24,7 +28,7 @@ async function bootstrap() {
     options: {
       host: '0.0.0.0',
       port: Number(process.env.TCP_PORT ?? 3000),
-      tlsOptions: httpsOptions
+      tlsOptions: httpsOptions,
     },
   });
   app.setGlobalPrefix('api');

@@ -17,7 +17,11 @@ import cookieParser from 'cookie-parser';
 import * as fs from 'fs';
 
 async function bootstrap() {
-  if (!process.env.NODE_EXTRA_CA_CERTS || !process.env.TLS_CERT_PATH || !process.env.TLS_KEY_PATH) {
+  if (
+    !process.env.NODE_EXTRA_CA_CERTS ||
+    !process.env.TLS_CERT_PATH ||
+    !process.env.TLS_KEY_PATH
+  ) {
     throw new Error('Undefined https options!');
   }
   const httpsOptions = {
@@ -26,7 +30,9 @@ async function bootstrap() {
     ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS),
   };
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { httpsOptions });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    httpsOptions,
+  });
 
   if (process.env.ENVIRONMENT != 'local') {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);

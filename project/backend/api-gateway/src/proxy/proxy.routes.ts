@@ -48,7 +48,7 @@ export class RouteResolver {
     {
       apiRoute: '/api/comms',
       targetService: this.config.getOrThrow('COMMS_SERVICE_URL'),
-    }
+    },
   ];
   private readonly expectedStart =
     'https://' + this.config.getOrThrow<string>('SERVER_DOMAIN');

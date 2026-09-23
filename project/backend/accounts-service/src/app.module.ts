@@ -34,7 +34,11 @@ import * as fs from 'fs';
         synchronize: true, //this will auto create tables based on entities, but this is for development only.
         ssl: {
           rejectUnauthorized: true,
-          ca: fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt').toString(),
+          ca: fs
+            .readFileSync(
+              process.env.NODE_EXTRA_CA_CERTS || '/etc/ssl/certs/root_ca.crt',
+            )
+            .toString(),
         },
       }),
     }),
