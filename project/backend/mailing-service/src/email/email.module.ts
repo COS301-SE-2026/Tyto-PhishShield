@@ -17,6 +17,7 @@ import { VariableResolverService } from '../shared-services/variable-resolver.se
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
 @Module({
   imports: [
@@ -25,6 +26,19 @@ import { EmployeeInfoEntity } from '../entities/employee-info.entity';
       UserEntity,
       EmployeeInfoEntity,
     ]),
+    RabbitMQModule.forRoot({
+      uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
+      exchanges: [
+        {
+          name: 'llm-event-exchange',
+          type: 'topic',
+        },
+      ],
+      enableControllerDiscovery: true,
+      connectionInitOptions: {
+        wait: false,
+      },
+    }),
     mailingRabbitMQModule,
   ],
   controllers: [EmailController],
