@@ -6,6 +6,7 @@ import {
   HttpStatus,
   HttpCode,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { ProxyService } from '../proxy/proxy.service';
 import { ConfigService } from '@nestjs/config';
@@ -15,6 +16,7 @@ import { Public } from '../auth/public.decorator';
 import { ResendReceivedWebhookPayloadDto } from '@phishshield/dto';
 import { randomUUID } from 'node:crypto';
 import { toReceivedReply } from './received-reply.mapper';
+import { ResendWebhookGuard } from './resend-webhook.guard';
 
 interface ResendWebhookPayload {
   type: string;
@@ -82,6 +84,7 @@ export class WebhookController {
 
   @Public()
   @Post('received')
+  @UseGuards(ResendWebhookGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Handle Resend email.received (inbound reply) events',
@@ -115,7 +118,6 @@ export class WebhookController {
     @Body() body: ResendReceivedWebhookPayloadDto,
     @Headers('svix-id') svixId?: string,
   ) {
-    this.logger.warn(body);
     if (body.type !== 'email.received') {
       this.logger.warn(`ignore triggered in api-gateway`);
       return { ignored: true };
