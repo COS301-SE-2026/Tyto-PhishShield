@@ -51,8 +51,6 @@ export class LlmController {
       );
       return { accepted: true };
     }
-
-    this.logger.warn(`ignore did not happen in llm service`);
     void this.llmService.processReceivedReply(body).catch((err) => {
       this.logger.error(
         `Processing reply for email ${body.emailId} failed: ${err}`,
