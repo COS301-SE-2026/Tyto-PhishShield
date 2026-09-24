@@ -25,7 +25,6 @@ export class VariableResolverService {
 
   substitute(
     text: string,
-    referenceNumber: string,
     user: UserEntity,
     employeeInfo?: EmployeeInfoEntity,
   ): string {
@@ -42,10 +41,10 @@ export class VariableResolverService {
 
       if (value === undefined) {
         this.logger.error(
-          `Template "${referenceNumber}" uses an unsupported or unavailable variable: ${variableName}`,
+          `Template uses an unsupported or unavailable variable: ${variableName}`,
         );
         throw new InternalServerErrorException(
-          `Template "${referenceNumber}" contains an unsupported or unavailable variable: ${variableName}`,
+          `Template contains an unsupported or unavailable variable: ${variableName}`,
         );
       }
 

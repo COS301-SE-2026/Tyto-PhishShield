@@ -512,13 +512,11 @@ export class BatchEmailService {
   ): { subject: string; content: string; token: string } {
     const subject = this.variableResolver.substitute(
       email.subject,
-      email.referenceNumber,
       user,
       employeeInfo,
     );
     const substitutedContent = this.variableResolver.substitute(
       email.content,
-      email.referenceNumber,
       user,
       employeeInfo,
     );
