@@ -46,15 +46,17 @@ import * as fs from 'fs';
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
-        exchanges: [
-          { name: 'comms-event-exchange', type: 'topic' },
-          { name: 'accounts-event-exchange', type: 'topic' },
-        ],
-        enableControllerDiscovery: true,
-        connectionInitOptions: { wait: false },
-      }),
+      useFactory: (config: ConfigService) => {
+          return {
+          uri: config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
+          exchanges: [
+            { name: 'comms-event-exchange', type: 'topic' },
+            { name: 'accounts-event-exchange', type: 'topic' },
+          ],
+          enableControllerDiscovery: true,
+          connectionInitOptions: { wait: false },
+        };
+      },
     }),
     CommsModule,
     SlackModule,

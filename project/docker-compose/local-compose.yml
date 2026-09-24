@@ -1059,6 +1059,10 @@ services:
 
         step ca certificate comms_app /certs/comms_app.crt /certs/comms_app.key --ca-url https://step-ca:9000 --root /certs/root_ca.crt --provisioner ${PROVISIONER_NAME} --provisioner-password-file /secrets/provisioner_password --san ${COMMS_APP_CONTAINER} --force
 
+        #Download public Certificates
+        curl -s https://cacerts.digicert.com/DigiCertGlobalRootCA.crt.pem >> /certs/root_ca.crt
+        curl -s https://www.amazontrust.com/repository/AmazonRootCA1.pem >> /certs/root_ca.crt
+
         # Grant permissions so database/service containers can read certs
         chmod 644 /certs/*
         echo 'Certificates successfully generated!'

@@ -16,3 +16,4 @@ allowBuilds:
   ngrok: true
   cpu-features: true
   ssh2: true
+  '@parcel/watcher': true

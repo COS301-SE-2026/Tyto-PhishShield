@@ -8,13 +8,15 @@ import { EventProducerService } from './event-producer.service';
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
-        exchanges: [
-          { name: EventProducerService.EVENT_EXCHANGE, type: 'topic' },
-        ],
-        connectionInitOptions: { wait: false },
-      }),
+      useFactory: (config: ConfigService) => {
+        return {
+          uri: config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
+          exchanges: [
+            { name: EventProducerService.EVENT_EXCHANGE, type: 'topic' },
+          ],
+          connectionInitOptions: { wait: false },
+        }
+      },
     }),
   ],
   providers: [EventProducerService],
