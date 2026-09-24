@@ -73,15 +73,15 @@ export class ClassificationService {
 
     if (!Array.isArray(parsed.categories)) {
       this.logger.warn(
-        `[classify] Expected "categories" to be an array but got: ${JSON.stringify(
+        `Expected "categories" to be an array but got: ${JSON.stringify(
           parsed.categories,
-        )}. If this is undefined, the model likely used a different key name than "categories". Check CLASSIFICATION_SCHEMA / the prompt text match this exactly.`,
+        )}. If this is undefined, the model likely used a different key name than "categories".`,
       );
     }
 
     const categories = Array.isArray(parsed.categories)
-      ? parsed.categories.filter((c): c is MistakeCategory =>
-          Object.values(MistakeCategory).includes(c as MistakeCategory),
+      ? parsed.categories.filter((cat): cat is MistakeCategory =>
+          Object.values(MistakeCategory).includes(cat as MistakeCategory),
         )
       : [];
 
@@ -91,7 +91,7 @@ export class ClassificationService {
       categories.length === 0
     ) {
       this.logger.warn(
-        `[classify] Model returned categories that don't match the MistakeCategory enum values: ${JSON.stringify(
+        `Model returned categories that don't match the MistakeCategory enum values: ${JSON.stringify(
           parsed.categories,
         )}.`,
       );
@@ -106,7 +106,7 @@ export class ClassificationService {
 
     if (typeof parsed.confidence !== 'number') {
       this.logger.warn(
-        `[classify] Expected "confidence" to be a number but got: ${JSON.stringify(
+        `Expected "confidence" to be a number but got: ${JSON.stringify(
           parsed.confidence,
         )}.`,
       );
@@ -114,7 +114,7 @@ export class ClassificationService {
 
     if (categories.length === 0 || confidence < this.minConfidence) {
       this.logger.warn(
-        `[classify] Classification below confidence threshold or produced no valid categories (confidence=${confidence})`,
+        `Classification below confidence threshold or produced no valid categories (confidence=${confidence})`,
       );
       return this.fallback();
     }
