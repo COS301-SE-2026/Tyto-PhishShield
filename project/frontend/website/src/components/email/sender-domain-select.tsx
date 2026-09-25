@@ -2,10 +2,6 @@ import { Select } from "../ui";
 
 export const SENDER_DOMAINS = [
     {
-        value: 'capstone-five-guys.dns.net.za',
-        label: '@capstone-five-guys.dns.net.za'
-    },
-    {
         value: 'gmaill.co.za',
         label: '@gmaill.co.za'
     },
