@@ -104,7 +104,7 @@ describe('CommsService', () => {
       const created = { id: 'comm-1', ...baseMessage };
       commRepo.create.mockReturnValue(created as any);
       commRepo.save.mockResolvedValue(created as any);
-      dataSource.query.mockResolvedValue(undefined);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
       eventProducer.publishCommunicationRecorded.mockResolvedValue(undefined);
 
       await service.recordCommunication(baseMessage);
@@ -144,7 +144,7 @@ describe('CommsService', () => {
       commRepo.findOne.mockResolvedValue(null);
       commRepo.create.mockReturnValue({} as any);
       commRepo.save.mockResolvedValue({} as any);
-      dataSource.query.mockResolvedValue(undefined);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
       eventProducer.publishCommunicationRecorded.mockResolvedValue(undefined);
 
       const multi: NormalizedMessage = {
@@ -163,7 +163,7 @@ describe('CommsService', () => {
       commRepo.findOne.mockResolvedValue(null);
       commRepo.create.mockReturnValue({} as any);
       commRepo.save.mockResolvedValue({} as any);
-      dataSource.query.mockResolvedValue(undefined);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
       eventProducer.publishCommunicationRecorded.mockRejectedValue(
         new Error('broker down'),
       );
