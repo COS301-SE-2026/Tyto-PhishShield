@@ -27,6 +27,8 @@ export class UserSyncService implements OnModuleInit {
         id: user.id,
         auth0Id: user.auth0Id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         department: user.department,
         role: user.role,
