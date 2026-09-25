@@ -144,6 +144,7 @@ export function Register({ onNavigate }: RegisterProps) {
     try {
       await authApi.register({
         email, password, name: `${firstName} ${lastName}`.trim(),
+        firstName: firstName.trim(), lastName: lastName.trim(),
         department: DEPARTMENTS.find(d => d.value === department)?.label,
         employeeId: employeeId.trim(),
       });
