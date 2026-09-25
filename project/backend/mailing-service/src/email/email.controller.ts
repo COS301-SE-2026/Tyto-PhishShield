@@ -24,36 +24,58 @@ import {
   Param,
   Patch,
   Delete,
+  NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
-import { EmailsDto } from '@phishshield/dto';
+import { EmailsDto, SendReplyEmailEvent } from '@phishshield/dto';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { ScheduleSingleEmailDto } from '@phishshield/dto';
 import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
 import { SendSingleEmailDto } from '@phishshield/dto';
 import { DeleteResult } from 'typeorm';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 @Controller('emails')
 export class EmailController {
-  constructor(private readonly sendMailService: EmailService) {}
+  private readonly logger = new Logger(EmailController.name);
+
+  constructor(private readonly emailService: EmailService) {}
+
+  @RabbitSubscribe({
+    exchange: 'llm-event-exchange',
+    routingKey: 'reply.email',
+    queue: 'mailing-queue',
+  })
+  async handleSendReply(event: SendReplyEmailEvent): Promise<void> {
+    try {
+      await this.emailService.handleSendReply(event);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(`Dropping reply.email event: ${error.message}`);
+        return;
+      }
+      throw error;
+    }
+  }
 
   @Post()
   async createEmail(
     @Body() createEmailDto: EmailsDto,
   ): Promise<EmailTemplateEntity> {
-    return this.sendMailService.createEmail(createEmailDto);
+    return this.emailService.createEmail(createEmailDto);
   }
 
   @Get()
   async getAllEmails(): Promise<EmailTemplateEntity[]> {
-    return this.sendMailService.getAllEmails();
+    return this.emailService.getAllEmails();
   }
 
   @Get(':referenceNumber')
   async getEmailByReference(
     @Param('referenceNumber') referenceNumber: string,
   ): Promise<EmailTemplateEntity> {
-    return this.sendMailService.getEmailByReference(referenceNumber);
+    return this.emailService.getEmailByReference(referenceNumber);
   }
 
   @Patch(':referenceNumber')
@@ -61,14 +83,14 @@ export class EmailController {
     @Param('referenceNumber') referenceNumber: string,
     @Body() updateEmailDto: Partial<EmailsDto>,
   ): Promise<EmailTemplateEntity> {
-    return this.sendMailService.updateEmail(referenceNumber, updateEmailDto);
+    return this.emailService.updateEmail(referenceNumber, updateEmailDto);
   }
 
   @Delete(':referenceNumber')
   async deleteEmail(
     @Param('referenceNumber') referenceNumber: string,
   ): Promise<DeleteResult> {
-    return this.sendMailService.deleteEmail(referenceNumber);
+    return this.emailService.deleteEmail(referenceNumber);
   }
 
   @Post(':referenceNumber/send-single')
@@ -77,7 +99,7 @@ export class EmailController {
     @Param('referenceNumber') emailReferenceNumber: string,
     @Body() sendSingleEmailDto: SendSingleEmailDto,
   ): Promise<MailingPostReturnDto> {
-    const result = await this.sendMailService.sendEmail(
+    const result = await this.emailService.sendEmail(
       emailReferenceNumber,
       sendSingleEmailDto.auth0Id,
       sendSingleEmailDto.senderCustomName,
@@ -98,7 +120,7 @@ export class EmailController {
     @Param('referenceNumber') referenceNumber: string,
     @Body() scheduledSingleEmailDto: ScheduleSingleEmailDto,
   ): Promise<MailingPostReturnDto> {
-    const result = await this.sendMailService.scheduleSendEmail(
+    const result = await this.emailService.scheduleSendEmail(
       referenceNumber,
       scheduledSingleEmailDto.auth0Id,
       scheduledSingleEmailDto.scheduledAt,

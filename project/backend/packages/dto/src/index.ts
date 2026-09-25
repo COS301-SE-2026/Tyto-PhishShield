@@ -10,3 +10,6 @@ export * from './mailing/schedule-single-email.dto';
 export * from './mailing/send-batch.dto';
 export * from './mailing/send-single-email.dto';
 export * from './events/event-employee.dto';
+export * from './llm/resend-received-webhook.dto';
+export * from './llm/received-reply.dto';
+export * from './llm/llm-mailing-events.dto';

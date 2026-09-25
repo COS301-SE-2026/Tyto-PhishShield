@@ -33,6 +33,7 @@ import { VariableResolverService } from '../shared-services/variable-resolver.se
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
+import { SendReplyEmailEvent } from '@phishshield/dto';
 
 @Injectable()
 export class EmailService {
@@ -200,14 +201,12 @@ export class EmailService {
 
     const subject = this.variableResolver.substitute(
       email.subject,
-      referenceNumber,
       user,
       employeeInfo,
     );
 
     const substitutedContent = this.variableResolver.substitute(
       email.content,
-      referenceNumber,
       user,
       employeeInfo,
     );
@@ -366,5 +365,63 @@ export class EmailService {
           : 'Failed to process email scheduling';
       throw new InternalServerErrorException(diagnosticMessage);
     }
+  }
+
+  async handleSendReply(event: SendReplyEmailEvent): Promise<void> {
+    const recipient = await this.userRepository.findOne({
+      where: { email: event.to },
+    });
+
+    const { user, employeeInfo } = await this.loadUserAndEmployeeInfo(
+      recipient.auth0Id,
+    );
+
+    const subject = this.variableResolver.substitute(
+      event.subject,
+      user,
+      employeeInfo,
+    );
+
+    const content = this.variableResolver.substitute(
+      event.content,
+      user,
+      employeeInfo,
+    );
+
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: event.from,
+        to: event.to,
+        subject,
+        html: content,
+        headers: this.buildThreadingHeaders(event),
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.logger.log(
+        `Reply sent for ${event.emailId}, new message id ${data?.id}`,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to send ${event.kind} reply for ${event.emailId}`,
+        err,
+      );
+    }
+  }
+
+  private buildThreadingHeaders(
+    event: SendReplyEmailEvent,
+  ): Record<string, string> | undefined {
+    if (!event.inReplyTo && event.references.length === 0) return undefined;
+
+    const headers: Record<string, string> = {};
+    if (event.inReplyTo) headers['In-Reply-To'] = `<${event.inReplyTo}>`;
+    if (event.references.length > 0) {
+      headers['References'] = event.references.map((r) => `<${r}>`).join(' ');
+    }
+    return headers;
   }
 }
