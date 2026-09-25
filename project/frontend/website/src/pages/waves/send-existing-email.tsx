@@ -28,14 +28,6 @@ interface FormErrors {
   sender?:string;
 }
 
-function formatSender(template: EmailTemplate): string {
-  if (template.alias) {
-    return `${template.alias} <${template.sender}>`;
-  }
-
-  return template.sender;
-}
-
 function getDifficultyVariant(
   difficulty: EmailTemplate["difficulty"],
 ): "success" | "warning" | "danger" {
@@ -825,9 +817,11 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
                 </div>
 
                 <div>
-                  <p style={detailLabelStyle}>Sender</p>
+                  <p style={detailLabelStyle}>Sender domain</p>
 
-                  <p style={sectionValueStyle}>{formatSender(selectedEmail)}</p>
+                  <p style={sectionValueStyle}>
+                    @{selectedEmail.sender}
+                  </p>
                 </div>
 
                 <div>
