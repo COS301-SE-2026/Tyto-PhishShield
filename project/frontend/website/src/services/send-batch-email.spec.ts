@@ -129,6 +129,40 @@ describe('sendBatchWithReference', () => {
             ),
         ).rejects.toThrow('Failed to send batch email');
     });
+
+    it('should include sender options when provided', async () => {
+        const backendResponse: BatchEmailResponse = {
+            success: true,
+            message: 'Batch email successfully sent'
+        };
+
+        mockFetch.mockResolvedValue(
+            createMockResponse(true, backendResponse),
+        );
+
+        await sendBatchWithReference(
+            'PHISH-67',
+            ['auth0|user1', 'auth0|user2'],
+            {
+                senderCustomName: 'Trolling',
+                alias: 'Trolling Department',
+            }
+        );
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            `${API_BASE}/batch-emails/PHISH-67/send-batch-with-reference`,
+            expect.objectContaining({
+                body: JSON.stringify({
+                    auth0Id: [
+                        'auth0|user1',
+                        'auth0|user2',
+                    ],
+                    senderCustomName: 'Trolling',
+                    alias: 'Trolling Department',
+                }),
+            }),
+        );
+    });
 });
 
 describe('sendBatchRandomSameEmail', () => {
@@ -338,6 +372,47 @@ describe('sendBatchRandomSameEmail', () => {
             ),
         ).rejects.toThrow('Failed to send random times same-email batch');
     });
+
+    it('should include sender options when provided', async () => {
+        const backendResponse: BatchEmailResponse = {
+            success: true,
+            message: 'Same-email batch scheduled successfully',
+        };
+
+        mockFetch.mockResolvedValue(
+            createMockResponse(true, backendResponse),
+        );
+
+        await sendBatchRandomSameEmail(
+            ['auth0|user1'],
+            'medium',
+            '2026-10-20T10:00:00.000Z',
+            '2026-10-20T12:00:00.000Z',
+            true,
+            'Test Wave',
+            'PHISH-67',
+            {
+                senderAuth0Id: 'auth0|001',
+                alias: 'Big Guy',
+            }
+        );
+        expect(mockFetch).toHaveBeenCalledWith(
+            `${API_BASE}/batch-emails/send-batch-random-same-email`,
+            expect.objectContaining({
+                body: JSON.stringify({
+                    auth0Id: ['auth0|user1'],
+                    difficulty: 'medium',
+                    scheduledFrom: '2026-10-20T10:00:00.000Z',
+                    scheduledTo: '2026-10-20T12:00:00.000Z',
+                    randomisedTimes: true,
+                    waveName: 'Test Wave',
+                    referenceNumber: 'PHISH-67',
+                    senderAuth0Id: 'auth0|001',
+                    alias: 'Big Guy',
+                }),
+            }),
+        );
+    });
 });
 
 describe('sendBatchRandomDifferentEmail', () => {
@@ -512,5 +587,48 @@ describe('sendBatchRandomDifferentEmail', () => {
                 'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times different-email batch');
+    });
+
+    it('should include sender options when provided', async () => {
+        const backendResponse: BatchEmailResponse = {
+            success: true,
+            message: 'Different email batch scheduled successfuly',
+        };
+
+        mockFetch.mockResolvedValue(
+            createMockResponse(true, backendResponse),
+        );
+
+        await sendBatchRandomDifferentEmail(
+            ['auth0|user1', 'auth0|user2'],
+            'hard',
+            '2026-10-20T10:00:00.000Z',
+            '2026-10-20T12:00:00.000Z',
+            false,
+            'Test Wave',
+            {
+                senderCustomName: 'security',
+                alias: 'IT Security',
+            },
+        );
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            `${API_BASE}/batch-emails/send-batch-random-different-email`,
+            expect.objectContaining({
+                body: JSON.stringify({
+                    auth0Id: [
+                        'auth0|user1',
+                        'auth0|user2',
+                    ],
+                    difficulty: 'hard',
+                    scheduledFrom: '2026-10-20T10:00:00.000Z',
+                    scheduledTo: '2026-10-20T12:00:00.000Z',
+                    randomisedTimes: false,
+                    waveName: 'Test Wave',
+                    senderCustomName: 'security',
+                    alias: 'IT Security',
+                })
+            }),
+        );
     });
 });

@@ -15,6 +15,7 @@ import {
 } from "../../services/email-template";
 import { sendBatchWithReference } from "../../services/send-batch-email";
 import { getUsers, type User } from "../../services/user";
+import { SenderSelector, getSenderOptions, initialSenderSelection, type SenderSelection } from "../../components/email/sender-selector";
 
 interface SendEmailProps {
   onNavigate: (path: string) => void;
@@ -24,6 +25,7 @@ interface SendEmailProps {
 interface FormErrors {
   referenceNumber?: string;
   recipients?: string;
+  sender?:string;
 }
 
 function formatSender(template: EmailTemplate): string {
@@ -65,6 +67,7 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
   const [userSearch, setUserSearch] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [userLoading, setUserLoading] = useState(true);
+  const [senderSelection, setSenderSelection] = useState<SenderSelection>(initialSenderSelection);
 
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -300,6 +303,14 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
       nextErrors.recipients = "Select at least one recipient.";
     }
 
+    if (senderSelection.mode === 'custom' && !senderSelection.customName.trim()) {
+      nextErrors.sender = "Enter a custom sender name.";
+    }
+
+    if (senderSelection.mode === 'company' && !senderSelection.senderAuth0Id) {
+      nextErrors.sender = "Select a company user to spoof.";
+    }
+
     setErrors(nextErrors);
 
     return Object.keys(nextErrors).length === 0;
@@ -313,9 +324,12 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
     setSending(true);
 
     try {
+      const senderOptions = getSenderOptions(senderSelection);
+
       await sendBatchWithReference(
         selectedEmail.referenceNumber,
         selectedAuth0Ids,
+        senderOptions,
       );
 
       addToast({
@@ -386,8 +400,8 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
       subtitle="Send a saved email to one or more recipients"
       breadcrumbs={[
         {
-          label: "Phishing Waves",
-          path: "/waves",
+          label: "Emails",
+          path: "/emails",
         },
         {
           label: "Send Existing Email",
@@ -523,6 +537,32 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
                 Find Template
               </Button>
             </div>
+          </Card>
+
+          <Card style={{ padding: 24 }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={sectionHeadingStyle}>Sender Options</h2>
+
+              <p style={sectionTextStyle}>
+                Choose how the sender should appear to the recipients.
+              </p>
+            </div>
+
+            <SenderSelector
+              users={users}
+              userLoading={userLoading}
+              value={senderSelection}
+              onChange={(selection) => {
+                setSenderSelection(selection);
+                setErrors((previous) => ({
+                  ...previous,
+                  sender: undefined
+                }));
+              }}
+              domain={selectedEmail?.sender}
+            />
+
+            {errors.sender && (<p style={errorStyle}>{errors.sender}</p>)}
           </Card>
 
           <Card style={{ padding: "24px 28px" }}>

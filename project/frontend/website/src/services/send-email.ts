@@ -1,7 +1,22 @@
 import { SendEmailResponse, ErrorResponse } from '../types';
-import { API_BASE } from './api';
+import { API_BASE, authFetch } from './api';
 
 const EMAIL_BASE = API_BASE + '/emails';
+
+export interface SenderOptions {
+  senderCustomName?: string;
+  senderAuth0Id?: string;
+  alias?: string;
+}
+
+export interface SendSingleEmailRequest extends SenderOptions {
+  auth0Id: string;
+}
+
+export interface ScheduleSingleEmailRequest extends SenderOptions {
+  auth0Id: string;
+  scheduledAt: string;
+}
 
 export function isErrorResponse(value: unknown): value is ErrorResponse {
   return (
@@ -12,59 +27,59 @@ export function isErrorResponse(value: unknown): value is ErrorResponse {
   );
 }
 
-export async function sendEmail(referenceNumber: string, recipient = 'FiveGuys301@outlook.com'): Promise<SendEmailResponse> {
-  const token = localStorage.getItem('access_token');
+async function readResponse<T>(response: Response, fallbackMessage: string): Promise<T>{
+  const data: unknown = await response.json().catch(() => null);
 
-  const response = await fetch(
+  if (!response.ok) {
+    throw new Error(isErrorResponse(data) ? data.message : fallbackMessage);
+  }
+
+  return data as T;
+}
+
+export async function sendEmail(referenceNumber: string, auth0Id: string, senderOptions: SenderOptions = {}): Promise<SendEmailResponse> {
+  const body: SendSingleEmailRequest = {
+    auth0Id,
+    ...senderOptions,
+  }
+
+  const response = await authFetch(
     `${EMAIL_BASE}/${referenceNumber}/send-single`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({
-        recipient,
-      })
+      body: JSON.stringify(body),
     }
   );
 
-  const data: unknown = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(isErrorResponse(data) ? data.message : 'Failed to send email');
-  }
-
-  return data as SendEmailResponse;
+  return readResponse<SendEmailResponse>(
+    response,
+    'Failed to send email',
+  );
 }
 
-export async function scheduleEmail(
-  referenceNumber: string, 
-  recipient: string,
-  scheduledAt: string
-): Promise<SendEmailResponse> {
-  const token = localStorage.getItem('access_token');
-  
-  const response = await fetch(
+export async function scheduleEmail(referenceNumber: string, auth0Id: string, scheduledAt: string, senderOptions: SenderOptions = {}): Promise<SendEmailResponse> {
+  const body: ScheduleSingleEmailRequest = {
+    auth0Id,
+    scheduledAt,
+    ...senderOptions,
+  };
+
+  const response = await authFetch(
     `${EMAIL_BASE}/${referenceNumber}/schedule-send-single`,
     {
       method: 'POST',
       headers: {
-        'Content-Type' : 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}`} : {}),
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        recipient,
-        scheduledAt,
-      }),
-    }
+      body: JSON.stringify(body),
+    },
   );
 
-  const data: unknown = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(isErrorResponse(data) ? data.message : 'Failed to schedule single email');
-  }
-
-  return data as SendEmailResponse;
+  return readResponse<SendEmailResponse>(
+    response,
+    'Failed to schedule single email',
+  );
 }
