@@ -1,6 +1,5 @@
 import {
   IsArray,
-  IsEmail,
   ArrayMinSize,
   ArrayMaxSize,
   IsNotEmpty,
@@ -8,6 +7,7 @@ import {
   IsBoolean,
   IsEnum,
   IsOptional,
+  IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -21,8 +21,8 @@ export class SendBatchRandomDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
-  @IsEmail({}, { each: true })
-  recipients!: string[];
+  @IsString({ each: true })
+  auth0Id!: string[];
 
   @IsNotEmpty()
   @IsEnum(EmailDifficulty)
@@ -40,5 +40,9 @@ export class SendBatchRandomDto {
 
   @IsBoolean()
   @IsOptional()
-  randomisedTimes: boolean = true;
+  randomisedTimes?: boolean = true;
+
+  @IsString()
+  @IsNotEmpty()
+  waveName!: string;
 }

@@ -20,7 +20,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Server } from 'http';
 import { AppModule } from '../src/app.module';
-import { UserEntity } from '../src/entities/user.entity';
+import { Department, UserEntity } from '../src/entities/user.entity';
 import { XpEntity } from '../src/entities/xp.entity';
 import { XpResponseDto } from '../src/dto/xp-response.dto';
 import { NetXpResponseDto } from '../src/dto/net-xp-response.dto';
@@ -55,7 +55,7 @@ describe('XP service integration test', () => {
         auth0Id: TEST_AUTH0_ID,
         name: 'XP E2E Tester',
         email: 'xp-e2e@example.com',
-        department: 'Test Department',
+        department: Department.FINANCE,
       });
       seededUser = await userRepository.save(newUser);
       console.log('Successfully seeded user:', JSON.stringify(seededUser));
@@ -103,7 +103,7 @@ describe('XP service integration test', () => {
         expect(entry).toBeDefined();
         expect(entry?.user.name).toEqual('XP E2E Tester');
         expect(entry?.user.email).toEqual('xp-e2e@example.com');
-        expect(entry?.user.department).toEqual('Test Department');
+        expect(entry?.user.department).toEqual(Department.FINANCE);
       });
   });
 
@@ -135,7 +135,7 @@ describe('XP service integration test', () => {
         for (const entry of body) {
           expect(entry.user.auth0Id).toEqual(TEST_AUTH0_ID);
           expect(entry.user.email).toEqual('xp-e2e@example.com');
-          expect(entry.user.department).toEqual('Test Department');
+          expect(entry.user.department).toEqual(Department.FINANCE);
         }
       });
   });

@@ -18,7 +18,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EmailController } from './email.controller';
 import { EmailService } from './email.service';
 import { EmailsDto } from '../dto/emails.dto';
-import { EmailDifficulty } from '../entities/emails.entity';
+import { EmailDifficulty } from '../entities/email-template.entity';
 import { SendSingleEmailDto } from '../dto/send-single-email.dto';
 import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
 
@@ -46,8 +46,7 @@ describe('EmailController', () => {
   const mockEmail = {
     email_id: 'uuid-1234',
     reference_number: 'PHISH-001',
-    sender: 'security@domain.com',
-    alias: 'IT Support',
+    sender: 'domain.com',
     subject: 'Urgent: Password Reset',
     content: '<p>Please reset your password</p>',
     difficulty: EmailDifficulty.EASY,
@@ -56,20 +55,25 @@ describe('EmailController', () => {
 
   // Mock the EmailsDto
   const mockCreateDto: EmailsDto = {
-    sender: 'security@domain.com',
-    alias: 'IT Support',
+    sender: 'domain.com',
     subject: 'Urgent: Password Reset',
     content: '<p>Please reset your password</p>',
     difficulty: EmailDifficulty.EASY,
   };
 
   const mockSendSingleEmail: SendSingleEmailDto = {
-    recipient: 'test@domain.com',
+    auth0Id: 'auth0|1',
+    senderCustomName: 'it-support',
+    senderAuth0Id: undefined,
+    alias: 'IT Support',
   };
 
   const mockScheduleSingleEmail: ScheduleSingleEmailDto = {
-    recipient: 'test@domain.com',
+    auth0Id: 'auth0|1',
     scheduledAt: new Date('2026-05-25T14:30:00.000Z'),
+    senderCustomName: 'it-support',
+    senderAuth0Id: undefined,
+    alias: 'IT Support',
   };
 
   beforeEach(async () => {
@@ -134,7 +138,7 @@ describe('EmailController', () => {
   });
 
   describe('sendEmail', () => {
-    it('should send a single email to recipient', async () => {
+    it('should send a single email to recipient with senderName and alias', async () => {
       const serviceResponse = {
         success: true,
         message: 'Email sent successfully',
@@ -146,18 +150,26 @@ describe('EmailController', () => {
 
       expect(service.sendEmail).toHaveBeenCalledWith(
         'PHISH-001',
-        mockSendSingleEmail.recipient,
+        mockSendSingleEmail.auth0Id,
+        mockSendSingleEmail.senderCustomName,
+        mockSendSingleEmail.senderAuth0Id,
+        mockSendSingleEmail.alias,
       );
-      expect(result).toEqual({
-        success: true,
-        message: 'Email sent successfully',
-        deliveryId: 'resend-id',
-      });
+      expect(result).toEqual(serviceResponse);
+    });
+
+    it('should pass undefined senderName/alias through when non are provided', async () => {
+      const minimalDto: SendSingleEmailDto = { auth0Id: 'auth0|1' };
+      mockEmailService.sendEmail.mockResolvedValue({ success: true, message: 'sent', deliveryId: 'id' });
+
+      await controller.sendEmail('PHISH-001', minimalDto);
+
+      expect(service.sendEmail).toHaveBeenCalledWith('PHISH-001', 'auth0|1', undefined, undefined, undefined);
     });
   });
 
   describe('scheduleSendEmail', () => {
-    it('should schedule a single email to recipient', async () => {
+    it('should schedule a single email to recipient with senderName and alias', async () => {
       const serviceResponse = {
         success: true,
         message: 'Email scheduled successfully',
@@ -169,14 +181,13 @@ describe('EmailController', () => {
 
       expect(service.scheduleSendEmail).toHaveBeenCalledWith(
         'PHISH-001',
-        mockScheduleSingleEmail.recipient,
+        mockScheduleSingleEmail.auth0Id,
         mockScheduleSingleEmail.scheduledAt,
+        mockScheduleSingleEmail.senderCustomName,
+        mockScheduleSingleEmail.senderAuth0Id,
+        mockScheduleSingleEmail.alias,
       );
-      expect(result).toEqual({
-        success: true,
-        message: 'Email scheduled successfully',
-        deliveryId: 'schedule-id',
-      });
+      expect(result).toEqual(serviceResponse);
     });
   });
 });

@@ -1,37 +1,30 @@
 import { API_BASE, authFetch } from '../../services/api';
 
-export interface RealUser {
-  id: string;
+export interface XpNetEntry {
   auth0Id: string;
-  email: string;
   name: string;
-  role: string;
+  email: string;
   department: string | null;
-  xp: number;
-  createdAt: string;
-}
-
-export async function fetchLeaderboardUsers(): Promise<RealUser[]> {
-  const res = await authFetch(`${API_BASE}/accounts/users`);
-  if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
-  return res.json() as Promise<RealUser[]>;
-}
-
-export interface XpNetEntry {
-  auth0Id: string;
   totalXp: number;
 }
 
-export interface XpNetEntry {
-  auth0Id: string;
+export interface RawNetXpEntry {
   totalXp: number;
+  user: { auth0Id: string; name: string; email: string; department: string | null };
 }
 
 // Only includes users with at least one XP entry (below)
 export async function fetchLeaderboardXp(): Promise<XpNetEntry[]> {
   const res = await authFetch(`${API_BASE}/xp/net`);
   if (!res.ok) throw new Error(`Failed to load XP (${res.status})`);
-  return res.json() as Promise<XpNetEntry[]>;
+  const raw = await res.json() as RawNetXpEntry[];
+  return raw.map(entry => ({
+    auth0Id: entry.user.auth0Id,
+    name: entry.user.name,
+    email: entry.user.email,
+    department: entry.user.department,
+    totalXp: entry.totalXp, 
+}));
 }
 
 export function getInitials(name?: string, email?: string): string {
@@ -44,7 +37,6 @@ export function getInitials(name?: string, email?: string): string {
   return (email ?? '??').slice(0, 2).toUpperCase();
 }
 
-// department field doesn't exist yet server-side (need to add in an update from backend)
 export function resolveDepartment(department?: string | null): string {
   const trimmed = department?.trim();
   if (!trimmed) return 'Unassigned';
@@ -58,9 +50,14 @@ export interface DepartmentGroup {
   averageXP: number;
 }
 
-// groups real users by department once that field is actually populated - "Unassigned" for now.
-export function groupUsersByDepartment(users: RealUser[]): DepartmentGroup[] {
-  const groups = new Map<string, RealUser[]>();
+interface DepartmentSource {
+  department: string | null;
+  xp: number;
+}
+
+// groups by department. Accounts with no department falls under "Unassigned".
+export function groupUsersByDepartment(users: readonly DepartmentSource[]): DepartmentGroup[] {
+  const groups = new Map<string, DepartmentSource[]>();
   for (const u of users) {
     const key = resolveDepartment(u.department);
     const list = groups.get(key) ?? [];

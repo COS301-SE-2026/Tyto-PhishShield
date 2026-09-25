@@ -1,0 +1,12 @@
+services:
+  stalwart:
+    image: stalwartlabs/stalwart:v0.15
+    container_name: stalwart
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8180:8080" 
+      - "25:25"               
+      - "587:587"             
+      - "993:993"            
+    volumes:
+      - ./data:/opt/stalwart-mail

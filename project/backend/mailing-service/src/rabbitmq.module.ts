@@ -5,5 +5,5 @@ export const mailingRabbitMQModule = RabbitMQModule.forRoot({
   exchanges: [{ name: 'mailing-event-exchange', type: 'topic' }],
   connectionInitOptions: {
     wait: false,
-  }
+  },
 });

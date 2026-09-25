@@ -12,7 +12,11 @@
     "serve": "serve -s dist"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
     "eslint-plugin-react-x": "^5.7.5",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "lucide-react": "^1.28.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.15.1",

@@ -3,9 +3,20 @@
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const webpack = require("webpack");
+const dotenv = require("dotenv");
+const path = require("path");
 
 const urlDev = "https://localhost:3000/";
 const urlProd = process.env.ADDIN_BASE_URL; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
+
+dotenv.config({
+  path: path.resolve(__dirname, ".env"),
+});
+
+if (!process.env.API_BASE) {
+  throw new Error("API_BASE is not defined");
+}
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
@@ -51,6 +62,9 @@ module.exports = async (env, options) => {
       ],
     },
     plugins: [
+      new webpack.DefinePlugin({
+        "process.env.API_BASE": JSON.stringify(process.env.API_BASE),
+      }),
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: "./src/taskpane/taskpane.html",

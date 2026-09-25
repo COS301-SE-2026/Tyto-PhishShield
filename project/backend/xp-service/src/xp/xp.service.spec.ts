@@ -6,15 +6,16 @@ import {
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { XpService } from './xp.service';
 import { XpEntity, XpReason } from '../entities/xp.entity';
-import { UserEntity } from '../entities/user.entity';
+import { Department, UserEntity } from '../entities/user.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { EmailDetailsEntity } from '../entities/email-details.entity';
 
 const mockUser: Partial<UserEntity> = {
   id: '1',
   auth0Id: 'auth0|123',
   name: 'Alice',
   email: 'test@example.com',
-  department: 'Example',
+  department: Department.FINANCE,
 };
 const mockXpEntry: Partial<XpEntity> = {
   id: '1',
@@ -65,6 +66,10 @@ describe('XpService', () => {
         { provide: getRepositoryToken(XpEntity), useValue: mockXpRepository },
         {
           provide: getRepositoryToken(UserEntity),
+          useValue: mockUserRepository,
+        },
+        {
+          provide: getRepositoryToken(EmailDetailsEntity),
           useValue: mockUserRepository,
         },
         {
@@ -275,14 +280,14 @@ describe('XpService', () => {
           auth0Id: 'auth0|123',
           name: 'Alice',
           email: 'alice@example.com',
-          department: 'Test',
+          department: Department.FINANCE,
           totalXp: '300',
         },
         {
           auth0Id: 'auth0|456',
           name: 'Bob',
           email: 'bob@example.com',
-          department: 'Test',
+          department: Department.FINANCE,
           totalXp: '150',
         },
       ];
@@ -297,7 +302,7 @@ describe('XpService', () => {
             auth0Id: 'auth0|123',
             name: 'Alice',
             email: 'alice@example.com',
-            department: 'Test',
+            department: Department.FINANCE,
           },
         },
         {
@@ -306,7 +311,7 @@ describe('XpService', () => {
             auth0Id: 'auth0|456',
             name: 'Bob',
             email: 'bob@example.com',
-            department: 'Test',
+            department: Department.FINANCE,
           },
         },
       ]);

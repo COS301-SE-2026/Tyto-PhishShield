@@ -38,8 +38,8 @@ describe('sendBatchWithReference', () => {
         const result = await sendBatchWithReference(
             'PHISH-123',
             [
-                'a@example.com',
-                'b@example.com',
+                'auth0|user1',
+                'auth0|user2',
             ],
         );
 
@@ -54,9 +54,9 @@ describe('sendBatchWithReference', () => {
                     Authorization: 'Bearer test-token',
                 },
                 body: JSON.stringify({
-                    recipients: [
-                        'a@example.com',
-                        'b@example.com',
+                    auth0Id: [
+                        'auth0|user1',
+                        'auth0|user2',
                     ],
                 }),
             },
@@ -73,7 +73,7 @@ describe('sendBatchWithReference', () => {
     
         await sendBatchWithReference(
             'PHISH-123',
-            ['recipient@example.com'],
+            ['auth0|user1'],
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
@@ -94,7 +94,7 @@ describe('sendBatchWithReference', () => {
         await expect(
             sendBatchWithReference(
                 'INVALID',
-                ['recipient@example.com'],
+                ['auth0|user1'],
             ),
         ).rejects.toThrow('Email reference was not found');
     });
@@ -107,7 +107,7 @@ describe('sendBatchWithReference', () => {
         await expect(
             sendBatchWithReference(
                 'PHISH-123',
-                ['recipient@example.com'],
+                ['auth0|user1'],
             ),
         ).rejects.toThrow('Failed to send batch email');
     });
@@ -125,7 +125,7 @@ describe('sendBatchWithReference', () => {
         await expect(
             sendBatchWithReference(
                 'PHISH-123',
-                ['recipient@example.com'],
+                ['auth0|user1'],
             ),
         ).rejects.toThrow('Failed to send batch email');
     });
@@ -155,13 +155,14 @@ describe('sendBatchRandomSameEmail', () => {
 
         const result = await sendBatchRandomSameEmail(
             [
-                'a@example.com',
-                'b@example.com',
+                'auth0|user1',
+                'auth0|user2',
             ],
             'medium',
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             true,
+            'Test Wave',
         );
 
         expect(result).toEqual(backendResponse);
@@ -175,14 +176,15 @@ describe('sendBatchRandomSameEmail', () => {
                     Authorization: 'Bearer test-token',
                 },
                 body: JSON.stringify({
-                    recipients: [
-                        'a@example.com',
-                        'b@example.com',
+                    auth0Id: [
+                        'auth0|user1',
+                        'auth0|user2',
                     ],
                     difficulty: 'medium',
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: true,
+                    waveName: 'Test Wave',
                 }),
             },
         );
@@ -197,11 +199,12 @@ describe('sendBatchRandomSameEmail', () => {
         mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
     
         await sendBatchRandomSameEmail(
-            ['recipient@example.com'],
+            ['auth0|user1'],
             'easy',
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
@@ -223,22 +226,58 @@ describe('sendBatchRandomSameEmail', () => {
         mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
 
         await sendBatchRandomSameEmail(
-            ['recipient@example.com'],
+            ['auth0|user1'],
             'hard',
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
             expect.any(String),
             expect.objectContaining({
                 body: JSON.stringify({
-                    recipients: ['recipient@example.com'],
+                    auth0Id: ['auth0|user1'],
                     difficulty: 'hard',
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: false,
+                    waveName: 'Test Wave',
+                })
+            }),
+        );
+    });
+
+    it('should include a reference number for a same email wave when one is provided', async () => {
+        const backendResponse: BatchEmailResponse = {
+            success: true,
+            message: 'Same-email batch scheduled successfully'
+        };
+
+        mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
+
+        await sendBatchRandomSameEmail(
+            ['auth0|user1'],
+            'hard',
+            '2026-10-20T10:00:00.000Z',
+            '2026-10-20T12:00:00.000Z',
+            false,
+            'Test Wave',
+            'PHISH-67',
+        );
+    
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                body: JSON.stringify({
+                    auth0Id: ['auth0|user1'],
+                    difficulty: 'hard',
+                    scheduledFrom: '2026-10-20T10:00:00.000Z',
+                    scheduledTo: '2026-10-20T12:00:00.000Z',
+                    randomisedTimes: false,
+                    waveName: 'Test Wave',
+                    referenceNumber: 'PHISH-67',
                 })
             }),
         );
@@ -251,11 +290,12 @@ describe('sendBatchRandomSameEmail', () => {
 
         await expect(
             sendBatchRandomSameEmail(
-                ['recipient@example.com'],
+                ['auth0|user1'],
                 'hard',
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('No matching email template was found');
     });
@@ -267,11 +307,12 @@ describe('sendBatchRandomSameEmail', () => {
 
         await expect(
             sendBatchRandomSameEmail(
-                ['recipient@example.com'],
+                ['auth0|user1'],
                 'easy',
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times same-email batch');
     });
@@ -288,11 +329,12 @@ describe('sendBatchRandomSameEmail', () => {
 
         await expect(
             sendBatchRandomSameEmail(
-                ['recipient@example.com'],
+                ['auth0|user1'],
                 'easy',
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times same-email batch');
     });
@@ -322,13 +364,14 @@ describe('sendBatchRandomDifferentEmail', () => {
 
         const result = await sendBatchRandomDifferentEmail(
             [
-                'a@example.com',
-                'b@example.com',
+                'auth0|user1',
+                'auth0|user2',
             ],
             'hard',
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             true,
+            'Test Wave',
         );
 
         expect(result).toEqual(backendResponse);
@@ -342,14 +385,15 @@ describe('sendBatchRandomDifferentEmail', () => {
                     Authorization: 'Bearer test-token',
                 },
                 body: JSON.stringify({
-                    recipients: [
-                        'a@example.com',
-                        'b@example.com',
+                    auth0Id: [
+                        'auth0|user1',
+                        'auth0|user2',
                     ],
                     difficulty: 'hard',
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: true,
+                    waveName: 'Test Wave',
                 }),
             },
         );
@@ -364,11 +408,12 @@ describe('sendBatchRandomDifferentEmail', () => {
         mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
     
         await sendBatchRandomDifferentEmail(
-            ['recipient@example.com'],
+            ['auth0|user1'],
             'medium',
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
@@ -390,22 +435,24 @@ describe('sendBatchRandomDifferentEmail', () => {
         mockFetch.mockResolvedValue(createMockResponse(true, backendResponse));
 
         await sendBatchRandomDifferentEmail(
-            ['recipient@example.com'],
+            ['auth0|user1'],
             'medium',
             '2026-10-20T10:00:00.000Z',
             '2026-10-20T12:00:00.000Z',
             false,
+            'Test Wave',
         );
     
         expect(mockFetch).toHaveBeenCalledWith(
             expect.any(String),
             expect.objectContaining({
                 body: JSON.stringify({
-                    recipients: ['recipient@example.com'],
+                    auth0Id: ['auth0|user1'],
                     difficulty: 'medium',
                     scheduledFrom: '2026-10-20T10:00:00.000Z',
                     scheduledTo: '2026-10-20T12:00:00.000Z',
                     randomisedTimes: false,
+                    waveName: 'Test Wave',
                 })
             }),
         );
@@ -418,11 +465,12 @@ describe('sendBatchRandomDifferentEmail', () => {
 
         await expect(
             sendBatchRandomDifferentEmail(
-                ['recipient@example.com'],
+                ['auth0|user1'],
                 'hard',
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('No matching email template was found');
     });
@@ -434,11 +482,12 @@ describe('sendBatchRandomDifferentEmail', () => {
 
         await expect(
             sendBatchRandomDifferentEmail(
-                ['recipient@example.com'],
+                ['auth0|user1'],
                 'easy',
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times different-email batch');
     });
@@ -455,11 +504,12 @@ describe('sendBatchRandomDifferentEmail', () => {
 
         await expect(
             sendBatchRandomDifferentEmail(
-                ['recipient@example.com'],
+                ['auth0|user1'],
                 'easy',
                 '2026-10-20T10:00:00.000Z',
                 '2026-10-20T12:00:00.000Z',
                 false,
+                'Test Wave',
             ),
         ).rejects.toThrow('Failed to send random times different-email batch');
     });

@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, type ReactNode } from 'react';
+import React, { useState, useRef, useEffect, type ReactNode, useId } from 'react';
+import { Eye, EyeOff, X, Moon, Sun, } from 'lucide-react';
 
 // Button
 
@@ -72,12 +73,17 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({
-  label, error, hint, leftIcon, rightIcon, ...props
+  label, error, hint, leftIcon, rightIcon, id, ...props
 }: InputProps) {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       {label && (
-        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+        <label 
+          htmlFor={inputId}
+          style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
           {label}
           {props.required && <span style={{ color: 'var(--color-danger)', marginLeft: 2 }}>*</span>}
         </label>
@@ -91,6 +97,7 @@ export function Input({
         )}
         <input
           {...props}
+          id={inputId}
           style={{
             width: '100%',
             border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border-strong, var(--border))'}`,
@@ -146,15 +153,9 @@ export function PasswordInput(props: PasswordInputProps) {
           aria-label={show ? 'Hide password' : 'Show password'}
         >
           {show ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
-            </svg>
+            <EyeOff size={16} aria-hidden='true' />
           ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+            <Eye size={16} aria-hidden='true' />
           )}
         </button>
       }
@@ -170,12 +171,16 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   options: { value: string; label: string }[];
 }
 
-export function Select({ label, error, options, ...props }: SelectProps) {
+export function Select({ label, error, options, id, ...props }: SelectProps) {
+  const generatedId = useId();
+  const selectId = id ?? generatedId;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      {label && <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{label}</label>}
+      {label && <label htmlFor={selectId} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{label}</label>}
       <select
         {...props}
+        id={selectId}
         style={{
           width: '100%', border: `1.5px solid ${error ? 'var(--color-danger)' : 'var(--border-strong, var(--border))'}`,
           borderRadius: 'var(--radius-md)', padding: '9px 12px', fontSize: 13,
@@ -236,6 +241,18 @@ export function Card({
   );
 }
 
+// ComingSoon
+
+export function ComingSoon({ label }: { readonly label: string }) {
+  return (
+    <div style={{ padding: '24px 8px', textAlign: 'center' }}>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.6 }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
 // Modal
 
 interface ModalProps {
@@ -281,8 +298,9 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 440 }: Moda
               background: 'none', border: 'none', color: 'var(--text-muted)',
               cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex',
             }}
+            aria-label='Close'
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <X size={18} aria-hidden='true' />
           </button>
         </div>
         {children}
@@ -335,17 +353,9 @@ export function ThemeToggle({ theme, onToggle }: { theme: 'light' | 'dark'; onTo
       }}
     >
       {theme === 'light' ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
+        <Moon size={16} aria-hidden='true' />
       ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="12" cy="12" r="5"/>
-          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
+        <Sun size={16} aria-hidden='true' />
       )}
     </button>
   );
@@ -375,6 +385,7 @@ export function OtpInput({ value, onChange, length = 5 }: {
     <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
       {Array.from({ length }).map((_, i) => (
         <input
+        // eslint-disable-next-line react-x/no-array-index-key -- fixed-length digit slots, never reordered
           key={i}
           ref={el => { refs.current[i] = el; }}
           type="text" inputMode="numeric" maxLength={1}
@@ -424,8 +435,8 @@ export function ToastContainer({ toasts, onRemove }: {
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{t.title}</div>
             {t.message && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{t.message}</div>}
           </div>
-          <button onClick={() => onRemove(t.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button onClick={() => onRemove(t.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }} aria-label='Dismiss notification'>
+            <X size={14} aria-hidden='true' />
           </button>
         </div>
       ))}

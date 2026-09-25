@@ -7,47 +7,82 @@ import ColourSection from './components/design-preview/colour-section';
 import TypographySection from './components/design-preview/typography-section';
 import SpacingSection from './components/design-preview/spacing-section';
 import ComponentsSection from './components/design-preview/components-section';
-import DashboardSection from './components/design-preview/dashboard-section';
 
 function App() {
   const [darkMode, setDarkMode] = useState(true);
-
-  const pageStyle = darkMode? 'bg-slate-950 text-slate-100' : 'bg-slate-200 text-slate-950';
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return(
-    <div className={`min-h-screen ${pageStyle}`}>
-      <Sidebar/>
+    <div
+      data-theme={darkMode ? "dark" : "light"}
+      style={{
+        color: "var(--text-primary)",
+        background: "var(--bg-page)",
+        display: 'flex',
+        width: "100%",
+        height: "100vh",
+        overflow: 'hidden',
+      }}
+    >
+      <Sidebar collapsed={sidebarCollapsed}/>
 
-      <main className='lg:ml-64'>
-        <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+      <div
+        style={{
+          flex:1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
 
-        <div className='space-y-8 p-6 md:p-8'>
-          <PageSection id='brand' title='Brand Identity' darkMode={darkMode}>
-            <BrandSection darkMode={darkMode} />
-          </PageSection>
+        <Header 
+          darkMode={darkMode} 
+          setDarkMode={setDarkMode} 
+          onToggleSidebar={() => setSidebarCollapsed(value => !value)}
+        />
 
-          <PageSection id='colours' title='Colour System' darkMode={darkMode}>
-            <ColourSection darkMode={darkMode} />
-          </PageSection>
-
-          <PageSection id='typography' title='Typography' darkMode={darkMode}>
-            <TypographySection darkMode={darkMode} />
-          </PageSection>
-
-          <PageSection id='spacing' title='Spacing System' darkMode={darkMode}>
-            <SpacingSection darkMode={darkMode} />
-          </PageSection>
-
-          <PageSection id='components' title='UI Components' darkMode={darkMode}>
-            <ComponentsSection darkMode={darkMode} />
-          </PageSection>
-
-          <PageSection id='dashboard' title='Dashboard Layout' darkMode={darkMode}>
-            <DashboardSection darkMode={darkMode} />
-          </PageSection>
-        </div>
+        <main 
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            padding: "24px 26px",
+            background: "var(--bg-page)",
+          }}
+        >
         
-      </main>
+
+          <div 
+            style={{
+              display: 'flex',
+              flexDirection:'column',
+              gap: 24,
+              maxWidth: 1500,
+              margin: "0 auto",
+            }}
+          >
+            <PageSection id='brand' title='Brand Identity'>
+              <BrandSection/>
+            </PageSection>
+
+            <PageSection id='colours' title='Colour System'>
+              <ColourSection/>
+            </PageSection>
+
+            <PageSection id='typography' title='Typography'>
+              <TypographySection/>
+            </PageSection>
+
+            <PageSection id='spacing' title='Spacing System'>
+              <SpacingSection/>
+            </PageSection>
+
+            <PageSection id='components' title='UI Components'>
+              <ComponentsSection/>
+            </PageSection>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

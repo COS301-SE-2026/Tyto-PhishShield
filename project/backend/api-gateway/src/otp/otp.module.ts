@@ -7,5 +7,6 @@ import { ProxyModule } from '../proxy/proxy.module';
   imports: [ProxyModule],
   providers: [OtpService],
   controllers: [OtpController],
+  exports: [OtpService],
 })
 export class OtpModule {}

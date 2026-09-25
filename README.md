@@ -19,9 +19,18 @@ University of Pretoria • Tyto Insights • DNS Business
   <img src="https://img.shields.io/github/issues/COS301-SE-2026/Tyto-PhishShield?branch=main&style=for-the-badge&logo=github" alt="Open Issues"/>
   <img src="https://img.shields.io/github/issues-pr/COS301-SE-2026/Tyto-PhishShield?branch=main&style=for-the-badge&logo=github" alt="Open Pull Requests"/>
   <img src="https://img.shields.io/github/last-commit/COS301-SE-2026/Tyto-PhishShield/main?style=for-the-badge&logo=github" alt="Last Commit"/>
+
+  <img alt="Outlook add-in status" src="https://img.shields.io/uptimerobot/status/m803835252-96af8d04421d161d7be833e6?style=flat-square&label=Outlook%20add-in%20status">
+  <img alt="API status" src="https://img.shields.io/uptimerobot/status/m803835240-77ca868f801cbd8ab1412e6e?style=flat-square&label=API%20status">
+  <img alt="Website status" src="https://img.shields.io/uptimerobot/status/m803835229-3aaa1821f65cc2575d0d3124?style=flat-square&label=Website%20status">
+
 </p>
 
 </div>
+
+---
+
+<h1 align="center"><a href="https://capstone-five-guys.dns.net.za/">➡️ 🚀Deployed System🚀 ⬅️</a> </h1>
 
 ---
 
@@ -155,14 +164,72 @@ All project documentation can be found in our
 
 ### Important / Frequently Used Documents
 
-| Document |
+| Documents |
 |-----------|
 | 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
-| 📖 [Project Documentation](project/README.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
+| { }&ensp; [Coding Standards](docs/standards-and-policies/coding-standards.md) |
+| 🧪 [Testing Policy](docs/standards-and-policies/testing-policy.md) |
+| 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
+| 📖 [Project Documentation](docs/README.md) |
+| 📃 [Project Code Files](project/README.md) |
 | 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
-| 🎨 [Design Specification Preview](docs/design-specifications/design-specifications-document.md) |
-| 🎨 [Design Specification Document](docs/design-specifications/design-specifications-document.md) |
+| 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
+| 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
+|🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
 
+<h2 align="center"> 📁 Documentation Archive<h2>
+<details style="font-size: 14px;">
+<summary>Demo 3 Documentation</summary>
+
+| Documents |
+|-----------|
+| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 📐 [Software Architecture Specification (SAS) NFR Test](docs/SRS/Software-Architecture-Specification.md#quality-requirements-based-off-of-nfr) |
+| 📐 [Software Architecture Specification (SAS) NFR Tracability matrix](docs/SRS/Software-Architecture-Specification.md#nfr-quality-requirement-matrix) |
+| 📐 [Software Architecture Specification (SAS) Deployment](docs/SRS/Software-Architecture-Specification.md#deployment) |
+| 📐 [Software Architecture Specification (SAS) Service Contracts](docs/SRS/Software-Architecture-Specification.md#api-service-contracts) |
+| 📐 [API service contract](docs/SRS/service-contracts/api-service-contract.md) |
+| 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
+| 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
+| 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
+| 🎨 [Design Specification Document](docs/design-specifications/PhishShield-Brand-Style-Guide.pdf) |
+| 🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
+| 🎬 [Demo 3 videos](https://drive.google.com/drive/u/1/folders/1KzNlCSQ1aX3uWdeu567TElWooIkOOStt) |
+
+</details> 
+<details style="font-size: 14px;">
+<summary>Demo 2 Documentation</summary>
+
+| Documents |
+|-----------|
+| 📁 [Root Archive: ](docs/demo-2/README.md) |
+| 📋 [Software Requirements Specification (SRS)](docs/demo-2/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/demo-2/Software-Architecture-Specification.md) |
+| { }&ensp; [Coding Standards](docs/demo-2/standards-and-policies/coding-standards.md) |
+| 🧪 [Testing Policy](docs/demo-2/standards-and-policies/testing-policy.md) |
+| 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
+| 🚀 [Scrum Documentation](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/Scrum) |
+| 🎨 [Brand Style Guide Preview](https://cos301-se-2026.github.io/Tyto-PhishShield/design-specifications/) |
+| 🎨 [Design Specification Document](docs/demo-2/PhishShield-Brand-Style-Guide.pdf) |
+| 🎨 [Figma](docs/figma/phase-two-images/figma-phase2.pdf) |
+| 🎬 [Demo 2 videos](https://drive.google.com/drive/folders/10Y1lEcmk7wfp3HCWWZjnnqrf9gLC6ggJ?usp=sharing) |
+
+</details> 
+
+<details style="font-size: 14px;">
+<summary>Demo 1 Documentation</summary>
+
+| Documents |
+|-----------|
+| 📁 [Root Archive: ](docs/demo-1/README.md.md) |
+| 📋 [Software Requirements Specification (SRS)](docs/demo-1/Software_Requirements_Specification.md) |
+| 🎨 [Brand Style Guide Preview](docs/demo-1/design-specifications/index.html) |
+| 🎨 [Design Specification Document](docs/demo-1/design-specifications/design-specifications-document.md) |
+<br>
+</details> 
 <br>
 
 ---

@@ -19,5 +19,6 @@ async function getSocketTicket(): Promise<string> {
 
 export async function connectXpSocket(): Promise<Socket> {
   const ticket = await getSocketTicket();
-  return io(`${API_BASE}/xp-websocket`, { auth: { ticket } });
+  const socketPath = `${import.meta.env.BASE_URL}socket.io/`;
+  return io(`${API_BASE}/xp-websocket`, { path: socketPath, auth: { ticket } });
 }

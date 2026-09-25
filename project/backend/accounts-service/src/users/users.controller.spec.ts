@@ -9,9 +9,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { AuthService } from '../auth/auth.service';
-import { UserRole, Department } from './entities/user.entity';
 import { NotFoundException } from '@nestjs/common';
 import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy';
+import { Department, UserRole } from '@phishshield/dto';
 
 const makeUser = (overrides = {}) =>
   ({
@@ -47,21 +47,28 @@ describe('UsersController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [
-        {
-          provide: UsersService,
-          useValue: {
-            findAll: jest.fn(),
-            findById: jest.fn(),
-            updateRole: jest.fn(),
-            deactivate: jest.fn(),
+        providers: [
+          {
+            provide: UsersService,
+            useValue: {
+              findAll: jest.fn(),
+              findById: jest.fn(),
+              updateRole: jest.fn(),
+              deactivate: jest.fn(),
+              activate: jest.fn(),
+              remove: jest.fn(),
+            },
           },
-        },
-        {
-          provide: AuthService,
-          useValue: {}, // not directly called, but needed for injection
-        },
-      ],
+          {
+            provide: AuthService,
+            useValue: {
+              updateAuth0UserRole: jest.fn(),
+              deleteUser: jest.fn(),
+              blockUser: jest.fn(),
+              unblockUser: jest.fn(),
+            },
+          },
+        ],
     }).compile();
 
     controller = module.get(UsersController);
@@ -127,6 +134,8 @@ describe('UsersController', () => {
 
         describe('updateRole', () => {
           it('calls usersService.updateRole with correct parameters', async () => {
+            usersService.findById.mockResolvedValue(makeUser());
+            authService.updateAuth0UserRole.mockResolvedValue(undefined);
             const updatedUser = makeUser({ role: UserRole.ADMIN });
             usersService.updateRole.mockResolvedValue(updatedUser);
       
@@ -137,14 +146,22 @@ describe('UsersController', () => {
         });
 
           describe('remove', () => {
-            it('calls usersService.deactivate and returns nothing', async () => {
-              usersService.deactivate.mockResolvedValue(undefined);
-              await controller.remove('uuid-1');
-              expect(usersService.deactivate).toHaveBeenCalledWith('uuid-1');
-            });
+            it('calls authService.deleteUser and usersService.remove', async () => {
+            const user = makeUser();
+            usersService.findById.mockResolvedValue(user);
+            authService.deleteUser.mockResolvedValue(undefined);
+            usersService.remove.mockResolvedValue(undefined);
+
+            await controller.remove('uuid-1');
+
+            expect(authService.deleteUser).toHaveBeenCalledWith(user.auth0Id);
+            expect(usersService.remove).toHaveBeenCalledWith('uuid-1');
+          });
         
-            it('propagates errors from service', async () => {
-              usersService.deactivate.mockRejectedValue(new NotFoundException());
+            it('propagates errors from authService.deleteUser', async () => {
+              usersService.findById.mockResolvedValue(makeUser());
+              authService.deleteUser.mockRejectedValue(new NotFoundException());
+            
               await expect(controller.remove('bad-id')).rejects.toThrow(NotFoundException);
             });//dont know if this is needed, but feels good to add.
           });

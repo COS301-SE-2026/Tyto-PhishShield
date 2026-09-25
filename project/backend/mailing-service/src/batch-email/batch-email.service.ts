@@ -8,31 +8,24 @@ import {
 import { Resend } from 'resend';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EmailDifficulty, Emails } from '../entities/emails.entity';
+import {
+  EmailDifficulty,
+  EmailTemplateEntity,
+} from '../entities/email-template.entity';
 import { In, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { UserEntity } from '../entities/user.entity';
+import { BatchSendResultDto } from '../dto/batch-send-result.dto';
+import { ResendBatchItemDto } from '../dto/resend-batch-item.dto';
+import { BatchRecipientDto } from '../dto/batch-recipient.dto';
+import { WaveService } from '../wave/wave.service';
+import { VariableResolverService } from '../shared-services/variable-resolver.service';
+import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
 const MAILING_EVENT_EXCHANGE = 'mailing-event-exchange';
-
-interface BatchSendResult {
-  success: boolean;
-  message: string;
-}
-
-interface RecipientDispatch {
-  recipient: string;
-  referenceNumber: string;
-  scheduledAt: Date;
-}
-
-interface ResendBatchItem {
-  from: string;
-  to: string[];
-  subject: string;
-  html: string;
-  scheduledAt?: string;
-}
 
 @Injectable()
 export class BatchEmailService {
@@ -41,9 +34,17 @@ export class BatchEmailService {
 
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(Emails)
-    private readonly emailRepository: Repository<Emails>,
+    @InjectRepository(EmailTemplateEntity)
+    private readonly emailTemplateRepository: Repository<EmailTemplateEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(EmployeeInfoEntity)
+    private readonly employeeInfoRepository: Repository<EmployeeInfoEntity>,
+    private readonly waveService: WaveService,
     private readonly amqpConnection: AmqpConnection,
+    private readonly variableResolver: VariableResolverService,
+    private readonly senderResolver: SenderResolverService,
+    private readonly trackingLinkService: TrackingLinkService,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
@@ -51,90 +52,158 @@ export class BatchEmailService {
 
   async sendBatchWithReference(
     referenceNumber: string,
-    recipients: string[],
-  ): Promise<BatchSendResult> {
+    auth0Ids: string[],
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
+  ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     const now = new Date();
 
-    const dispatches: RecipientDispatch[] = recipients.map((recipient) => ({
-      recipient,
+    const dispatches: BatchRecipientDto[] = auth0Ids.map((auth0Id) => ({
+      auth0Id,
       referenceNumber: referenceNumber,
       scheduledAt: now,
+      senderCustomName,
+      senderAuth0Id,
+      alias,
     }));
 
-    return this.dispatchBatch(dispatches, `reference ${referenceNumber}`);
+    const { emailsIds, tokens, recipientEmails } = await this.sendEmails(
+      dispatches,
+      `reference ${referenceNumber}`,
+    );
+
+    await this.publishBatchDispatchEvent(
+      this.routingKey(dispatches),
+      dispatches,
+      emailsIds,
+      tokens,
+      undefined,
+      recipientEmails,
+    );
+
+    return {
+      success: true,
+      message: `Successfully dispatched ${dispatches.length} email(s) with reference ${referenceNumber}.`,
+    };
   }
 
   async sendBatchRandomSameEmail(
-    recipients: string[],
+    auth0Ids: string[],
     difficulty: EmailDifficulty,
     scheduledFrom: Date,
     scheduledTo: Date,
     randomisedTimes: boolean,
-  ): Promise<BatchSendResult> {
+    waveName: string,
+    referenceNumber: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
+  ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     // Makes sure scheduledFrom <= scheduledTo
     this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
-    const referenceNumber = await this.getRandomEmailByDifficulty(difficulty);
+    if (!referenceNumber) {
+      referenceNumber = await this.getRandomEmailByDifficulty(difficulty);
+    }
 
     const scheduledAts = this.resolveScheduledTimes(
-      recipients.length,
+      auth0Ids.length,
       scheduledFrom,
       scheduledTo,
       randomisedTimes,
     );
 
-    const dispatches: RecipientDispatch[] = recipients.map(
-      (recipient, index) => ({
-        recipient,
-        referenceNumber,
-        scheduledAt: scheduledAts[index],
-      }),
-    );
+    const dispatches: BatchRecipientDto[] = auth0Ids.map((auth0Id, index) => ({
+      auth0Id,
+      referenceNumber,
+      scheduledAt: scheduledAts[index],
+      senderCustomName,
+      senderAuth0Id,
+      alias,
+    }));
 
     return this.dispatchBatch(
       dispatches,
       `difficulty ${difficulty} (same template)`,
+      {
+        waveName,
+        scheduledFrom: scheduledFrom.toISOString(),
+        scheduledTo: scheduledTo.toISOString(),
+        sameEmail: true,
+        randomisedTimes,
+      },
     );
   }
 
   async sendBatchRandomDifferentEmail(
-    recipients: string[],
+    auth0Ids: string[],
     difficulty: EmailDifficulty,
     scheduledFrom: Date,
     scheduledTo: Date,
     randomisedTimes: boolean,
-  ): Promise<BatchSendResult> {
+    waveName: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
+  ): Promise<BatchSendResultDto> {
+    if (senderAuth0Id && senderCustomName) {
+      throw new BadRequestException(
+        'Cannot have both custom sender name and sender auth0Id',
+      );
+    }
+
     // Makes sure scheduledFrom <= scheduledTo
     this.validateScheduleWindow(scheduledFrom, scheduledTo);
 
     const referenceNumberPool = await this.getRandomEmailByDifficultyArray(
       difficulty,
-      recipients.length,
+      auth0Ids.length,
     );
 
     const referenceNumbers = this.buildRoundRobinReferenceNumbers(
       referenceNumberPool,
-      recipients.length,
+      auth0Ids.length,
     );
 
     const scheduledAts = this.resolveScheduledTimes(
-      recipients.length,
+      auth0Ids.length,
       scheduledFrom,
       scheduledTo,
       randomisedTimes,
     );
 
-    const dispatches: RecipientDispatch[] = recipients.map(
-      (recipient, index) => ({
-        recipient,
-        referenceNumber: referenceNumbers[index],
-        scheduledAt: scheduledAts[index],
-      }),
-    );
+    const dispatches: BatchRecipientDto[] = auth0Ids.map((auth0Id, index) => ({
+      auth0Id,
+      referenceNumber: referenceNumbers[index],
+      scheduledAt: scheduledAts[index],
+      senderCustomName,
+      senderAuth0Id,
+      alias,
+    }));
 
     return this.dispatchBatch(
       dispatches,
       `difficulty ${difficulty} (different templates)`,
+      {
+        waveName,
+        scheduledFrom: scheduledFrom.toISOString(),
+        scheduledTo: scheduledTo.toISOString(),
+        sameEmail: false,
+        randomisedTimes,
+      },
     );
   }
 
@@ -152,14 +221,14 @@ export class BatchEmailService {
     difficulty: EmailDifficulty,
     size: number,
   ): Promise<string[]> {
-    let emails: Emails[];
+    let emails: EmailTemplateEntity[];
 
     try {
       // Query Builder:
       // Get all email entries with the specific difficulty
       // Orders it as Random
       // Returns only the size needed
-      emails = await this.emailRepository
+      emails = await this.emailTemplateRepository
         .createQueryBuilder('email')
         .where('email.difficulty = :difficulty', { difficulty })
         .orderBy('RANDOM()')
@@ -188,36 +257,53 @@ export class BatchEmailService {
   }
 
   private async dispatchBatch(
-    dispatches: RecipientDispatch[],
+    dispatches: BatchRecipientDto[],
     details: string,
-  ): Promise<BatchSendResult> {
-    const referenceNumbers = [
-      ...new Set(dispatches.map((dispatch) => dispatch.referenceNumber)),
-    ];
-
-    const emailsByReference =
-      await this.fetchEmailsByReferenceNumbers(referenceNumbers);
-
-    const payload = dispatches.map((dispatch) =>
-      this.buildResendItem(
-        dispatch,
-        emailsByReference.get(dispatch.referenceNumber),
-      ),
+    waveInfo: {
+      waveName: string;
+      scheduledFrom: string;
+      scheduledTo: string;
+      sameEmail: boolean;
+      randomisedTimes: boolean;
+    },
+  ): Promise<BatchSendResultDto> {
+    const { emailsIds, tokens, recipientEmails } = await this.sendEmails(
+      dispatches,
+      details,
     );
 
-    await this.sendResendBatch(payload);
+    let waveId: string | undefined;
 
-    this.logger.log(
-      `Dispatched batch of ${dispatches.length} email(s) for ${details}`,
+    try {
+      const wave = await this.waveService.saveWave({
+        waveName: waveInfo.waveName,
+        scheduledFrom: waveInfo.scheduledFrom,
+        scheduledTo: waveInfo.scheduledTo,
+        sameEmail: waveInfo.sameEmail,
+        randomisedTimes: waveInfo.randomisedTimes,
+        recipients: dispatches.map((dispatch, index) => ({
+          auth0Id: dispatch.auth0Id,
+          referenceNumber: dispatch.referenceNumber,
+          emailId: emailsIds[index],
+          scheduledAt: dispatch.scheduledAt,
+        })),
+      });
+      waveId = wave.id;
+    } catch (error) {
+      this.logger.error(
+        `Failed to save wave record "${waveInfo.waveName}" after send`,
+        error,
+      );
+    }
+
+    await this.publishBatchDispatchEvent(
+      this.routingKey(dispatches),
+      dispatches,
+      emailsIds,
+      tokens,
+      waveId,
+      recipientEmails,
     );
-
-    const routing = dispatches.every((dispatch) =>
-      this.isImmediate(dispatch.scheduledAt),
-    )
-      ? 'mailing.batch_send'
-      : 'mailing.batch_schedule';
-
-    await this.publishBatchDispatchEvent(routing, dispatches);
 
     return {
       success: true,
@@ -225,11 +311,80 @@ export class BatchEmailService {
     };
   }
 
+  private async sendEmails(
+    dispatches: BatchRecipientDto[],
+    details: string,
+  ): Promise<{
+    emailsIds: string[];
+    tokens: string[];
+    recipientEmails: string[];
+  }> {
+    const referenceNumbers = [
+      ...new Set(dispatches.map((dispatch) => dispatch.referenceNumber)),
+    ];
+
+    const emailsByReference =
+      await this.fetchEmailsByReferenceNumbers(referenceNumbers);
+
+    const auth0Ids = [
+      ...new Set(dispatches.map((dispatch) => dispatch.auth0Id)),
+    ];
+
+    const recipients = await this.userRepository.find({
+      where: { auth0Id: In(auth0Ids) },
+    });
+
+    const recipientMap = new Map(
+      recipients.map((recipient) => [recipient.auth0Id, recipient]),
+    );
+
+    const employeeInfos = await this.employeeInfoRepository.find({
+      where: { auth0Id: In(auth0Ids) },
+    });
+
+    const employeeInfoMap = new Map(
+      employeeInfos.map((info) => [info.auth0Id, info]),
+    );
+
+    const built = await Promise.all(
+      dispatches.map((dispatch) =>
+        this.buildResendItem(
+          dispatch,
+          emailsByReference.get(dispatch.referenceNumber),
+          recipientMap.get(dispatch.auth0Id),
+          employeeInfoMap.get(dispatch.auth0Id),
+        ),
+      ),
+    );
+
+    const payload = built.map((item) => item.dto);
+    const tokens = built.map((item) => item.token);
+
+    const emailsIds = await this.sendResendBatch(payload);
+    const recipientEmails = dispatches.map(
+      (dispatch) => recipientMap.get(dispatch.auth0Id)?.email ?? '',
+    );
+
+    this.logger.log(
+      `Dispatched batch of ${dispatches.length} email(s) for ${details}`,
+    );
+
+    return { emailsIds, tokens, recipientEmails };
+  }
+
+  private routingKey(dispatches: BatchRecipientDto[]): string {
+    return dispatches.every((dispatch) =>
+      this.isImmediate(dispatch.scheduledAt),
+    )
+      ? 'mailing.batch_send'
+      : 'mailing.batch_schedule';
+  }
+
   private async fetchEmailsByReferenceNumbers(
     referenceNumbers: string[],
-  ): Promise<Map<string, Emails>> {
+  ): Promise<Map<string, EmailTemplateEntity>> {
     // Find all the email templates relative to their reference numbers
-    const emails = await this.emailRepository.find({
+    const emails = await this.emailTemplateRepository.find({
       where: { referenceNumber: In(referenceNumbers) },
     });
 
@@ -254,12 +409,20 @@ export class BatchEmailService {
   // Event publishing for batch
   private async publishBatchDispatchEvent(
     routingKey: string,
-    dispatches: RecipientDispatch[],
+    dispatches: BatchRecipientDto[],
+    emailIds: string[],
+    tokens: string[],
+    waveId?: string,
+    recipientEmails?: string[],
   ): Promise<void> {
-    const entries = dispatches.map((dispatch) => ({
-      recipient: dispatch.recipient,
+    const entries = dispatches.map((dispatch, index) => ({
+      auth0Id: dispatch.auth0Id,
       referenceNumber: dispatch.referenceNumber,
       scheduledAt: dispatch.scheduledAt.toISOString(),
+      emailId: emailIds[index],
+      token: tokens[index],
+      recipient: recipientEmails?.[index] ?? undefined,
+      ...(waveId ? { waveId } : {}),
     }));
 
     this.logger.log(
@@ -283,10 +446,6 @@ export class BatchEmailService {
     }
   }
 
-  private formatFromAddress(email: Emails): string {
-    return email.alias ? `${email.alias} <${email.sender}>` : email.sender;
-  }
-
   private isImmediate(scheduledAt: Date): boolean {
     return scheduledAt.getTime() - Date.now() <= 5 * 60 * 1000;
   }
@@ -299,44 +458,100 @@ export class BatchEmailService {
     }
   }
 
-  private buildResendItem(
-    dispatch: RecipientDispatch,
-    email: Emails,
-  ): ResendBatchItem {
-    const item: ResendBatchItem = {
-      from: this.formatFromAddress(email),
-      to: [dispatch.recipient],
-      subject: email.subject,
-      html: email.content,
-    };
+  private async buildResendItem(
+    dispatch: BatchRecipientDto,
+    email: EmailTemplateEntity,
+    user?: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
+  ): Promise<{ dto: ResendBatchItemDto; token: string }> {
+    try {
+      if (!user) {
+        throw new NotFoundException(
+          `User not found for Auth0Id: ${dispatch.auth0Id}`,
+        );
+      }
 
-    // Add scheduledAt field if the scheduledAt time is inside the 5-min time.
-    if (!this.isImmediate(dispatch.scheduledAt)) {
-      item.scheduledAt = dispatch.scheduledAt.toISOString();
+      const { subject, content, token } = this.formatEmailContent(
+        email,
+        user,
+        employeeInfo,
+      );
+
+      const item: ResendBatchItemDto = {
+        from: await this.senderResolver.resolveFromAddress(
+          email,
+          dispatch.auth0Id,
+          dispatch.senderCustomName,
+          dispatch.senderAuth0Id,
+          dispatch.alias,
+        ),
+        to: [user.email],
+        subject,
+        html: content,
+      };
+
+      // Add scheduledAt field if the scheduledAt time is outside the 5-min time.
+      if (!this.isImmediate(dispatch.scheduledAt)) {
+        item.scheduledAt = dispatch.scheduledAt.toISOString();
+      }
+
+      return { dto: item, token };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Failed to find user: ${dispatch.auth0Id}`);
+      throw new InternalServerErrorException(error);
     }
-
-    return item;
   }
 
-  private async sendResendBatch(payload: ResendBatchItem[]): Promise<void> {
-    let error: { message?: string } | null | undefined;
+  private formatEmailContent(
+    email: EmailTemplateEntity,
+    user: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
+  ): { subject: string; content: string; token: string } {
+    const subject = this.variableResolver.substitute(
+      email.subject,
+      user,
+      employeeInfo,
+    );
+    const substitutedContent = this.variableResolver.substitute(
+      email.content,
+      user,
+      employeeInfo,
+    );
 
+    const { content, token } =
+      this.trackingLinkService.replace(substitutedContent);
+
+    return { subject, content, token };
+  }
+
+  private async sendResendBatch(
+    payload: ResendBatchItemDto[],
+  ): Promise<string[]> {
     try {
-      ({ error } = await this.resend.batch.send(payload));
-    } catch (sendError) {
-      this.logger.error('Resend batch API call failed', sendError);
-      const diagnosticMessage =
-        sendError instanceof Error
-          ? sendError.message
-          : 'Resend batch send failed';
-      throw new InternalServerErrorException(diagnosticMessage);
-    }
+      const { data, error } = await this.resend.batch.send(payload);
+      if (error) {
+        this.logger.error('Resend batch API returned an error', error);
+        throw new InternalServerErrorException(
+          error.message ?? 'Resend batch send failed',
+        );
+      }
+      const emailIds: string[] = data.data.map((item) => item.id);
 
-    if (error) {
-      this.logger.error('Resend batch API returned an error', error);
-      throw new InternalServerErrorException(
-        error.message ?? 'Resend batch send failed',
-      );
+      if (emailIds.length !== payload.length) {
+        this.logger.warn(
+          `emailIds do not align with the amount of recipients. Event published is incorrect`,
+        );
+      }
+
+      return emailIds;
+    } catch (error) {
+      this.logger.error('Resend batch API call failed', error);
+      const diagnosticMessage =
+        error instanceof Error ? error.message : 'Resend batch send failed';
+      throw new InternalServerErrorException(diagnosticMessage);
     }
   }
 

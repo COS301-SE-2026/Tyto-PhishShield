@@ -6,7 +6,8 @@
  * recipients, or dispatching randomized emails drawn by difficulty.
  *
  * Functions:
- * - {@link BatchEmailController#sendBatchWithReference} - Sends one email template to a list of recipients using a reference number.
+ * - {@link BatchEmailCont
+ * roller#sendBatchWithReference} - Sends one email template to a list of recipients using a reference number.
  * - {@link BatchEmailController#sendBatchRandom} - Sends the same randomly selected email (by difficulty) to all recipients.
  * - {@link BatchEmailController#sendBatchRandomDifferentEmail} - Sends a different randomly selected email (by difficulty) to each recipient.
  */
@@ -20,9 +21,10 @@ import {
   Post,
 } from '@nestjs/common';
 import { BatchEmailService } from './batch-email.service';
-import { SendBatchEmailDto } from '../dto/send-batch-email.dto';
 import { BatchPostReturnDto } from '../dto/batch-post-return.dto';
-import { SendBatchRandomDto } from '../dto/send-batch-random.dto';
+import { SendBatchRandomDto } from '@phishshield/dto';
+import { SendBatchDto } from '@phishshield/dto';
+import { SendBatchEmailDto } from '@phishshield/dto';
 
 @Controller('batch-emails')
 export class BatchEmailController {
@@ -36,7 +38,10 @@ export class BatchEmailController {
   ): Promise<BatchPostReturnDto> {
     const result = await this.batchEmailService.sendBatchWithReference(
       referenceNumber,
-      sendBatchEmail.recipients,
+      sendBatchEmail.auth0Id,
+      sendBatchEmail.senderCustomName,
+      sendBatchEmail.senderAuth0Id,
+      sendBatchEmail.alias,
     );
 
     return new BatchPostReturnDto({
@@ -48,14 +53,19 @@ export class BatchEmailController {
   @Post('send-batch-random-same-email')
   @HttpCode(HttpStatus.OK)
   async sendBatchRandom(
-    @Body() sendBatchRandom: SendBatchRandomDto,
+    @Body() sendBatchRandom: SendBatchDto,
   ): Promise<BatchPostReturnDto> {
     const result = await this.batchEmailService.sendBatchRandomSameEmail(
-      sendBatchRandom.recipients,
+      sendBatchRandom.auth0Id,
       sendBatchRandom.difficulty,
       sendBatchRandom.scheduledFrom,
       sendBatchRandom.scheduledTo,
       sendBatchRandom.randomisedTimes,
+      sendBatchRandom.waveName,
+      sendBatchRandom.referenceNumber,
+      sendBatchRandom.senderCustomName,
+      sendBatchRandom.senderAuth0Id,
+      sendBatchRandom.alias,
     );
 
     return new BatchPostReturnDto({
@@ -70,11 +80,15 @@ export class BatchEmailController {
     @Body() sendBatchRandom: SendBatchRandomDto,
   ): Promise<BatchPostReturnDto> {
     const result = await this.batchEmailService.sendBatchRandomDifferentEmail(
-      sendBatchRandom.recipients,
+      sendBatchRandom.auth0Id,
       sendBatchRandom.difficulty,
       sendBatchRandom.scheduledFrom,
       sendBatchRandom.scheduledTo,
       sendBatchRandom.randomisedTimes,
+      sendBatchRandom.waveName,
+      sendBatchRandom.senderCustomName,
+      sendBatchRandom.senderAuth0Id,
+      sendBatchRandom.alias,
     );
 
     return new BatchPostReturnDto({

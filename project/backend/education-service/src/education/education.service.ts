@@ -6,14 +6,19 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Question } from './entities/question.entity';
 import { Assignment, AssignmentStatus } from './entities/assignment.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-
+import {
+  ACTIONABLE_MISTAKE_CATEGORIES,
+  MistakeCategory,
+} from './types/mistake-category.enum';
+//can change this at anytime to get more robust stuff this is for now, but I think more questions
+// would also be appropriate sinc e then we can do more with it.
 const QUESTIONS_PER_ASSIGNMENT = 3;
 const PASS_THRESHOLD = 0.65;
 const XP_AWARDED = 10;
@@ -22,13 +27,14 @@ const XP_AWARDED = 10;
 export class EducationService {
   private readonly logger = new Logger(EducationService.name);
   constructor(
-    @InjectRepository(Question)
+    @InjectRepository(Question) // I think this is good strategy.
     private readonly questionRepo: Repository<Question>,
     @InjectRepository(Assignment)
     private readonly assignmentRepo: Repository<Assignment>,
+
     private readonly amqpConnection: AmqpConnection,
   ) {}
-
+  //my idea here is that we will be creating assignments which will consist of about 3-4 questions and then an array of answers to get the right answers. Everything will have its own ID and all that jazz as well.
   async createQuestion(dto: CreateQuestionDto): Promise<Question> {
     if (dto.correctOptionIndex >= dto.options.length) {
       throw new BadRequestException(
@@ -43,7 +49,10 @@ export class EducationService {
     return this.questionRepo.find({ order: { createdAt: 'DESC' } });
   }
 
-  async createAssignment(auth0Id: string): Promise<Assignment> {
+  async createAssignment(
+    auth0Id: string,
+    category?: MistakeCategory,
+  ): Promise<Assignment> {
     const existing = await this.assignmentRepo.findOne({
       where: { auth0Id, status: AssignmentStatus.PENDING },
     });
@@ -51,14 +60,15 @@ export class EducationService {
       throw new ConflictException('You already have existing assignment');
     }
 
-    const allQuestions = await this.questionRepo.find();
-    if (allQuestions.length === 0) {
+    const questionPool = await this.buildQuestionPool(category);
+
+    if (questionPool.length === 0) {
       throw new BadRequestException(
         'No questions available yet, please contact an admin',
       );
     }
 
-    const selected = this.randomSubset(allQuestions, QUESTIONS_PER_ASSIGNMENT);
+    const selected = this.randomSubset(questionPool, QUESTIONS_PER_ASSIGNMENT);
 
     const assignment = this.assignmentRepo.create({
       auth0Id,
@@ -69,6 +79,48 @@ export class EducationService {
     return this.assignmentRepo.save(assignment);
   }
 
+  /**
+   * Builds the pool of questions to draw from.
+   *
+   * - No category, or a non-actionable category → all questions.
+   * - Actionable category → category-specific questions first, then top up
+   *   with general (null category) questions if there aren't enough.
+   */
+  private async buildQuestionPool(
+    category?: MistakeCategory,
+  ): Promise<Question[]> {
+    const isActionable =
+      category !== undefined &&
+      ACTIONABLE_MISTAKE_CATEGORIES.includes(category);
+
+    if (!isActionable) {
+      return this.questionRepo.find();
+    }
+
+    const specific = await this.questionRepo.find({
+      where: { category },
+    });
+
+    if (specific.length >= QUESTIONS_PER_ASSIGNMENT) {
+      return specific;
+    }
+
+    // Not enough category-specific questions — pad with general ones.
+    const general = await this.questionRepo.find({
+      where: { category: IsNull() },
+    });
+
+    // Dedupe in case category-specific questions also match the general
+    // criteria (they won't with IsNull, but defensive against future
+    // schema changes).
+    const seen = new Set(specific.map((q) => q.id));
+    const combined = [...specific];
+    for (const q of general) {
+      if (!seen.has(q.id)) combined.push(q);
+    }
+    return combined;
+  }
+  //have to think about admin view since they wont have this which will take up most of the normal user stuff.
   async getMyAssignment(
     auth0Id: string,
   ): Promise<
@@ -76,6 +128,7 @@ export class EducationService {
   > {
     const assignment = await this.assignmentRepo.findOne({
       where: { auth0Id, status: AssignmentStatus.PENDING },
+
       order: { createdAt: 'DESC' },
     });
 
@@ -87,6 +140,7 @@ export class EducationService {
       id: q.id,
       questionText: q.questionText,
       options: q.options,
+
       createdAt: q.createdAt,
     }));
 
@@ -107,6 +161,7 @@ export class EducationService {
     passed: boolean;
     xpAwarded: number;
     correctCount: number;
+
     total: number;
     feedback: string;
   }> {
@@ -119,6 +174,7 @@ export class EducationService {
     });
 
     if (!assignment) {
+      // ok this didnt work at start dont know why works now.
       throw new NotFoundException('Assignment nof found or already completed');
     }
 
@@ -136,7 +192,7 @@ export class EducationService {
         correctCount++;
       }
     }
-
+    //check with the exchange stuff with Darius and Josua before demo 2.
     const score = correctCount / questions.length;
     const passed = score >= PASS_THRESHOLD;
 
@@ -146,17 +202,33 @@ export class EducationService {
     assignment.xpAwarded = passed ? XP_AWARDED : 0;
     assignment.completedAt = new Date();
     await this.assignmentRepo.save(assignment);
-
+    try {
+      await this.amqpConnection.publish(
+        'education-event-exchange',
+        'education.completed',
+        {
+          auth0Id: auth0Id,
+          assignmentId: assignment.id,
+          passed: passed,
+        },
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to publish education.completed for ${auth0Id}`,
+        err,
+      );
+    }
     if (passed) {
       try {
         await this.amqpConnection.publish('xp-event-exchange', 'xp.give', {
           auth0Id,
+
           amount: XP_AWARDED,
           reason: 'Passed education assignment',
         });
         this.logger.log(`Published xp.give for user ${auth0Id}`);
       } catch (err) {
-        this.logger.error(`Failed to publish xp.give for ${auth0Id}`, err);
+        this.logger.error(`Failed to publis xp.give for ${auth0Id}`, err);
       }
     }
 
@@ -167,6 +239,7 @@ export class EducationService {
     return {
       passed,
       xpAwarded: assignment.xpAwarded,
+
       correctCount,
       total: questions.length,
       feedback,

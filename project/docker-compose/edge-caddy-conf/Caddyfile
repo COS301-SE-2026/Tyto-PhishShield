@@ -1,0 +1,30 @@
+{
+    email cos301.fiveguys@gmail.com
+}
+
+capstone-five-guys.dns.net.za:443 {
+    @staging_root path /staging
+    redir @staging_root /staging/ 308
+
+    handle_path /staging/* {
+        reverse_proxy dev-caddy.internal:8001 {
+            header_up Host dev-caddy.internal
+            transport http {
+                tls
+                tls_trust_pool file ./certs/dev-root.crt
+                tls_server_name dev-caddy.internal
+            }
+        }
+    }
+
+    handle {
+        reverse_proxy prod-caddy.internal:8003 {
+            header_up Host prod-caddy.internal
+            transport http {
+                tls
+                tls_trust_pool file ./certs/prod-root.crt
+                tls_server_name prod-caddy.internal
+            }
+        }
+    }
+}

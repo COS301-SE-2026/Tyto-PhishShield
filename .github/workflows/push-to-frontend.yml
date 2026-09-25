@@ -1,0 +1,9 @@
+name: Frontend Push
+
+on:
+    push:
+        branches: [Frontend]
+
+jobs:
+    frontend:
+        uses: ./.github/workflows/ci-frontend.yml

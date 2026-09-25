@@ -1,0 +1,10 @@
+import { MessageTone } from '../../dto/difficulty-llm-generation.dto';
+
+export const TONE_PROMPTS: Record<MessageTone, string> = {
+  [MessageTone.PROFESSIONAL]: `Use a formal, businesslike tone. Measured language, no exclamation points, no casual phrasing. When available, address the recipient formally with {{title}} and {{surname}}; fall back to {{name}}, if available, only if those are not both provided.`,
+  [MessageTone.FRIENDLY]: `Use a warm, approachable tone, as a colleague would use in everyday internal correspondence. Conversational but still workplace-appropriate. Address the recipient by {{name}} when available, even if {{title}} and {{surname}} are also provided.`,
+  [MessageTone.URGENT]: `Use language that conveys time pressure and the need for immediate action, phrases like "as soon as possible," "before end of day," or a stated deadline. Do not use excessive capitalization or exclamation points; urgency should come from the wording and framing, not from shouting. Keep the greeting short and direct: prefer {{name}} when available, otherwise {{title}} and {{surname}} if available.`,
+  [MessageTone.AUTHORITATIVE]: `Write as though from someone with organizational authority (e.g. a senior leader or department head) whose instructions are expected to be followed without much question. Confident, directive language. Address the recipient by {{name}} when available, as a senior person would; otherwise use {{title}} and {{surname}} if available.`,
+  [MessageTone.NEUTRAL]: `Use plain, matter-of-fact language with no particular emotional register, neither urgent nor especially warm. Purely informational in feel. Use {{title}} and {{surname}} when both are available; otherwise {{name}} if available.`,
+  [MessageTone.APOLOGETIC]: `Write as though acknowledging an inconvenience, delay, or mistake, with a somewhat conciliatory tone before making the request. Show respect in the greeting: use {{title}} and {{surname}} when both are available; otherwise {{name}} if available.`,
+};

@@ -1,7 +1,13 @@
 import type { LoginDto, RegisterDto, LoginResponse, RegisterResponse, AuthenticatedUser,
 } from '../types';
 
-export const API_BASE = (import.meta.env.VITE_API_GATEWAY_URL ?? '') + '/api';
+function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end--;
+  return value.slice(0, end);
+}
+
+export const API_BASE = stripTrailingSlashes(import.meta.env.VITE_API_GATEWAY_URL ?? '') + '/api';
 
 export function getToken(): string | null {
   return localStorage.getItem('access_token');
@@ -50,7 +56,7 @@ export const authApi = {
   },
 
   verifyOtp: async (email: string, code: string): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/accounts/auth/verify-otp`, {
+    const res = await fetch(`${API_BASE}/auth/otp/verify-otp`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -63,7 +69,7 @@ export const authApi = {
   },
 
   resendOtp: async (email: string): Promise<{ message: string }> => {
-    const res = await fetch(`${API_BASE}/accounts/auth/resend-otp`, {
+    const res = await fetch(`${API_BASE}/auth/otp/resend-otp`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -82,6 +88,28 @@ export const authApi = {
       body: JSON.stringify({ email }),
     });
     if (res.status === 404) return { message: 'Reset email sent (stub)' };
+    return parseResponse<{ message: string }>(res);
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/accounts/auth/password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    return parseResponse<{ message: string }>(res);
+  },
+  
+  contactSales: async (dto: { companyName: string; workEmail: string; message?: string }): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/company/contact-sales`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) throw new Error('Could not send message, please try again');
     return parseResponse<{ message: string }>(res);
   },
 };

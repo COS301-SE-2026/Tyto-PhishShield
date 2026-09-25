@@ -362,7 +362,6 @@ export function UserTraining({
       onNavigate={onNavigate}
       title="Training"
       subtitle="Complete assignments and earn XP"
-      securityScore={72}
     >
       <div style={summaryGridStyle}>
         <Card style={summaryCardStyle}>
@@ -477,7 +476,7 @@ export function UserTraining({
 
                             return(
                               <button
-                                key={`${question.id}-${optionIndex}`}
+                                key={`${question.id}-${option}`}
                                 type="button"
                                 style={{
                                   ...optionButtonStyle,
@@ -518,9 +517,6 @@ export function UserTraining({
                   disabled={!allQuestionsAnswered || submitting}
                   onClick={() => {
                     void handleSubmitAnswers();
-                  }}
-                  style={{
-                    padding: '8px 16px',
                   }}
                 >
                   Submit Answers

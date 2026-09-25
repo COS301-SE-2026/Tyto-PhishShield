@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* Light theme */
@@ -10,14 +11,14 @@
   --color-primary-mid:   #BFDBFE;
 
   /* Semantic */
-  --color-success:       #22C55E;
-  --color-success-light: #F0FDF4;
+  --color-success:       #15803D;
+  --color-success-light: #DCFCE7;
   --color-success-border:#BBF7D0;
   --color-warning:       #F59E0B;
   --color-warning-light: #FFFBEB;
   --color-warning-border:#FDE68A;
-  --color-danger:        #EF4444;
-  --color-danger-light:  #FEF2F2;
+  --color-danger:        #B91C1C;
+  --color-danger-light:  #FEE2E2;
   --color-danger-border: #FECACA;
 
   /* Neutrals */
@@ -39,15 +40,18 @@
 
   /* Text */
   --text-primary:   #0F172A;
-  --text-secondary: #64748B;
-  --text-muted:     #94A3B8;
+  --text-secondary: #475569;
+  --text-muted:     #64748B;
   --text-on-dark:   #FFFFFF;
 
   /* Sidebar text */
-  --sidebar-text:        rgba(255,255,255,0.45);
+  --sidebar-text:        rgba(255,255,255,0.65);
   --sidebar-text-active: #FFFFFF;
-  --sidebar-active-bg:   rgba(37,99,235,0.3);
-  --sidebar-hover-bg:    rgba(255,255,255,0.06);
+  --sidebar-active-bg:   rgba(37,99,235,0.35);
+  --sidebar-hover-bg:    rgba(255,255,255,0.08);
+
+  /*sidebar color*/
+  --sidebar-danger: #FCA5A5;
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
@@ -76,24 +80,52 @@
   --border-focus:   #2563EB;
 
   --text-primary:   #F0F6FC;
-  --text-secondary: #8B949E;
-  --text-muted:     #6E7681;
+  --text-secondary: #B1BAC4;
+  --text-muted:     #9CA6B2;
 
-  --sidebar-text:        rgba(255,255,255,0.45);
+  --sidebar-text:        #B8C1CC;
   --sidebar-text-active: #FFFFFF;
   --sidebar-active-bg:   rgba(37,99,235,0.35);
-  --sidebar-hover-bg:    rgba(255,255,255,0.05);
+  --sidebar-hover-bg:    rgba(255,255,255,0.08);
+
+  --color-danger:  #F87171;
+  --color-warning: #FBBF24;
+  --color-success: #4ADE80;
 
   --color-primary-light: rgba(37,99,235,0.15);
   --color-primary-mid:   rgba(37,99,235,0.3);
+
+  --color-success-light: rgba(34,197,94,0.15);
+  --color-success-border:rgba(34,197,94,0.3);
+  --color-warning-light: rgba(245,158,11,0.15);
+  --color-warning-border:rgba(245,158,11,0.3);
+  --color-danger-light:  rgba(239,68,68,0.15);
+  --color-danger-border: rgba(239,68,68,0.3);
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
   --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
 }
 
+/* High contrast mode */
+[data-theme="light"][data-contrast="high"] {
+  --text-secondary: #1E293B;
+  --text-muted:     #334155;
+  --border:         #475569;
+  --border-strong:  #1E293B;
+}
+
+[data-theme="dark"][data-contrast="high"] {
+  --text-secondary: #F0F6FC;
+  --text-muted:     #D0D7DE;
+  --border:         #8B949E;
+  --border-strong:  #F0F6FC;
+}
+
 /* Reset and Base */
+@layer base{
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+}
 
 html, body, #root {
   height: 100%;
@@ -124,8 +156,22 @@ input, select, textarea { font-family: inherit; }
   border-radius: var(--radius-sm);
 }
 
+/* Enhanced keyboard focus indicators */
+[data-focus="enhanced"] :focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--color-primary-mid);
+}
+
 /* Transition defaults */
 * { transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
+
+/* Reduce motion */
+[data-motion="reduced"] * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
 
 /* Utility classes */
 .sr-only {

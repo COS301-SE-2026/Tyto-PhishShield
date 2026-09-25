@@ -4,6 +4,7 @@ import { XpService } from './xp.service';
 import { GiveXpDto } from '../dto/give-xp.dto';
 import { XpReason } from '../entities/xp.entity';
 import { Logger, NotFoundException } from '@nestjs/common';
+import { Department } from '../entities/user.entity';
 
 const mockXpService = {
   giveXp: jest.fn(),
@@ -107,7 +108,7 @@ describe('XpController', () => {
             auth0Id: 'auth0|123',
             name: 'Alice',
             email: 'alice@example.com',
-            department: 'Test',
+            department: Department.FINANCE,
           },
         },
       ];
@@ -142,7 +143,7 @@ describe('XpController', () => {
           auth0Id,
           name: 'Alice',
           email: 'alice@example.com',
-          department: 'Test',
+          department: Department.FINANCE,
         },
       };
       mockXpService.getNetXpByUser.mockResolvedValue(entry);

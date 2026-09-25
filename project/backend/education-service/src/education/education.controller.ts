@@ -7,6 +7,8 @@ import {
   Req,
   HttpCode,
   Logger,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -16,9 +18,22 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import {
+  MistakeCategory,
+  MISTAKE_PRIORITY,
+} from './types/mistake-category.enum';
 
 interface AuthenticatedRequest extends Request {
   user: { auth0Id: string; email: string; role: string };
+}
+
+interface MistakeDetectedPayload {
+  sender: string; // auth0Id of the user who made the mistake
+  emailId: string;
+  categories: MistakeCategory[];
+  severity: string; // 'none' | 'low' | 'medium' | 'high'
+  confidence: number | string; // LLM service currently sends as string
+  occurredAt: string;
 }
 
 @ApiTags('Education')
@@ -28,6 +43,7 @@ export class EducationController {
   constructor(private readonly educationService: EducationService) {}
 
   @RabbitSubscribe({
+    // this is crucial to communicate with the other service.
     exchange: 'education-event-exchange',
     routingKey: 'education.assign',
     queue: 'education-service-assign-queue',
@@ -36,8 +52,96 @@ export class EducationController {
     this.logger.log(`Received education.assign for user ${payload.auth0Id}`);
     await this.educationService.createAssignment(payload.auth0Id);
   }
-  
-  @Post('questions')
+
+  @RabbitSubscribe({
+    exchange: 'xp-event-exchange',
+    routingKey: 'xp.link_clicked',
+    queue: 'education-service-link-clicked-queue',
+  })
+  async handleLinkClicked(payload: { auth0Id: string }) {
+    this.logger.log(`Received xp.link_clicked for user ${payload.auth0Id}`);
+    try {
+      await this.educationService.createAssignment(payload.auth0Id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error';
+      this.logger.warn(
+        `Could not create assignment for ${payload.auth0Id}: ${message}`,
+      );
+    }
+  }
+
+  @RabbitSubscribe({
+    exchange: 'llm-event-exchange',
+    routingKey: 'reply.mistake',
+    queue: 'education-service-mistake-queue',
+  })
+  async handleMistakeDetected(payload: MistakeDetectedPayload): Promise<void> {
+    this.logger.log(
+      `Received reply.mistake for ${payload.sender}: [${payload.categories.join(', ')}]`,
+    );
+
+    const target = this.pickTargetCategory(payload.categories);
+    if (!target) {
+      this.logger.log(
+        `No actionable category for ${payload.sender} — skipping assignment`,
+      );
+      return;
+    }
+
+    try {
+      await this.educationService.createAssignment(payload.sender, target);
+      this.logger.log(
+        `Created targeted assignment for ${payload.sender} (category: ${target})`,
+      );
+    } catch (error) {
+      // User already has a pending assignment — leave it, don't overwrite.
+      if (error instanceof ConflictException) {
+        this.logger.log(
+          `User ${payload.sender} already has a pending assignment — skipping`,
+        );
+        return;
+      }
+
+      // No questions for this category — fall back to a general assignment.
+      if (error instanceof BadRequestException) {
+        this.logger.warn(
+          `No questions for category ${target} — falling back to general`,
+        );
+        try {
+          await this.educationService.createAssignment(payload.sender);
+        } catch (fallbackErr) {
+          const msg =
+            fallbackErr instanceof Error
+              ? fallbackErr.message
+              : 'unknown error';
+          this.logger.warn(
+            `Fallback assignment for ${payload.sender} failed: ${msg}`,
+          );
+        }
+        return;
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Picks the highest-priority actionable category from the array.
+   * Returns null if the event contains only non-actionable categories
+   * (valid_response / needs_review) or nothing at all.
+   */
+  private pickTargetCategory(
+    categories: MistakeCategory[],
+  ): MistakeCategory | null {
+    for (const candidate of MISTAKE_PRIORITY) {
+      if (categories.includes(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  @Post('questions') // ok if this works we shoulb de good.
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add a question to the bank(admin)' })
@@ -55,12 +159,12 @@ export class EducationController {
 
   @Get('assignments')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth() // maybe user as well in future?
   @ApiOperation({ summary: 'List all assignments (admin)' })
   findAllAssignments() {
     return this.educationService.findAllAssignments();
   }
-
+  // keep in mind what to do with the assignment fo admin pages.
   @Post('assignments')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -90,10 +194,10 @@ export class EducationController {
   }
 
   @Post('answers')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) //make sure the array length match what we have in the number of quuestions.
   @ApiBearerAuth()
   @HttpCode(200)
-  @ApiOperation({ summary: 'Submit answers for a pending assignment' })
+  @ApiOperation({ summary: 'Submit answers for a pening assignment' })
   submitAnswers(
     @Req() req: AuthenticatedRequest,
     @Body() dto: SubmitAnswersDto,

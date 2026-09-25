@@ -1,32 +1,71 @@
-type BrandSectionProps = {
-    darkMode : boolean;
-}
-
-function BrandSection({darkMode}: BrandSectionProps) {
-    const mutedText = darkMode ? 'text-slate-400' : 'text-slate-500';
-
+function BrandSection() {
     return(
-        <div className='max-w-3xl text-sm leading-6 md:text-base'>
-            <p>
+        <div 
+            style={{
+                maxWidth: 760,
+                fontSize: 14,
+                lineHeight: 1.5,
+                color: 'var(--text-primary)'
+            }}
+        >
+            <p
+                style={{
+                    maxWidth: 720,
+                    color: 'var(--text-secondary)'
+                }}
+            >
                 Tyto-PhishShield helps organizations to build resilience against phishing attacks by training employees with realistic phishing simulations.
             </p>
             
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div 
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: 32,
+                    marginTop: 24,
+                }}
+            >
                 <div>
-                    <h3 className="text-sm font-semibold text-blue-500">
+                    <h3
+                        style={{
+                            color: 'var(--color-primary)',
+                            marginTop: 8,
+                            fontSize: 13,
+                            fontWeight: 600,
+                        }}
+                    >
                         Mission
                     </h3>
-                    <p className={`mt-2 text-sm leading-6 ${mutedText}`}>
+                    <p 
+                        style={{
+                            color: 'var(--text-secondary)',
+                            fontSize: 13,
+                            lineHeight: 1.5,
+                        }}
+                    >
                         Make employees a part of the firewall by encouraging safer
                         behaviour and faster phishing reporting.
                     </p>
                 </div>
 
                 <div>
-                    <h3 className="text-sm font-semibold text-blue-500">
+                    <h3
+                        style={{
+                            color: 'var(--color-primary)',
+                            marginTop: 8,
+                            fontSize: 13,
+                            fontWeight: 600,
+                        }}
+                    >
                         Tone
                     </h3>
-                    <p className={`mt-2 text-sm leading-6 ${mutedText}`}>
+                    <p
+                        style={{
+                            color: 'var(--text-secondary)',
+                            fontSize: 13,
+                            lineHeight: 1.5,
+                        }}
+                    >
                         Clear, Helpful, Encouraging, Security-focused and Professional
                     </p>
                 </div>

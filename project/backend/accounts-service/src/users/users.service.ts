@@ -21,9 +21,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import { EventProducerService } from '../event-producer/event-producer.service';
-import { Department } from './entities/user.entity';
+import { Department, UserRole } from '@phishshield/dto';
 
 export interface CreateUserInput {
   auth0Id: string;
@@ -53,7 +53,8 @@ export class UsersService {
         auth0Id: savedUser.auth0Id,
         name: savedUser.name,
         email: savedUser.email,
-        department: input.department ?? '',
+        department: input.department ?? Department.HR,
+        role: savedUser.role,
       })
       .catch((err) =>
         console.error('Failed to publish user.created event', err),
@@ -85,7 +86,22 @@ export class UsersService {
   async updateRole(id: string, role: UserRole): Promise<User> {
     const user = await this.findById(id);
     user.role = role;
-    return this.repo.save(user);
+    const saved = await this.repo.save(user);
+
+    this.event
+      .publishUserUpdatedEvent({
+        id: saved.id,
+        auth0Id: saved.auth0Id,
+        name: saved.name,
+        email: saved.email,
+        department: saved.department,
+        role: saved.role,
+      })
+      .catch((err) =>
+        console.error('Failed to publish user.updated event', err),
+      );
+
+    return saved;
   }
 
   async updateProfile(
@@ -95,8 +111,24 @@ export class UsersService {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
+    if (data.email !== undefined) user.email = data.email;
     if (data.department !== undefined) user.department = data.department;
-    return this.repo.save(user);
+
+    const saved = await this.repo.save(user);
+    this.event
+      .publishUserUpdatedEvent({
+        id: saved.id,
+        auth0Id: saved.auth0Id,
+        name: saved.name,
+        email: saved.email,
+        department: saved.department,
+        role: saved.role,
+      })
+      .catch((err) =>
+        console.error('Failed to publish user.updated event', err),
+      );
+
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
@@ -117,5 +149,9 @@ export class UsersService {
 
   async deactivate(id: string): Promise<void> {
     await this.repo.update({ id }, { isActive: false });
+  }
+
+  async activate(id: string): Promise<void> {
+    await this.repo.update({ id }, { isActive: true });
   }
 }

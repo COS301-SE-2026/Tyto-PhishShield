@@ -11,10 +11,6 @@ export interface User {
   updatedAt: string;
   xp: number;
   rank: number;
-  // Extended profile fields below (maybe for Demo2?)
-  //streak?: number;
-  //reportsField?: number;
-  //securityScore?: number;
 }
 
 export interface AuthenticatedUser {
@@ -35,6 +31,7 @@ export interface RegisterDto {
   password: string;
   name?: string;
   department?: string;
+  employeeId?: string;
 }
 
 export interface LoginResponse {
@@ -49,12 +46,12 @@ export interface RegisterResponse {
   userId: string;
 }
 
-export type CampaignStatus = 'draft' | 'active' | 'complete' | 'scheduled';
+export type WaveStatus = 'draft' | 'active' | 'complete' | 'scheduled';
 
-export interface Campaign {
+export interface Wave {
   id: string;
   name: string;
-  status: CampaignStatus;
+  status: WaveStatus;
   sentCount: number;
   clickedCount: number;
   reportedCount: number;
@@ -65,8 +62,6 @@ export interface Campaign {
   emailSubject?: string;
   emailBody?: string;
 }
-
-// Training (ready for Demo 2?)
 
 export type TrainingStatus = 'not_started' | 'in_progress' | 'completed';
 

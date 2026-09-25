@@ -1,52 +1,98 @@
-type ColourSectionProps = {
-    darkMode : boolean;
-};
-
 type ColourToken = {
     name: string;
+    token: string;
     value: string;
     purpose: string;
 };
 
 const colourTokens: ColourToken[] = [
-    { name: 'Primary Navy', value: '#0F172A', purpose: 'Headers, sidebars, hero sections' },
-    { name: 'Accent Blue', value: '#2563EB', purpose: 'Buttons, links, focus states' },
-    { name: 'Accent Blue Hover', value: '#1D4ED8', purpose: 'Hover states' },
-    { name: 'Success Green', value: '#22C55E', purpose: 'XP gains, success states' },
-    { name: 'Warning Amber', value: '#F59E0B', purpose: 'Suspicion and warnings' },
-    { name: 'Danger Red', value: '#EF4444', purpose: 'Threats and errors' },
-    { name: 'Neutral Gray', value: '#64748B', purpose: 'Secondary text' },
-    { name: 'Light Blue Accent', value: '#60A5FA', purpose: 'Hero highlights' },
+    { name: 'Primary Blue', token:'--color-primary', value: '#2563EB', purpose: 'Primary buttons, links, selected states and focus indicators' },
+    { name: 'Primary Blue Hover', token:'--color-primary-hover', value: '#1D4ED8', purpose: 'Hover and pressed states for primary actions' },
+    { name: "Structural Navy", token: "--color-navy", value: "#0F172A", purpose: "Sidebar, dark structural elements and primary light-theme text",},
+    { name: "Success Green", token: "--color-success", value: "#22C55E", purpose: "Successful actions, completed states and positive indicators",},
+    { name: "Warning Amber", token: "--color-warning", value: "#F59E0B", purpose: "Warnings, suspicious activity and caution states", },
+    { name: "Danger Red", token: "--color-danger", value: "#EF4444", purpose: "Errors, threats and destructive actions",},
+    { name: "Secondary Text", token: "--text-secondary", value: "#64748B", purpose: "Supporting text and metadata",},
+    { name: "Page Background", token: "--bg-page", value: "#F8FAFC", purpose: "Main page background in the light theme",},
+    { name: "Card Background", token: "--bg-card", value: "#F1F5F9", purpose: "Cards, panels and grouped content",},
+    {name: "Dark Card Background", token: "--bg-card", value: "#161B22", purpose: "Cards and panels in the dark theme",},
 ];
 
-function ColourSection({darkMode}: ColourSectionProps) {
-    const cardStyle = darkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-slate-50';
-
-    const mutedText = darkMode ? 'text-slate-400' : 'text-slate-600';
-
+function ColourSection() {
     return(
-        <div className = 'grid gap-4 sm:grid-cols-2 xl:grid-cols-4'>
+        <div 
+            style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                gap: 16,
+            }}
+        >
             {colourTokens.map((colour) => (
                 <article
-                    key={colour.name}
-                    className={`rounded-xl border p-4 ${cardStyle}`}
+                    key={`${colour.name}-${colour.value}`}
+                    style={{
+                        overflow: 'hidden',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'var(--bg-input)',
+                        boxShadow: 'var(--shadow-sm)',
+                    }}
                 >
                     <div
-                        className="mb-4 h-20 rounded-lg border border-black/10"
-                        style={{ backgroundColor: colour.value }}
+                        style={{ 
+                            background: colour.value,
+                            height: 72,
+                            borderBottom: '1px solid var(--border)',
+                        }}
                     />
 
-                    <h3 className="font-semibold">
-                        {colour.name}
-                    </h3>
+                    <div 
+                        style={{
+                            padding: 16,
+                        }}
+                    >
+                        <h3
+                            style={{
+                                marginBottom: 4,
+                                color: 'var(--text-primary)',
+                                fontSize: 13,
+                                fontWeight: 600,
+                            }}
+                        >
+                            {colour.name}
+                        </h3>
 
-                    <p className={`mt-1 text-sm ${mutedText}`}>
-                        {colour.value}
-                    </p>
+                        <p 
+                            style={{
+                                marginBottom: 4,
+                                color: 'var(--color-primary)',
+                                fontSize: 11,
+                                fontWeight: 500,
+                            }}
+                        >
+                            {colour.token}
+                        </p>
 
-                    <p className={`mt-2 text-sm ${mutedText}`}>
-                        {colour.purpose}
-                    </p>
+                        <p 
+                            style={{
+                                marginBottom: 8,
+                                color: 'var(--text-secondary)',
+                                fontSize: 11,
+                            }}
+                        >
+                            {colour.value}
+                        </p>
+
+                        <p 
+                            style={{
+                                color: 'var(--text-secondary)',
+                                fontSize: 11,
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            {colour.purpose}
+                        </p>
+                    </div>
                 </article>
             ))}
         </div>

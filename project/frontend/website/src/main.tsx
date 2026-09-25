@@ -7,18 +7,24 @@ import './index.css';
 import App from './app.tsx';
 
 import { ThemeProvider } from './context/theme-context';
+import { AccessibilityProvider } from './context/accessibility-context';
 import { AuthProvider } from './context/auth-context';
 import { ToastProvider } from './context/toast-context';
+import { NotificationProvider } from './context/notification-context';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL || '/'}>
       <ThemeProvider>
-        <AuthProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </AuthProvider>
+        <AccessibilityProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </AccessibilityProvider>
       </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,

@@ -5,15 +5,20 @@ import { UserEntity } from '../entities/user.entity';
 import { XpEntity } from '../entities/xp.entity';
 import { XpController } from './xp.controller';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { EmailDetailsEntity } from '../entities/email-details.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, XpEntity]),
+    TypeOrmModule.forFeature([UserEntity, XpEntity, EmailDetailsEntity]),
     RabbitMQModule.forRoot({
       uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
       exchanges: [
         {
           name: 'xp-event-exchange',
+          type: 'topic',
+        },
+        {
+          name: 'mailing-event-exchange',
           type: 'topic',
         },
       ],
