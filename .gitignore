@@ -16,6 +16,9 @@ Thumbs.db
 *.env
 secrets.yml
 credentials.json
+secrets/
+password
+provisioner_password
 
 # Logs
 *.log
