@@ -126,6 +126,7 @@
 		"server:update:dev": "node ./project/scripts/send-dev-compose.js",
 		"server:update:prod": "node ./project/scripts/send-prod-compose.js prod-infrastructure.yml",
 		"server:update:llm": "node ./project/scripts/send-prod-compose.js ollama-compose.yml",
+		"server:update:mailbox": "node ./project/scripts/send-prod-compose.js mailbox-compose.yml",
 		"server:update:caddy": "node ./project/scripts/send-edge-caddy.js",
 		"validate:blue": "node ./project/scripts/validate-prod-compose.js prod-blue.yml",
 		"validate:green": "node ./project/scripts/validate-prod-compose.js prod-green.yml",
