@@ -3,6 +3,7 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity('questions')
@@ -18,6 +19,10 @@ export class Question {
 
   @Column()
   correctOptionIndex!: number;
+
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  category?: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;
