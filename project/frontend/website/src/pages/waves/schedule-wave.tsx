@@ -666,7 +666,7 @@ export function ScheduleWave({
                         color:'var(--text-secondary)',
                       }}
                     >
-                      {selectedEmail.alias ? `${selectedEmail.alias} <${selectedEmail.sender}>` : selectedEmail.sender}
+                      Sender domain: @{selectedEmail.sender}
                     </div>
 
                     <div
