@@ -427,7 +427,7 @@ export class AuthService {
         role: (await this.getAuth0UserRoles(auth0ID))[0]?.name ?? UserRole.USER,
         isVerified: false,
       };
-      void await this.userSyncService.syncAuth0User(createDbUser);
+      void (await this.userSyncService.syncAuth0User(createDbUser));
     }
     const role =
       (await this.getAuth0UserRoles(auth0ID))[0]?.name ?? UserRole.USER;
