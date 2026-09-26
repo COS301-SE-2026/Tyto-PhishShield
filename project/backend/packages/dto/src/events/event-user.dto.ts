@@ -12,10 +12,12 @@ export class EventUser {
   name!: string;
 
   @IsString()
-  firstName!: string;
+  @IsOptional()
+  firstName?: string;
 
   @IsString()
-  lastName!: string;
+  @IsOptional()
+  lastName?: string;
 
   @IsEmail()
   email!: string;
