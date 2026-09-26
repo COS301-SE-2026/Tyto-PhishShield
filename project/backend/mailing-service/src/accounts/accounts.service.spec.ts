@@ -44,6 +44,8 @@ describe('AccountsService', () => {
       id: 'user-1',
       auth0Id: 'auth0|123',
       name: 'test',
+      firstName: 'test_first',
+      lastName: 'test_last',
       email: 'test@example.com',
       department: Department.FINANCE,
     };
@@ -60,6 +62,8 @@ describe('AccountsService', () => {
         id: user.id,
         auth0Id: user.auth0Id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         department: user.department,
       });

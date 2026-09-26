@@ -38,12 +38,19 @@ export class AccountsService {
           id: user.id,
           auth0Id: user.auth0Id,
           name: user.name,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
           department: user.department,
+          role: user.role,
         })
-        .orUpdate(['name', 'email', 'department'], ['auth0Id'], {
-          skipUpdateIfNoValuesChanged: true,
-        })
+        .orUpdate(
+          ['name', 'firstName', 'lastName', 'email', 'department', 'role'],
+          ['auth0Id'],
+          {
+            skipUpdateIfNoValuesChanged: true,
+          },
+        )
         .execute();
       this.logger.log(`Upserted user ${user.auth0Id}`);
     } catch (error) {
