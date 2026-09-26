@@ -33,7 +33,7 @@ import { VariableResolverService } from '../shared-services/variable-resolver.se
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { SenderResolverService } from '../shared-services/sender-resolver.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
-import { SendReplyEmailEvent } from '@phishshield/dto';
+import { ReplyEmailKind, SendReplyEmailEvent } from '@phishshield/dto';
 
 @Injectable()
 export class EmailService {
@@ -372,18 +372,18 @@ export class EmailService {
       where: { email: event.to },
     });
 
+    if (!recipient) {
+      throw new NotFoundException(
+        `No user found for recipient email: ${event.to}`,
+      );
+    }
+
     const { user, employeeInfo } = await this.loadUserAndEmployeeInfo(
       recipient.auth0Id,
     );
 
-    const subject = this.variableResolver.substitute(
-      event.subject,
-      user,
-      employeeInfo,
-    );
-
-    const content = this.variableResolver.substitute(
-      event.content,
+    const { subject, content } = this.resolveReplyContent(
+      event,
       user,
       employeeInfo,
     );
@@ -410,6 +410,45 @@ export class EmailService {
         err,
       );
     }
+  }
+
+  private resolveReplyContent(
+    event: SendReplyEmailEvent,
+    user: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
+  ): { subject: string; content: string } {
+    if (event.kind === ReplyEmailKind.FAILED_DEFAULT) {
+      return {
+        subject: this.buildFailedReplySubject(event.originalSubject),
+        content: this.buildFailedReplyHtml(),
+      };
+    }
+
+    return {
+      subject: this.variableResolver.substitute(
+        event.subject ?? '',
+        user,
+        employeeInfo,
+      ),
+      content: this.variableResolver.substitute(
+        event.content ?? '',
+        user,
+        employeeInfo,
+      ),
+    };
+  }
+
+  private buildFailedReplySubject(originalSubject?: string): string {
+    const base = originalSubject?.trim() || 'your recent message';
+    return base.toLowerCase().startsWith('re:') ? base : `Re: ${base}`;
+  }
+
+  private buildFailedReplyHtml(): string {
+    return `
+    <p>This was a simulated phishing email, sent as part of your organization's security awareness training.</p>
+    <p>Your response has been recorded as a failed attempt to recognize a phishing email.</p>
+    <p>If you believe this is a mistake, please contact your IT administrator.</p>
+  `.trim();
   }
 
   private buildThreadingHeaders(
