@@ -10,3 +10,4 @@ services:
       - "993:993"            
     volumes:
       - ./data:/opt/stalwart-mail
+      - /var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/mail.example-compnay.xyz/
