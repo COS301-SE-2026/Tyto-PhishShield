@@ -15,8 +15,11 @@ import {
   MistakeDetectedEvent,
   ReceivedReplyDto,
   ReplyEmailKind,
-  ReplyReviewNeededEvent,
+  ReplyValidatedEvent,
+  ReviewNeededEvent,
+  ReviewType,
   SendReplyEmailEvent,
+  Severity,
 } from '@phishshield/dto';
 import {
   ParsedReply,
@@ -27,9 +30,15 @@ import { MistakeCategory } from './dto/reply-classification.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ReplyGenerationService } from './reply-generation/reply-generation.service';
 
-// Searches for <a href="{{tracking_link}}"></a>
 const TRACKING_LINK_ANCHOR =
   /<a\s[^>]*href=["']\{\{tracking_link\}\}["'][^>]*>[\s\S]*?<\/a>/i;
+
+interface ClassificationResult {
+  needsReview: boolean;
+  categories: MistakeCategory[];
+  severity: Severity;
+  confidence: number;
+}
 
 @Injectable()
 export class LlmService {
@@ -158,94 +167,120 @@ export class LlmService {
       originalSubject: reply.subject,
     });
 
-    if (classification.needsReview || classification.categories.length === 0) {
-      this.logger.log(
-        `Reply ${dto.emailId} needs manual review, publishing review event`,
-      );
-      const reviewPayload: ReplyReviewNeededEvent = {
-        emailId: dto.emailId,
-        sender: this.extractAddress(reply.from),
-        inReplyTo: reply.inReplyTo,
-        references: reply.references,
-        categories: classification.categories,
-        severity: classification.severity,
-        confidence: classification.confidence,
-        occurredAt: new Date(),
-      };
-      try {
-        await this.amqpConnection.publish(
-          'llm-event-exchange',
-          'reply.review',
-          reviewPayload,
-        );
-      } catch (error) {
-        this.logger.error(
-          'Failed to publish review event',
-          error instanceof Error ? error.stack : String(error),
-        );
-      }
+    const hasAttachments = dto.attachments.length > 0;
+    const llmFlagged =
+      classification.needsReview || classification.categories.length === 0;
+
+    if (hasAttachments || llmFlagged) {
+      await this.publishReviewNeeded(dto, reply, classification, {
+        hasAttachments,
+        llmFlagged,
+      });
       return;
     }
 
     if (!classification.categories.includes(MistakeCategory.VALID_RESPONSE)) {
-      const mistakePayload: MistakeDetectedEvent = {
-        emailId: dto.emailId,
-        sender: this.extractAddress(reply.from),
-        categories: classification.categories,
-        severity: classification.severity,
-        confidence: classification.confidence,
-        occurredAt: new Date(),
-      };
-      const mailingPayload: SendReplyEmailEvent = {
-        kind: ReplyEmailKind.FAILED_DEFAULT,
-        emailId: dto.emailId,
-        to: this.extractAddress(reply.from),
-        from: dto.to[0],
-        subject: this.buildFailedReplySubject(reply.subject),
-        content: this.buildFailedReplyHtml(),
-        inReplyTo: reply.messageId,
-        references: [...reply.references, reply.messageId].filter(
-          (id): id is string => !!id,
-        ),
-      };
-      try {
-        await this.amqpConnection.publish(
-          'llm-event-exchange',
-          'reply.mistake',
-          mistakePayload,
-        );
-
-        await this.amqpConnection.publish(
-          'llm-event-exchange',
-          'reply.email',
-          mailingPayload,
-        );
-      } catch (error) {
-        this.logger.error(`Failed to publish event`, error);
-      }
+      await this.publishMistakeDetected(dto, reply, classification);
       return;
     }
 
     await this.handleValidReply(dto, reply);
   }
 
+  private async publishReviewNeeded(
+    dto: ReceivedReplyDto,
+    reply: ParsedReply,
+    classification: ClassificationResult,
+    flags: { hasAttachments: boolean; llmFlagged: boolean },
+  ): Promise<void> {
+    const reviewType =
+      flags.hasAttachments && flags.llmFlagged
+        ? ReviewType.BOTH
+        : flags.hasAttachments
+          ? ReviewType.ATTACHMENT
+          : ReviewType.NEEDS_REVIEW;
+
+    this.logger.log(
+      `Reply ${dto.emailId} needs manual review (${reviewType}), publishing review event`,
+    );
+
+    const reviewPayload: ReviewNeededEvent = {
+      reviewType,
+      emailId: dto.emailId,
+      messageId: reply.messageId,
+      sender: this.extractAddress(reply.from),
+      businessAddress: dto.to[0],
+      subject: reply.subject,
+      inReplyTo: reply.inReplyTo,
+      references: reply.references,
+      replyBody: reply.replyText,
+      attachments: dto.attachments.length ? dto.attachments : undefined,
+      categories: classification.categories,
+      severity: classification.severity,
+      confidence: classification.confidence,
+      occurredAt: new Date(),
+    };
+
+    try {
+      await this.amqpConnection.publish(
+        'llm-event-exchange',
+        'reply.review',
+        reviewPayload,
+      );
+    } catch (error) {
+      this.logger.error(
+        'Failed to publish review event',
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
+
+  private async publishMistakeDetected(
+    dto: ReceivedReplyDto,
+    reply: ParsedReply,
+    classification: ClassificationResult,
+  ): Promise<void> {
+    const mistakePayload: MistakeDetectedEvent = {
+      emailId: dto.emailId,
+      sender: this.extractAddress(reply.from),
+      categories: classification.categories,
+      severity: classification.severity,
+      confidence: classification.confidence,
+      occurredAt: new Date(),
+    };
+
+    const mailingPayload: SendReplyEmailEvent = {
+      kind: ReplyEmailKind.FAILED_DEFAULT,
+      emailId: dto.emailId,
+      to: this.extractAddress(reply.from),
+      from: dto.to[0],
+      originalSubject: reply.subject,
+      inReplyTo: reply.messageId,
+      references: [...reply.references, reply.messageId].filter(
+        (id): id is string => !!id,
+      ),
+    };
+
+    try {
+      await this.amqpConnection.publish(
+        'llm-event-exchange',
+        'reply.mistake',
+        mistakePayload,
+      );
+
+      await this.amqpConnection.publish(
+        'llm-event-exchange',
+        'reply.email',
+        mailingPayload,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to publish event`, error);
+    }
+  }
+
   private extractAddress(raw: string): string {
     const match = raw.match(/<([^>]+)>/);
     return match ? match[1] : raw.trim();
-  }
-
-  private buildFailedReplySubject(originalSubject: string): string {
-    return originalSubject.trim().toLowerCase().startsWith('re:')
-      ? originalSubject
-      : `Re: ${originalSubject}`;
-  }
-
-  private buildFailedReplyHtml(): string {
-    return `
-      <p>This was a simulated phishing email, sent as part of your organization's security awareness training.</p>
-      <p>Your response has been recorded as a failed attempt to recognize a phishing email.</p>
-      <p>If you believe this is a mistake, please contact your IT administrator.</p>
-    `.trim();
   }
 
   private async handleValidReply(
@@ -274,6 +309,44 @@ export class LlmService {
       content: generated.body,
       inReplyTo: reply.messageId,
       references: [...reply.references, reply.messageId].filter(
+        (id): id is string => !!id,
+      ),
+    };
+
+    try {
+      await this.amqpConnection.publish(
+        'llm-event-exchange',
+        'reply.email',
+        mailingPayload,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to publish generated reply event`, error);
+    }
+  }
+
+  async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
+    const generated = await this.replyGenerationService.generateSafeReply({
+      replyText: event.replyText,
+      quotedText: event.quotedText,
+      originalSubject: event.subject,
+    });
+
+    if (!generated) {
+      this.logger.warn(
+        `Reply ${event.emailId}: generation failed or was rejected after review, no reply sent`,
+      );
+      return;
+    }
+
+    const mailingPayload: SendReplyEmailEvent = {
+      kind: ReplyEmailKind.GENERATED,
+      emailId: event.emailId,
+      to: event.from,
+      from: event.to,
+      subject: generated.subject,
+      content: generated.body,
+      inReplyTo: event.messageId,
+      references: [...event.references, event.messageId].filter(
         (id): id is string => !!id,
       ),
     };
