@@ -12,8 +12,9 @@ import { GeneratedTemplatesResponseDto } from './dto/generated-templates-respons
 import { ClassifyReplyDto } from './dto/classify-reply.dto';
 import { ReplyClassificationDto } from './dto/reply-classification.dto';
 import { ClassificationService } from './classification/classification.service';
-import { ReceivedReplyDto } from '@phishshield/dto';
+import { ReceivedReplyDto, ReplyValidatedEvent } from '@phishshield/dto';
 import { ReplyGuardService } from './reply-guard/reply-guard.service';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 @Controller('llm')
 export class LlmController {
@@ -24,6 +25,15 @@ export class LlmController {
     private readonly classificationService: ClassificationService,
     private readonly replyGuardService: ReplyGuardService,
   ) {}
+
+  @RabbitSubscribe({
+    exchange: 'llm-event-exchange',
+    routingKey: 'reply.valid',
+    queue: 'llm-review-resolution-queue',
+  })
+  async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
+    await this.llmService.handleReplyValidated(event);
+  }
 
   @Post('difficulty_generation')
   @HttpCode(HttpStatus.OK)
