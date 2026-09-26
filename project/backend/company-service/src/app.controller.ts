@@ -24,6 +24,7 @@ export class AppController {
       firstName: 'firstName',
       lastName: 'lastName',
       jobTitle: 'jobTitle',
+      title: 'title',
       department: 'department',
       managerId: 'managerId',
       employeeStatus: 'employeeStatus',

@@ -13,9 +13,11 @@ describe('Route resolver', () => {
                     case 'EDUCATION_SERVICE_URL': return 'education';
                     case 'MAILING_SERVICE_URL': return 'mailing';
                     case 'REPORT_SERVICE_URL': return 'report';
+                    case 'ANALYTICS_SERVICE_URL': return 'analytics';
                     case 'XP_SERVICE_URL': return 'xp';
                     case 'LLM_SERVICE_URL': return 'llm';
                     case 'COMPANY_SERVICE_URL': return 'company';
+                    case 'COMMS_SERVICE_URL': return 'comms';
                     case 'SERVER_DOMAIN': return 'domain';
                     default: throw Error('unexpected key');
                 }

@@ -2,7 +2,8 @@
  * Service: llm-service
  *
  * LLM-Gateway:
- * Proxies requests to an external LLM-Gateway which manages which LLMs are used and applies rate limiting.
+ * Proxies requests to an external LLM-Gateway which manages which LLMs are used and applies rate limiting,
+ * and to a local Ollama instance for on-device model inference.
  *
  * Requires:
  * env variables:
@@ -12,6 +13,7 @@
  *
  * Functions:
  * - {@link LlmGatewayService#send} - Sends a fully-formed chat completion request to the LLM gateway and returns the parsed response.
+ * - {@link LlmGatewayService#sendLocal} - Sends a chat completion request to the local Ollama instance and returns the raw message content.
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -22,6 +24,18 @@ import {
   OkLlmGatewayResponse,
 } from '../dto/llm-gateway.dto';
 import { Ollama } from 'ollama';
+
+export interface LocalLlmChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface LocalLlmRequest {
+  model: string;
+  messages: LocalLlmChatMessage[];
+  format?: 'json';
+  temperature?: number;
+}
 
 @Injectable()
 export class LlmGatewayService {
@@ -59,18 +73,25 @@ export class LlmGatewayService {
     return (await response.json()) as OkLlmGatewayResponse;
   }
 
-  //TODO: IMPLEMENT THIS FUNCTION
-  //Currently a placeholder example
-  async sendLocal() {
-    const response = await this.ollama.chat({
-      model: 'gemma2:2b',
-      messages: [{ role: 'user', content: `is this email phishing? EMAIL` }],
-      stream: false,
-      options: {
-        temperature: 0,
-      },
-    });
+  async sendLocal(request: LocalLlmRequest): Promise<string> {
+    try {
+      const response = await this.ollama.chat({
+        model: request.model,
+        messages: request.messages,
+        stream: false,
+        format: request.format,
+        options: {
+          temperature: request.temperature ?? 0,
+        },
+      });
 
-    return response;
+      return response.message.content;
+    } catch (err) {
+      this.logger.error(`Local LLM request failed against ${this.localLlmUrl}`);
+      this.logger.error(`Error name: ${(err as Error)?.name}`);
+      this.logger.error(`Error message: ${(err as Error)?.message}`);
+
+      throw err;
+    }
   }
 }

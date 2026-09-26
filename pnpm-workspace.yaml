@@ -14,3 +14,5 @@ allowBuilds:
   'protobufjs@8.0.1': true
   unrs-resolver: true
   ngrok: true
+  cpu-features: true
+  ssh2: true

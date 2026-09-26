@@ -1,5 +1,3 @@
-// sendEmail & scheduleSendEmail might get removed in the future.
-
 /**
  * Service: mailing-service
  *
@@ -31,6 +29,11 @@ import { Resend } from 'resend';
 import { EmailsDto } from '../dto/emails.dto';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { VariableResolverService } from '../shared-services/variable-resolver.service';
+import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
+import { SendReplyEmailEvent } from '@phishshield/dto';
 
 @Injectable()
 export class EmailService {
@@ -43,7 +46,12 @@ export class EmailService {
     private readonly emailTemplateRepository: Repository<EmailTemplateEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(EmployeeInfoEntity)
+    private readonly employeeInfoRepository: Repository<EmployeeInfoEntity>,
     private readonly amqpConnection: AmqpConnection,
+    private readonly variableResolver: VariableResolverService,
+    private readonly senderResolver: SenderResolverService,
+    private readonly trackingLinkService: TrackingLinkService,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
@@ -156,53 +164,127 @@ export class EmailService {
     }
   }
 
+  // Helper Function to load all necessary user info.
+  private async loadUserAndEmployeeInfo(
+    auth0Id: string,
+  ): Promise<{ user: UserEntity; employeeInfo?: EmployeeInfoEntity }> {
+    const user = await this.userRepository.findOne({ where: { auth0Id } });
+
+    if (!user) {
+      this.logger.error(`User: ${auth0Id}, not found in db.`);
+      throw new NotFoundException(`User: ${auth0Id}, not found in db.`);
+    }
+
+    const employeeInfo = await this.employeeInfoRepository.findOne({
+      where: { auth0Id },
+    });
+
+    return { user, employeeInfo: employeeInfo ?? undefined };
+  }
+
+  // Helper Function to prepare email content.
+  private async prepareDispatch(
+    referenceNumber: string,
+    auth0Id: string,
+    user: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
+  ): Promise<{
+    subject: string;
+    content: string;
+    token: string;
+    fromString: string;
+  }> {
+    const email = await this.getEmailByReference(referenceNumber);
+
+    const subject = this.variableResolver.substitute(
+      email.subject,
+      user,
+      employeeInfo,
+    );
+
+    const substitutedContent = this.variableResolver.substitute(
+      email.content,
+      user,
+      employeeInfo,
+    );
+
+    const { content, token } =
+      this.trackingLinkService.replace(substitutedContent);
+
+    const fromString = await this.senderResolver.resolveFromAddress(
+      email,
+      auth0Id,
+      senderCustomName,
+      senderAuth0Id,
+      alias,
+    );
+
+    return { subject, content, token, fromString };
+  }
+
+  // Helper Function to publish event on event exchange
+  private async publishMailingEvent(
+    routingKey: string,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      await this.amqpConnection.publish(
+        'mailing-event-exchange',
+        routingKey,
+        payload,
+      );
+    } catch (publishError) {
+      this.logger.error(`Failed to publish ${routingKey}`, publishError);
+    }
+  }
+
   async sendEmail(
     referenceNumber: string,
     auth0Id: string,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     try {
-      const user = await this.userRepository.findOne({ where: { auth0Id } });
+      const { user, employeeInfo } =
+        await this.loadUserAndEmployeeInfo(auth0Id);
 
-      if (!user) {
-        this.logger.error(`User: ${auth0Id}, not found in db.`);
-        throw new NotFoundException(`User: ${auth0Id}, not found in db.`);
-      }
-
-      const email = await this.getEmailByReference(referenceNumber);
-
-      const fromString = email.alias
-        ? `${email.alias} <${email.sender}>`
-        : email.sender;
+      const { subject, content, token, fromString } =
+        await this.prepareDispatch(
+          referenceNumber,
+          auth0Id,
+          user,
+          employeeInfo,
+          senderCustomName,
+          senderAuth0Id,
+          alias,
+        );
 
       const { data, error } = await this.resend.emails.send({
         from: fromString,
         to: user.email,
-        subject: email.subject,
-        html: email.content,
+        subject,
+        html: content,
       });
 
       if (error) {
         throw new InternalServerErrorException(error.message);
       }
 
-      this.logger.log(`Email successfully dispatched from ${email.sender}`);
+      this.logger.log(`Email successfully dispatched from ${fromString}`);
 
-      try {
-        const date = new Date();
-        await this.amqpConnection.publish(
-          'mailing-event-exchange',
-          'mailing.send',
-          {
-            emailId: data.id,
-            recipient: user.email,
-            referenceNumber: referenceNumber,
-            scheduledAt: date.toISOString(),
-            auth0Id: auth0Id,
-          },
-        );
-      } catch (publishError) {
-        this.logger.error(`Failed to publish email.send`, publishError);
-      }
+      await this.publishMailingEvent('mailing.send', {
+        emailId: data.id,
+        recipient: user.email,
+        referenceNumber,
+        scheduledAt: new Date().toISOString(),
+        auth0Id,
+        token,
+      });
+
       return {
         success: true,
         message: `Email with referencing number: ${referenceNumber}, sent instantly.`,
@@ -223,26 +305,30 @@ export class EmailService {
     referenceNumber: string,
     auth0Id: string,
     scheduledAt: Date,
+    senderCustomName?: string,
+    senderAuth0Id?: string,
+    alias?: string,
   ): Promise<{ success: boolean; message: string; deliveryId: string }> {
     try {
-      const user = await this.userRepository.findOne({ where: { auth0Id } });
+      const { user, employeeInfo } =
+        await this.loadUserAndEmployeeInfo(auth0Id);
 
-      if (!user) {
-        this.logger.error(`User: ${auth0Id}, not found in db.`);
-        throw new NotFoundException(`User: ${auth0Id}, not found in db.`);
-      }
-
-      const email = await this.getEmailByReference(referenceNumber);
-
-      const fromString = email.alias
-        ? `${email.alias} <${email.sender}>`
-        : email.sender;
+      const { subject, content, token, fromString } =
+        await this.prepareDispatch(
+          referenceNumber,
+          auth0Id,
+          user,
+          employeeInfo,
+          senderCustomName,
+          senderAuth0Id,
+          alias,
+        );
 
       const { data, error } = await this.resend.emails.send({
         from: fromString,
         to: user.email,
-        subject: email.subject,
-        html: email.content,
+        subject,
+        html: content,
         scheduledAt: scheduledAt.toISOString(),
       });
 
@@ -254,21 +340,14 @@ export class EmailService {
         `Email successfully scheduled for dispatch at ${scheduledAt.toISOString()}`,
       );
 
-      try {
-        await this.amqpConnection.publish(
-          'mailing-event-exchange',
-          'mailing.schedule',
-          {
-            emailId: data.id,
-            referenceNumber: referenceNumber,
-            recipient: user.email,
-            scheduledAt: scheduledAt.toISOString(),
-            auth0Id: auth0Id,
-          },
-        );
-      } catch (publishError) {
-        this.logger.error(`Failed to publish email.schedule`, publishError);
-      }
+      await this.publishMailingEvent('mailing.schedule', {
+        emailId: data.id,
+        referenceNumber,
+        recipient: user.email,
+        scheduledAt: scheduledAt.toISOString(),
+        auth0Id,
+        token,
+      });
 
       return {
         success: true,
@@ -286,5 +365,63 @@ export class EmailService {
           : 'Failed to process email scheduling';
       throw new InternalServerErrorException(diagnosticMessage);
     }
+  }
+
+  async handleSendReply(event: SendReplyEmailEvent): Promise<void> {
+    const recipient = await this.userRepository.findOne({
+      where: { email: event.to },
+    });
+
+    const { user, employeeInfo } = await this.loadUserAndEmployeeInfo(
+      recipient.auth0Id,
+    );
+
+    const subject = this.variableResolver.substitute(
+      event.subject,
+      user,
+      employeeInfo,
+    );
+
+    const content = this.variableResolver.substitute(
+      event.content,
+      user,
+      employeeInfo,
+    );
+
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: event.from,
+        to: event.to,
+        subject,
+        html: content,
+        headers: this.buildThreadingHeaders(event),
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      this.logger.log(
+        `Reply sent for ${event.emailId}, new message id ${data?.id}`,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to send ${event.kind} reply for ${event.emailId}`,
+        err,
+      );
+    }
+  }
+
+  private buildThreadingHeaders(
+    event: SendReplyEmailEvent,
+  ): Record<string, string> | undefined {
+    if (!event.inReplyTo && event.references.length === 0) return undefined;
+
+    const headers: Record<string, string> = {};
+    if (event.inReplyTo) headers['In-Reply-To'] = `<${event.inReplyTo}>`;
+    if (event.references.length > 0) {
+      headers['References'] = event.references.map((r) => `<${r}>`).join(' ');
+    }
+    return headers;
   }
 }

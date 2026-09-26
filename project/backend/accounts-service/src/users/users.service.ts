@@ -29,6 +29,8 @@ export interface CreateUserInput {
   auth0Id: string;
   email: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   role?: UserRole;
   department?: Department;
   isVerified?: boolean;
@@ -52,6 +54,8 @@ export class UsersService {
         id: savedUser.id,
         auth0Id: savedUser.auth0Id,
         name: savedUser.name,
+        firstName: savedUser.firstName,
+        lastName: savedUser.lastName,
         email: savedUser.email,
         department: input.department ?? Department.HR,
         role: savedUser.role,
@@ -93,6 +97,8 @@ export class UsersService {
         id: saved.id,
         auth0Id: saved.auth0Id,
         name: saved.name,
+        firstName: saved.firstName,
+        lastName: saved.lastName,
         email: saved.email,
         department: saved.department,
         role: saved.role,
@@ -120,6 +126,8 @@ export class UsersService {
         id: saved.id,
         auth0Id: saved.auth0Id,
         name: saved.name,
+        firstName: saved.firstName,
+        lastName: saved.lastName,
         email: saved.email,
         department: saved.department,
         role: saved.role,

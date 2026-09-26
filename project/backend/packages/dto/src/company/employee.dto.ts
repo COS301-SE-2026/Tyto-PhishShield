@@ -39,4 +39,12 @@ export class EmployeeDto {
     @IsBoolean()
     @IsOptional()
     registered?: boolean;
+
+    @IsString()
+    @IsOptional()
+    auth0Id?: string;
+
+    @IsString()
+    @IsOptional()
+    title?: string; //Mr, Mrs, Ms, Dr, Prof, etc...
 }

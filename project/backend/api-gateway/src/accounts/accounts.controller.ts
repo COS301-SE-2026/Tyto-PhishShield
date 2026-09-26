@@ -70,7 +70,8 @@ export class AccountsController {
         email: { type: 'string', example: 'test@example.com' },
         password: { type: 'string', example: 'Password123!' },
         employeeId: { type: 'string', example: 'emp-id.0123456789' },
-        name: { type: 'string', example: 'Test User' },
+        firstName: { type: 'string', example: 'Test' },
+        lastName: { type: 'string', example: 'User' },
         department: {
           type: 'string',
           enum: [
@@ -93,16 +94,19 @@ export class AccountsController {
     );
     if (valid) {
       const accountsRegister = body as RegisterDto;
-      const register: { response: string; message: string } =
+      const register: { response: string; auth0Id: string; message: string } =
         await this.proxy.forward({
           url: `${this.accountsServiceUrl}/api/auth/register`,
           method: 'POST',
           data: accountsRegister,
         });
       if (register.response === 'ok')
-        await this.accountsService.updateEmployeeAsRegistered(body.employeeId);
+        await this.accountsService.updateEmployeeAsRegistered(
+          body.employeeId,
+          register.auth0Id,
+        );
 
-      return register;
+      return { response: register.response, message: register.message };
     }
     throw new BadRequestException(
       'Could not register employee. If this issue presists please contact the admin.',
