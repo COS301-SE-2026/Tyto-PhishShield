@@ -11,6 +11,12 @@ export class EventUser {
   @IsString()
   name!: string;
 
+  @IsString()
+  firstName!: string;
+
+  @IsString()
+  lastName!: string;
+
   @IsEmail()
   email!: string;
 
