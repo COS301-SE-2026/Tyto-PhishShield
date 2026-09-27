@@ -54,7 +54,9 @@ export class ReviewController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Retrieve all pending/handled reviews' })
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Retrieve all pending reviews' })
   @ApiResponse({ status: 200, type: [ReviewListItemDto] })
   getAll() {
     return this.proxy.forward({
