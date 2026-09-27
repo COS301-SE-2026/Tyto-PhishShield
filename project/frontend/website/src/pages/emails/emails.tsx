@@ -1,6 +1,6 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
-import { FilePenLine, Sparkles, Send, CalendarClock, LucideIcon } from 'lucide-react'
+import { FilePenLine, Sparkles, Send, CalendarClock, ClipboardCheck, type LucideIcon } from 'lucide-react'
 
 interface EmailsProps {
   readonly onNavigate: (path: string) => void;
@@ -114,6 +114,14 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           buttonLabel='Schedule Wave'
           icon={CalendarClock}
           onClick={() => onNavigate('/waves/schedule')}
+        />
+
+        <EmailActionCard
+          title='Needs Review'
+          description='Review employee attachments and replies that were flagged during phishing simulations.'
+          buttonLabel='Review Replies'
+          icon={ClipboardCheck}
+          onClick={() => onNavigate('/waves/needs-review')}
         />
       </div>  
     </AppLayout>
