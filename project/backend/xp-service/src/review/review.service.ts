@@ -11,6 +11,7 @@ import {
   ReviewListItemDto,
 } from '../dto/review-list-item.dto';
 import {
+  MistakeDetectedEvent,
   ReplyEmailKind,
   ReplyValidatedEvent,
   ReviewNeededEvent,
@@ -119,10 +120,11 @@ export class ReviewService {
 
     const results = await Promise.allSettled(
       review.attachments.map(async (attachment) => {
-        const { data, error } = await this.resend.emails.attachments.get({
-          id: attachment.id,
-          emailId: review.emailId,
-        });
+        const { data, error } =
+          await this.resend.emails.receiving.attachments.get({
+            id: attachment.id,
+            emailId: review.emailId,
+          });
 
         if (error || !data) throw new Error(error?.message ?? 'no data');
 
@@ -234,5 +236,26 @@ export class ReviewService {
     if (result.affected === 0) {
       throw new NotFoundException(`Review ${id} not found`);
     }
+  }
+
+  async handleMistakeDetected(event: MistakeDetectedEvent): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { email: event.sender },
+    });
+
+    if (!user) {
+      this.logger.warn(
+        `Could not resolve user for ${event.sender}, skipping XP deduction for detected mistake`,
+      );
+      return;
+    }
+
+    const penalty = event.severity ? SEVERITY_XP_PENALTY[event.severity] : 0;
+
+    await this.xpService.giveXp({
+      auth0Id: user.auth0Id,
+      amount: penalty,
+      reason: XpReason.COMPROMISED,
+    });
   }
 }

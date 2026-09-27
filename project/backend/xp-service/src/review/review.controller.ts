@@ -13,7 +13,7 @@ import { ReviewService } from './review.service';
 import { ResolveReviewDto } from '../dto/resolve-review.dto';
 import { ReviewListItemDto } from '../dto/review-list-item.dto';
 import { ReviewEntity } from '../entities/review.entity';
-import { ReviewNeededEvent } from '@phishshield/dto';
+import { MistakeDetectedEvent, ReviewNeededEvent } from '@phishshield/dto';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
 @Controller('reviews')
@@ -27,6 +27,15 @@ export class ReviewController {
   })
   async handleReviewNeeded(event: ReviewNeededEvent): Promise<void> {
     await this.reviewService.handleReviewNeeded(event);
+  }
+
+  @RabbitSubscribe({
+    exchange: 'llm-event-exchange',
+    routingKey: 'reply.mistake',
+    queue: 'xp-mistake-queue',
+  })
+  async handleMistakeDetected(event: MistakeDetectedEvent): Promise<void> {
+    await this.reviewService.handleMistakeDetected(event);
   }
 
   @Get()
