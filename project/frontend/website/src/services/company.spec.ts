@@ -272,7 +272,7 @@ describe('importEmployeesCsv', () => {
 
     await expect(
       importEmployeesCsv(file),
-    ).rejects.toThrow('Import failed (500)');
+    ).rejects.toThrow('Failed to import employees (500)');
   });
 
   it('should throw a fallback error when the error response is not valid JSON', async () => {
@@ -296,6 +296,6 @@ describe('importEmployeesCsv', () => {
 
     await expect(
       importEmployeesCsv(file),
-    ).rejects.toThrow('Import failed (400)');
+    ).rejects.toThrow('Failed to import employees (400)');
   });
 });
