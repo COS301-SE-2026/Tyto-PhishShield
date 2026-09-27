@@ -1,8 +1,9 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 import { Department } from '../entities/user.entity';
 import { UserRole } from '@phishshield/dto';
+import { EventUser } from '@phishshield/dto';
 
-export class User {
+export class User extends EventUser {
   @IsString()
   id!: string;
 

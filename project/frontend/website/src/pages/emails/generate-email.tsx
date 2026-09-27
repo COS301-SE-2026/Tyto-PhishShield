@@ -1,9 +1,10 @@
 import { AppLayout } from '../../components/layout/app-layout';
-import { Button, Card, Badge, Input, Select } from '../../components/ui';
+import { Button, Card, Badge, Select } from '../../components/ui';
 import { useState, type CSSProperties } from 'react';
 import { useToast } from '../../context/toast-context';
-import { createEmailTemplate } from '../../services/email-template';
+import { createEmailTemplate, type Department as EmailTemplateDepartment } from '../../services/email-template';
 import { generateTemplates, type Difficulty, type Department, type MessageType, type MessageTone, type TemplateVariable, type GeneratedTemplate } from '../../services/llm-template';
+import { SenderDomainSelect } from "../../components/email/sender-domain-select";
 
 interface GenerateEmailProps {
   readonly onNavigate: (path: string) => void;
@@ -12,7 +13,6 @@ interface GenerateEmailProps {
 
 interface GenerateEmailForm {
   sender: string;
-  alias: string;
   difficulty: Difficulty;
   tone: MessageTone;
   messageType: MessageType;
@@ -24,8 +24,6 @@ interface FormErrors {
   sender?: string;
   templateVariable?: string;
 }
-
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
 
 const DIFFICULTY_OPTIONS = [
     { value: 'easy', label: 'Easy'},
@@ -64,14 +62,22 @@ const DEPARTMENT_OPTIONS = [
     { value: 'executive', label: 'Executive' },
 ];
 
+const EMAIL_TEMPLATE_DEPARTMENT_MAP : Record<Department, EmailTemplateDepartment> = {
+  'it_&_security': 'IT & Security',
+  finance: 'Finance',
+  human_resources: 'Human Resources',
+  'legal_&_compliance': 'Legal & Compliance',
+  operations: 'Operations',
+  executive: 'Executive',
+}
+
 const COUNT_OPTIONS = Array.from({length: 6 }, (_, index) => ({
   value: String(index + 1),
   label: `${index + 1} template${index === 0 ? '' : 's'}`
 }));
 
 const INITIAL_FORM: GenerateEmailForm = {
-  sender: '',
-  alias: '',
+  sender: 'capstone-five-guys.dns.net.za',
   difficulty: 'easy',
   tone: 'professional',
   messageType: 'announcement',
@@ -90,6 +96,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
   const [generatedDifficulty, setGeneratedDifficulty] = useState<Difficulty | null>(null);
+  const [generatedDepartment, setGeneratedDepartment] = useState<Department | ''>('');
 
   const setField = <K extends keyof GenerateEmailForm>(field: K, value: GenerateEmailForm[K]): void => {
     setForm((previous) => ({
@@ -122,13 +129,17 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
     );
   }
 
+  const selectAllTemplates = (): void => {
+    setSelectedTemplateIds(
+      templates.map((template) => template.id)
+    )
+  }
+
   const validateForm = (): boolean => {
     const nextErrors: FormErrors = {};
 
     if (!form.sender.trim()) {
-      nextErrors.sender = 'Sender email required.';
-    }else if (!EMAIL_PATTERN.test(form.sender.trim())) {
-      nextErrors.sender = 'Enter a valid sender email address.';
+      nextErrors.sender = 'Sender domain is required.'
     }
 
     setErrors(nextErrors);
@@ -153,8 +164,9 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
       });
 
       setTemplates(result.templates);
-      setSelectedTemplateIds(result.templates.map((template) => template.id));
+      setSelectedTemplateIds([]);
       setGeneratedDifficulty(form.difficulty);
+      setGeneratedDepartment(form.senderDepartment);
 
       if (result.failed > 0) {
         addToast({
@@ -208,10 +220,10 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
         selectedTemplates.map((template) => 
           createEmailTemplate({
             sender: form.sender.trim(),
-            alias: form.alias.trim() || undefined,
             subject: template.subject,
             content: template.body,
             difficulty: generatedDifficulty ?? form.difficulty,
+            senderDepartment: generatedDepartment ? EMAIL_TEMPLATE_DEPARTMENT_MAP[generatedDepartment] : undefined,
           }),
         )
       );
@@ -336,30 +348,11 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
               gap: 16,
             }}
           >
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: 12,
-              }}
-            >
-              <Input
-                label='Sender email'
-                type='email'
-                placeholder='test@capstone-five-guys.dns.net.za'
-                value={form.sender}
-                error={errors.sender}
-                required
-                onChange={(event) => setField('sender', event.target.value)}
-              />
-
-              <Input
-                label='Display name (Optional)'
-                placeholder='IT Support'
-                value={form.alias}
-                onChange={(event) => setField('alias', event.target.value)}
-              />
-            </div>
+            <SenderDomainSelect
+              value={form.sender}
+              onChange={(value) => setField('sender', value)}
+              error={errors.sender}
+            />
 
             <div
               style={{
@@ -598,6 +591,20 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                           dangerouslySetInnerHTML={{ __html: template.body, }} 
                         />
                       </div>
+
+                      <p
+                        style={{
+                          marginTop: 16,
+                          marginBottom: 8,
+                          fontSize: 11,
+                          lineHeight: 1.5,
+                          fontWeight: 600,
+                          color: 'var(--text-muted)'
+                        }}
+                      >
+                        Raw HTML
+                      </p>
+
                       <div
                         style={{
                           padding: 12,
@@ -618,7 +625,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
                             lineHeight: 1.5,
                             whiteSpace: 'pre-wrap',
                             overflowWrap: 'anywhere',
-                            fontFamily: 'Inter, system-ui, sans-serif'
+                            fontFamily: 'monospace'
                           }}
                         >
                           {template.body}
@@ -639,10 +646,10 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
             >
               <Button
                 variant='ghost'
-                disabled={saving}
-                onClick={() => setSelectedTemplateIds([])}
+                disabled={saving || selectedTemplateIds.length === templates.length}
+                onClick={selectAllTemplates}
               >
-                Clear Selection
+                Select All
               </Button>
 
               <Button

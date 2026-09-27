@@ -96,7 +96,9 @@ export class AuthService {
     dto: RegisterDto,
   ): Promise<{ response: string; auth0Id: string; message: string }> {
     const mgmtToken = await this.getManagementToken();
-
+    const name: string = (
+      dto.firstName ? dto.firstName + ' ' + dto.lastName : dto.email
+    ).trim();
     let auth0User: Auth0UserResponse;
     try {
       const { data } = await firstValueFrom(
@@ -105,7 +107,7 @@ export class AuthService {
           {
             email: dto.email,
             password: dto.password,
-            name: dto.name ?? dto.email,
+            name: name,
             connection: 'Username-Password-Authentication',
           },
           { headers: { Authorization: `Bearer ${mgmtToken}` } },
@@ -127,7 +129,9 @@ export class AuthService {
     await this.usersService.create({
       auth0Id: auth0User.user_id,
       email: dto.email,
-      name: dto.name,
+      name: name,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
       department: dto.department,
       role: UserRole.USER,
     });
