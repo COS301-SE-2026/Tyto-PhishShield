@@ -417,6 +417,12 @@ export class EmailService {
     user: UserEntity,
     employeeInfo?: EmployeeInfoEntity,
   ): { subject: string; content: string } {
+    if (!ReplyEmailKind || Object.keys(ReplyEmailKind).length === 0) {
+      this.logger.error('ReplyEmailKind enum failed to import');
+      throw new InternalServerErrorException(
+        'Mailing service misconfigured: DTO enum unavailable',
+      );
+    }
     if (event.kind === ReplyEmailKind.FAILED_DEFAULT) {
       return {
         subject: this.buildFailedReplySubject(event.originalSubject),

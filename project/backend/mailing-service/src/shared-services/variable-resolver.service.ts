@@ -63,7 +63,11 @@ export class VariableResolverService {
         return this.businessName;
 
       case 'name':
-        return user.firstName;
+        if (!user.firstName) {
+          return user.name;
+        } else {
+          return user.firstName;
+        }
 
       case 'surname':
         return user.lastName;
