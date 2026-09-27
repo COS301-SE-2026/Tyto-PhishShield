@@ -16,12 +16,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe, } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
-import {
-  EmailDifficulty,
-  EmailTemplateEntity,
-} from '../src/entities/email-template.entity';
+import { EmailDifficulty, EmailTemplateEntity, } from '../src/entities/email-template.entity';
 import { In, Repository } from 'typeorm';
-import { Department, UserEntity } from '../src/entities/user.entity';
+import { Department, UserEntity, UserRole } from '../src/entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EmployeeInfoEntity } from '../src/entities/employee-info.entity';
 
@@ -64,14 +61,20 @@ describe('Email service integration test', () => {
       userRepository.create({
         auth0Id: TEST_AUTH0_ID,
         name: 'E2e Test User',
+        firstName: 'E2E_first',
+        lastName: 'E2E_last',
         email: TEST_RECIPIENT,
         department: Department.FINANCE,
+        role: UserRole.USER,
       }),
       userRepository.create({
         auth0Id: TEST_SENDER_AUTH0_ID,
         name: 'E2e Test sender',
+        firstName: 'E2E_first',
+        lastName: 'E2E_last',
         email: `sender@${TEST_SENDER_DOMAIN}`,
         department: Department.IT_SECURITY,
+        role: UserRole.USER,
       }),
     ]);
 
