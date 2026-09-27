@@ -121,7 +121,7 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           description='Review employee attachments and replies that were flagged during phishing simulations.'
           buttonLabel='Review Replies'
           icon={ClipboardCheck}
-          onClick={() => onNavigate('/waves/needs-review')}
+          onClick={() => onNavigate('/emails/needs-review')}
         />
       </div>  
     </AppLayout>
