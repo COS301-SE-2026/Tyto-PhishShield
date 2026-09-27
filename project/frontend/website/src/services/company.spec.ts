@@ -1,9 +1,4 @@
-import {
-  fetchEmployees,
-  importEmployeesCsv,
-  type Employee,
-  type ImportResult,
-} from './company';
+import {fetchEmployees, importEmployeesCsv, fetchEmployee, updateEmployee, deleteEmployee, fetchCompanyFields, type Employee, type ImportResult } from './company';
 import { API_BASE, authFetch, getToken } from './api';
 
 vi.mock('./api', async () => {
@@ -299,3 +294,60 @@ describe('importEmployeesCsv', () => {
     ).rejects.toThrow('Failed to import employees (400)');
   });
 });
+
+describe('fetchEmployee', () => {
+  it('should fetch an employee by its ID', async () => {
+    const employee ={
+      employeeId: 'EMP001',
+      email: 'test@example1.com',
+      registered: false,
+    }
+
+    mockAuthFetch.mockResolvedValue(createMockResponse(true, employee));
+
+    expect(await fetchEmployee('EMP001')).toEqual(employee);
+  });
+});
+
+describe('updateEmployee', () => {
+  it('should update a employee', async () => {
+    const employee = {
+      employeeId: 'EMP001',
+      email: 'test@example2.com',
+      firstName: 'John'
+    }
+
+    mockAuthFetch.mockResolvedValue(createMockResponse(true, employee));
+
+    await updateEmployee('EMP001', employee);
+
+    expect(mockAuthFetch).toHaveBeenCalledWith(
+      `${API_BASE}/company/employees/EMP001`,
+      expect.objectContaining({method: 'PATCH'}),
+    );
+  });
+});
+
+describe('deleteEmployee', () => {
+  it('should delete an employee', async () => {
+    mockAuthFetch.mockResolvedValue(createMockResponse(true, true));
+    expect(await deleteEmployee('EMP001')).toBe(true);
+
+    expect(mockAuthFetch).toHaveBeenCalledWith(
+      `${API_BASE}/company/employees/EMP001`,
+      expect.objectContaining({method: 'DELETE'}),
+    );
+  });
+});
+
+describe('fetchCompanyFields', () => {
+  it('Should return available mapping fields', async () => {
+    const fields = {
+      employeeId: 'Employee ID',
+      email: 'Email',
+    };
+
+    mockAuthFetch.mockResolvedValue(createMockResponse(true, fields));
+    expect(await fetchCompanyFields()).toEqual(fields);
+  })
+})
