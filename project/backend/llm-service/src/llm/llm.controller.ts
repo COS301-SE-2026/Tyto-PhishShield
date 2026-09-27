@@ -29,7 +29,7 @@ export class LlmController {
   @RabbitSubscribe({
     exchange: 'llm-event-exchange',
     routingKey: 'reply.valid',
-    queue: 'llm-review-resolution-queue',
+    queue: 'llm-review-queue',
   })
   async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
     await this.llmService.handleReplyValidated(event);

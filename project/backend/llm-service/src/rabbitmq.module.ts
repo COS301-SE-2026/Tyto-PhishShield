@@ -6,4 +6,5 @@ export const rabbitMQModule = RabbitMQModule.forRoot({
   connectionInitOptions: {
     wait: false,
   },
+  enableControllerDiscovery: true,
 });
