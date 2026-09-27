@@ -5,6 +5,7 @@ import { Employee } from './entities/employee.entity';
 import { EmployeeController } from './employee.controller';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { EventProducerService } from '@phishshield/eventhandler';
+import { FailedImport } from './entities/failed-import.entity';
 
 describe('EmployeeService', () => {
   let service: EmployeeService;
@@ -23,6 +24,7 @@ describe('EmployeeService', () => {
         providers: [
           EmployeeService,
           { provide: getRepositoryToken(Employee), useValue: repo },
+          { provide: getRepositoryToken(FailedImport), useValue: repo },
           {
             provide: EventProducerService,
             useValue: {

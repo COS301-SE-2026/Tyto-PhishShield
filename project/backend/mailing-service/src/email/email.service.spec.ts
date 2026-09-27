@@ -247,13 +247,11 @@ describe('EmailService', () => {
 
       expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(
         mockEmail.subject,
-        'PHISH-001',
         mockUser,
         undefined,
       );
       expect(mockVariableResolverService.substitute).toHaveBeenCalledWith(
         mockEmail.content,
-        'PHISH-001',
         mockUser,
         undefined,
       );

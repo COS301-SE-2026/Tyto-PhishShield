@@ -23,15 +23,24 @@ export interface ImportResult {
   fileType: string;
 }
 
+export interface EmployeeCsvMapping {
+  employeeId: string;
+  email: string;
+}
+
 export async function fetchEmployees(): Promise<Employee[]> {
   const res = await authFetch(`${COMPANY_BASE}/employees`);
   if (!res.ok) throw new Error(`Failed to load employees (${res.status})`);
   return res.json() as Promise<Employee[]>;
 }
 
-export async function importEmployeesCsv(file: File): Promise<ImportResult> {
+export async function importEmployeesCsv(file: File, mapping?: EmployeeCsvMapping): Promise<ImportResult> {
   const formData = new FormData();
   formData.append('file', file);
+
+  if (mapping) {
+    formData.append('mapping', JSON.stringify(mapping));
+  }
 
   const res = await fetch(`${COMPANY_BASE}/import`, {
     method: 'POST',

@@ -1,4 +1,4 @@
-import {IsArray, IsDate, IsEnum, IsNumber, IsString} from "class-validator";
+import { IsArray, IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export enum ReplyEmailKind {
   FAILED_DEFAULT = 'failed_default',
@@ -14,83 +14,95 @@ export enum Severity {
 }
 
 export enum MistakeCategory {
-  VALID_RESPONSE = 'valid_response', // The user has a valid response with no leaked info.
+  VALID_RESPONSE = 'valid_response',
   LOGIN_DETAILS_LEAKED = 'login_details_leaked',
   SECRETS_LEAKED = 'secrets_leaked',
   PII_LEAKED = 'pii_leaked',
   FINANCIAL_INFO_LEAKED = 'financial_info_leaked',
-  NEEDS_REVIEW = 'needs_review', // The llm's evaluation is not confident enough to classify the response.
+  NEEDS_REVIEW = 'needs_review',
 }
 
 export class MistakeDetectedEvent {
-    @IsString()
-    sender!: string;
+  @IsString()
+  sender!: string;
 
-    @IsString()
-    emailId!: string;
+  @IsString()
+  emailId!: string;
 
-    @IsEnum(MistakeCategory, { each: true })
-    @IsArray()
-    categories!: MistakeCategory[];
+  @IsEnum(MistakeCategory, { each: true })
+  @IsArray()
+  categories!: MistakeCategory[];
 
-    @IsEnum(Severity)
-    severity!: Severity;
+  @IsEnum(Severity)
+  severity!: Severity;
 
-    @IsString()
-    confidence!: number;
+  @IsNumber()
+  confidence!: number;
 
-    @IsDate()
-    occurredAt!: Date;
+  @IsDate()
+  occurredAt!: Date;
 }
 
 export class SendReplyEmailEvent {
-    @IsEnum(ReplyEmailKind)
-    kind!: ReplyEmailKind;
+  @IsEnum(ReplyEmailKind)
+  kind!: ReplyEmailKind;
 
-    @IsString()
-    emailId!: string;
+  @IsString()
+  emailId!: string;
 
-    @IsString()
-    to!: string;
+  @IsString()
+  to!: string;
 
-    @IsString()
-    from!: string;
+  @IsString()
+  from!: string;
 
-    @IsString()
-    subject!: string;
+  @IsOptional()
+  @IsString()
+  subject?: string;
 
-    @IsString()
-    content!: string;
+  @IsOptional()
+  @IsString()
+  content?: string;
 
-    @IsString()
-    inReplyTo!: string
+  @IsOptional()
+  @IsString()
+  originalSubject?: string;
 
-    @IsArray()
-    references!: string[];
+  @IsOptional()
+  @IsString()
+  inReplyTo?: string;
+
+  @IsArray()
+  references!: string[];
 }
 
-export class ReplyReviewNeededEvent {
-    @IsString()
-    emailId!: string;
+export class ReplyValidatedEvent {
+  @IsString()
+  emailId!: string;
 
-    @IsString()
-    sender!: string;
+  @IsOptional()
+  @IsString()
+  messageId?: string;
 
-    @IsString()
-    inReplyTo!: string
+  @IsString()
+  from!: string;
 
-    @IsArray()
-    references!: string[];
+  @IsString()
+  to!: string;
 
-    @IsEnum(MistakeCategory, { each: true })
-    categories!: MistakeCategory[];
+  @IsString()
+  subject!: string;
 
-    @IsEnum(Severity)
-    severity!: Severity;
+  @IsString()
+  replyText!: string;
 
-    @IsNumber()
-    confidence!: number;
+  @IsString()
+  quotedText!: string;
 
-    @IsDate()
-    occurredAt!: Date;
+  @IsOptional()
+  @IsString()
+  inReplyTo?: string;
+
+  @IsArray()
+  references!: string[];
 }

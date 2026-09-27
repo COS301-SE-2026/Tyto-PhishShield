@@ -46,10 +46,7 @@ export class CommsController {
     summary: 'Directed communication graph for the admin dashboard',
   })
   @ApiQuery({ name: 'period', required: false, example: '30d' })
-  getGraph(
-    @Req() req: AuthenticatedRequest,
-    @Query('period') period?: string,
-  ) {
+  getGraph(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
     const qs = period ? `?period=${period}` : '';
     return this.proxy.forward({
       url: `${this.commsServiceUrl}/api/comms/graph${qs}`,

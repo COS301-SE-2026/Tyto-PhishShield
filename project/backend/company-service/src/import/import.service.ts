@@ -35,6 +35,20 @@ export class ImportService {
     private readonly db: Repository<Import>,
     private readonly employeeService: EmployeeService,
   ) {}
+  private readonly fullMap: MappingDto = {
+    employeeId: 'employeeId',
+    email: 'email',
+    firstName: 'firstName',
+    lastName: 'lastName',
+    department: 'department',
+    jobTitle: 'jobTitle',
+    managerEmail: 'managerEmail',
+    managerId: 'managerId',
+    employeeStatus: 'employeeStatus',
+    externalId: 'externalId',
+    title: 'title',
+    auth0Id: 'auth0Id',
+  };
 
   async create(createImportDto: CreateImportDto, file: Express.Multer.File) {
     const extension = path.extname(file.originalname).toLowerCase();
@@ -90,6 +104,17 @@ export class ImportService {
         throw new BadRequestException(
           `CSV column "${csvField}" specified for "${systemField}" does not exist`,
         );
+      }
+    }
+
+    for (const [systemField, csvField] of Object.entries(this.fullMap)) {
+      const field = csvField as string;
+      if (
+        !parsedMap[systemField as keyof MappingDto] &&
+        field &&
+        headers.includes(field)
+      ) {
+        parsedMap = { ...parsedMap, [systemField]: field };
       }
     }
 
@@ -190,6 +215,7 @@ export class ImportService {
         employeeStatus: parsedMap?.employeeStatus,
         externalId: parsedMap?.externalId,
         title: parsedMap?.title,
+        auth0Id: parsedMap?.auth0Id,
       };
 
       return validMap;
@@ -197,12 +223,6 @@ export class ImportService {
       throw new BadRequestException('Mapping field contains invalid JSON');
     }
   }
-
-  // private validateRequiredFields(headers: string[]) {
-  //   if(!headers.includes(Object.keys(MappingDto)[0])) {
-  //     throw new BadRequestException
-  //   }
-  // }
 
   private mapEmployeeRow(
     row: Record<string, string>,
@@ -224,6 +244,7 @@ export class ImportService {
         : undefined,
       externalId: mapping.externalId ? row[mapping.externalId] : undefined,
       title: mapping.title ? row[mapping.title] : undefined,
+      auth0Id: mapping.auth0Id ? row[mapping.auth0Id] : undefined,
     };
   }
 }

@@ -109,8 +109,8 @@ jobs:
         - name: run integration test
           run: pnpm int:test:analytics
 
-    llm-integration:
-      name: llm integration testing
+    company-integration:
+      name: company integration testing
       runs-on: ubuntu-24.04
       strategy:
         matrix:
@@ -131,7 +131,7 @@ jobs:
         - name: Build shared packages
           run: pnpm build:shared
         - name: run integration test
-          run: pnpm int:test:llm
+          run: pnpm int:test:company
 
     Comms-integration:
       name: Communication tracking integration testing

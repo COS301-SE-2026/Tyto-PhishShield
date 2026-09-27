@@ -70,7 +70,8 @@ export class AccountsController {
         email: { type: 'string', example: 'test@example.com' },
         password: { type: 'string', example: 'Password123!' },
         employeeId: { type: 'string', example: 'emp-id.0123456789' },
-        name: { type: 'string', example: 'Test User' },
+        firstName: { type: 'string', example: 'Test' },
+        lastName: { type: 'string', example: 'User' },
         department: {
           type: 'string',
           enum: [

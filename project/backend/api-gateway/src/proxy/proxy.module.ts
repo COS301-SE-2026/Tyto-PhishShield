@@ -87,7 +87,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           host: process.env.COMMS_HOST ?? 'comms_app',
           port: Number(process.env.COMMS_TCP_PORT ?? 4009),
         },
-      }
+      },
     ]),
   ],
   providers: [ProxyService, RouteResolver],

@@ -13,3 +13,4 @@ export * from './events/event-employee.dto';
 export * from './llm/resend-received-webhook.dto';
 export * from './llm/received-reply.dto';
 export * from './llm/llm-mailing-events.dto';
+export * from './llm/review-needed-event.dto';

@@ -13,6 +13,16 @@ export class EmployeeController {
     return this.employeeService.findAll();
   }
 
+  @MessagePattern('errors.get')
+  findErrors() {
+    return this.employeeService.getErrors();
+  }
+
+  @MessagePattern('errors.delete')
+  deleteError(errorId: string) {
+    return this.employeeService.deleteError(errorId);
+  }
+
   @MessagePattern('employees.get.one')
   findOne(@Payload() employeeId: string) {
     return this.employeeService.findOne(employeeId);

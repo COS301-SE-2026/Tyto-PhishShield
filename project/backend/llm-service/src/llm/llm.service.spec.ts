@@ -11,6 +11,10 @@ import {
   MessageType,
   TemplateVariable,
 } from './dto/difficulty-llm-generation.dto';
+import { ReceivedEmailService } from './received-email/received-email.service';
+import { ClassificationService } from './classification/classification.service';
+import { rabbitMQModule } from '../rabbitmq.module';
+import { ReplyGenerationService } from './reply-generation/reply-generation.service';
 
 describe('LlmService', () => {
   let service: LlmService;
@@ -29,6 +33,18 @@ describe('LlmService', () => {
       if (key === 'LLM_PROVIDER') return 'test-llm-provider';
       return defaultValue;
     }),
+  };
+
+  const mockRecievedEmailService = {
+
+  };
+
+  const mockClassificationService = {
+
+  };
+
+  const mockReplyGenerationService = {
+
   };
 
   const baseDto: DifficultyLlmGenerationDto = {
@@ -53,11 +69,15 @@ describe('LlmService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [rabbitMQModule],
       providers: [
         LlmService,
         { provide: PromptBuilderService, useValue: mockPromptBuilderService },
         { provide: LlmGatewayService, useValue: mockLlmGatewayService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: ReceivedEmailService, useValue: mockRecievedEmailService },
+        { provide: ClassificationService, useValue: mockClassificationService },
+        { provide: ReplyGenerationService, useValue: mockReplyGenerationService },
       ],
     }).compile();
 

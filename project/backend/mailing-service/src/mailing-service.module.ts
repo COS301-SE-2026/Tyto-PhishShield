@@ -13,6 +13,7 @@ import { WaveRecipientEntity } from './entities/wave-recipient.entity';
 import { WaveModule } from './wave/wave.module';
 import { EmployeeInfoModule } from './employee-info/employee-info.module';
 import { EmployeeInfoEntity } from './entities/employee-info.entity';
+import { ConnectionModule } from './connection/connection.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { EmployeeInfoEntity } from './entities/employee-info.entity';
     AccountsModule,
     WaveModule,
     EmployeeInfoModule,
+    ConnectionModule,
   ],
   controllers: [MailingServiceController],
 })
