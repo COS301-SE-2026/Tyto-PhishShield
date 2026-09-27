@@ -17,6 +17,7 @@ import { ResendReceivedWebhookPayloadDto } from '@phishshield/dto';
 import { randomUUID } from 'node:crypto';
 import { toReceivedReply } from './received-reply.mapper';
 import { ResendWebhookGuard } from './resend-webhook.guard';
+import { isAllowedReceivedReplyDomain } from './allowlist';
 
 interface ResendWebhookPayload {
   type: string;
@@ -120,6 +121,13 @@ export class WebhookController {
   ) {
     if (body.type !== 'email.received') {
       this.logger.warn(`ignore triggered in api-gateway`);
+      return { ignored: true };
+    }
+
+    if (!isAllowedReceivedReplyDomain([body.data.from])) {
+      this.logger.warn(
+        `Ignoring received reply for disallowed domain(s): ${body.data.to.join(', ')}`,
+      );
       return { ignored: true };
     }
 
