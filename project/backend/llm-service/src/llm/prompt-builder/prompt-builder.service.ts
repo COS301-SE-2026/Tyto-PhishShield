@@ -13,6 +13,12 @@ import { BASE_SYSTEM_INSTRUCTIONS } from './prompts/base-instructions.prompts';
 import { LINK_INSTRUCTIONS } from './prompts/link-instructions.prompts';
 import { OUTPUT_FORMAT } from './prompts/output-format.prompts';
 import { SENDER_DEPARTMENT_PROMPTS } from './prompts/sender-department-prompts';
+import { CLASSIFICATION_INSTRUCTIONS } from './prompts/classification.prompts';
+import { CLASSIFICATION_SCHEMA } from './prompts/classification_schema.prompts';
+import { REDACTION_INSTRUCTIONS } from './prompts/redaction-instructions.prompts';
+import { REDACTION_SCHEMA } from './prompts/redaction-schema.prompts';
+import { REPLY_GENERATION_INSTRUCTIONS } from './prompts/reply-generation-instructions.prompts';
+import { REPLY_SCHEMA } from './prompts/reply-schema.prompts';
 
 const BUSINESS_NAME_CONTEXT = `{{business_name}} is the recipient's business/organization name. Use it to make the message feel like it's coming from within their own company (If applicable).`;
 
@@ -30,6 +36,16 @@ export class PromptBuilderService {
       OUTPUT_FORMAT,
     ];
     return prompt.join('\n\n');
+  }
+
+  buildClassificationPrompt(): string {
+    return `
+      ${CLASSIFICATION_INSTRUCTIONS}
+ 
+      You MUST respond with ONLY a valid JSON object. Do not include markdown formatting, backticks, or conversational text.
+      Ensure the JSON structure exactly matches this schema:
+      ${JSON.stringify(CLASSIFICATION_SCHEMA)}
+    `.trim();
   }
 
   private buildVariableSection(
@@ -59,5 +75,25 @@ export class PromptBuilderService {
       return null;
     }
     return SENDER_DEPARTMENT_PROMPTS[senderDepartment];
+  }
+
+  buildRedactionPrompt(): string {
+    return `
+    ${REDACTION_INSTRUCTIONS}
+
+    You MUST respond with ONLY a valid JSON object. Do not include markdown formatting, backticks, or conversational text.
+    Ensure the JSON structure exactly matches this schema:
+    ${JSON.stringify(REDACTION_SCHEMA)}
+  `.trim();
+  }
+
+  buildReplyGenerationPrompt(): string {
+    return `
+    ${REPLY_GENERATION_INSTRUCTIONS}
+
+    You MUST respond with ONLY a valid JSON object. Do not include markdown formatting, backticks, or conversational text.
+    Ensure the JSON structure exactly matches this schema:
+    ${JSON.stringify(REPLY_SCHEMA)}
+  `.trim();
   }
 }

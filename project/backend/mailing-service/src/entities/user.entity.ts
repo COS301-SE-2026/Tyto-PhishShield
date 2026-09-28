@@ -9,6 +9,12 @@ export enum Department {
   EXECUTIVE = 'Executive',
 }
 
+export enum UserRole {
+  ADMIN = 'admin',
+  ANALYST = 'analyst',
+  USER = 'user',
+}
+
 @Entity('users')
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -20,9 +26,18 @@ export class UserEntity {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  firstName: string;
+
+  @Column({ nullable: true })
+  lastName: string;
+
   @Column()
   email: string;
 
   @Column({ nullable: true })
   department: Department;
+
+  @Column({ nullable: true })
+  role: UserRole;
 }

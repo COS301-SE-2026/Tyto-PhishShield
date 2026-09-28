@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge, Button, Input, Modal } from '../../components/ui';
+import { Card, Badge, Button, Input, Modal, Spinner } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { API_BASE, authFetch, authApi } from '../../services/api';
 import { fetchLeaderboardXp } from '../leaderboard/leaderboard.service';
-import { fetchEmployees, importEmployeesCsv, type Employee } from '../../services/company';
+import { fetchEmployees, type Employee } from '../../services/company';
+import { ImportUsersModal } from './import-users-modal';
+import { EmployeeActionsModal } from './employee-actions-modal';
 import { connectXpSocket } from '../../services/xp-socket';
 import { ShieldCheck, Check, User, Search, Trash2, Ban, Lock, Upload } from 'lucide-react';
 
@@ -191,63 +193,8 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
   );
 }
 
-function ImportUsersModal({ isOpen, onClose, onImported }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onImported: () => void;
-}) {
-  const { addToast } = useToast();
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const handleUpload = async () => {
-    if (!file) return;
-    setUploading(true);
-    try {
-      await importEmployeesCsv(file);
-      addToast({ type: 'success', title: 'Import started', message: 'Employees are being added, refresh the list shortly to see them.' });
-      setFile(null);
-      onImported();
-      onClose();
-    } catch (err) {
-      addToast({ type: 'error', title: 'Import failed', message: err instanceof Error ? err.message : 'Please try again.' });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Import Users" maxWidth={420}>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.6 }}>
-        Upload a CSV of employees to add them to the roster. Columns should be named <strong>employeeId</strong> and <strong>email</strong> (other columns like name and department are optional).
-      </p>
-      <label style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-        border: '1.5px dashed var(--border)', borderRadius: 10, padding: '24px 14px',
-        cursor: 'pointer', background: 'var(--bg-hover)', marginBottom: 20,
-      }}>
-        <Upload size={20} color="var(--text-muted)" aria-hidden="true" />
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
-          {file ? file.name : 'Click to choose a CSV file'}
-        </span>
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          onChange={e => setFile(e.target.files?.[0] ?? null)}
-          style={{ display: 'none' }}
-        />
-      </label>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button fullWidth loading={uploading} disabled={!file} onClick={() => { void handleUpload(); }}>
-          Upload
-        </Button>
-      </div>
-    </Modal>
-  );
-}
-
 export function Users({ onNavigate, activePath }: UsersProps) {
+  const { hasRole } = useAuth();
   const [users, setUsers] = useState<RealUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -259,6 +206,8 @@ export function Users({ onNavigate, activePath }: UsersProps) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [importOpen, setImportOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [employeeActionsOpen, setEmployeeActionsOpen] = useState(false);
   const { addToast } = useToast();
   const fetchUnregisteredEmployees = useCallback(async () => {
     try {
@@ -393,8 +342,8 @@ export function Users({ onNavigate, activePath }: UsersProps) {
       <Card>
         <div style={{ overflowX: 'auto' }}>
           {loading ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Loading users...
+            <div style={{ padding: '48px', display: 'flex', justifyContent: 'center' }}>
+              <Spinner size={28} />
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -444,11 +393,19 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-ZA') : '—'}
                     </td>
                     <td style={{ padding: '11px 16px' }}>
-                      <Button variant="primary"
-                        onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
-                      >
-                        Manage
-                      </Button>
+                      {hasRole('admin') ? (
+                        <Button variant="primary"
+                          onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
+                        >
+                          Manage
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" style={{ border: '1px solid var(--border)' }}
+                          onClick={() => onNavigate(`/users/${u.id}`)}
+                        >
+                          View
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -479,8 +436,16 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                     <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>
                       {new Date(e.dateImported).toLocaleDateString('en-ZA')}
                     </td>
-                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'Inter, system-ui, sans-serif' }}>
-                      Awaiting sign-up
+                    <td style={{ padding: '11px 16px' }}>
+                      <Button
+                        variant='primary'
+                        onClick={() => {
+                          setSelectedEmployee(e);
+                          setEmployeeActionsOpen(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -494,8 +459,31 @@ export function Users({ onNavigate, activePath }: UsersProps) {
           )}
         </div>
       </Card>
-      <UserActionsModal user={selectedUser} isOpen={actionsOpen} onClose={() => { setActionsOpen(false); void fetchUsers(); }} onNavigate={onNavigate} />
-      <ImportUsersModal isOpen={importOpen} onClose={() => setImportOpen(false)} onImported={() => { void fetchUnregisteredEmployees(); }} />
+      <UserActionsModal
+        user={selectedUser}
+        isOpen={actionsOpen}
+        onClose={() => {
+          setActionsOpen(false);
+          void fetchUsers();
+        }}
+        onNavigate={onNavigate}
+      />
+
+      <ImportUsersModal
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => {void fetchUnregisteredEmployees();}}
+      />
+
+      <EmployeeActionsModal
+        employee={selectedEmployee}
+        isOpen={employeeActionsOpen}
+        onClose={() => {
+          setEmployeeActionsOpen(false);
+          setSelectedEmployee(null);
+        }}
+        onChanged={() => {void fetchUnregisteredEmployees()}}
+      />
     </AppLayout>
   );
 }

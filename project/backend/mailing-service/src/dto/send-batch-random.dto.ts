@@ -8,6 +8,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EmailDifficulty } from '../entities/email-template.entity';
@@ -40,4 +41,17 @@ export class SendBatchRandomDto {
   @IsString()
   @IsNotEmpty()
   waveName: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^[^@\s]+$/)
+  senderCustomName?: string;
+
+  @IsString()
+  @IsOptional()
+  senderAuth0Id?: string;
+
+  @IsString()
+  @IsOptional()
+  alias?: string;
 }

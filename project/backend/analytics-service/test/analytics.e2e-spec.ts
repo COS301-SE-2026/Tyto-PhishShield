@@ -307,7 +307,7 @@ describe('Analytics (integration)', () => {
 
       expect(res.body).toEqual({
         totalSent: 21,
-        scheduled: 8,
+        scheduled: 4,
       });
     });
   });

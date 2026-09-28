@@ -33,11 +33,15 @@ export enum MessageType {
   MEETING_INVITE = 'meeting_invite',
   IT_SUPPORT = 'it_support',
   QUESTION = 'question',
+  DIRECT_REQUEST = 'direct_request',
 }
 
 export enum TemplateVariable {
   NAME = 'name',
   DEPARTMENT = 'department',
+  JOB_TITLE = 'job_title',
+  TITLE = 'title',
+  SURNAME = 'surname',
 }
 
 export enum Department {
