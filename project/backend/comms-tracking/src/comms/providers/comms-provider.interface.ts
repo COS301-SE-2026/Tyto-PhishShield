@@ -8,6 +8,7 @@ export interface NormalizedMessage {
   channelExternalId?: string;
   isReply: boolean;
   parentExternalId?: string;
+  text?: string | null;
   occurredAt: Date;
 }
 

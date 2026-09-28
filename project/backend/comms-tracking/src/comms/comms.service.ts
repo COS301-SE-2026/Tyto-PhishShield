@@ -49,6 +49,7 @@ export class CommsService {
         channelExternalId: msg.channelExternalId,
         isReply: msg.isReply,
         parentExternalId: msg.parentExternalId,
+        text: msg.text ?? null,
         occurredAt: msg.occurredAt,
       }),
     );
@@ -64,6 +65,7 @@ export class CommsService {
         source: msg.source,
         senderAuth0Id: msg.senderAuth0Id,
         receiverAuth0Ids: msg.receiverAuth0Ids,
+        text: msg.text ?? null,
         occurredAt: msg.occurredAt.toISOString(),
       });
     } catch (err) {

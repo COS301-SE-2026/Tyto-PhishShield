@@ -131,6 +131,7 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
       channelExternalId: event.channel,
       isReply,
       parentExternalId: threadTs,
+      text,
       occurredAt: new Date(Number(event.ts.split('.')[0]) * 1000),
     });
   }

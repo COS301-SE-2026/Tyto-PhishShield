@@ -5,6 +5,7 @@ export interface CommunicationRecordedEvent {
   source: string;
   senderAuth0Id: string;
   receiverAuth0Ids: string[];
+  text: string | null;
   occurredAt: string;
 }
 
