@@ -15,6 +15,7 @@ import { ClassificationService } from './classification/classification.service';
 import { ReceivedReplyDto, ReplyValidatedEvent } from '@phishshield/dto';
 import { ReplyGuardService } from './reply-guard/reply-guard.service';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
 
 @Controller('llm')
 export class LlmController {
@@ -64,6 +65,21 @@ export class LlmController {
     void this.llmService.processReceivedReply(body).catch((err) => {
       this.logger.error(
         `Processing reply for email ${body.emailId} failed: ${err}`,
+      );
+    });
+
+    return { accepted: true };
+  }
+
+  @Post('spear_phishing')
+  @HttpCode(HttpStatus.ACCEPTED)
+  handleSpearPhishing(@Body() dto: GenerateSpearPhishingDto): {
+    accepted: true;
+  } {
+    this.llmService.processSpearPhishing(dto).catch((err: Error) => {
+      this.logger.error(
+        `Spear-phishing generation failed: ${err.message}`,
+        err.stack,
       );
     });
 
