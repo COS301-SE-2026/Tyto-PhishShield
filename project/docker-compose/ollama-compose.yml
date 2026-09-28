@@ -7,25 +7,30 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
+    ports:
+      - "11434:11434"
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: '512M'
+          cpus: '2'
+          memory: '4G'
     networks:
       - local-llm
 
-# downloads model
   ollama-pull-model:
     image: ollama/ollama:0.33.3
     container_name: ollama_pull_model
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
     entrypoint: /bin/sh
     command: >
       -c "sleep 5 && ollama pull gemma2:2b"
     depends_on:
       - ollama
+    networks:
+      - local-llm
     
 
 volumes:

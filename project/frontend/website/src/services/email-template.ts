@@ -4,23 +4,31 @@ import { API_BASE,authFetch } from './api';
 
 const EMAIL_BASE = `${API_BASE}/emails`;
 
+export type Department =
+  | 'IT & Security'
+  | 'Finance'
+  | 'Human Resources'
+  | 'Legal & Compliance'
+  | 'Operations'
+  | 'Executive';
+
 export interface EmailTemplate {
     id: string;
     referenceNumber: string;
     sender: string;
-    alias?: string;
     subject: string;
     content: string;
     difficulty: EmailDifficulty;
+    senderDepartment?: Department;
     createdAt: string;
 }
 
 export interface CreateEmailTemplateRequest {
     sender: string;
-    alias?: string;
     subject: string;
     content: string;
     difficulty: EmailDifficulty;
+    senderDepartment?: Department;
 }
 
 export interface DeleteEmailTemplateResponse {

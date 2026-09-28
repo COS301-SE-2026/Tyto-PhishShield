@@ -60,23 +60,30 @@ describe('EmailStatusController', () => {
   });
 
   describe('createStatus', () => {
-    it('should call service.createStatus', async () => {
-      mockEmailStatusService.createStatus.mockResolvedValue(mockEmailStatus);
+    it('should call service.createStatus and return the entity', async () => {
+      mockEmailStatusService.createStatus.mockResolvedValue({
+        entity: mockEmailStatus,
+        isNew: true,
+      });
 
       const result = await controller.createStatus(mockEmailStatus);
+
       expect(mockEmailStatusService.createStatus).toHaveBeenCalledWith(
         mockEmailStatus,
       );
       expect(result).toEqual(mockEmailStatus);
     });
 
-    it('should record click when status is CLICKED', async () => {
+    it('should record click when status is CLICKED and the entry is new', async () => {
       const clickedStatus = {
         ...mockEmailStatus,
         status: EmailStatusEnum.CLICKED,
       };
 
-      mockEmailStatusService.createStatus.mockResolvedValue(clickedStatus);
+      mockEmailStatusService.createStatus.mockResolvedValue({
+        entity: clickedStatus,
+        isNew: true,
+      });
       analyticsService.recordClickFromEmailId.mockResolvedValue(undefined);
 
       await controller.createStatus(clickedStatus);
@@ -86,8 +93,27 @@ describe('EmailStatusController', () => {
       );
     });
 
+    it('should NOT record click when the webhook is a duplicate (isNew false)', async () => {
+      const clickedStatus = {
+        ...mockEmailStatus,
+        status: EmailStatusEnum.CLICKED,
+      };
+
+      mockEmailStatusService.createStatus.mockResolvedValue({
+        entity: clickedStatus,
+        isNew: false,
+      });
+
+      await controller.createStatus(clickedStatus);
+
+      expect(analyticsService.recordClickFromEmailId).not.toHaveBeenCalled();
+    });
+
     it('should NOT record click for non-click statuses', async () => {
-      mockEmailStatusService.createStatus.mockResolvedValue(mockEmailStatus);
+      mockEmailStatusService.createStatus.mockResolvedValue({
+        entity: mockEmailStatus,
+        isNew: true,
+      });
 
       await controller.createStatus(mockEmailStatus);
 

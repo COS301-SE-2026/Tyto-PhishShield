@@ -38,9 +38,9 @@ import {
 } from '@nestjs/swagger';
 import { ProxyService } from '../../proxy/proxy.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { EmailsDto } from '../dto/emails.dto';
-import { SendSingleEmailDto } from '../dto/send-single-email.dto';
-import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
+import { EmailsDto } from '@phishshield/dto';
+import { SendSingleEmailDto } from '@phishshield/dto';
+import { ScheduleSingleEmailDto } from '@phishshield/dto';
 
 class UpdateEmailDto extends PartialType(EmailsDto) {}
 import { RolesGuard } from '../../auth/guards/roles.guard';

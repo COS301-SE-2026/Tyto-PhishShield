@@ -14,11 +14,11 @@ export class EmailStatusController {
 
   @Post('create')
   async createStatus(@Body() body: StatusCreateDto) {
-    const saved = await this.emailStatusService.createStatus(body);
-    if (body.status === EmailStatusEnum.CLICKED) {
+    const { entity, isNew } = await this.emailStatusService.createStatus(body);
+    if (isNew && body.status === EmailStatusEnum.CLICKED) {
       await this.analyticsService.recordClickFromEmailId(body.emailId);
     }
-    return saved;
+    return entity;
   }
 
   @Get(':emailId/get')

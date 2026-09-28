@@ -15,9 +15,11 @@
         "build": "tsc"
     },
     "dependencies": {
+        "class-transformer": "^0.5.1",
         "class-validator": "^0.15.1"
     },
     "devDependencies": {
+        "class-transformer": "^0.5.1",
         "typescript": "^5.0.0"
     }
 }

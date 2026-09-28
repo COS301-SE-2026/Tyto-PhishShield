@@ -3,8 +3,9 @@ import { AppLayout } from "../../components/layout/app-layout";
 import { Button, Card, Input, Select } from '../../components/ui';
 import { useToast } from "../../context/toast-context";
 import type { EmailDifficulty } from "../../services/send-batch-email";
-import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate } from '../../services/email-template';
+import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate, type Department } from '../../services/email-template';
 import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
+import { SenderDomainSelect } from "../../components/email/sender-domain-select";
 
 interface CreateEmailProps {
     onNavigate: (path: string) => void;
@@ -13,7 +14,7 @@ interface CreateEmailProps {
 
 interface EmailForm {
     sender: string;
-    alias: string;
+    senderDepartment: Department | '',
     subject: string;
     content: string;
     difficulty: EmailDifficulty;
@@ -36,11 +37,19 @@ const DIFFICULTY_OPTIONS = [
     },
 ];
 
-const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i; //regex validates email. got it from https://dirask.com/posts/TypeScript-validate-email-with-regex-Dn40Ej.
+const DEPARTMENT_OPTIONS = [
+  { value: '', label: 'No sender department' },
+  { value: 'IT & Security', label: 'IT & Security' },
+  { value: 'Finance', label: 'Finance' },
+  { value: 'Human Resources', label: 'Human Resources' },
+  { value: 'Legal & Compliance', label: 'Legal & Compliance' },
+  { value: 'Operations', label: 'Operations' },
+  { value: 'Executive', label: 'Executive' },
+];
 
 const initialForm: EmailForm = {
-    sender: '',
-    alias: '',
+    sender: 'capstone-five-guys.dns.net.za',
+    senderDepartment: '',
     subject: '',
     content: '',
     difficulty: 'medium',
@@ -97,10 +106,8 @@ export function CreateEmail({
     const validateForm = (): boolean =>{
         const nextErrors: EmailFormErrors = {};
 
-        if (!form.sender.trim()){
-            nextErrors.sender = 'Sender email is required. eg. test@capstone-five-guys.dns.net.za';
-        } else if (!EMAIL_PATTERN.test(form.sender.trim())) {
-            nextErrors.sender = 'Enter a valid sender email address.';
+        if (!form.sender.trim()) {
+            nextErrors.sender = 'Sender domain is required'
         }
 
         if (!form.subject.trim()){
@@ -125,7 +132,7 @@ export function CreateEmail({
         try{
             const request: CreateEmailTemplateRequest = {
                 sender: form.sender.trim(),
-                alias: form.alias.trim() || undefined,
+                senderDepartment: form.senderDepartment || undefined,
                 subject: form.subject.trim(),
                 content: form.content.trim(),
                 difficulty: form.difficulty,
@@ -259,30 +266,21 @@ export function CreateEmail({
                 <div
                     style={{
                     display: 'grid',
-                    gridTemplateColumns:
-                        'repeat(auto-fit, minmax(220px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                     gap: 12,
                     }}
                 >
-                    <Input
-                    label='Sender email'
-                    type="email"
-                    placeholder="eg. test@capstone-five-guys.dns.net.za"
-                    value={form.sender}
-                    onChange={(event) =>
-                        setField('sender', event.target.value)
-                    }
-                    error={errors.sender}
-                    required
+                    <SenderDomainSelect
+                        value={form.sender}
+                        onChange={(value) => setField('sender', value)}
+                        error={errors.sender}
                     />
 
-                    <Input
-                    label="Display name (optional)"
-                    placeholder="Alias"
-                    value={form.alias}
-                    onChange={(event) =>
-                        setField('alias', event.target.value)
-                    }
+                    <Select
+                        label="Sender department (Optional)"
+                        value={form.senderDepartment}
+                        options={DEPARTMENT_OPTIONS}
+                        onChange={(event) => setField('senderDepartment', event.target.value as Department | '')}
                     />
                 </div>
 
@@ -520,10 +518,12 @@ export function CreateEmail({
                     value: createdTemplate.subject,
                     },
                     {
-                    label: 'Sender',
-                    value: createdTemplate.alias
-                        ? `${createdTemplate.alias} <${createdTemplate.sender}>`
-                        : createdTemplate.sender,
+                    label: "Sender domain",
+                    value: `@${createdTemplate.sender}`,
+                    },
+                    {
+                    label: "Sender department",
+                    value: createdTemplate.senderDepartment ?? "None",
                     },
                     {
                     label: 'Difficulty',
