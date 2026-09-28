@@ -1,5 +1,6 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
+import { useAuth } from '../../context/auth-context';
 import { FilePenLine, Sparkles, Send, CalendarClock, LucideIcon } from 'lucide-react'
 
 interface EmailsProps {
@@ -73,6 +74,9 @@ function EmailActionCard({
 }
 
 export function Emails({ onNavigate, activePath }: EmailsProps) {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
+
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Emails"
       subtitle="Create, send, and manage phishing simulation emails"
@@ -100,22 +104,26 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           onClick={() => onNavigate('/emails/generate')}
         />
 
-        <EmailActionCard
-          title='Send Existing Email'
-          description='Select an existing email template and send it to specific users.'
-          buttonLabel='Send Email'
-          icon={Send}
-          onClick={() => onNavigate('/waves/send-email')}
-        />
+        {isAdmin && (
+          <EmailActionCard
+            title='Send Existing Email'
+            description='Select an existing email template and send it to specific users.'
+            buttonLabel='Send Email'
+            icon={Send}
+            onClick={() => onNavigate('/waves/send-email')}
+          />
+        )}
 
-        <EmailActionCard
-          title='Schedule a Phishing Wave'
-          description='Schedule phishing emails for multiple recipients over a selected period.'
-          buttonLabel='Schedule Wave'
-          icon={CalendarClock}
-          onClick={() => onNavigate('/waves/schedule')}
-        />
-      </div>  
+        {isAdmin && (
+          <EmailActionCard
+            title='Schedule a Phishing Wave'
+            description='Schedule phishing emails for multiple recipients over a selected period.'
+            buttonLabel='Schedule Wave'
+            icon={CalendarClock}
+            onClick={() => onNavigate('/waves/schedule')}
+          />
+        )}
+      </div>
     </AppLayout>
   );
 }
