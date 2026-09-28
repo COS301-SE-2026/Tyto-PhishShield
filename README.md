@@ -181,6 +181,19 @@ All project documentation can be found in our
 
 <h2 align="center"> 📁 Documentation Archive<h2>
 <details style="font-size: 14px;">
+<summary>Demo 4 Documentation</summary>
+
+| Documents |
+|-----------|
+| 📋 [Software Requirements Specification (SRS)](docs/SRS/Software_Requirements_Specification.md) |
+| 📐 [Software Architecture Specification (SAS)](docs/SRS/Software-Architecture-Specification.md) |
+| 🧪 [NFR Testing](docs/SRS/Software-Architecture-Specification.md#quality-requirements-based-off-of-nfr) |
+| 📝 [User Manual](https://github.com/COS301-SE-2026/Tyto-PhishShield/wiki/User-Manual) |
+| 🎨 [Landing page](https://capstone-five-guys.dns.net.za/) |
+| 📝 [Help menue](https://capstone-five-guys.dns.net.za/help) |
+
+</details> 
+<details style="font-size: 14px;">
 <summary>Demo 3 Documentation</summary>
 
 | Documents |
