@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, MoreThanOrEqual, DataSource, Not, IsNull } from 'typeorm';
+import {
+  Repository,
+  In,
+  MoreThanOrEqual,
+  DataSource,
+  Not,
+  IsNull,
+} from 'typeorm';
 import { Communication, CommsSource } from './entities/communication.entity';
 import { Connection } from './entities/connection.entity';
 import { CommsUser } from './entities/comms-user.entity';
@@ -228,7 +235,7 @@ export class CommsService {
     const where: Record<string, unknown> = {
       text: Not(IsNull()),
     };
-  
+
     if (options.senderAuth0Id) where.senderAuth0Id = options.senderAuth0Id;
     if (options.source) where.source = options.source;
     if (options.sinceDays && options.sinceDays > 0) {
@@ -236,25 +243,25 @@ export class CommsService {
         new Date(Date.now() - options.sinceDays * 86400000),
       );
     }
-  
+
     // Fetch a buffer when we'll filter in-memory, so the effective
     // result count can still reach `limit`.
     const fetchLimit = options.receiverAuth0Id
       ? options.limit * 3
       : options.limit;
-  
+
     const rows = await this.commRepo.find({
       where,
       order: { occurredAt: 'DESC' },
       take: fetchLimit,
     });
-  
+
     const filtered = options.receiverAuth0Id
       ? rows.filter((r) =>
           r.receiverAuth0Ids.includes(options.receiverAuth0Id!),
         )
       : rows;
-  
+
     return filtered.slice(0, options.limit).map((r) => ({
       id: r.id,
       source: r.source,

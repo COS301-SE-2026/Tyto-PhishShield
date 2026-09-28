@@ -78,7 +78,7 @@ export class CommsController {
     if (receiverAuth0Id) params.set('receiverAuth0Id', receiverAuth0Id);
     if (sinceDays) params.set('sinceDays', sinceDays);
     const qs = params.toString() ? `?${params.toString()}` : '';
-  
+
     return this.proxy.forward({
       url: `${this.commsServiceUrl}/api/comms/messages${qs}`,
       method: 'GET',
