@@ -14,10 +14,12 @@ import { mailingRabbitMQModule } from '../rabbitmq.module';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { UserEntity } from '../entities/user.entity';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
-import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { ConnectionEntity } from '../entities/connection.entity';
+import { SenderResolverController } from '../sender-resolver/sender-resolver.controller';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
       EmailTemplateEntity,
       UserEntity,
       EmployeeInfoEntity,
+      ConnectionEntity,
     ]),
     RabbitMQModule.forRoot({
       uri: process.env.RABBITMQ_URL ?? 'amqp://localhost:5672',
@@ -48,11 +51,6 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
     SenderResolverService,
     TrackingLinkService,
   ],
-  exports: [
-    EmailService,
-    VariableResolverService,
-    SenderResolverService,
-    TrackingLinkService,
-  ],
+  exports: [EmailService, VariableResolverService, TrackingLinkService],
 })
 export class EmailModule {}

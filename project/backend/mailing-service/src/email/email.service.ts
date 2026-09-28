@@ -31,7 +31,7 @@ import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
-import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 import { ReplyEmailKind, SendReplyEmailEvent } from '@phishshield/dto';
 

@@ -21,7 +21,7 @@ import { ResendBatchItemDto } from '../dto/resend-batch-item.dto';
 import { BatchRecipientDto } from '../dto/batch-recipient.dto';
 import { WaveService } from '../wave/wave.service';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
-import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
