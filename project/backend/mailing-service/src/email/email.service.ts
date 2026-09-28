@@ -469,4 +469,65 @@ export class EmailService {
     }
     return headers;
   }
+
+  async scheduleSpearPhishingEmail(
+    recipientAuth0Id: string,
+    senderAuth0Id: string,
+    rawSubject: string,
+    rawContent: string,
+    scheduledAt: Date,
+  ): Promise<void> {
+    try {
+      const recipientContext =
+        await this.loadUserAndEmployeeInfo(recipientAuth0Id);
+      const senderContext = await this.loadUserAndEmployeeInfo(senderAuth0Id);
+
+      const subject = this.variableResolver.substituteSpear(
+        rawSubject,
+        recipientContext,
+        senderContext,
+      );
+
+      const substitutedContent = this.variableResolver.substituteSpear(
+        rawContent,
+        recipientContext,
+        senderContext,
+      );
+
+      const frontOfSender = this.extractLocalPart(senderContext.user.email);
+      const tempSenderChange = this.formatAddress(frontOfSender, 'compnay.xyz');
+
+      const { error } = await this.resend.emails.send({
+        from: tempSenderChange,
+        to: recipientContext.user.email,
+        subject,
+        html: substitutedContent,
+        scheduledAt: scheduledAt.toISOString(),
+      });
+
+      if (error) {
+        throw new InternalServerErrorException(error.message);
+      }
+
+      this.logger.log(
+        `Spear-phishing scheduled for ${scheduledAt.toISOString()}.`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to schedule spear-phishing for ${recipientAuth0Id}`,
+        error,
+      );
+      throw new InternalServerErrorException('Spear-phishing dispatch failed');
+    }
+  }
+
+  // temp
+  private extractLocalPart(email: string): string {
+    const [localPart] = email.split('@');
+    return localPart;
+  }
+  // temp
+  formatAddress(sender: string, domain: string, alias?: string): string {
+    return alias ? `${alias} <${sender}@${domain}>` : `${sender}@${domain}`;
+  }
 }

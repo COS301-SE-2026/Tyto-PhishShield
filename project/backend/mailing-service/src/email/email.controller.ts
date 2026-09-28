@@ -28,7 +28,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
-import { EmailsDto, SendReplyEmailEvent } from '@phishshield/dto';
+import {
+  EmailsDto,
+  SendReplyEmailEvent,
+  SendSpearPhishingEvent,
+} from '@phishshield/dto';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { ScheduleSingleEmailDto } from '@phishshield/dto';
 import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
@@ -134,5 +138,44 @@ export class EmailController {
       message: result.message,
       deliveryId: result.deliveryId,
     });
+  }
+
+  @RabbitSubscribe({
+    exchange: 'llm-event-exchange',
+    routingKey: 'spear-phishing.email',
+    queue: 'mailing-spear-phishing-queue',
+  })
+  async handleSpearPhishingEvent(event: SendSpearPhishingEvent): Promise<void> {
+    this.logger.log(
+      `Received spear-phishing event for recipient ${event.recipientAuth0Id}`,
+    );
+
+    try {
+      const startTime = new Date(event.scheduledFrom).getTime();
+      const endTime = new Date(event.scheduledTo).getTime();
+
+      if (startTime >= endTime) {
+        this.logger.error(
+          'Invalid schedule window: scheduledFrom must be before scheduledTo',
+        );
+        return;
+      }
+
+      const randomTime = startTime + Math.random() * (endTime - startTime);
+      const scheduledAt = new Date(randomTime);
+
+      await this.emailService.scheduleSpearPhishingEmail(
+        event.recipientAuth0Id,
+        event.senderAuth0Id,
+        event.subject,
+        event.content,
+        scheduledAt,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to handle spear-phishing event for recipient ${event.recipientAuth0Id}`,
+        error,
+      );
+    }
   }
 }
