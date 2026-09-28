@@ -5,7 +5,9 @@ import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { API_BASE, authFetch, authApi } from '../../services/api';
 import { fetchLeaderboardXp } from '../leaderboard/leaderboard.service';
-import { fetchEmployees, importEmployeesCsv, type Employee } from '../../services/company';
+import { fetchEmployees, type Employee } from '../../services/company';
+import { ImportUsersModal } from './import-users-modal';
+import { EmployeeActionsModal } from './employee-actions-modal';
 import { connectXpSocket } from '../../services/xp-socket';
 import { ShieldCheck, Check, User, Search, Trash2, Ban, Lock, Upload } from 'lucide-react';
 
@@ -191,310 +193,6 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
   );
 }
 
-function ImportUsersModal({ isOpen, onClose, onImported }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onImported: () => void;
-}) {
-  const { addToast } = useToast();
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [employeeIdColumn, setEmployeeIdColumn] = useState('');
-  const [emailColumn, setEmailColumn] = useState('');
-  const [requiresMapping, setRequiresMapping] = useState(false);
-
-  const resetImport = () => {
-    setFile(null);
-    setCsvHeaders([]);
-    setEmployeeIdColumn('');
-    setEmailColumn('');
-    setRequiresMapping(false);
-  }
-
-  const handleClose = () => {
-    resetImport();
-    onClose();
-  }
-
-  const handleFileChange = async (event:React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] ?? null;
-
-    resetImport();
-    if (!selectedFile) return;
-
-    try {
-      const text = await selectedFile.text();
-      const firstLine = text.split(/\r?\n/, 1)[0]?.trim(); //the regex match a line break across different OSs
-
-      if (!firstLine){
-        throw new Error('The CSV does not contain a header row.');
-      }
-
-      let delimiter = ',';
-
-      if (firstLine.includes('\t')) {
-        delimiter = '\t';
-      } else if (
-        firstLine.includes(';') &&
-        !firstLine.includes(',')
-      ) {
-        delimiter = ';';
-      }
-
-      const headers = firstLine.split(delimiter)
-        .map(header => header.trim().replace(/^"|"$/g, '')) //the regex removes quotes from from start and end of headers
-        .filter(header => header.length > 0);
-
-      if (headers.length === 0) {
-        throw new Error('No CSV columns detected');
-      }
-
-      const hasEmployeeId = headers.includes('employeeId');
-      const hasEmail = headers.includes('email');
-
-      setFile(selectedFile);
-      setCsvHeaders(headers);
-
-      if (hasEmployeeId && hasEmail) {
-        setEmployeeIdColumn('employeeId');
-        setEmailColumn('email');
-        setRequiresMapping(false);
-      } else {
-        setEmployeeIdColumn(hasEmployeeId ? 'employeeId' : '');
-        setEmailColumn(hasEmail ? 'email' : '');
-        setRequiresMapping(true);
-      }
-    }catch (error) {
-      resetImport();
-      addToast({
-        type: 'error',
-        title: 'Could not read CSV',
-        message: error instanceof Error ? error.message : 'Please select a valid CSV file.'
-      });
-    } finally {
-      event.target.value = '';
-    }
-  }
-
-  const handleUpload = async () => {
-    if (!file) return;
-
-    if (requiresMapping && (!employeeIdColumn || !emailColumn)){
-      addToast({
-        type: 'error',
-        title: 'Mapping required',
-        message: 'Please select the employee ID and email columns.'
-      });
-      return;
-    }
-
-    if (requiresMapping && employeeIdColumn === emailColumn){
-      addToast({
-        type: 'error',
-        title: 'invalid mapping',
-        message: 'Employee ID and email must use different columns.'
-      });
-      return;
-    }
-
-    setUploading(true);
-    try {
-      if (requiresMapping) {
-        await importEmployeesCsv(file, {
-          employeeId: employeeIdColumn,
-          email: emailColumn
-        });
-      } else {
-        await importEmployeesCsv(file);
-      }
-
-      addToast({
-        type: 'success',
-        title: 'Import Started',
-        message: 'Employees are being added. Please refresh shortly to see imported users.'
-      });
-
-      resetImport();
-      onImported();
-      onClose();
-    } catch (err) {
-      addToast({ type: 'error', title: 'Import failed', message: err instanceof Error ? err.message : 'Please try again.' });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const mappingComplete = !requiresMapping || (employeeIdColumn !== '' && emailColumn !== '' && employeeIdColumn !== emailColumn);
-
-  const selectStyle: React.CSSProperties = {
-    width: '100%',
-    border: '1.5px solid var(--border)',
-    borderRadius: 8,
-    padding: '9px 12px',
-    fontSize: 12,
-    background: 'var(--bg-input)',
-    color: 'var(--text-primary)',
-    fontFamily: 'Inter, system-ui, sans-serif',
-  }
-
-  return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Import Users" maxWidth={420}>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.5 }}>
-        Upload a CSV of employees to add them to the roster.
-        The CSV must contain an employee ID and email column.
-      </p>
-      <label style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-        border: '1.5px dashed var(--border)', borderRadius: 10, padding: '24px 16px',
-        cursor: 'pointer', background: 'var(--bg-hover)', marginBottom: 16,
-      }}>
-        <Upload size={20} color="var(--text-muted)" aria-hidden="true" />
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
-          {file ? file.name : 'Click to choose a CSV file'}
-        </span>
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          onChange={e => {void handleFileChange(e)}}
-          style={{ display: 'none' }}
-        />
-      </label>
-
-      {file && !requiresMapping && (
-        <div
-          style={{
-            padding: 12,
-            fontSize: 12,
-            borderRadius: 8,
-            background: 'var(--bg-hover)',
-            marginBottom: 16,
-            color: 'var(--text-secondary)',
-            fontFamily: 'Inter, system-ui, sans-serif',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              alignItems: 'center',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-            }}
-          >
-            <Check
-              size={14}
-              color='var(--color-primary)'
-              aria-hidden='true'
-            />
-              Required columns detected
-          </div>
-        </div>
-      )}
-
-      {file && requiresMapping && (
-        <div
-          style={{
-            padding: 12,
-            marginBottom: 16,
-            border: '1px solid var(--border)',
-            borderRadius: 10
-          }}
-        >
-          <div
-            style={{
-              marginBottom: 4,
-              fontSize: 12,
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              fontFamily: 'Inter, system-ui, sans-serif',
-            }}
-          >
-            Map CSV columns
-          </div>
-
-          <p
-            style={{
-              fontSize: 11,
-              color: 'var(--text-muted)',
-              margin: '0 0 12px',
-              lineHeight: 1.5,
-              fontFamily: 'Inter, system-ui, sans-serif',
-            }}
-          >
-            The required column names were not detected automatically.
-            Select which CSV columns contain each value.
-          </p>
-
-          <div style={{ marginBottom: 12}}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                fontWeight: 600,
-                marginBottom: 4,
-                color: 'var(--text-secondary)',
-                fontFamily: 'Inter, system-ui, sans-serif',
-              }}
-            >
-              Employee ID *
-            </label>
-
-            <select
-              value={employeeIdColumn}
-              onChange={e => setEmployeeIdColumn(e.target.value)}
-              style={selectStyle}
-            >
-              <option value="">Select a column</option>
-
-              {csvHeaders.map(header => (
-                <option key={header} value={header}>
-                  {header}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 12}}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                fontWeight: 600,
-                marginBottom: 4,
-                color: 'var(--text-secondary)',
-                fontFamily: 'Inter, system-ui, sans-serif',
-              }}
-            >
-              Email *
-            </label>
-
-            <select
-              value={emailColumn}
-              onChange={e => setEmailColumn(e.target.value)}
-              style={selectStyle}
-            >
-              <option value="">Select a column</option>
-
-              {csvHeaders.map(header => (
-                <option key={header} value={header}>
-                  {header}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 10 }}>
-        <Button variant="ghost" onClick={handleClose}>Cancel</Button>
-        <Button fullWidth loading={uploading} disabled={!file || !mappingComplete} onClick={() => { void handleUpload(); }}>
-          Upload
-        </Button>
-      </div>
-    </Modal>
-  );
-}
-
 export function Users({ onNavigate, activePath }: UsersProps) {
   const [users, setUsers] = useState<RealUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -507,6 +205,8 @@ export function Users({ onNavigate, activePath }: UsersProps) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [importOpen, setImportOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [employeeActionsOpen, setEmployeeActionsOpen] = useState(false);
   const { addToast } = useToast();
   const fetchUnregisteredEmployees = useCallback(async () => {
     try {
@@ -727,8 +427,16 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                     <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>
                       {new Date(e.dateImported).toLocaleDateString('en-ZA')}
                     </td>
-                    <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic', fontFamily: 'Inter, system-ui, sans-serif' }}>
-                      Awaiting sign-up
+                    <td style={{ padding: '11px 16px' }}>
+                      <Button
+                        variant='primary'
+                        onClick={() => {
+                          setSelectedEmployee(e);
+                          setEmployeeActionsOpen(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -742,8 +450,31 @@ export function Users({ onNavigate, activePath }: UsersProps) {
           )}
         </div>
       </Card>
-      <UserActionsModal user={selectedUser} isOpen={actionsOpen} onClose={() => { setActionsOpen(false); void fetchUsers(); }} onNavigate={onNavigate} />
-      <ImportUsersModal isOpen={importOpen} onClose={() => setImportOpen(false)} onImported={() => { void fetchUnregisteredEmployees(); }} />
+      <UserActionsModal
+        user={selectedUser}
+        isOpen={actionsOpen}
+        onClose={() => {
+          setActionsOpen(false);
+          void fetchUsers();
+        }}
+        onNavigate={onNavigate}
+      />
+
+      <ImportUsersModal
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => {void fetchUnregisteredEmployees();}}
+      />
+
+      <EmployeeActionsModal
+        employee={selectedEmployee}
+        isOpen={employeeActionsOpen}
+        onClose={() => {
+          setEmployeeActionsOpen(false);
+          setSelectedEmployee(null);
+        }}
+        onChanged={() => {void fetchUnregisteredEmployees()}}
+      />
     </AppLayout>
   );
 }
