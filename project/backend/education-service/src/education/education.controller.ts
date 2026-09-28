@@ -211,11 +211,11 @@ export class EducationController {
   }
 
   @MessagePattern('education.getFailedCategories')
-  getFailedCategories(auth0Id: string) {
+  async getFailedCategories(auth0Id: string) {
     return {
       auth0Id: auth0Id,
       categoryCounts:
-        this.educationService.getIncorrectQuestionCategoryCount(auth0Id),
+        await this.educationService.getIncorrectQuestionCategoryCount(auth0Id),
     };
   }
 }
