@@ -10,7 +10,7 @@
 import { Controller } from '@nestjs/common';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { AccountsService } from './accounts.service';
-import { EventUser } from '@phishshield/dto';
+import { User } from '../dto/user.dto';
 
 @Controller('accounts')
 export class AccountsController {
@@ -21,7 +21,7 @@ export class AccountsController {
     routingKey: 'user.created',
     queue: 'xp-accounts-queue',
   })
-  async createUser(user: EventUser): Promise<void> {
+  async createUser(user: User): Promise<void> {
     await this.accountsService.createUser(user);
   }
 
@@ -30,7 +30,7 @@ export class AccountsController {
     routingKey: 'user.deleted',
     queue: 'xp-accounts-queue',
   })
-  async delete(user: EventUser): Promise<void> {
+  async delete(user: User): Promise<void> {
     await this.accountsService.deleteUser(user);
   }
 
@@ -39,7 +39,7 @@ export class AccountsController {
     routingKey: 'user.update',
     queue: 'xp-accounts-queue',
   })
-  async update(user: EventUser): Promise<void> {
+  async update(user: User): Promise<void> {
     await this.accountsService.createUser(user);
   }
 }

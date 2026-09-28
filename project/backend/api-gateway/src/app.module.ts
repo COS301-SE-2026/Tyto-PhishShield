@@ -24,6 +24,7 @@ import { WebhookModule } from './webhook/webhook.module';
 import { LlmModule } from './llm/llm.module';
 import { CompanyModule } from './company/company.module';
 import { ProxyModule } from './proxy/proxy.module';
+import { CommsModule } from './comms/comms.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ProxyModule } from './proxy/proxy.module';
     LlmModule,
     CompanyModule,
     ProxyModule,
+    CommsModule,
   ],
   controllers: [AppController],
   providers: [

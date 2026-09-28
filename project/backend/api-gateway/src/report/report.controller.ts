@@ -113,7 +113,8 @@ export class ReportController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'analyst')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a specific report' })
   findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {

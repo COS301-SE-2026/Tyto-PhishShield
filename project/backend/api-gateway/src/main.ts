@@ -16,7 +16,9 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
 
   if (process.env.ENVIRONMENT != 'local') {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
