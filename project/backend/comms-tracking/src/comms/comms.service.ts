@@ -8,18 +8,23 @@ import {
   Not,
   IsNull,
 } from 'typeorm';
+
+
 import { Communication, CommsSource } from './entities/communication.entity';
 import { Connection } from './entities/connection.entity';
 import { CommsUser } from './entities/comms-user.entity';
+//this normalized message is there so that we can record messages from different sources in a uniform way. It is used to record messages from slack, teams, and email.
 import { NormalizedMessage } from './providers/comms-provider.interface';
 import { EventProducerService } from '../events/event-producer.service';
-
+//this is used to record messages to send to mailing for spearfishing. Hear with Darius if this is fine.
 export interface MessageRecord {
   id: string;
   source: string;
   senderAuth0Id: string;
   receiverAuth0Ids: string[];
   text: string | null;
+
+
   isReply: boolean;
   channelExternalId: string | null;
   occurredAt: string;
@@ -28,6 +33,7 @@ export interface MessageRecord {
 @Injectable()
 export class CommsService {
   private readonly logger = new Logger(CommsService.name);
+  // strong connections are used for spearfishing in mailing, check with Darius for these numbers.
   private static readonly STRONG_CONNECTION_THRESHOLDS = [
     2, 5, 10, 25, 50, 100,
   ];
@@ -37,13 +43,15 @@ export class CommsService {
     @InjectRepository(Connection)
     private readonly connRepo: Repository<Connection>,
     @InjectRepository(CommsUser)
+
     private readonly userRepo: Repository<CommsUser>,
     private readonly eventProducer: EventProducerService,
     private readonly dataSource: DataSource,
-  ) {}
 
+  ) {}
+// this method is used to record messages from different sources in a uniform way. It is used to record messages from slack, teams, and email.
   async recordCommunication(msg: NormalizedMessage): Promise<void> {
-    // 1. Idempotency on external message id
+
     const existing = await this.commRepo.findOne({
       where: {
         source: msg.source,
@@ -57,7 +65,6 @@ export class CommsService {
       return;
     }
 
-    // 2. Persist the raw communication
     await this.commRepo.save(
       this.commRepo.create({
         source: msg.source,
@@ -72,18 +79,20 @@ export class CommsService {
       }),
     );
 
-    // 3. Update each directed edge atomically.
+  
     for (const receiver of msg.receiverAuth0Ids) {
       await this.upsertConnection(msg.senderAuth0Id, receiver, msg.occurredAt);
     }
 
-    // 4. Publish for downstream consumers.
     try {
       await this.eventProducer.publishCommunicationRecorded({
         source: msg.source,
         senderAuth0Id: msg.senderAuth0Id,
+
         receiverAuth0Ids: msg.receiverAuth0Ids,
         text: msg.text ?? null,
+
+
         occurredAt: msg.occurredAt.toISOString(),
       });
     } catch (err) {
@@ -91,13 +100,11 @@ export class CommsService {
     }
   }
 
-  /**
-   * Atomic upsert:
-   *   ON CONFLICT DO UPDATE SET message_count = message_count + 1, last_interaction_at = EXCLUDED...
-   * Postgres handles the "two messages arrive at the same time" case for us.
-   */
+
+
   private async upsertConnection(
     senderAuth0Id: string,
+
     receiverAuth0Id: string,
     when: Date,
   ): Promise<void> {
@@ -125,6 +132,8 @@ export class CommsService {
     if (crossed !== undefined) {
       await this.publishStrongConnection(
         senderAuth0Id,
+
+
         receiverAuth0Id,
         newCount,
         crossed,
@@ -132,12 +141,7 @@ export class CommsService {
       );
     }
   }
-
-  /**
-   * Enriches the edge with user records and publishes the event.
-   * Best-effort: failures are logged but never bubble up, so a broken
-   * downstream consumer never blocks message recording.
-   */
+// used for events. Helps determine when a strong connection is made between two users. This is used for spearfishing analysis in mailing. Check with Darius if this is fine.
   private async publishStrongConnection(
     senderAuth0Id: string,
     receiverAuth0Id: string,
@@ -151,6 +155,8 @@ export class CommsService {
       });
       const byId = new Map(users.map((u) => [u.auth0Id, u]));
       const sender = byId.get(senderAuth0Id);
+
+
       const receiver = byId.get(receiverAuth0Id);
 
       await this.eventProducer.publishStrongConnection({
@@ -167,6 +173,8 @@ export class CommsService {
 
       this.logger.log(
         `Published comms.connection.strong (threshold ${threshold}) ` +
+
+
           `${senderAuth0Id} → ${receiverAuth0Id} (weight ${messageCount})`,
       );
     } catch (err) {
@@ -174,8 +182,7 @@ export class CommsService {
     }
   }
 
-  // ────────────── Graph endpoint ──────────────
-
+// this method is used to get the directed communication graph for the dashboard. It is used to get the graph for the last 30 days by default, but can be changed to 7 or 90 days. This is used for spearfishing analysis in mailing. Check with Darius if this is fine.
   async getGraph(periodDays = 30): Promise<{
     nodes: { id: string; label: string; department?: string }[];
     edges: {
@@ -183,6 +190,8 @@ export class CommsService {
       target: string;
       weight: number;
       lastInteractionAt: string;
+
+
     }[];
   }> {
     const since = new Date(Date.now() - periodDays * 86400000);
@@ -192,9 +201,9 @@ export class CommsService {
       order: { lastInteractionAt: 'DESC' },
     });
 
-    // Only include nodes that actually have edges — the frontend can
-    // fetch all users separately if it needs an isolated-node view.
     const auth0Ids = new Set<string>();
+
+
     for (const c of connections) {
       auth0Ids.add(c.senderAuth0Id);
       auth0Ids.add(c.receiverAuth0Id);
@@ -208,26 +217,32 @@ export class CommsService {
 
     const nodes = [...auth0Ids].map((id) => {
       const u = userMap.get(id);
+
       return {
         id,
         label: u?.name ?? u?.email ?? id,
         department: u?.department,
       };
     });
-
+// will be used for graph stuff in frontend, yuppee.
     const edges = connections.map((c) => ({
       source: c.senderAuth0Id,
       target: c.receiverAuth0Id,
       weight: c.messageCount,
+
+
+
       lastInteractionAt: c.lastInteractionAt.toISOString(),
     }));
 
     return { nodes, edges };
   }
-
+// also used for spearfishing analysis, this method is used to get messages from different sources in a uniform way. It is used to get messages from slack, teams, and email.
   async getMessages(options: {
     limit: number;
     senderAuth0Id?: string;
+
+
     receiverAuth0Id?: string;
     source?: CommsSource;
     sinceDays?: number;
@@ -244,8 +259,6 @@ export class CommsService {
       );
     }
 
-    // Fetch a buffer when we'll filter in-memory, so the effective
-    // result count can still reach `limit`.
     const fetchLimit = options.receiverAuth0Id
       ? options.limit * 3
       : options.limit;
@@ -268,6 +281,7 @@ export class CommsService {
       senderAuth0Id: r.senderAuth0Id,
       receiverAuth0Ids: r.receiverAuth0Ids,
       text: r.text ?? null,
+      
       isReply: r.isReply,
       channelExternalId: r.channelExternalId ?? null,
       occurredAt: r.occurredAt.toISOString(),
