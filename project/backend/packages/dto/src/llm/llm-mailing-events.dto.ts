@@ -22,6 +22,14 @@ export enum MistakeCategory {
   NEEDS_REVIEW = 'needs_review', // The llm's evaluation is not confident enough to classify the response.
 }
 
+export class IncorrectCategoryCount {
+  @IsEnum(MistakeCategory, { each: true })
+  category!: MistakeCategory;
+
+  @IsNumber()
+  count!: number;
+}
+
 export class MistakeDetectedEvent {
     @IsString()
     sender!: string;

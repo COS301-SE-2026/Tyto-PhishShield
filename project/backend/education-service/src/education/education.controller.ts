@@ -209,4 +209,13 @@ export class EducationController {
   getHistoryTcp(auth0Id: string) {
     return this.educationService.getMyHistory(auth0Id);
   }
+
+  @MessagePattern('education.getFailedCategories')
+  getFailedCategories(auth0Id: string) {
+    return {
+      auth0Id: auth0Id,
+      categoryCounts:
+        this.educationService.getIncorrectQuestionCategoryCount(auth0Id),
+    };
+  }
 }
