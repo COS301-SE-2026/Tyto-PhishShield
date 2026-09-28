@@ -9,9 +9,15 @@ import { AuthModule } from '../auth/auth.module';
 import { EmailController } from './email/email.controller';
 import { BatchEmailController } from './batch-email/batch-email.controller';
 import { WaveController } from './wave/wave.controller';
+import { SenderResolverController } from './sender-resolver/sender-resolver.controller';
 
 @Module({
   imports: [ProxyModule, AuthModule],
-  controllers: [EmailController, BatchEmailController, WaveController],
+  controllers: [
+    EmailController,
+    BatchEmailController,
+    WaveController,
+    SenderResolverController,
+  ],
 })
 export class MailingModule {}
