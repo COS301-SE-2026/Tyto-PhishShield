@@ -253,6 +253,7 @@ export class SenderResolverService {
     const recommendations: SenderRecommendation[] = scored.map((s) => ({
       auth0Id: s.user.auth0Id,
       email: s.user.email,
+      department: s.user.department,
       score: Math.round(s.score * 10) / 10,
       recommendation: this.toLevel(s.score, highestScore),
       reasons: s.reasons,
