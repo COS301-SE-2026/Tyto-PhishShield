@@ -17,6 +17,8 @@ import {
   ACTIONABLE_MISTAKE_CATEGORIES,
   MistakeCategory,
 } from './types/mistake-category.enum';
+import { IncorrectQuestion } from './entities/incorrect-question.entity';
+import { IncorrectCategoryCount } from '@phishshield/dto';
 //can change this at anytime to get more robust stuff this is for now, but I think more questions
 // would also be appropriate sinc e then we can do more with it.
 const QUESTIONS_PER_ASSIGNMENT = 3;
@@ -31,7 +33,8 @@ export class EducationService {
     private readonly questionRepo: Repository<Question>,
     @InjectRepository(Assignment)
     private readonly assignmentRepo: Repository<Assignment>,
-
+    @InjectRepository(Assignment)
+    private readonly incorrectQRepo: Repository<IncorrectQuestion>,
     private readonly amqpConnection: AmqpConnection,
   ) {}
   //my idea here is that we will be creating assignments which will consist of about 3-4 questions and then an array of answers to get the right answers. Everything will have its own ID and all that jazz as well.
@@ -190,6 +193,13 @@ export class EducationService {
     for (let i = 0; i < questions.length; i++) {
       if (dto.answers[i] === questions[i].correctOptionIndex) {
         correctCount++;
+      } else {
+        const incorrect = this.incorrectQRepo.create({
+          auth0Id,
+          questionId: questions[i].id,
+          category: questions[i].category as MistakeCategory,
+        });
+        await this.incorrectQRepo.save(incorrect);
       }
     }
     //check with the exchange stuff with Darius and Josua before demo 2.
@@ -253,5 +263,36 @@ export class EducationService {
   private randomSubset<T>(arr: T[], size: number): T[] {
     const shuffled = [...arr].sort(() => crypto.randomInt(-1, 2));
     return shuffled.slice(0, Math.min(size, arr.length));
+  }
+
+  async getIncorrectQuestionCategoryCount(auth0Id: string) {
+    const incorrect: IncorrectQuestion[] = await this.incorrectQRepo.find({
+      where: {
+        auth0Id: auth0Id,
+      },
+    });
+
+    const countPerCategory: IncorrectCategoryCount[] = [];
+
+    for (let i = 0; i < incorrect.length; i++) {
+      const element = incorrect[i];
+
+      if (!element.category) {
+        continue;
+      }
+      const index = countPerCategory.findIndex(
+        (item) => item.category === element.category,
+      );
+      if (index === -1) {
+        countPerCategory.push({
+          category: element.category,
+          count: 1,
+        });
+      } else {
+        countPerCategory[index].count++;
+      }
+    }
+
+    return countPerCategory;
   }
 }
