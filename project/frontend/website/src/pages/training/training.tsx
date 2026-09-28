@@ -483,7 +483,7 @@ export function UserTraining({
                                   fontWeight: isSelected? 600 : 400,
                                   borderColor: isSelected ? 'var(--color-primary)' : 'var(--border)',
                                   background: isSelected ? 'var(--color-primary-light)' : 'var(--bg-input)',
-                                  color: isSelected ? 'var(--color-primary)' : 'var(--text-secodary)',
+                                  color: isSelected ? 'var(--color-primary)' : 'var(--text-secondary)',
                                 }}
                                 onClick={() =>
                                   handleSelectAnswer(question.id, optionIndex)
