@@ -9,6 +9,7 @@ export * from './mailing/send-batch-email.dto';
 export * from './mailing/schedule-single-email.dto';
 export * from './mailing/send-batch.dto';
 export * from './mailing/send-single-email.dto';
+export * from './mailing/sender-recommendation.dto';
 export * from './events/event-employee.dto';
 export * from './llm/resend-received-webhook.dto';
 export * from './llm/received-reply.dto';
