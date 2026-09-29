@@ -9,6 +9,7 @@ import {
 interface BatchMailingEventEntry {
   auth0Id: string;
   emailId: string;
+  from?: string;
 }
 
 @Injectable()
@@ -24,7 +25,9 @@ export class MailingEventService {
     routingKey: string,
     emailId: string | undefined,
     recipientAuth0Id: string | undefined,
+    fromAddress: string | undefined,
   ): Promise<void> {
+    this.logger.warn(emailId, recipientAuth0Id);
     if (!emailId || !recipientAuth0Id) {
       this.logger.warn(
         `Mailing event on ${routingKey} missing emailId or auth0Id, skipping`,
@@ -35,6 +38,7 @@ export class MailingEventService {
       emailId,
       recipientAuth0Id,
       this.kindForRoutingKey(routingKey),
+      fromAddress,
     );
   }
 
@@ -45,7 +49,7 @@ export class MailingEventService {
     const kind = this.kindForRoutingKey(routingKey);
     for (const entry of entries) {
       if (entry.emailId) {
-        await this.record(entry.emailId, entry.auth0Id, kind);
+        await this.record(entry.emailId, entry.auth0Id, kind, entry.from);
       }
     }
   }
@@ -77,12 +81,14 @@ export class MailingEventService {
     emailId: string,
     recipientAuth0Id: string,
     kind: SentMessageKind,
+    fromAddress?: string,
   ): Promise<void> {
     try {
       await this.sentMessageRepository.save({
         emailId,
         recipientAuth0Id,
         kind,
+        fromAddress,
       });
     } catch (err) {
       this.logger.warn(`Failed to record sent message ${emailId}: ${err}`);
@@ -94,5 +100,14 @@ export class MailingEventService {
       return SentMessageKind.SPEAR_PHISHING;
     if (routingKey === 'mailing.reply') return SentMessageKind.GENERATED_REPLY;
     return SentMessageKind.TEMPLATE;
+  }
+
+  async findSentMessage(
+    candidateIds: string[],
+  ): Promise<SentSimulationMessageEntity | null> {
+    if (candidateIds.length === 0) return null;
+    return this.sentMessageRepository.findOne({
+      where: candidateIds.map((messageId) => ({ messageId })),
+    });
   }
 }

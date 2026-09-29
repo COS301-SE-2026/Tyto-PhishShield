@@ -7,10 +7,12 @@ interface SingleMailingEventPayload {
   emailId?: string;
   auth0Id?: string;
   recipientAuth0Id?: string;
+  from?: string;
 }
 interface BatchMailingEventEntry {
   auth0Id: string;
   emailId: string;
+  from?: string;
 }
 interface BatchMailingEventPayload {
   entries: BatchMailingEventEntry[];
@@ -52,6 +54,7 @@ export class MailingEventController {
       routingKey,
       payload.emailId,
       payload.recipientAuth0Id ?? payload.auth0Id,
+      payload.from,
     );
   }
 
@@ -59,9 +62,8 @@ export class MailingEventController {
   async confirmMessageId(
     @Body() dto: ConfirmMessageIdDto,
   ): Promise<{ success: boolean }> {
-    this.logger.warn(dto);
     await this.mailingEventService.backfillMessageId(
-      dto.resendEmailId,
+      dto.emailId,
       dto.messageId,
     );
     return { success: true };

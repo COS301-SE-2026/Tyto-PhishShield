@@ -170,6 +170,20 @@ export class LlmService {
       (id): id is string => !!id,
     );
 
+    const sentMessage =
+      await this.mailingEventService.findSentMessage(candidateIds);
+
+    if (!sentMessage) {
+      this.logger.log(
+        `Reply ${dto.emailId} doesn't reference a message we sent, ignoring`,
+      );
+      return;
+    }
+
+    const originalFromAddress = sentMessage.fromAddress ?? dto.to[0];
+
+    const updatedData = { ...dto, to: [originalFromAddress] };
+
     if (!(await this.mailingEventService.isKnownSentMessage(candidateIds))) {
       this.logger.log(
         `Reply ${dto.emailId} doesn't reference a message we sent, ignoring`,
@@ -187,7 +201,7 @@ export class LlmService {
       classification.needsReview || classification.categories.length === 0;
 
     if (hasAttachments || llmFlagged) {
-      await this.publishReviewNeeded(dto, reply, classification, {
+      await this.publishReviewNeeded(updatedData, reply, classification, {
         hasAttachments,
         llmFlagged,
       });
@@ -195,11 +209,11 @@ export class LlmService {
     }
 
     if (!classification.categories.includes(MistakeCategory.VALID_RESPONSE)) {
-      await this.publishMistakeDetected(dto, reply, classification);
+      await this.publishMistakeDetected(updatedData, reply, classification);
       return;
     }
 
-    await this.handleValidReply(dto, reply);
+    await this.handleValidReply(updatedData, reply);
   }
 
   private async publishReviewNeeded(

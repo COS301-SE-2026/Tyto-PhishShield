@@ -74,10 +74,8 @@ export class BatchEmailService {
       alias,
     }));
 
-    const { emailsIds, tokens, recipientEmails } = await this.sendEmails(
-      dispatches,
-      `reference ${referenceNumber}`,
-    );
+    const { emailsIds, tokens, recipientEmails, fromAddresses } =
+      await this.sendEmails(dispatches, `reference ${referenceNumber}`);
 
     await this.publishBatchDispatchEvent(
       this.routingKey(dispatches),
@@ -86,6 +84,7 @@ export class BatchEmailService {
       tokens,
       undefined,
       recipientEmails,
+      fromAddresses,
     );
 
     return {
@@ -267,10 +266,8 @@ export class BatchEmailService {
       randomisedTimes: boolean;
     },
   ): Promise<BatchSendResultDto> {
-    const { emailsIds, tokens, recipientEmails } = await this.sendEmails(
-      dispatches,
-      details,
-    );
+    const { emailsIds, tokens, recipientEmails, fromAddresses } =
+      await this.sendEmails(dispatches, details);
 
     let waveId: string | undefined;
 
@@ -303,6 +300,7 @@ export class BatchEmailService {
       tokens,
       waveId,
       recipientEmails,
+      fromAddresses,
     );
 
     return {
@@ -318,6 +316,7 @@ export class BatchEmailService {
     emailsIds: string[];
     tokens: string[];
     recipientEmails: string[];
+    fromAddresses: string[];
   }> {
     const referenceNumbers = [
       ...new Set(dispatches.map((dispatch) => dispatch.referenceNumber)),
@@ -359,7 +358,7 @@ export class BatchEmailService {
 
     const payload = built.map((item) => item.dto);
     const tokens = built.map((item) => item.token);
-
+    const fromAddresses = built.map((item) => item.dto.from);
     const emailsIds = await this.sendResendBatch(payload);
     const recipientEmails = dispatches.map(
       (dispatch) => recipientMap.get(dispatch.auth0Id)?.email ?? '',
@@ -369,7 +368,7 @@ export class BatchEmailService {
       `Dispatched batch of ${dispatches.length} email(s) for ${details}`,
     );
 
-    return { emailsIds, tokens, recipientEmails };
+    return { emailsIds, tokens, recipientEmails, fromAddresses };
   }
 
   private routingKey(dispatches: BatchRecipientDto[]): string {
@@ -414,6 +413,7 @@ export class BatchEmailService {
     tokens: string[],
     waveId?: string,
     recipientEmails?: string[],
+    fromAddresses?: string[],
   ): Promise<void> {
     const entries = dispatches.map((dispatch, index) => ({
       auth0Id: dispatch.auth0Id,
@@ -423,6 +423,7 @@ export class BatchEmailService {
       token: tokens[index],
       recipient: recipientEmails?.[index] ?? undefined,
       ...(waveId ? { waveId } : {}),
+      from: fromAddresses?.[index] ?? undefined,
     }));
 
     this.logger.log(
