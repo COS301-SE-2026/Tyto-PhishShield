@@ -6,11 +6,11 @@ import { GeneratedTemplatesResponseDto } from './dto/generated-templates-respons
 import { GeneratedTemplateDto } from './dto/generated-template.dto';
 import { randomUUID } from 'node:crypto';
 import { TEMPLATE_SCHEMA } from './prompt-builder/prompts/template-schema.prompts';
+import { SPEAR_TEMPLATE_SCHEMA } from './prompt-builder/prompts/spear-template-schema.prompts';
 import {
   LlmGatewayRequestBody,
   OkLlmGatewayResponse,
 } from './dto/llm-gateway.dto';
-import { ConfigService } from '@nestjs/config';
 import {
   MistakeDetectedEvent,
   ReceivedReplyDto,
@@ -19,6 +19,7 @@ import {
   ReviewNeededEvent,
   ReviewType,
   SendReplyEmailEvent,
+  SendSpearPhishingEvent,
   Severity,
 } from '@phishshield/dto';
 import {
@@ -29,9 +30,14 @@ import { ClassificationService } from './classification/classification.service';
 import { MistakeCategory } from './dto/reply-classification.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ReplyGenerationService } from './reply-generation/reply-generation.service';
+import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
+import { MailingEventService } from '../mailing-event/mailing-event.service';
 
 const TRACKING_LINK_ANCHOR =
   /<a\s[^>]*href=["']\{\{tracking_link\}\}["'][^>]*>[\s\S]*?<\/a>/i;
+
+// Anything that looks like a link: an anchor tag, a URL, or the tracking placeholder.
+const NO_LINK_ALLOWED = /<a\s|https?:\/\/|www\.|tracking_link/i;
 
 interface ClassificationResult {
   needsReview: boolean;
@@ -43,22 +49,16 @@ interface ClassificationResult {
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
-  private readonly llmProvider: string;
 
   constructor(
     private readonly promptBuilderService: PromptBuilderService,
     private readonly llmGatewayService: LlmGatewayService,
-    private readonly config: ConfigService,
     private readonly receivedEmailService: ReceivedEmailService,
     private readonly classificationService: ClassificationService,
     private readonly amqpConnection: AmqpConnection,
     private readonly replyGenerationService: ReplyGenerationService,
-  ) {
-    this.llmProvider = this.config.get<string>(
-      'LLM_PROVIDER',
-      'google-ai-studio/gemini-3.1-flash-lite',
-    );
-  }
+    private readonly mailingEventService: MailingEventService,
+  ) {}
 
   async generateTemplates(
     dto: DifficultyLlmGenerationDto,
@@ -66,7 +66,7 @@ export class LlmService {
     const prompt = this.promptBuilderService.buildSystemPrompt(dto);
 
     const requests = Array.from({ length: dto.count }, () =>
-      this.llmGatewayService.send(this.buildGatewayRequest(prompt)),
+      this.llmGatewayService.sendWithFallback(this.buildGatewayRequest(prompt)),
     );
 
     const responses = await Promise.allSettled(requests);
@@ -99,17 +99,19 @@ export class LlmService {
     };
   }
 
-  private buildGatewayRequest(systemPrompt: string): LlmGatewayRequestBody {
+  private buildGatewayRequest(
+    systemPrompt: string,
+    schema: object = TEMPLATE_SCHEMA,
+  ): Omit<LlmGatewayRequestBody, 'model'> {
     const systemInstructions = `
       ${systemPrompt}
       
       You MUST respond with ONLY a valid JSON object. Do not include markdown formatting, backticks, or conversational text.
       Ensure the JSON structure exactly matches this schema:
-      ${JSON.stringify(TEMPLATE_SCHEMA)}
+      ${JSON.stringify(schema)}
     `.trim();
 
     return {
-      model: this.llmProvider,
       messages: [
         {
           role: 'system',
@@ -129,6 +131,7 @@ export class LlmService {
 
   private parseTemplate(
     response: OkLlmGatewayResponse,
+    requireLink = true,
   ): GeneratedTemplateDto | null {
     const content = response.choices[0]?.message?.content;
     if (!content) return null;
@@ -137,8 +140,9 @@ export class LlmService {
       const parsed = JSON.parse(content) as { subject?: string; body?: string };
       if (!parsed.subject || !parsed.body) return null;
 
-      // Checks if the html link was added.
-      if (!TRACKING_LINK_ANCHOR.test(parsed.body)) return null;
+      if (requireLink && !TRACKING_LINK_ANCHOR.test(parsed.body)) return null;
+
+      if (!requireLink && NO_LINK_ALLOWED.test(parsed.body)) return null;
 
       return { id: randomUUID(), subject: parsed.subject, body: parsed.body };
     } catch {
@@ -159,6 +163,17 @@ export class LlmService {
 
     if (!reply.replyText) {
       this.logger.log(`Reply ${dto.emailId} has no new text, skipping`);
+      return;
+    }
+
+    const candidateIds = [reply.inReplyTo, ...reply.references].filter(
+      (id): id is string => !!id,
+    );
+
+    if (!(await this.mailingEventService.isKnownSentMessage(candidateIds))) {
+      this.logger.log(
+        `Reply ${dto.emailId} doesn't reference a message we sent, ignoring`,
+      );
       return;
     }
 
@@ -359,6 +374,104 @@ export class LlmService {
       );
     } catch (error) {
       this.logger.error(`Failed to publish generated reply event`, error);
+    }
+  }
+
+  async processSpearPhishing(dto: GenerateSpearPhishingDto): Promise<void> {
+    this.logger.log(
+      `Starting spear-phishing generation for recipient ${dto.recipientAuth0Id}`,
+    );
+
+    const safeContext = await this.sanitizeContext(dto.extraContext);
+    this.logger.warn(safeContext);
+    if (dto.extraContext && !safeContext) {
+      this.logger.log(
+        `Proceeding with spear-phishing generation WITHOUT extra context for ${dto.recipientAuth0Id}`,
+      );
+    }
+
+    const systemPrompt = this.promptBuilderService.buildSpearPhishingPrompt(
+      dto,
+      safeContext,
+    );
+
+    const requestBody = this.buildGatewayRequest(
+      systemPrompt,
+      SPEAR_TEMPLATE_SCHEMA,
+    );
+    let generatedTemplate: GeneratedTemplateDto | null = null;
+
+    try {
+      const response =
+        await this.llmGatewayService.sendWithFallback(requestBody);
+      generatedTemplate = this.parseTemplate(response, false);
+    } catch (error) {
+      this.logger.error(
+        `Cloud LLM request failed for spear-phishing generation: ${error}`,
+      );
+      return;
+    }
+
+    if (!generatedTemplate) {
+      this.logger.error(
+        `Failed to parse generated spear-phishing template for recipient ${dto.recipientAuth0Id}. Validation failed.`,
+      );
+      return;
+    }
+
+    this.logger.log(
+      `Spear-phishing template generated successfully. Subject: "${generatedTemplate.subject}"`,
+    );
+
+    const spearPhishingEvent: SendSpearPhishingEvent = {
+      recipientAuth0Id: dto.recipientAuth0Id,
+      senderAuth0Id: dto.senderAuth0Id,
+      subject: generatedTemplate.subject,
+      content: generatedTemplate.body,
+      scheduledFrom: dto.scheduledFrom,
+      scheduledTo: dto.scheduledTo,
+    };
+
+    try {
+      await this.amqpConnection.publish(
+        'llm-event-exchange',
+        'spear-phishing.email',
+        spearPhishingEvent,
+      );
+      this.logger.log(
+        `Published spear-phishing event for recipient ${dto.recipientAuth0Id}`,
+      );
+    } catch (error) {
+      this.logger.error('Failed to publish spear-phishing event', error);
+    }
+  }
+
+  private async sanitizeContext(context?: string): Promise<string | undefined> {
+    if (!context || context.trim() === '') {
+      return undefined;
+    }
+    try {
+      const result = await this.classificationService.classify({
+        replyText: context,
+      });
+
+      const clean =
+        !result.needsReview &&
+        result.categories.every((c) => c === MistakeCategory.VALID_RESPONSE);
+
+      if (!clean) {
+        this.logger.warn(
+          `Spear-phishing context dropped, classifier flagged: ${result.categories.join(', ')}`,
+        );
+        return undefined;
+      }
+
+      return context.trim();
+    } catch (err) {
+      this.logger.warn(
+        `Context classification failed, dropping context to be safe. Error: ${err}`,
+      );
+      return undefined;
     }
   }
 }

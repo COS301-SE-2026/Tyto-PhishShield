@@ -31,7 +31,7 @@ import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
-import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 import { ReplyEmailKind, SendReplyEmailEvent } from '@phishshield/dto';
 
@@ -369,7 +369,7 @@ export class EmailService {
 
   async handleSendReply(event: SendReplyEmailEvent): Promise<void> {
     const recipient = await this.userRepository.findOne({
-      where: { email: event.to },
+      where: { email: event.to.toLowerCase() },
     });
 
     if (!recipient) {
@@ -468,5 +468,63 @@ export class EmailService {
       headers['References'] = event.references.map((r) => `<${r}>`).join(' ');
     }
     return headers;
+  }
+
+  async scheduleSpearPhishingEmail(
+    recipientAuth0Id: string,
+    senderAuth0Id: string,
+    rawSubject: string,
+    rawContent: string,
+    scheduledAt: Date,
+  ): Promise<void> {
+    try {
+      const recipientContext =
+        await this.loadUserAndEmployeeInfo(recipientAuth0Id);
+      const senderContext = await this.loadUserAndEmployeeInfo(senderAuth0Id);
+
+      const subject = this.variableResolver.substituteSpear(
+        rawSubject,
+        recipientContext,
+        senderContext,
+      );
+
+      const substitutedContent = this.variableResolver.substituteSpear(
+        rawContent,
+        recipientContext,
+        senderContext,
+      );
+
+      const sender =
+        await this.senderResolver.resolveSpoofedAddress(senderAuth0Id);
+
+      const { data, error } = await this.resend.emails.send({
+        from: sender,
+        to: recipientContext.user.email,
+        subject,
+        html: substitutedContent,
+        scheduledAt: scheduledAt.toISOString(),
+      });
+
+      if (error) {
+        throw new InternalServerErrorException(error.message);
+      }
+
+      this.logger.log(
+        `Spear-phishing scheduled for ${scheduledAt.toISOString()}.`,
+      );
+
+      await this.publishMailingEvent('mailing.spear_phishing', {
+        emailId: data.id,
+        recipientAuth0Id,
+        senderAuth0Id,
+        scheduledAt: scheduledAt.toISOString(),
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to schedule spear-phishing for ${recipientAuth0Id}`,
+        error,
+      );
+      throw new InternalServerErrorException('Spear-phishing dispatch failed');
+    }
   }
 }

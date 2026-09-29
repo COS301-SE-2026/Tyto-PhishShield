@@ -28,19 +28,27 @@ import {
   Logger,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
-import { EmailsDto, SendReplyEmailEvent } from '@phishshield/dto';
+import {
+  EmailsDto,
+  SendReplyEmailEvent,
+  SendSpearPhishingEvent,
+} from '@phishshield/dto';
 import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { ScheduleSingleEmailDto } from '@phishshield/dto';
 import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
 import { SendSingleEmailDto } from '@phishshield/dto';
 import { DeleteResult } from 'typeorm';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { ScheduleResolverService } from '../shared-services/schedule-resolver.service';
 
 @Controller('emails')
 export class EmailController {
   private readonly logger = new Logger(EmailController.name);
 
-  constructor(private readonly emailService: EmailService) {}
+  constructor(
+    private readonly emailService: EmailService,
+    private readonly scheduleResolver: ScheduleResolverService,
+  ) {}
 
   @RabbitSubscribe({
     exchange: 'llm-event-exchange',
@@ -134,5 +142,42 @@ export class EmailController {
       message: result.message,
       deliveryId: result.deliveryId,
     });
+  }
+
+  @RabbitSubscribe({
+    exchange: 'llm-event-exchange',
+    routingKey: 'spear-phishing.email',
+    queue: 'mailing-spear-phishing-queue',
+  })
+  async handleSpearPhishingEvent(event: SendSpearPhishingEvent): Promise<void> {
+    this.logger.log(
+      `Received spear-phishing event for recipient ${event.recipientAuth0Id}`,
+    );
+
+    try {
+      const decision = this.scheduleResolver.resolve(
+        event.scheduledFrom ? new Date(event.scheduledFrom) : undefined,
+        event.scheduledTo ? new Date(event.scheduledTo) : undefined,
+      );
+
+      if (decision.instant) {
+        this.logger.log(
+          `Schedule window invalid/too close for recipient ${event.recipientAuth0Id}, sending instantly`,
+        );
+      }
+
+      await this.emailService.scheduleSpearPhishingEmail(
+        event.recipientAuth0Id,
+        event.senderAuth0Id,
+        event.subject,
+        event.content,
+        decision.instant ? new Date(Date.now() + 60_000) : decision.scheduledAt,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to handle spear-phishing event for recipient ${event.recipientAuth0Id}`,
+        error,
+      );
+    }
   }
 }
