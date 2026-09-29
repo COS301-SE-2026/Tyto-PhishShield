@@ -1,5 +1,6 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
+import { useAuth } from '../../context/auth-context';
 import { FilePenLine, Sparkles, Send, CalendarClock, ClipboardCheck, Crosshair, type LucideIcon } from 'lucide-react'
 
 interface EmailsProps {
