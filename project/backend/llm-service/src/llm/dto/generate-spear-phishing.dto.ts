@@ -50,4 +50,10 @@ export class GenerateSpearPhishingDto {
   @IsEnum(MistakeCategory)
   @IsOptional()
   strugglesCategory?: MistakeCategory;
+
+  @IsOptional()
+  availableVariables?: {
+    sender: string[];
+    recipient: string[];
+  };
 }

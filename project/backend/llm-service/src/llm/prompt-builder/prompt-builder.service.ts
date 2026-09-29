@@ -19,7 +19,7 @@ import { REDACTION_INSTRUCTIONS } from './prompts/redaction-instructions.prompts
 import { REDACTION_SCHEMA } from './prompts/redaction-schema.prompts';
 import { REPLY_GENERATION_INSTRUCTIONS } from './prompts/reply-generation-instructions.prompts';
 import { REPLY_SCHEMA } from './prompts/reply-schema.prompts';
-import { SPEAR_VARIABLE_INSTRUCTIONS } from './prompts/spear-variable-instructions.prompts';
+import { buildSpearVariableInstructions } from './prompts/spear-variable-instructions.prompts';
 import { SPEAR_REPLY_INSTRUCTIONS } from './prompts/spear-reply-instructions.prompts';
 import { GenerateSpearPhishingDto } from '../dto/generate-spear-phishing.dto';
 import { SPEAR_TYPE_PROMPTS } from './prompts/spear-type.prompts';
@@ -113,7 +113,10 @@ export class PromptBuilderService {
       SPEAR_TYPE_PROMPTS[dto.messageType],
       this.buildSenderDepartmentSection(dto.senderDepartment),
       `The target recipient works in the ${dto.recipientDepartment} department. Tailor the psychological lure specifically to their department's likely duties and stressors.`,
-      SPEAR_VARIABLE_INSTRUCTIONS,
+      buildSpearVariableInstructions(dto.availableVariables, {
+        isManager: dto.isManager,
+        frequentContact: dto.frequentContact,
+      }),
     ];
 
     if (safeContext) {
