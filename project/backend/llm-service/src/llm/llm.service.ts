@@ -31,6 +31,7 @@ import { MistakeCategory } from './dto/reply-classification.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ReplyGenerationService } from './reply-generation/reply-generation.service';
 import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
+import { MailingEventService } from '../mailing-event/mailing-event.service';
 
 const TRACKING_LINK_ANCHOR =
   /<a\s[^>]*href=["']\{\{tracking_link\}\}["'][^>]*>[\s\S]*?<\/a>/i;
@@ -56,6 +57,7 @@ export class LlmService {
     private readonly classificationService: ClassificationService,
     private readonly amqpConnection: AmqpConnection,
     private readonly replyGenerationService: ReplyGenerationService,
+    private readonly mailingEventService: MailingEventService,
   ) {}
 
   async generateTemplates(
@@ -161,6 +163,17 @@ export class LlmService {
 
     if (!reply.replyText) {
       this.logger.log(`Reply ${dto.emailId} has no new text, skipping`);
+      return;
+    }
+
+    const candidateIds = [reply.inReplyTo, ...reply.references].filter(
+      (id): id is string => !!id,
+    );
+
+    if (!(await this.mailingEventService.isKnownSentMessage(candidateIds))) {
+      this.logger.log(
+        `Reply ${dto.emailId} doesn't reference a message we sent, ignoring`,
+      );
       return;
     }
 
@@ -392,7 +405,6 @@ export class LlmService {
       const response =
         await this.llmGatewayService.sendWithFallback(requestBody);
       generatedTemplate = this.parseTemplate(response, false);
-      this.logger.warn(generatedTemplate);
     } catch (error) {
       this.logger.error(
         `Cloud LLM request failed for spear-phishing generation: ${error}`,
