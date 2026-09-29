@@ -283,6 +283,7 @@ export class EmailService {
         scheduledAt: new Date().toISOString(),
         auth0Id,
         token,
+        from: fromString,
       });
 
       return {
@@ -347,6 +348,7 @@ export class EmailService {
         scheduledAt: scheduledAt.toISOString(),
         auth0Id,
         token,
+        from: fromString,
       });
 
       return {
@@ -404,6 +406,13 @@ export class EmailService {
       this.logger.log(
         `Reply sent for ${event.emailId}, new message id ${data?.id}`,
       );
+
+      await this.publishMailingEvent('mailing.reply', {
+        emailId: data.id,
+        recipientAuth0Id: recipient.auth0Id,
+        from: event.from,
+      });
+      this.logger.warn(data.id, recipient.auth0Id, event.from);
     } catch (err) {
       this.logger.error(
         `Failed to send ${event.kind} reply for ${event.emailId}`,
@@ -518,6 +527,7 @@ export class EmailService {
         recipientAuth0Id,
         senderAuth0Id,
         scheduledAt: scheduledAt.toISOString(),
+        from: sender,
       });
     } catch (error) {
       this.logger.error(

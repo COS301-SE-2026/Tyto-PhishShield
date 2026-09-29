@@ -7,10 +7,12 @@ interface SingleMailingEventPayload {
   emailId?: string;
   auth0Id?: string;
   recipientAuth0Id?: string;
+  from?: string;
 }
 interface BatchMailingEventEntry {
   auth0Id: string;
   emailId: string;
+  from?: string;
 }
 interface BatchMailingEventPayload {
   entries: BatchMailingEventEntry[];
@@ -52,6 +54,7 @@ export class MailingEventController {
       routingKey,
       payload.emailId,
       payload.recipientAuth0Id ?? payload.auth0Id,
+      payload.from,
     );
   }
 

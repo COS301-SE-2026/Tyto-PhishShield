@@ -32,4 +32,7 @@ export class SentSimulationMessageEntity {
 
   @CreateDateColumn()
   sentAt: Date;
+
+  @Column({ nullable: true })
+  fromAddress?: string;
 }
