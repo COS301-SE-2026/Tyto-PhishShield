@@ -239,7 +239,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       {/* Departmental risk heatmap */}
       <Card style={{ padding: '20px 22px', marginBottom: 16 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Departmental Risk Heatmap</h2>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Greener is safer, redder needs attention — shaded by detection rate and click rate.</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Greener is safer, redder needs attention: shaded by detection rate and click rate.</p>
         <SectionState loading={loading} isEmpty={departments?.length === 0} emptyLabel="No department activity recorded in this period yet.">
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -279,7 +279,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       {/* Communication network */}
       <Card style={{ padding: '20px 22px', marginBottom: 16 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Communication Network</h2>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Who talks to whom across Slack, Teams, and email — darker nodes are the most active communicators, thicker lines mean more messages exchanged.</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Who talks to whom across Slack, Teams, and email: darker nodes are the most active communicators, thicker lines mean more messages exchanged.</p>
         <SectionState loading={commsLoading} isEmpty={!commsGraph?.nodes.length} emptyLabel="No communication activity tracked in this period yet.">
           {commsGraph && <CommsNetworkGraph graph={commsGraph} />}
         </SectionState>
