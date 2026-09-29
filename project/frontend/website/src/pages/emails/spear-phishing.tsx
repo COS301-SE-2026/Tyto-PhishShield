@@ -62,6 +62,14 @@ const headingStyle: CSSProperties = {
   fontSize: 15, fontWeight: 700, marginBottom: 8,
   color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif',
 };
+const radioLabelStyle: CSSProperties = {
+    display: 'block',
+    fontSize: 12,
+    fontWeight: 600,
+    marginBottom: 4,
+    color: 'var(--text-primary)',
+    fontFamily: 'Inter, system-ui, sans-serif',
+};
 const textStyle: CSSProperties = {
   fontSize: 12, lineHeight: 1.5, color: 'var(--text-secondary)',
   fontFamily: 'Inter, system-ui, sans-serif',
@@ -91,9 +99,9 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
   const [extraContext, setExtraContext] = useState('');
   const [scheduledFrom, setScheduledFrom] = useState('');
   const [scheduledTo, setScheduledTo] = useState('');
+  const [sendImmediately, setSendImmediately] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const recommendationRequest = useRef(0);
 
   const fetchUsers = useCallback(async () => {
@@ -137,7 +145,6 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
     setRecipientId(id);
     setRecipientDepartment(toLlmDepartment(users.find((user) => user.auth0Id === id)?.department) ?? '');
     setDepartmentFilter('');
-    setSubmitted(false);
     setErrors((previous) => ({ ...previous, recipient: undefined }));
     resetRecommendations();
   };
@@ -171,18 +178,29 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
 
   const validate = (): boolean => {
     const next: FormErrors = {};
-    if (!recipientId || !recipientDepartment) next.recipient = 'Select a recipient with a valid department.';
-    if (!sender) next.sender = 'Select a recommended sender.';
-    if (!scheduledFrom || !Number.isFinite(new Date(scheduledFrom).getTime())) {
-      next.scheduledFrom = 'Enter a valid start date and time.';
-    } else if (new Date(scheduledFrom).getTime() <= Date.now()) {
-      next.scheduledFrom = 'Start time must be in the future.';
+
+    if (!recipientId || !recipientDepartment) {
+        next.recipient = 'Select a recipient with a valid department.';
     }
-    if (!scheduledTo || !Number.isFinite(new Date(scheduledTo).getTime())) {
-      next.scheduledTo = 'Enter a valid end date and time.';
-    } else if (scheduledFrom && new Date(scheduledTo).getTime() < new Date(scheduledFrom).getTime()) {
-      next.scheduledTo = 'End time must not be before start time.';
+
+    if (!sender) {
+        next.sender = 'Select a recommended sender.';
     }
+
+    if (!sendImmediately){
+        if (!scheduledFrom || !Number.isFinite(new Date(scheduledFrom).getTime())) {
+            next.scheduledFrom = 'Enter a valid start date and time';
+        } else if (new Date(scheduledFrom).getTime() <= Date.now()) {
+            next.scheduledFrom = 'Start time must be in the future.';
+        }
+
+        if (!scheduledTo || !Number.isFinite(new Date(scheduledTo).getTime())) {
+            next.scheduledTo = 'Enter a valid end date and time';
+        } else if (scheduledFrom && new Date(scheduledTo).getTime() < new Date(scheduledFrom).getTime()) {
+            next.scheduledTo = 'End time must be after start time.'
+        }
+    }
+
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -201,6 +219,7 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
   }
 
   setSubmitting(true);
+
     try {
       const response = await generateSpearPhishing({
         recipientAuth0Id: recipientId,
@@ -209,18 +228,25 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
         senderDepartment,
         messageType,
         extraContext: extraContext.trim() || undefined,
-        scheduledFrom: new Date(scheduledFrom).toISOString(),
-        scheduledTo: new Date(scheduledTo).toISOString(),
+        ...(!sendImmediately && {
+            scheduledFrom: new Date(scheduledFrom).toISOString(),
+            scheduledTo: new Date(scheduledTo).toISOString(),
+        }),
+        isManager: sender.isManager === true,
       });
+
       if (!response.accepted) throw new Error('The backend did not confirm acceptance.');
-      setSubmitted(true);
       addToast({
-        type: 'success', title: 'Generation request accepted',
-        message: 'The request was accepted. Generation and delivery are processed separately.',
+        type: 'success', 
+        title: 'Generation request accepted',
+        message: 'Your spear-phising simulation request has been submitted successfully.',
       });
+
+      onNavigate('/emails')
     } catch (error) {
       addToast({
-        type: 'error', title: 'Request failed',
+        type: 'error', 
+        title: 'Request failed',
         message: error instanceof Error ? error.message : 'Could not submit the generation request.',
       });
     } finally {
@@ -255,7 +281,7 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
                 <input type="radio" name="spear-recipient" checked={recipientId === user.auth0Id} onChange={() => chooseRecipient(user.auth0Id)} disabled={submitting} />
                 <span style={{ minWidth: 0 }}>
                   <strong style={{ fontSize: 13, color: 'var(--text-primary)' }}>{user.name}</strong>
-                  <span style={{ ...textStyle, display: 'block', overflowWrap: 'anywhere' }}>{user.email}{user.department ? ` · ${user.department}` : ''}</span>
+                  <span style={{ ...textStyle, display: 'block', overflowWrap: 'anywhere' }}>{user.email}{user.department ? ` - ${user.department}` : ''}</span>
                 </span>
               </label>
             ))}
@@ -309,11 +335,22 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <strong style={{ fontSize: 13, color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{candidate.email}</strong>
                     <Badge variant={candidate.recommendation === 'high' ? 'success' : candidate.recommendation === 'medium' ? 'warning' : 'neutral'}>
-                      {candidate.recommendation} · {candidate.score}
+                      {candidate.recommendation} - {candidate.score}
                     </Badge>
                   </div>
-                  <p style={{ ...textStyle, marginTop: 4 }}>{DEPARTMENTS.find((item) => item.value === candidate.department)?.label ?? candidate.department}</p>
-                  <p style={{ ...textStyle, marginTop: 6 }}>{candidate.reasons.join(' · ')}</p>
+                    <p style={{ ...textStyle, marginTop:4}}>
+                        {DEPARTMENTS.find((item) => item.value === toLlmDepartment(candidate.department))?.label ?? candidate.department}
+                    </p>
+                    {candidate.isManager && (
+                        <div style={{ marginTop: 8}}>
+                            <Badge variant="success">
+                                Recipient's manager
+                            </Badge>
+                        </div>
+                    )}
+                    <p>
+                        {candidate.reasons.join(' - ')}
+                    </p>
                 </div>
               </label>
             ))}
@@ -344,34 +381,188 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
 
         <Card style={{ padding: 24 }}>
           <h2 style={headingStyle}>4. Scheduling</h2>
-          <p style={{ ...textStyle, marginBottom: 16 }}>Select the time window for the simulation. Times are entered in your local timezone.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-            <div>
-              <label htmlFor="spear-from" style={{ ...headingStyle, display: 'block', fontSize: 12 }}>Start date and time</label>
-              <input id="spear-from" type="datetime-local" value={scheduledFrom} disabled={submitting}
-                onChange={(event) => { setScheduledFrom(event.target.value); setErrors((previous) => ({ ...previous, scheduledFrom: undefined, scheduledTo: undefined })); }}
-                style={{ width: '100%', boxSizing: 'border-box', padding: 10, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-              {errors.scheduledFrom && <p style={errorStyle}>{errors.scheduledFrom}</p>}
-            </div>
-            <div>
-              <label htmlFor="spear-to" style={{ ...headingStyle, display: 'block', fontSize: 12 }}>End date and time</label>
-              <input id="spear-to" type="datetime-local" value={scheduledTo} disabled={submitting}
-                onChange={(event) => { setScheduledTo(event.target.value); setErrors((previous) => ({ ...previous, scheduledTo: undefined })); }}
-                style={{ width: '100%', boxSizing: 'border-box', padding: 10, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-              {errors.scheduledTo && <p style={errorStyle}>{errors.scheduledTo}</p>}
-            </div>
-          </div>
-          <p style={{ ...textStyle, marginTop: 12 }}>The backend receives these dates as UTC ISO timestamps.</p>
-        </Card>
+          <p style={{ ...textStyle, marginBottom: 16 }}>Choose whether to send the simulation immediately or to schedule it.</p>
+          
+          <div
+            style={{
+                ...panelStyle,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+            }}
+          >
+            <label
+                style={{
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                    cursor: 'pointer',
+                }}
+            >
+                <input
+                    type='radio'
+                    name='delivery-mode'
+                    checked={sendImmediately}
+                    onChange={() => {
+                        setSendImmediately(true);
+                        setErrors((previous) => ({
+                            ...previous,
+                            scheduledFrom: undefined,
+                            scheduledTo: undefined,
+                        }));
+                    }}
+                    disabled={submitting}
+                />
+                <span>
+                    <strong style={radioLabelStyle}>
+                        Send Immediately
+                    </strong>
 
-        {submitted && <Card style={{ padding: 20 }}>
-          <Badge variant="success">Request accepted</Badge>
-          <p style={{ ...textStyle, marginTop: 10 }}>The generation request was accepted. Email generation, scheduling and delivery have not been confirmed.</p>
-        </Card>}
+                    <span 
+                        style={{
+                            ...textStyle,
+                            display: 'block'
+                        }}
+                    >
+                        Generate the simulation and send it as soon as generation is complete.
+                    </span>
+                </span>
+            </label>
+
+            <label
+                style={{
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                    cursor: 'pointer',
+                }}
+            >
+                <input
+                    type='radio'
+                    name='delivery-mode'
+                    checked={!sendImmediately}
+                    onChange={() => setSendImmediately(false)}
+                    disabled={submitting}
+                />
+                <span>
+                    <strong style={radioLabelStyle}>
+                        Schedule Delivery
+                    </strong>
+
+                    <span 
+                        style={{
+                            ...textStyle,
+                            display: 'block'
+                        }}
+                    >
+                        Select a time window.
+                    </span>
+                </span>
+            </label>
+          </div>
+
+          {!sendImmediately && (
+            <>
+                <div
+                    style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: 16,
+                    marginTop: 24,
+                    }}
+                >
+                    <div>
+                    <label
+                        htmlFor="spear-from"
+                        style={{
+                        ...headingStyle,
+                        display: 'block',
+                        fontSize: 12,
+                        }}
+                    >
+                        Start date and time
+                    </label>
+
+                    <input
+                        id="spear-from"
+                        type="datetime-local"
+                        value={scheduledFrom}
+                        disabled={submitting}
+                        onChange={(event) => {
+                        setScheduledFrom(event.target.value);
+                        setErrors((previous) => ({
+                            ...previous,
+                            scheduledFrom: undefined,
+                            scheduledTo: undefined,
+                        }));
+                        }}
+                        style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: 12,
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        background: 'var(--bg-input)',
+                        color: 'var(--text-primary)',
+                        }}
+                    />
+
+                    {errors.scheduledFrom && (
+                        <p style={errorStyle}>
+                        {errors.scheduledFrom}
+                        </p>
+                    )}
+                    </div>
+
+                    <div>
+                    <label
+                        htmlFor="spear-to"
+                        style={{
+                        ...headingStyle,
+                        display: 'block',
+                        fontSize: 12,
+                        }}
+                    >
+                        End date and time
+                    </label>
+
+                    <input
+                        id="spear-to"
+                        type="datetime-local"
+                        value={scheduledTo}
+                        disabled={submitting}
+                        onChange={(event) => {
+                        setScheduledTo(event.target.value);
+                        setErrors((previous) => ({
+                            ...previous,
+                            scheduledTo: undefined,
+                        }));
+                        }}
+                        style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: 12,
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        background: 'var(--bg-input)',
+                        color: 'var(--text-primary)',
+                        }}
+                    />
+
+                    {errors.scheduledTo && (
+                        <p style={errorStyle}>
+                        {errors.scheduledTo}
+                        </p>
+                    )}
+                    </div>
+                </div>
+                </>
+          )}
+        </Card>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <Button variant="ghost" disabled={submitting} onClick={() => onNavigate('/emails')}>Cancel</Button>
-          <Button loading={submitting} disabled={submitting || usersLoading || recommendationsLoading || submitted}
+          <Button loading={submitting} disabled={submitting || usersLoading || recommendationsLoading}
             onClick={() => void handleSubmit()}>
             Submit generation request
           </Button>

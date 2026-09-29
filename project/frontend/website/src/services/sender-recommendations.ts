@@ -3,6 +3,7 @@ import { Department } from './llm-template';
 
 const SENDERS_BASE = `${API_BASE}/senders`;
 
+//convert llm departments to mailing-service department
 const MAILING_DEPARTMENTS: Record<Department, string> ={
     'it_&_security': 'IT & Security',
     'finance': 'Finance',
@@ -21,6 +22,7 @@ export interface SenderRecommendation {
     score: number;
     recommendation: RecommendationLevel;
     reasons: string[];
+    isManager: boolean;
 }
 
 export async function getSenderRecommendations(

@@ -10,8 +10,10 @@ export interface GenerateSpearPhishingRequest {
     senderDepartment: Department;
     messageType: MessageType;
     extraContext?: string;
-    scheduledFrom: string;
-    scheduledTo: string;
+    scheduledFrom?: string;
+    scheduledTo?: string;
+    isManager?: boolean;
+    frequentContact?: boolean;
 }
 
 export interface GenerateSpearPhishingResponse {
