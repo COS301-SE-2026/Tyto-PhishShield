@@ -23,6 +23,7 @@ import { EducationController } from '../src/education/education.controller';
 import { EducationService } from '../src/education/education.service';
 import { Question } from '../src/education/entities/question.entity';
 import { Assignment } from '../src/education/entities/assignment.entity';
+import { IncorrectQuestion } from '../src/education/entities/incorrect-question.entity';
 
 const mockQuestionRepo = {
   find: jest.fn(),
@@ -31,6 +32,13 @@ const mockQuestionRepo = {
   save: jest.fn(),
 };
 const mockAssignmentRepo = {
+  find: jest.fn(),
+  findOne: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+};
+
+const mockIncorrectQuestionRepo = {
   find: jest.fn(),
   findOne: jest.fn(),
   create: jest.fn(),
@@ -97,6 +105,10 @@ describe('Education (integration)', () => {
         {
           provide: getRepositoryToken(Assignment),
           useValue: mockAssignmentRepo,
+        },
+        {
+          provide: getRepositoryToken(IncorrectQuestion),
+          useValue: mockIncorrectQuestionRepo,
         },
         { provide: AmqpConnection, useValue: mockAmqpConnection },
       ],
