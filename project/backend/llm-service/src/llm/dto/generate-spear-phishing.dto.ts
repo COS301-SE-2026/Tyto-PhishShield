@@ -7,6 +7,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Department, MessageType } from './difficulty-llm-generation.dto';
+import { MistakeCategory } from '@phishshield/dto';
 
 export class GenerateSpearPhishingDto {
   @IsString()
@@ -45,4 +46,8 @@ export class GenerateSpearPhishingDto {
   @IsBoolean()
   @IsOptional()
   frequentContact?: boolean;
+
+  @IsEnum(MistakeCategory)
+  @IsOptional()
+  strugglesCategory?: MistakeCategory;
 }

@@ -7,6 +7,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { DifficultyLlmGenerationDto } from './dto/difficulty-llm-generation.dto';
 import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
+import { LlmService } from './llm.service';
 
 @ApiTags('LLM')
 @Controller('llm')
@@ -18,6 +19,7 @@ export class LlmController {
   constructor(
     private readonly proxyService: ProxyService,
     private readonly config: ConfigService,
+    private readonly llmService: LlmService,
   ) {
     this.llmServiceUrl = this.config.get<string>(
       'LLM_SERVICE_URL',
@@ -64,11 +66,15 @@ export class LlmController {
       },
     },
   })
-  spearPhishing(@Body() body: GenerateSpearPhishingDto) {
+  async spearPhishing(@Body() body: GenerateSpearPhishingDto) {
+    const strugglesCategory = await this.llmService.resolveStruggleCategory(
+      body.recipientAuth0Id,
+    );
+
     return this.proxyService.forward({
       method: 'POST',
       url: `${this.llmServiceUrl}/api/llm/spear_phishing`,
-      data: body,
+      data: { ...body, strugglesCategory },
     });
   }
 }
