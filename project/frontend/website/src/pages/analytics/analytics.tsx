@@ -281,7 +281,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Communication Network</h2>
         <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Who talks to whom across Slack, Teams, and email: darker nodes are the most active communicators, thicker lines mean more messages exchanged.</p>
         <SectionState loading={commsLoading} isEmpty={!commsGraph?.nodes.length} emptyLabel="No communication activity tracked in this period yet.">
-          {commsGraph && <CommsNetworkGraph graph={commsGraph} />}
+          {commsGraph && <CommsNetworkGraph graph={commsGraph} period={period} />}
         </SectionState>
       </Card>
 
