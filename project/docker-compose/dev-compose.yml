@@ -55,10 +55,6 @@ services:
           cpus: '0.15'
           memory: 64M
 
-    # ports:
-    #   # Left side must be unique
-    #   - "$MAILING_DB_PORT:5432"
-
   mailing_app:
     image: fiveguys301/mailing:latest
     container_name: ${MAILING_APP_CONTAINER}
@@ -77,9 +73,6 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - BUSINESS_NAME=${BUSINESS_NAME}
       - TRACKING_LINK=${TRACKING_LINK}
-
-    # ports:
-    #   - "${MAILING_SERVICE_PORT}:${MAILING_SERVICE_PORT}"
 
     depends_on:
       mailing_db:
@@ -110,8 +103,6 @@ services:
     container_name: ${ACCOUNTS_DB_CONTAINER}
     volumes:
       - accounts_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - '${ACCOUNTS_DB_PORT}:5432'
     deploy:
       resources:
         limits:
@@ -148,15 +139,11 @@ services:
       - RESEND_EMAIL_DELIVERED=${RESEND_EMAIL_DELIVERED}
       - RESEND_EMAIL=${RESEND_EMAIL}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    # ports:
-    #   - '${ACCOUNTS_SERVICE_PORT}:3002'
     depends_on:
       accounts_db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -171,6 +158,9 @@ services:
       - VERSION=latest
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
+      - RESEND_WEBHOOK_SKIP_VERIFY=${RESEND_WEBHOOK_SKIP_VERIFY}
+      - NODE_ENV=${ENVIRONMENT}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
@@ -180,6 +170,7 @@ services:
       - ANALYTICS_SERVICE_URL=http://${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - LLM_SERVICE_URL=http://${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
       - COMPANY_SERVICE_URL=http://${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - COMMS_SERVICE_URL=http://${COMMS_APP_CONTAINER}:${COMMS_SERVICE_PORT}
       - XP_HOST=${XP_APP_CONTAINER}
       - REPORT_HOST=${REPORT_APP_CONTAINER}
       - MAILING_HOST=${MAILING_APP_CONTAINER}
@@ -188,6 +179,7 @@ services:
       - ANALYTICS_HOST=${ANALYTICS_APP_CONTAINER}
       - LLM_HOST=${LLM_APP_CONTAINER}
       - COMPANY_HOST=${COMPANY_APP_CONTAINER}
+      - COMMS_HOST=${COMMS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -196,6 +188,7 @@ services:
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - LLM_TCP_PORT=${LLM_TCP_PORT}
       - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
+      - COMMS_TCP_PORT=${COMMS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
@@ -207,8 +200,6 @@ services:
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=dev
       - LOG_DIR=/var/log/api-gateway
-    # ports:
-    #   - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     deploy:
       resources:
         limits:
@@ -234,8 +225,6 @@ services:
       start_period: 30s
     volumes:
       - report_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - "${REPORT_DB_PORT}:${INTERNAL_DB_PORT}"
     deploy:
       resources:
         limits:
@@ -260,8 +249,6 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE} 
       - REPORT_DB_PORT=${INTERNAL_DB_PORT}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    # ports:
-    #   - "${REPORT_SERVICE_PORT}:${REPORT_SERVICE_PORT}"
     depends_on:
       report_db:
         condition: service_healthy
@@ -291,8 +278,6 @@ services:
       start_period: 30s
     volumes:
       - xp_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - "${XP_DB_PORT}:${INTERNAL_DB_PORT}"
     deploy:
       resources:
         limits:
@@ -315,15 +300,12 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - XP_DB_NAME=${XP_DB_NAME}
       - DB_SYNC=${DB_SYNC}
-    # ports:
-    #   - "${XP_SERVICE_PORT}:${XP_SERVICE_PORT}"
+      - RESEND_API_KEY=${RESEND_API_KEY}
     depends_on:
       xp_db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -346,8 +328,6 @@ services:
       start_period: 30s
     volumes:
       - education_pgdata:/var/lib/postgresql/data
-    # ports:
-    #   - "${EDUCATION_DB_PORT}:${INTERNAL_DB_PORT}"
     deploy:
       resources:
         limits:
@@ -371,8 +351,6 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-    # ports:
-    #   - "${EDUCATION_SERVICE_PORT}:${EDUCATION_SERVICE_PORT}"
     deploy:
       resources:
         limits:
@@ -384,8 +362,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    volumes:
-      - ./src:/app/src
 
   analytics_db:
     image: postgres:15-alpine
@@ -404,9 +380,6 @@ services:
 
     volumes:
       - analytics_pgdata:/var/lib/postgresql/data
-
-    # ports:
-    #   - "${ANALYTICS_DB_PORT}:${INTERNAL_DB_PORT}"
     deploy:
       resources:
         limits:
@@ -431,16 +404,11 @@ services:
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - RABBITMQ_URL=amqp://rabbitmq:5672
 
-    # ports:
-    #   - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
-
     depends_on:
       analytics_db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    volumes:
-      - ./src:/app/src
     deploy:
       resources:
         limits:
@@ -491,6 +459,9 @@ services:
       - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - LOCAL_LLM_URL=http://ollama:11434
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - CLASSIFICATION_MIN_CONFIDENCE=${CLASSIFICATION_MIN_CONFIDENCE}
     deploy:
       resources:
         limits:
@@ -502,8 +473,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    volumes:
-      - ./src:/app/src
     networks:
       - default
       - local-llm
@@ -549,20 +518,67 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${COMPANY_DB_NAME}
       - RABBITMQ_URL=amqp://rabbitmq:5672
-
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: '128M'
-
     depends_on:
       company_db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+  
+  comms_db:
+    image: postgres:15-alpine
+    restart: always
+    container_name: ${COMMS_DB_CONTAINER}
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${COMMS_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d ${COMMS_DB_NAME}"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     volumes:
-      - ./src:/app/src
+      - comms_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+        reservations:
+          cpus: '0.15'
+          memory: 64M
+      
+  comms_app:
+    image: fiveguys301/comms:latest
+    container_name: ${COMMS_APP_CONTAINER}
+    environment:
+      - PORT=${COMMS_SERVICE_PORT}
+      - TCP_PORT=${COMMS_TCP_PORT}
+      - DB_HOST=${COMMS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMMS_DB_NAME}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+    depends_on:
+      comms_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   website:
     image: fiveguys301/website:latest
@@ -633,6 +649,7 @@ volumes:
   analytics_pgdata:
   llm_pgdata:
   company_pgdata:
+  comms_pgdata:
   caddy_data:
   caddy_config:
   caddy_logs:

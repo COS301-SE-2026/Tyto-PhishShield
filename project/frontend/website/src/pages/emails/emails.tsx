@@ -1,7 +1,7 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
-import { FilePenLine, Sparkles, Send, CalendarClock, LucideIcon } from 'lucide-react'
+import { FilePenLine, Sparkles, Send, CalendarClock, ClipboardCheck, type LucideIcon } from 'lucide-react'
 
 interface EmailsProps {
   readonly onNavigate: (path: string) => void;
@@ -114,16 +114,22 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           />
         )}
 
-        {isAdmin && (
-          <EmailActionCard
-            title='Schedule a Phishing Wave'
-            description='Schedule phishing emails for multiple recipients over a selected period.'
-            buttonLabel='Schedule Wave'
-            icon={CalendarClock}
-            onClick={() => onNavigate('/waves/schedule')}
-          />
-        )}
-      </div>
+        <EmailActionCard
+          title='Schedule a Phishing Wave'
+          description='Schedule phishing emails for multiple recipients over a selected period.'
+          buttonLabel='Schedule Wave'
+          icon={CalendarClock}
+          onClick={() => onNavigate('/waves/schedule')}
+        />
+
+        <EmailActionCard
+          title='Needs Review'
+          description='Review employee attachments and replies that were flagged during phishing simulations.'
+          buttonLabel='Review Replies'
+          icon={ClipboardCheck}
+          onClick={() => onNavigate('/emails/needs-review')}
+        />
+      </div>  
     </AppLayout>
   );
 }

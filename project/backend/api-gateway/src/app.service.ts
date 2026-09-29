@@ -56,7 +56,7 @@ export class AppService {
   async contactSales(dto: ContactSalesDto): Promise<{ message: string }> {
     try {
       await this.resend.emails.send({
-        from: 'noreply@capstone-five-guys.dns.net.za',
+        from: 'noreply@example-compnay.xyz',
         to: dto.workEmail,
         replyTo: this.salesEmail,
         subject: `Bringing PhishShield to ${dto.companyName}`,

@@ -6,10 +6,11 @@ import { Assignment } from './entities/assignment.entity';
 import { EducationService } from './education.service';
 import { EducationController } from './education.controller';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { IncorrectQuestion } from './entities/incorrect-question.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Question, Assignment]),
+    TypeOrmModule.forFeature([Question, Assignment, IncorrectQuestion]),
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

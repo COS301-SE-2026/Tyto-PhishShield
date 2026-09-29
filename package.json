@@ -126,13 +126,17 @@
 		"server:update:dev": "node ./project/scripts/send-dev-compose.js",
 		"server:update:prod": "node ./project/scripts/send-prod-compose.js prod-infrastructure.yml",
 		"server:update:llm": "node ./project/scripts/send-prod-compose.js ollama-compose.yml",
+		"server:update:emergancy": "node ./project/scripts/send-emergancy-files.js",
 		"server:update:mailbox": "node ./project/scripts/send-prod-compose.js mailbox-compose.yml",
 		"server:update:caddy": "node ./project/scripts/send-edge-caddy.js",
 		"validate:blue": "node ./project/scripts/validate-prod-compose.js prod-blue.yml",
 		"validate:green": "node ./project/scripts/validate-prod-compose.js prod-green.yml",
 		"validate:infra": "node ./project/scripts/validate-prod-compose.js prod-infrastructure.yml",
 		"deploy:infra": "node ./project/scripts/deploy.js infrastructure",
-		"deploy:production": "node ./project/scripts/deploy.js prod"
+		"deploy:production": "node ./project/scripts/deploy.js prod",
+		"reset:production": "node ./project/scripts/run-emergancy-command.js reset",
+		"reset-half:production": "node ./project/scripts/run-emergancy-command.js reset-half",
+		"restart:production": "node ./project/scripts/run-emergancy-command.js restart"
 	},
 	"devDependencies": {
 		"@nestjs/cli": "^11.0.21",
