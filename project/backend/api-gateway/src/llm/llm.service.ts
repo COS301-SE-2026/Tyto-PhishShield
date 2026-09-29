@@ -61,8 +61,9 @@ export class LlmService {
         return undefined;
       }
 
-      const top = raw.categoryCounts.reduce((best, current) =>
-        current.count > best.count ? current : best,
+      const top = raw.categoryCounts.reduce(
+        (best, current) => (current.count > best.count ? current : best),
+        raw.categoryCounts[0],
       );
 
       return top.count > 0 ? top.category : undefined;
