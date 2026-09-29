@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge, Button, Input, Modal } from '../../components/ui';
+import { Card, Badge, Button, Input, Modal, Spinner } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { API_BASE, authFetch, authApi } from '../../services/api';
@@ -194,6 +194,7 @@ function UserActionsModal({ user, isOpen, onClose, onNavigate }: {
 }
 
 export function Users({ onNavigate, activePath }: UsersProps) {
+  const { hasRole } = useAuth();
   const [users, setUsers] = useState<RealUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -341,8 +342,8 @@ export function Users({ onNavigate, activePath }: UsersProps) {
       <Card>
         <div style={{ overflowX: 'auto' }}>
           {loading ? (
-            <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Loading users...
+            <div style={{ padding: '48px', display: 'flex', justifyContent: 'center' }}>
+              <Spinner size={28} />
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -392,11 +393,19 @@ export function Users({ onNavigate, activePath }: UsersProps) {
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-ZA') : '—'}
                     </td>
                     <td style={{ padding: '11px 16px' }}>
-                      <Button variant="primary"
-                        onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
-                      >
-                        Manage
-                      </Button>
+                      {hasRole('admin') ? (
+                        <Button variant="primary"
+                          onClick={() => { setSelectedUser(u); setActionsOpen(true); }}
+                        >
+                          Manage
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" style={{ border: '1px solid var(--border)' }}
+                          onClick={() => onNavigate(`/users/${u.id}`)}
+                        >
+                          View
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -73,6 +73,9 @@ function EmailActionCard({
 }
 
 export function Emails({ onNavigate, activePath }: EmailsProps) {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
+
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Emails"
       subtitle="Create, send, and manage phishing simulation emails"
@@ -100,13 +103,15 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           onClick={() => onNavigate('/emails/generate')}
         />
 
-        <EmailActionCard
-          title='Send Existing Email'
-          description='Select an existing email template and send it to specific users.'
-          buttonLabel='Send Email'
-          icon={Send}
-          onClick={() => onNavigate('/waves/send-email')}
-        />
+        {isAdmin && (
+          <EmailActionCard
+            title='Send Existing Email'
+            description='Select an existing email template and send it to specific users.'
+            buttonLabel='Send Email'
+            icon={Send}
+            onClick={() => onNavigate('/waves/send-email')}
+          />
+        )}
 
         <EmailActionCard
           title='Schedule a Phishing Wave'

@@ -1,6 +1,6 @@
 import {useEffect, useState, type CSSProperties} from "react";
 import { AppLayout } from "../../components/layout/app-layout";
-import { Badge, Card, Button } from "../../components/ui";
+import { Badge, Card, Button, Spinner } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
 import { getMyAssignment, submitAnswers, getMyEducationHistory, type Assignment, type PendingAssignment, type SubmitAnswerResponse, type AssignmentStatus } from "../../services/education";
 import { useAuth } from "../../context/auth-context";
@@ -427,9 +427,9 @@ export function UserTraining({
 
       {loading ? (
         <Card style={contentCardStyle}>
-          <p style={emptyMessageStyle}>
-            Loading assignments...
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+            <Spinner size={28} />
+          </div>
         </Card>
       ) : (
         <div style={contentListStyle}>

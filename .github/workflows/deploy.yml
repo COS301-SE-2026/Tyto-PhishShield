@@ -35,8 +35,10 @@ jobs:
 
               - image: company
                 dockerfile: ./project/backend/company-service/Dockerfile
-
               
+              - image: comms
+                dockerfile: ./project/backend/comms-tracking/Dockerfile
+     
         steps:
             - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
