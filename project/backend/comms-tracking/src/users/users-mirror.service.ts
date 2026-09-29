@@ -19,7 +19,7 @@ export class UsersMirrorService {
     @InjectRepository(CommsUser)
     private readonly userRepo: Repository<CommsUser>,
   ) {}
-
+// check with Josua for this one, make sure its good.
   async upsertUser(payload: AccountUserPayload): Promise<void> {
     const existing = await this.userRepo.findOne({
       where: { auth0Id: payload.auth0Id },
@@ -44,9 +44,8 @@ export class UsersMirrorService {
       }),
     );
   }
-
+// check with Josua as well.
   async markDeleted(auth0Id: string): Promise<void> {
-    // Soft delete: keep the row so graph history still resolves names.
     await this.userRepo.update({ auth0Id }, { isActive: false });
   }
 }

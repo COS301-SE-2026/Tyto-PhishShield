@@ -6,6 +6,8 @@ import { fetchAnalyticsSummary, fetchTimeSeries, fetchLeaderboard, fetchByDepart
   type Period, type AnalyticsSummary, type TimeSeriesPoint, type LeaderboardEntry, type DepartmentBreakdown, type AtRiskUser, type Campaign, } from './analytics.service';
 import { fetchAllUsers, type AccountUser } from './reports.service';
 import { computePredictedRisk } from './predictive-risk';
+import { fetchCommsGraph, type CommsGraph } from '../../services/comms';
+import { CommsNetworkGraph } from './comms-network';
 
 interface AnalyticsProps { onNavigate: (path: string) => void; activePath: string; }
 
@@ -39,7 +41,7 @@ function SectionSpinner() {
   );
 }
 
-function SectionState({ loading, isEmpty, emptyLabel, children }: {
+export function SectionState({ loading, isEmpty, emptyLabel, children }: {
   readonly loading: boolean;
   readonly isEmpty: boolean;
   readonly emptyLabel: string;
@@ -69,6 +71,26 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [users, setUsers] = useState<AccountUser[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [commsGraph, setCommsGraph] = useState<CommsGraph | null>(null);
+  const [commsLoading, setCommsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadCommsGraph = async (): Promise<void> => {
+      setCommsLoading(true);
+      try {
+        const graph = await fetchCommsGraph(period);
+        if (!cancelled) setCommsGraph(graph);
+      } catch {
+        if (!cancelled) setCommsGraph({ nodes: [], edges: [] });
+      } finally {
+        if (!cancelled) setCommsLoading(false);
+      }
+    };
+
+    void loadCommsGraph();
+    return () => { cancelled = true; };
+  }, [period]);
 
   useEffect(() => {
     let cancelled = false;
@@ -217,7 +239,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
       {/* Departmental risk heatmap */}
       <Card style={{ padding: '20px 22px', marginBottom: 16 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Departmental Risk Heatmap</h2>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Greener is safer, redder needs attention — shaded by detection rate and click rate.</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Greener is safer, redder needs attention: shaded by detection rate and click rate.</p>
         <SectionState loading={loading} isEmpty={departments?.length === 0} emptyLabel="No department activity recorded in this period yet.">
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -251,6 +273,15 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
               </tbody>
             </table>
           </div>
+        </SectionState>
+      </Card>
+
+      {/* Communication network */}
+      <Card style={{ padding: '20px 22px', marginBottom: 16 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Communication Network</h2>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Who talks to whom across Slack, Teams, and email: darker nodes are the most active communicators, thicker lines mean more messages exchanged.</p>
+        <SectionState loading={commsLoading} isEmpty={!commsGraph?.nodes.length} emptyLabel="No communication activity tracked in this period yet.">
+          {commsGraph && <CommsNetworkGraph graph={commsGraph} period={period} />}
         </SectionState>
       </Card>
 
