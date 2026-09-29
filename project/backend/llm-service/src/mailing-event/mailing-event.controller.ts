@@ -59,9 +59,8 @@ export class MailingEventController {
   async confirmMessageId(
     @Body() dto: ConfirmMessageIdDto,
   ): Promise<{ success: boolean }> {
-    this.logger.warn(dto);
     await this.mailingEventService.backfillMessageId(
-      dto.resendEmailId,
+      dto.emailId,
       dto.messageId,
     );
     return { success: true };

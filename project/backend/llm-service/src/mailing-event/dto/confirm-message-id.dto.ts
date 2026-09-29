@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class ConfirmMessageIdDto {
   @IsString()
   @IsNotEmpty()
-  resendEmailId: string;
+  emailId: string;
 
   @IsString()
   @IsNotEmpty()
