@@ -25,6 +25,7 @@ import { GenerateSpearPhishingDto } from '../dto/generate-spear-phishing.dto';
 import { SPEAR_TYPE_PROMPTS } from './prompts/spear-type.prompts';
 import { SPEAR_SUBTLE_INSTRUCTIONS } from './prompts/spear-subtle-instructions.prompts';
 import { SPEAR_MANAGER_INSTRUCTIONS } from './prompts/spear-manager-instructions.prompts';
+import { buildStruggleCategoryInstructions } from './prompts/struggle-category-instructions.promts';
 
 const BUSINESS_NAME_CONTEXT = `{{business_name}} is the recipient's business/organization name. Use it to make the message feel like it's coming from within their own company (If applicable).`;
 
@@ -117,7 +118,13 @@ export class PromptBuilderService {
 
     if (safeContext) {
       promptParts.push(
-        `Background context, for your own understanding only — do not quote, paraphrase, or reference this description directly in the email; use it only to decide what to ask for and how casually to ask it: "${safeContext}"`,
+        `Background context, for your own understanding only, do not quote, paraphrase, or reference this description directly in the email; use it only to decide what to ask for and how casually to ask it: "${safeContext}"`,
+      );
+    }
+
+    if (dto.strugglesCategory) {
+      promptParts.push(
+        buildStruggleCategoryInstructions(dto.strugglesCategory),
       );
     }
 
