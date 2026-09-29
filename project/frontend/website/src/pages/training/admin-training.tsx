@@ -2,11 +2,37 @@ import {useEffect, useState, type CSSProperties} from "react";
 import { AppLayout } from "../../components/layout/app-layout";
 import { Badge, Card, Button, Input, Select, Spinner } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
-import { createQuestion, getAllQuestions, type Question } from "../../services/education";
+import { createQuestion, getAllQuestions, type Question, type EducationCategory } from "../../services/education";
 
 interface AdminTrainingProps {
   onNavigate: (path: string) => void;
   activePath: string;
+}
+
+const EDUCATION_CATEGORIES: {
+    value: EducationCategory;
+    label: string;
+}[] = [
+    {
+        value: 'login_details_leaked',
+        label: 'Login Details Leaked',
+    },
+    {
+        value: 'secrets_leaked',
+        label: 'Secrets Leaked',
+    },
+    {
+        value: 'pii_leaked',
+        label: 'Personal Information Leaked',
+    },
+    {
+        value: 'financial_info_leaked',
+        label: 'Financial Information Leaked',
+    },
+];
+
+function getCategoryLabel(category: EducationCategory | null | undefined): string {
+    return EDUCATION_CATEGORIES.find((item) => item.value === category)?.label ?? 'General';
 }
 
 function getErrorMessage(error: unknown): string {
@@ -22,6 +48,7 @@ export function AdminTraining({
     const [questionText, setQuestionText] = useState('');
     const [options, setOptions] = useState(['', '', '', '']);
     const [correctOptionIndex, setCorrectOptionIndex] = useState(0);
+    const [category, setCategory] = useState<EducationCategory | ''>('');
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -96,6 +123,7 @@ export function AdminTraining({
                 questionText: trimmedQuestion,
                 options: trimmedOptions,
                 correctOptionIndex: newCorrectOptionIndex,
+                ...(category ? {category} : {}),
             });
 
             setQuestions((previous) => [
@@ -105,6 +133,7 @@ export function AdminTraining({
             setQuestionText('');
             setOptions(['','','','']);
             setCorrectOptionIndex(0);
+            setCategory('');
 
             addToast({
                 type: 'success',
@@ -271,6 +300,18 @@ export function AdminTraining({
                                 label: `Option${String.fromCharCode(65 + optionIndex)}`, 
                             }))}
                         />
+                        <Select
+                            label="Question Category"
+                            value={category}
+                            onChange={(event) => setCategory(event.target.value as EducationCategory | '')}
+                            options={[
+                                {
+                                    value: '',
+                                    label: 'General'
+                                },
+                                ...EDUCATION_CATEGORIES,
+                            ]}
+                        />
 
                         <div style={buttonRowStyle}>
                             <Button
@@ -313,10 +354,32 @@ export function AdminTraining({
                                     style={questionStyle}
                                     key={question.id}
                                 >
-                                    <p style={questionsTextStyle}>
-                                        {questionIndex + 1}.{' '}
-                                        {question.questionText}
-                                    </p>
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            gap: 12,
+                                            marginBottom: 12,
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
+                                        <p
+                                            style={{
+                                                ...questionsTextStyle,
+                                                marginBottom: 0,
+                                                flex: 1,
+                                            }}
+                                        >
+                                            {questionIndex + 1}.{' '}
+                                            {question.questionText}
+                                        </p>
+                                        <Badge
+                                            variant={question.category ? 'primary' : 'neutral'}
+                                        >
+                                            {getCategoryLabel(question.category)}
+                                        </Badge>
+                                    </div>
 
                                     {question.options.map(
                                         (option, optionIndex) => (

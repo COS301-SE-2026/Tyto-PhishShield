@@ -20,6 +20,7 @@ import { Settings } from './pages/settings/settings';
 import Leaderboard from './pages/leaderboard/leaderboard';
 import { Help } from './pages/help/help';
 import { LinkClicked } from './pages/link-clicked/link-clicked';
+import { NeedsReview } from './pages/emails/needs-review';
 
 function UserProfileById({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { id } = useParams<{ id: string }>();
@@ -62,6 +63,7 @@ function App() {
       <Route path="/waves/schedule" element={ <ProtectedRoute minRole="admin"><ScheduleWave onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
       <Route path="/emails/generate" element={ <ProtectedRoute minRole="admin"><GenerateEmail onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/emails/create-email" element={ <ProtectedRoute minRole="admin"><CreateEmail onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
+      <Route path="/emails/needs-review" element={ <ProtectedRoute minRole="admin"><NeedsReview onNavigate={handleNavigate} activePath="/emails" /></ProtectedRoute> } />
       <Route path="/waves/send-email" element={ <ProtectedRoute minRole="admin"><SendEmail onNavigate={handleNavigate} activePath="/waves" /></ProtectedRoute> } />
       <Route path="/users" element={ <ProtectedRoute minRole="analyst"><Users onNavigate={handleNavigate} activePath="/users" /></ProtectedRoute> } />
       <Route path="/users/:id" element={ <ProtectedRoute minRole="analyst"><UserProfileById onNavigate={handleNavigate} /></ProtectedRoute> } />

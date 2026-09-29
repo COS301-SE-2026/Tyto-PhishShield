@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { EventProducerService } from './event-producer.service';
 
 @Module({
@@ -11,8 +11,10 @@ import { EventProducerService } from './event-producer.service';
       useFactory: (config: ConfigService) => ({
         uri: config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
         exchanges: [
-          { name: EventProducerService.EVENT_EXCHANGE, type: 'topic' },
+          { name: 'comms-event-exchange', type: 'topic' },
+          { name: 'accounts-event-exchange', type: 'topic' },
         ],
+        enableControllerDiscovery: true,
         connectionInitOptions: { wait: false },
       }),
     }),
