@@ -15,7 +15,6 @@ interface SlackMessageEvent {
   user?: string;
   text?: string;
 
-
   ts: string;
   channel: string;
   thread_ts?: string;
@@ -39,7 +38,6 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
     const botToken = this.config.get<string>('SLACK_BOT_TOKEN');
     const appToken = this.config.get<string>('SLACK_APP_TOKEN');
 
-
     if (!botToken || !appToken) {
       this.logger.warn(
         'SLACK_BOT_TOKEN or SLACK_APP_TOKEN missing — Slack provider disabled',
@@ -49,7 +47,6 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
 
     this.app = new App({
       token: botToken,
-
 
       appToken,
       socketMode: true,
@@ -75,13 +72,11 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
   async onModuleDestroy(): Promise<void> {
     if (this.app) await this.app.stop();
   }
-// Handles a Slack message event, extracting sender, receivers, and other relevant info, then records it via CommsService. Check with slack credentials ot ensure this works.
+  // Handles a Slack message event, extracting sender, receivers, and other relevant info, then records it via CommsService. Check with slack credentials ot ensure this works.
   private async handleMessage(
     event: SlackMessageEvent,
     client: WebClient,
   ): Promise<void> {
-
-
     if (!event.user) return;
     if (event.subtype) return;
     if (event.bot_id) return;
@@ -104,7 +99,6 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
     const threadTs = event.thread_ts;
     const isReply = !!threadTs && threadTs !== event.ts;
     if (isReply && threadTs) {
-
       const parentSlackId = await this.userMapper.getThreadParentAuthor(
         event.channel,
         threadTs,
@@ -128,7 +122,6 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
       externalMessageId: event.ts,
       senderAuth0Id,
 
-
       receiverAuth0Ids,
       channelExternalId: event.channel,
       isReply,
@@ -137,13 +130,11 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
       occurredAt: new Date(Number(event.ts.split('.')[0]) * 1000),
     });
   }
-// Extracts Slack user IDs from a message text, e.g. "<@U12345|username>".
+  // Extracts Slack user IDs from a message text, e.g. "<@U12345|username>".
   private extractMentions(text: string): string[] {
-    const regex = /<@([A-Z0-9]+)(?:\|[^>]+)?>/g;// this regex matches slack mentions in the format <@U12345|username> or <@U12345>
+    const regex = /<@([A-Z0-9]+)(?:\|[^>]+)?>/g; // this regex matches slack mentions in the format <@U12345|username> or <@U12345>
     const ids: string[] = [];
 
-
-    
     let match: RegExpExecArray | null;
     while ((match = regex.exec(text)) !== null) {
       ids.push(match[1]);

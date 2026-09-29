@@ -7,7 +7,6 @@ export interface NormalizedMessage {
   receiverAuth0Ids: string[];
   channelExternalId?: string;
 
-
   isReply: boolean;
   parentExternalId?: string;
   text?: string | null;
