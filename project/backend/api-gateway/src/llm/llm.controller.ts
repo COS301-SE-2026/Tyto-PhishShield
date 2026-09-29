@@ -67,14 +67,18 @@ export class LlmController {
     },
   })
   async spearPhishing(@Body() body: GenerateSpearPhishingDto) {
-    const strugglesCategory = await this.llmService.resolveStruggleCategory(
-      body.recipientAuth0Id,
-    );
+    const [strugglesCategory, availableVariables] = await Promise.all([
+      this.llmService.resolveStruggleCategory(body.recipientAuth0Id),
+      this.llmService.resolveAvailableVariables(
+        body.senderAuth0Id,
+        body.recipientAuth0Id,
+      ),
+    ]);
 
     return this.proxyService.forward({
       method: 'POST',
       url: `${this.llmServiceUrl}/api/llm/spear_phishing`,
-      data: { ...body, strugglesCategory },
+      data: { ...body, strugglesCategory, availableVariables },
     });
   }
 }
