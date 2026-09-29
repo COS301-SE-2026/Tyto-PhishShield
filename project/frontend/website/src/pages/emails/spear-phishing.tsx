@@ -19,6 +19,12 @@ interface FormErrors {
   scheduledTo?: string;
 }
 
+const RECOMMENDATION_VARIANTS = {
+    high: 'success',
+    medium: 'warning',
+    low: 'neutral',
+} as const
+
 const DEPARTMENTS: { value: Department; label: string }[] = [
   { value: 'it_&_security', label: 'IT & Security' },
   { value: 'finance', label: 'Finance' },
@@ -344,7 +350,7 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <strong style={{ fontSize: 13, color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{candidate.email}</strong>
-                    <Badge variant={candidate.recommendation === 'high' ? 'success' : candidate.recommendation === 'medium' ? 'warning' : 'neutral'}>
+                    <Badge variant={RECOMMENDATION_VARIANTS[candidate.recommendation]}>
                       {candidate.recommendation} - {candidate.score}
                     </Badge>
                   </div>

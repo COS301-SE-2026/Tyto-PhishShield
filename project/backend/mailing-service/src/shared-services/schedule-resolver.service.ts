@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomInt } from 'node:crypto';
 
 export interface ScheduleDecision {
   instant: boolean;
@@ -31,8 +32,10 @@ export class ScheduleResolverService {
       if (scheduledTo.getTime() - now.getTime() < this.minLeadMs) {
         return { instant: true };
       }
-      const randomTime =
-        now.getTime() + Math.random() * (scheduledTo.getTime() - now.getTime());
+      const randomTime = randomInt(
+        now.getTime(),
+        scheduledTo.getTime(),
+      );
       return { instant: false, scheduledAt: new Date(randomTime) };
     }
 
@@ -54,7 +57,7 @@ export class ScheduleResolverService {
       return { instant: true };
     }
 
-    const randomTime = fromTime + Math.random() * (toTime - fromTime);
+    const randomTime = randomInt(fromTime, toTime);
 
     return { instant: false, scheduledAt: new Date(randomTime) };
   }
