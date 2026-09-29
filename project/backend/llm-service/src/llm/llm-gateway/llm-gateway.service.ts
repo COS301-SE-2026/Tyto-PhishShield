@@ -37,6 +37,14 @@ export interface LocalLlmRequest {
   temperature?: number;
 }
 
+const DEFAULT_MODEL_CHAIN = [
+  'google-ai-studio/gemini-3.5-flash-lite',
+  'google-ai-studio/gemini-3.1-flash-lite',
+  'google-ai-studio/gemini-3.5-flash',
+  'google-ai-studio/gemini-3.6-flash',
+  'google-ai-studio/gemini-3.7-flash',
+];
+
 @Injectable()
 export class LlmGatewayService {
   private readonly logger = new Logger(LlmGatewayService.name);
@@ -44,12 +52,21 @@ export class LlmGatewayService {
   private readonly llmGatewayKey: string;
   private readonly localLlmUrl: string;
   private readonly ollama: Ollama;
+  private readonly modelChain: string[];
 
   constructor(private readonly config: ConfigService) {
     this.llmGatewayKey = config.getOrThrow<string>('LLM_GATEWAY_KEY');
     this.llmGatewayUrl = config.getOrThrow<string>('LLM_GATEWAY_URL');
     this.localLlmUrl = config.getOrThrow<string>('LOCAL_LLM_URL');
     this.ollama = new Ollama({ host: this.localLlmUrl });
+
+    const rawChain = config.get<string>('LLM_MODEL_CHAIN');
+    this.modelChain = rawChain
+      ? rawChain
+          .split(',')
+          .map((m) => m.trim())
+          .filter(Boolean)
+      : DEFAULT_MODEL_CHAIN;
   }
 
   async send(body: LlmGatewayRequestBody): Promise<OkLlmGatewayResponse> {
@@ -63,14 +80,53 @@ export class LlmGatewayService {
     });
 
     if (!response.ok) {
-      const error = (await response.json()) as ErrorLlmGatewayResponse;
+      const error = (await response
+        .json()
+        .catch(() => null)) as ErrorLlmGatewayResponse | null;
       this.logger.warn(
-        `LLM gateway request failed: ${error.error?.message ?? response.statusText}`,
+        `LLM gateway request failed (model ${body.model}): ${error?.error?.message ?? response.statusText}`,
       );
-      throw error;
+      throw (
+        error ?? new Error(`HTTP ${response.status} ${response.statusText}`)
+      );
     }
 
     return (await response.json()) as OkLlmGatewayResponse;
+  }
+
+  async sendWithFallback(
+    body: Omit<LlmGatewayRequestBody, 'model'>,
+  ): Promise<OkLlmGatewayResponse> {
+    let lastError: unknown;
+
+    for (const [index, model] of this.modelChain.entries()) {
+      const next = this.modelChain[index + 1];
+
+      try {
+        return await this.send({ ...body, model });
+      } catch (error) {
+        lastError = error;
+        const reason = this.describeError(error);
+
+        if (next) {
+          this.logger.warn(
+            `Model ${model} failed (${reason}), falling back to ${next}`,
+          );
+        } else {
+          this.logger.error(
+            `Model ${model} failed (${reason}). No fallback models left, giving up.`,
+          );
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  private describeError(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    const gatewayError = error as ErrorLlmGatewayResponse | undefined;
+    return gatewayError?.error?.message ?? JSON.stringify(error);
   }
 
   async sendLocal(request: LocalLlmRequest): Promise<string> {

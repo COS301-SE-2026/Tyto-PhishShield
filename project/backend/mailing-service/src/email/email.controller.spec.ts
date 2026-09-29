@@ -21,6 +21,7 @@ import { EmailsDto } from '../dto/emails.dto';
 import { EmailDifficulty } from '../entities/email-template.entity';
 import { SendSingleEmailDto } from '../dto/send-single-email.dto';
 import { ScheduleSingleEmailDto } from '../dto/schedule-single-email.dto';
+import { ScheduleResolverService } from '../shared-services/schedule-resolver.service';
 
 jest.mock('../dto/mailing-post-return.dto', () => {
   return {
@@ -76,10 +77,17 @@ describe('EmailController', () => {
     alias: 'IT Support',
   };
 
+  const mockScheduleResolver = {
+    resolve: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmailController],
-      providers: [{ provide: EmailService, useValue: mockEmailService }],
+      providers: [
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: ScheduleResolverService, useValue: mockScheduleResolver }
+      ],
     }).compile();
 
     controller = module.get<EmailController>(EmailController);

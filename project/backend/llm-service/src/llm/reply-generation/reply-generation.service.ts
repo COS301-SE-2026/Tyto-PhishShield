@@ -32,7 +32,6 @@ export interface GeneratedReply {
 export class ReplyGenerationService {
   private readonly logger = new Logger(ReplyGenerationService.name);
   private readonly localModel: string;
-  private readonly cloudModel: string;
 
   constructor(
     private readonly llmGatewayService: LlmGatewayService,
@@ -40,10 +39,6 @@ export class ReplyGenerationService {
     private readonly promptBuilderService: PromptBuilderService,
   ) {
     this.localModel = this.config.get<string>('LOCAL_LLM_MODEL', 'gemma2:2b');
-    this.cloudModel = this.config.get<string>(
-      'LLM_PROVIDER',
-      'google-ai-studio/gemini-3.1-flash-lite',
-    );
   }
 
   async generateSafeReply(params: {
@@ -168,15 +163,14 @@ export class ReplyGenerationService {
 
     let response: OkLlmGatewayResponse;
     try {
-      response = await this.llmGatewayService.send({
-        model: this.cloudModel,
+      response = await this.llmGatewayService.sendWithFallback({
         messages: [
           { role: 'system', content: systemInstructions },
           { role: 'user', content: userContent },
         ],
         temperature: 0.6,
         response_format: { type: 'json_object' },
-      } satisfies LlmGatewayRequestBody);
+      } satisfies Omit<LlmGatewayRequestBody, 'model'>);
     } catch (err) {
       this.logger.warn(`Cloud LLM reply generation request failed: ${err}`);
       return null;

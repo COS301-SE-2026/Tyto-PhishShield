@@ -20,7 +20,7 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { UserEntity } from '../entities/user.entity';
 import { WaveService } from '../wave/wave.service';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
-import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { Department } from '@phishshield/dto';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
