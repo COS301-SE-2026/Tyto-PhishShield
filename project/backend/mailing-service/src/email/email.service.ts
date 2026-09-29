@@ -369,7 +369,7 @@ export class EmailService {
 
   async handleSendReply(event: SendReplyEmailEvent): Promise<void> {
     const recipient = await this.userRepository.findOne({
-      where: { email: event.to },
+      where: { email: event.to.toLowerCase() },
     });
 
     if (!recipient) {
@@ -497,7 +497,7 @@ export class EmailService {
       const sender =
         await this.senderResolver.resolveSpoofedAddress(senderAuth0Id);
 
-      const { error } = await this.resend.emails.send({
+      const { data, error } = await this.resend.emails.send({
         from: sender,
         to: recipientContext.user.email,
         subject,
@@ -512,6 +512,13 @@ export class EmailService {
       this.logger.log(
         `Spear-phishing scheduled for ${scheduledAt.toISOString()}.`,
       );
+
+      await this.publishMailingEvent('mailing.spear_phishing', {
+        emailId: data.id,
+        recipientAuth0Id,
+        senderAuth0Id,
+        scheduledAt: scheduledAt.toISOString(),
+      });
     } catch (error) {
       this.logger.error(
         `Failed to schedule spear-phishing for ${recipientAuth0Id}`,
