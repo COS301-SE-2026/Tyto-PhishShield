@@ -11,6 +11,7 @@ import { ConnectionEntity } from '../entities/connection.entity';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 import { RecommendationLevel, SenderRecommendation } from '@phishshield/dto';
 import { ConfigService } from '@nestjs/config';
+import { randomInt } from 'node:crypto';
 
 interface ConnectionSummary {
   messageCount: number;
@@ -120,8 +121,9 @@ export class SenderResolverService {
       total = total + weights[i];
     }
 
+    const RANDOM_PRECISION = 1_000_000;
     // choose a random number between 0 and total.
-    const chosenNumber = Math.random() * total;
+    const chosenNumber = (randomInt(RANDOM_PRECISION) / RANDOM_PRECISION) * total;
 
     let runningTotal = 0;
     for (let i = 0; i < users.length; i++) {
