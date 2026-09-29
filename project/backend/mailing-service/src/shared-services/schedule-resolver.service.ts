@@ -32,10 +32,7 @@ export class ScheduleResolverService {
       if (scheduledTo.getTime() - now.getTime() < this.minLeadMs) {
         return { instant: true };
       }
-      const randomTime = randomInt(
-        now.getTime(),
-        scheduledTo.getTime(),
-      );
+      const randomTime = randomInt(now.getTime(), scheduledTo.getTime());
       return { instant: false, scheduledAt: new Date(randomTime) };
     }
 

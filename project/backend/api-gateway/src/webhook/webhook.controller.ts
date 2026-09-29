@@ -91,10 +91,7 @@ export class WebhookController {
     });
   }
 
-  private backFillSentMessageId(
-    emailId: string,
-    messageId: string,
-  ): void {
+  private backFillSentMessageId(emailId: string, messageId: string): void {
     this.proxy
       .forward({
         url: `${this.llmServiceUrl}/api/mailing-event/confirm-message-id`,

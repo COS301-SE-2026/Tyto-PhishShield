@@ -31,7 +31,7 @@ import { EmailsDto } from '../dto/emails.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Department, UserEntity } from '../entities/user.entity';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
-import { SenderResolverService } from '../shared-services/sender-resolver.service';
+import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 

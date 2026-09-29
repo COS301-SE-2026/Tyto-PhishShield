@@ -123,7 +123,8 @@ export class SenderResolverService {
 
     const RANDOM_PRECISION = 1_000_000;
     // choose a random number between 0 and total.
-    const chosenNumber = (randomInt(RANDOM_PRECISION) / RANDOM_PRECISION) * total;
+    const chosenNumber =
+      (randomInt(RANDOM_PRECISION) / RANDOM_PRECISION) * total;
 
     let runningTotal = 0;
     for (let i = 0; i < users.length; i++) {
