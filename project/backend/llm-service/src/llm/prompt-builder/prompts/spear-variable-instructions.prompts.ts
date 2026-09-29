@@ -60,7 +60,7 @@ export function buildSpearVariableInstructions(
   );
   if (has(senderKeys, 'job_title')) {
     senderLines.push(
-      `- {{job_title_sender}}: The sender's job title. A body detail that lends the request legitimacy, not a sign-off line. A colleague emailing someone they already have a working relationship with doesn't sign off with a title block; that formality undercuts the familiarity the rest of the email is relying on.`,
+      `- {{job_title_sender}}: The sender's job title. A body detail that lends the request legitimacy, not a sign-off line. A colleague emailing someone they already have a working relationship with doesn't sign off with a title block; that formality undercuts the familiarity the rest of the email is relying on. Use very sparingly, meaning only if it helps the email sound natural. And keep in mind that the use of this variable can come off as rude in some cases.`,
     );
   }
 
