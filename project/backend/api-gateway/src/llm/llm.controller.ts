@@ -58,6 +58,8 @@ export class LlmController {
           extraContext: '',
           scheduledFrom: '2026-05-25T14:30:00.000Z',
           scheduledTo: '2026-05-25T14:30:00.000Z',
+          isManager: true,
+          frequentContact: true,
         },
       },
     },
