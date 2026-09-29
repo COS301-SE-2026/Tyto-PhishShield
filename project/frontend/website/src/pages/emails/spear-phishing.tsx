@@ -278,7 +278,14 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
               <p style={textStyle}>No active users found.</p>
             ) : filteredUsers.map((user) => (
               <label key={user.auth0Id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 10, cursor: 'pointer', borderBottom: '1px solid var(--border)' }}>
-                <input type="radio" name="spear-recipient" checked={recipientId === user.auth0Id} onChange={() => chooseRecipient(user.auth0Id)} disabled={submitting} />
+                <input 
+                    type="radio" 
+                    name="spear-recipient"
+                    aria-label= {`Select recipient ${user.name}`}
+                    checked={recipientId === user.auth0Id} 
+                    onChange={() => chooseRecipient(user.auth0Id)} 
+                    disabled={submitting}
+                />
                 <span style={{ minWidth: 0 }}>
                   <strong style={{ fontSize: 13, color: 'var(--text-primary)' }}>{user.name}</strong>
                   <span style={{ ...textStyle, display: 'block', overflowWrap: 'anywhere' }}>{user.email}{user.department ? ` - ${user.department}` : ''}</span>
@@ -327,7 +334,10 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
             {recommendations.map((candidate) => (
               <label key={candidate.auth0Id} style={{ ...panelStyle, display: 'flex', gap: 12, cursor: 'pointer', borderColor: senderId === candidate.auth0Id ? 'var(--color-primary)' : 'var(--border)' }}>
                 <input
-                  type="radio" name="spear-sender" checked={senderId === candidate.auth0Id}
+                  type="radio" 
+                  name="spear-sender"
+                  aria-label={`Select sender ${candidate.email}`}
+                  checked={senderId === candidate.auth0Id}
                   onChange={() => { setSenderId(candidate.auth0Id); setErrors((previous) => ({ ...previous, sender: undefined })); }}
                   disabled={submitting}
                 />
@@ -402,6 +412,7 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
                 <input
                     type='radio'
                     name='delivery-mode'
+                    aria-label='Send Immediately'
                     checked={sendImmediately}
                     onChange={() => {
                         setSendImmediately(true);
@@ -440,6 +451,7 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
                 <input
                     type='radio'
                     name='delivery-mode'
+                    aria-label='Schedule Delivery'
                     checked={!sendImmediately}
                     onChange={() => setSendImmediately(false)}
                     disabled={submitting}
