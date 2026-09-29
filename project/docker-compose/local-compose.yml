@@ -93,6 +93,8 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - BUSINESS_NAME=${BUSINESS_NAME}
       - TRACKING_LINK=${TRACKING_LINK}
+      - BUSINESS_SENDING_DOMAIN=${BUSINESS_SENDING_DOMAIN}
+      - SCHEDULE_MIN_LEAD_MINUTES=${SCHEDULE_MIN_LEAD_MINUTES}
 
     ports:
       # Left side must be unique
