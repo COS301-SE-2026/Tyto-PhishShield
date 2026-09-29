@@ -25,6 +25,13 @@ interface ScoredCandidate {
   isManager: boolean;
 }
 
+export type AvailableVariableKey = 'name' | 'surname' | 'job_title' | 'title';
+
+export interface AvailableVariables {
+  sender: AvailableVariableKey[];
+  recipient: AvailableVariableKey[];
+}
+
 @Injectable()
 export class SenderResolverService {
   constructor(
@@ -289,5 +296,46 @@ export class SenderResolverService {
     if (ratio > 0.66) return 'high';
     if (ratio > 0.33) return 'medium';
     return 'low';
+  }
+
+  async getAvailableVariables(
+    senderAuth0Id: string,
+    recipientAuth0Id: string,
+  ): Promise<AvailableVariables> {
+    const [sender, recipient] = await Promise.all([
+      this.loadUserAndEmployeeInfo(senderAuth0Id),
+      this.loadUserAndEmployeeInfo(recipientAuth0Id),
+    ]);
+
+    return {
+      sender: this.presentVariables(sender.user, sender.employeeInfo),
+      recipient: this.presentVariables(recipient.user, recipient.employeeInfo),
+    };
+  }
+
+  private async loadUserAndEmployeeInfo(
+    auth0Id: string,
+  ): Promise<{ user: UserEntity; employeeInfo?: EmployeeInfoEntity }> {
+    const user = await this.userRepository.findOne({ where: { auth0Id } });
+    if (!user) {
+      throw new NotFoundException(`Could not find user with id: ${auth0Id}`);
+    }
+    const employeeInfo = await this.employeeInfoRepository.findOne({
+      where: { auth0Id },
+    });
+    return { user, employeeInfo: employeeInfo ?? undefined };
+  }
+
+  private presentVariables(
+    user: UserEntity,
+    employeeInfo?: EmployeeInfoEntity,
+  ): AvailableVariableKey[] {
+    const available: AvailableVariableKey[] = [];
+    if (user.firstName) available.push('name');
+    if (user.lastName) available.push('surname');
+    if (employeeInfo && employeeInfo.jobTitle) available.push('job_title');
+    if (employeeInfo && employeeInfo.title) available.push('title');
+
+    return available;
   }
 }
