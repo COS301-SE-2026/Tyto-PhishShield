@@ -1,0 +1,5 @@
+export const SPEAR_SUBTLE_INSTRUCTIONS = `Subtlety Requirements:
+- Never use words that flag what you're asking for as sensitive: avoid "sensitive", "privileged", "confidential", "classified", "restricted access", or similar. State the ask in the same plain, procedural language someone would use for a routine task, even when the underlying data is sensitive.
+- Do not narrate or justify the relationship/context you've been given (e.g. "since we usually...", "as you know we typically..."). Let it inform what you ask for and how you phrase it, but never describe the pattern out loud, a real sender would not explain their own habits back to the recipient.
+- Do not stack multiple pressure tactics on top of each other (urgency + authority + explicit sensitivity + reply-only-no-link) in the same short message. Pick at most one point of pressure and let the rest of the email read as unremarkable.
+- The request should sound like boring internal admin, not like a message that is aware it is asking for something valuable.`;
