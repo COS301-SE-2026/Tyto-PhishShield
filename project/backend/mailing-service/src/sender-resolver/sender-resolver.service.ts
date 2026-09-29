@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { ConnectionEntity } from '../entities/connection.entity';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 import { RecommendationLevel, SenderRecommendation } from '@phishshield/dto';
+import { ConfigService } from '@nestjs/config';
 
 interface ConnectionSummary {
   messageCount: number;
@@ -21,6 +22,7 @@ interface ScoredCandidate {
   user: UserEntity;
   score: number;
   reasons: string[];
+  isManager: boolean;
 }
 
 @Injectable()
@@ -32,7 +34,26 @@ export class SenderResolverService {
     private readonly connectionRepository: Repository<ConnectionEntity>,
     @InjectRepository(EmployeeInfoEntity)
     private readonly employeeInfoRepository: Repository<EmployeeInfoEntity>,
+    private readonly config: ConfigService,
   ) {}
+
+  async resolveSpoofedAddress(
+    auth0Id: string,
+    alias?: string,
+  ): Promise<string> {
+    const user = await this.userRepository.findOne({ where: { auth0Id } });
+    if (!user) {
+      throw new NotFoundException(`Could not find user with id: ${auth0Id}`);
+    }
+    const businessDomain = this.config.getOrThrow<string>(
+      'BUSINESS_SENDING_DOMAIN',
+    );
+    return this.formatAddress(
+      this.extractLocalPart(user.email),
+      businessDomain,
+      alias,
+    );
+  }
 
   private extractLocalPart(email: string): string {
     const [localPart] = email.split('@');
@@ -142,7 +163,7 @@ export class SenderResolverService {
         summaries.get(user.auth0Id) ?? null,
         isManager,
       );
-      scored.push({ user, score, reasons });
+      scored.push({ user, score, reasons, isManager });
     }
     return scored;
   }
@@ -257,6 +278,7 @@ export class SenderResolverService {
       score: Math.round(s.score * 10) / 10,
       recommendation: this.toLevel(s.score, highestScore),
       reasons: s.reasons,
+      isManager: s.isManager,
     }));
 
     return recommendations.sort((a, b) => b.score - a.score);
