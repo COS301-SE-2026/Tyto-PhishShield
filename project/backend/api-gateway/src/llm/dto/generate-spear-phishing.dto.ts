@@ -4,6 +4,7 @@ import {
   IsDateString,
   IsEnum,
   IsNotEmpty,
+  IsBoolean,
 } from 'class-validator';
 import { Department, MessageType } from './difficulty-llm-generation.dto';
 
@@ -30,8 +31,18 @@ export class GenerateSpearPhishingDto {
   extraContext?: string;
 
   @IsDateString()
-  scheduledFrom!: string;
+  @IsOptional()
+  scheduledFrom?: string;
 
   @IsDateString()
-  scheduledTo!: string;
+  @IsOptional()
+  scheduledTo?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isManager?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  frequentContact?: boolean;
 }

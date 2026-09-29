@@ -19,7 +19,7 @@ import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { ConnectionEntity } from '../entities/connection.entity';
-import { SenderResolverController } from '../sender-resolver/sender-resolver.controller';
+import { ScheduleResolverService } from '../shared-services/schedule-resolver.service';
 
 @Module({
   imports: [
@@ -50,6 +50,7 @@ import { SenderResolverController } from '../sender-resolver/sender-resolver.con
     VariableResolverService,
     SenderResolverService,
     TrackingLinkService,
+    ScheduleResolverService,
   ],
   exports: [EmailService, VariableResolverService, TrackingLinkService],
 })

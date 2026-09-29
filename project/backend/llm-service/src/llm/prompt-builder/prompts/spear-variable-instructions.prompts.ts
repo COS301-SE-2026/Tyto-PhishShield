@@ -20,5 +20,5 @@ Shared Variables:
 
 Rules:
 1. Make the email appear as an internal communication from the sender's department to the recipient's department.
-2. Weave the placeholders naturally into the text (e.g., "Hi {{name_recipient}}, please review this invoice from the {{department_sender}} team.")
+2. Weave the placeholders naturally into the text.
 `.trim();

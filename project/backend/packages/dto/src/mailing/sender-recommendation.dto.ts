@@ -1,4 +1,4 @@
-import {IsArray, IsEnum, IsNotEmpty, IsNumber, IsString} from "class-validator";
+import {IsArray, IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsString} from "class-validator";
 import {Department} from "../accounts/enum";
 
 export type RecommendationLevel = 'high' | 'medium' | 'low';
@@ -25,4 +25,8 @@ export class SenderRecommendation {
 
     @IsArray()
     reasons!: string[];
+
+    @IsBoolean()
+    @IsNotEmpty()
+    isManager!: Boolean;
 }

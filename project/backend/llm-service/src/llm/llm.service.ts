@@ -11,7 +11,6 @@ import {
   LlmGatewayRequestBody,
   OkLlmGatewayResponse,
 } from './dto/llm-gateway.dto';
-import { ConfigService } from '@nestjs/config';
 import {
   MistakeDetectedEvent,
   ReceivedReplyDto,
@@ -49,22 +48,15 @@ interface ClassificationResult {
 @Injectable()
 export class LlmService {
   private readonly logger = new Logger(LlmService.name);
-  private readonly llmProvider: string;
 
   constructor(
     private readonly promptBuilderService: PromptBuilderService,
     private readonly llmGatewayService: LlmGatewayService,
-    private readonly config: ConfigService,
     private readonly receivedEmailService: ReceivedEmailService,
     private readonly classificationService: ClassificationService,
     private readonly amqpConnection: AmqpConnection,
     private readonly replyGenerationService: ReplyGenerationService,
-  ) {
-    this.llmProvider = this.config.get<string>(
-      'LLM_PROVIDER',
-      'google-ai-studio/gemini-3.1-flash-lite',
-    );
-  }
+  ) {}
 
   async generateTemplates(
     dto: DifficultyLlmGenerationDto,
@@ -72,7 +64,7 @@ export class LlmService {
     const prompt = this.promptBuilderService.buildSystemPrompt(dto);
 
     const requests = Array.from({ length: dto.count }, () =>
-      this.llmGatewayService.send(this.buildGatewayRequest(prompt)),
+      this.llmGatewayService.sendWithFallback(this.buildGatewayRequest(prompt)),
     );
 
     const responses = await Promise.allSettled(requests);
@@ -108,7 +100,7 @@ export class LlmService {
   private buildGatewayRequest(
     systemPrompt: string,
     schema: object = TEMPLATE_SCHEMA,
-  ): LlmGatewayRequestBody {
+  ): Omit<LlmGatewayRequestBody, 'model'> {
     const systemInstructions = `
       ${systemPrompt}
       
@@ -118,7 +110,6 @@ export class LlmService {
     `.trim();
 
     return {
-      model: this.llmProvider,
       messages: [
         {
           role: 'system',
@@ -379,6 +370,7 @@ export class LlmService {
     );
 
     const safeContext = await this.sanitizeContext(dto.extraContext);
+    this.logger.warn(safeContext);
     if (dto.extraContext && !safeContext) {
       this.logger.log(
         `Proceeding with spear-phishing generation WITHOUT extra context for ${dto.recipientAuth0Id}`,
@@ -397,8 +389,10 @@ export class LlmService {
     let generatedTemplate: GeneratedTemplateDto | null = null;
 
     try {
-      const response = await this.llmGatewayService.send(requestBody);
+      const response =
+        await this.llmGatewayService.sendWithFallback(requestBody);
       generatedTemplate = this.parseTemplate(response, false);
+      this.logger.warn(generatedTemplate);
     } catch (error) {
       this.logger.error(
         `Cloud LLM request failed for spear-phishing generation: ${error}`,

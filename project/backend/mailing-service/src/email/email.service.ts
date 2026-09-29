@@ -494,11 +494,11 @@ export class EmailService {
         senderContext,
       );
 
-      const frontOfSender = this.extractLocalPart(senderContext.user.email);
-      const tempSenderChange = this.formatAddress(frontOfSender, 'compnay.xyz');
+      const sender =
+        await this.senderResolver.resolveSpoofedAddress(senderAuth0Id);
 
       const { error } = await this.resend.emails.send({
-        from: tempSenderChange,
+        from: sender,
         to: recipientContext.user.email,
         subject,
         html: substitutedContent,
@@ -519,15 +519,5 @@ export class EmailService {
       );
       throw new InternalServerErrorException('Spear-phishing dispatch failed');
     }
-  }
-
-  // temp
-  private extractLocalPart(email: string): string {
-    const [localPart] = email.split('@');
-    return localPart;
-  }
-  // temp
-  formatAddress(sender: string, domain: string, alias?: string): string {
-    return alias ? `${alias} <${sender}@${domain}>` : `${sender}@${domain}`;
   }
 }

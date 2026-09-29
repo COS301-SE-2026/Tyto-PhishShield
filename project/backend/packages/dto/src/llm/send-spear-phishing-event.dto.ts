@@ -1,4 +1,4 @@
-import {IsNotEmpty, IsString} from "class-validator";
+import {IsNotEmpty, IsOptional, IsString} from "class-validator";
 
 export class SendSpearPhishingEvent {
     @IsString()
@@ -18,10 +18,10 @@ export class SendSpearPhishingEvent {
     content!: string;
 
     @IsString()
-    @IsNotEmpty()
-    scheduledFrom!: string;
+    @IsOptional()
+    scheduledFrom?: string;
 
     @IsString()
-    @IsNotEmpty()
-    scheduledTo!: string;
+    @IsOptional()
+    scheduledTo?: string;
 }

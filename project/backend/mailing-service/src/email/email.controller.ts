@@ -39,12 +39,16 @@ import { MailingPostReturnDto } from '../dto/mailing-post-return.dto';
 import { SendSingleEmailDto } from '@phishshield/dto';
 import { DeleteResult } from 'typeorm';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { ScheduleResolverService } from '../shared-services/schedule-resolver.service';
 
 @Controller('emails')
 export class EmailController {
   private readonly logger = new Logger(EmailController.name);
 
-  constructor(private readonly emailService: EmailService) {}
+  constructor(
+    private readonly emailService: EmailService,
+    private readonly scheduleResolver: ScheduleResolverService,
+  ) {}
 
   @RabbitSubscribe({
     exchange: 'llm-event-exchange',
@@ -151,25 +155,23 @@ export class EmailController {
     );
 
     try {
-      const startTime = new Date(event.scheduledFrom).getTime();
-      const endTime = new Date(event.scheduledTo).getTime();
+      const decision = this.scheduleResolver.resolve(
+        event.scheduledFrom ? new Date(event.scheduledFrom) : undefined,
+        event.scheduledTo ? new Date(event.scheduledTo) : undefined,
+      );
 
-      if (startTime >= endTime) {
-        this.logger.error(
-          'Invalid schedule window: scheduledFrom must be before scheduledTo',
+      if (decision.instant) {
+        this.logger.log(
+          `Schedule window invalid/too close for recipient ${event.recipientAuth0Id}, sending instantly`,
         );
-        return;
       }
-
-      const randomTime = startTime + Math.random() * (endTime - startTime);
-      const scheduledAt = new Date(randomTime);
 
       await this.emailService.scheduleSpearPhishingEmail(
         event.recipientAuth0Id,
         event.senderAuth0Id,
         event.subject,
         event.content,
-        scheduledAt,
+        decision.instant ? new Date(Date.now() + 60_000) : decision.scheduledAt,
       );
     } catch (error) {
       this.logger.error(
