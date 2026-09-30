@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 
 import { CommsModule } from './comms/comms.module';
 import { SlackModule } from './comms/providers/slack/slack.module';
@@ -11,6 +10,8 @@ import { Communication } from './comms/entities/communication.entity';
 import { Connection } from './comms/entities/connection.entity';
 import { CommsUser } from './comms/entities/comms-user.entity';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -28,26 +29,17 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
         database: config.get('DB_NAME', 'comms_tracking'),
         entities: [Communication, Connection, CommsUser],
         namingStrategy: new SnakeNamingStrategy(),
-        synchronize: true, // dev only
+        synchronize: true,
       }),
     }),
 
-    RabbitMQModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672'),
-        exchanges: [
-          { name: 'comms-event-exchange', type: 'topic' },
-          { name: 'accounts-event-exchange', type: 'topic' },
-        ],
-        enableControllerDiscovery: true,
-        connectionInitOptions: { wait: false },
-      }),
-    }),
+    // RabbitMQModule.forRootAsync removed — it now lives in EventProducerModule
+
     CommsModule,
     SlackModule,
     UsersMirrorModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
