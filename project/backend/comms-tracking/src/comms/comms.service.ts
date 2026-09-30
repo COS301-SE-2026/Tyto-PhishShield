@@ -256,16 +256,47 @@ export class CommsService {
         )
       : rows;
 
-    return filtered.slice(0, options.limit).map((r) => ({
-      id: r.id,
-      source: r.source,
-      senderAuth0Id: r.senderAuth0Id,
-      receiverAuth0Ids: r.receiverAuth0Ids,
-      text: r.text ?? null,
+    const page = filtered.slice(0, options.limit);
 
-      isReply: r.isReply,
-      channelExternalId: r.channelExternalId ?? null,
-      occurredAt: r.occurredAt.toISOString(),
-    }));
+    return Promise.all(
+      page.map(async (r) => ({
+        id: r.id,
+        source: r.source,
+        senderAuth0Id: r.senderAuth0Id,
+        receiverAuth0Ids: r.receiverAuth0Ids,
+        text: r.text ? await this.resolveMentionsInText(r.text) : null,
+        isReply: r.isReply,
+        channelExternalId: r.channelExternalId ?? null,
+        occurredAt: r.occurredAt.toISOString(),
+      })),
+    );
+  }
+// to convert from slackID to actual names, just check with Frikkie if this is fine. This is used for spearfishing analysis in mailing.
+  private async resolveMentionsInText(text: string): Promise<string> {
+    if (!text) return text;
+  
+    const regex = /<@([A-Z0-9]+)(?:\|[^>]+)?>/g;
+  
+    const slackIds = new Set<string>();
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(text)) !== null) {
+      slackIds.add(match[1]);
+    }
+  
+    if (slackIds.size === 0) return text;
+  // also just mak sure user mapper is working for this.
+    const users = await this.userRepo.find({
+      where: { slackId: In([...slackIds]) },
+    });
+    const nameBySlackId = new Map(
+      users
+        .filter((u) => u.slackId)
+        .map((u) => [u.slackId!, u.name ?? u.email ?? u.slackId!]),
+    );
+  
+    return text.replace(regex, (_full, id: string) => {
+      const name = nameBySlackId.get(id);
+      return name ? `@${name}` : `@${id}`;
+    });
   }
 }
