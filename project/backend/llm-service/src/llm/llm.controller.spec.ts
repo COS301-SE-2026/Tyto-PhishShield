@@ -10,11 +10,27 @@ import {
   TemplateVariable,
 } from './dto/difficulty-llm-generation.dto';
 import { GeneratedTemplatesResponseDto } from './dto/generated-templates-response.dto';
+import { ReceivedEmailService } from './received-email/received-email.service';
+import { ClassificationService } from './classification/classification.service';
+import { ReplyGenerationService } from './reply-generation/reply-generation.service';
+import { ReplyGuardService } from './reply-guard/reply-guard.service';
 
 describe('LlmController', () => {
   let controller: LlmController;
 
   const mockLlmService = {
+    generateTemplates: jest.fn(),
+  };
+
+  const mockRecievedEmailService = {
+    generateTemplates: jest.fn(),
+  };
+
+  const mockClassificationService = {
+    generateTemplates: jest.fn(),
+  };
+
+  const mockReplyGenerationService = {
     generateTemplates: jest.fn(),
   };
 
@@ -26,6 +42,10 @@ describe('LlmController', () => {
           provide: LlmService,
           useValue: mockLlmService,
         },
+        { provide: ReplyGuardService, useValue: mockRecievedEmailService },
+        { provide: ReceivedEmailService, useValue: mockRecievedEmailService },
+        { provide: ClassificationService, useValue: mockClassificationService },
+        { provide: ReplyGenerationService, useValue: mockReplyGenerationService },
       ],
     }).compile();
 

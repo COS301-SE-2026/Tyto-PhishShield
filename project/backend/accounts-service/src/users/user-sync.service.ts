@@ -14,12 +14,12 @@ export class UserSyncService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const nodeEnv = this.configService.get<string>('NODE_ENV');
-    if (nodeEnv !== 'development' && nodeEnv !== 'dev' && nodeEnv !== 'local') {
-      return;
-    }
+    // const nodeEnv = this.configService.get<string>('NODE_ENV');
+    // if (nodeEnv !== 'development' && nodeEnv !== 'dev' && nodeEnv !== 'local') {
+    //   return;
+    // }
 
-    this.logger.log('Development mode - syncing  all existing users...');
+    // this.logger.log('Development mode - syncing  all existing users...');
     const users = await this.usersService.findAll();
 
     for (const user of users) {
@@ -27,6 +27,8 @@ export class UserSyncService implements OnModuleInit {
         id: user.id,
         auth0Id: user.auth0Id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         department: user.department,
         role: user.role,

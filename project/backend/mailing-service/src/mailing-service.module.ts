@@ -11,6 +11,11 @@ import { AccountsModule } from './accounts/accounts.module';
 import { WaveEntity } from './entities/wave.entity';
 import { WaveRecipientEntity } from './entities/wave-recipient.entity';
 import { WaveModule } from './wave/wave.module';
+import { EmployeeInfoModule } from './employee-info/employee-info.module';
+import { EmployeeInfoEntity } from './entities/employee-info.entity';
+import { ConnectionModule } from './connection/connection.module';
+import { SenderResolverModule } from './sender-resolver/sender-resolver.module';
+import { ConnectionEntity } from './entities/connection.entity';
 
 @Module({
   imports: [
@@ -34,6 +39,8 @@ import { WaveModule } from './wave/wave.module';
           UserEntity,
           WaveEntity,
           WaveRecipientEntity,
+          EmployeeInfoEntity,
+          ConnectionEntity,
         ],
         autoLoadEntities: true,
       }),
@@ -42,11 +49,15 @@ import { WaveModule } from './wave/wave.module';
     TypeOrmModule.forFeature([UserEntity]),
     TypeOrmModule.forFeature([WaveEntity]),
     TypeOrmModule.forFeature([WaveRecipientEntity]),
+    TypeOrmModule.forFeature([ConnectionModule]),
     mailingRabbitMQModule,
     EmailModule,
     BatchEmailModule,
     AccountsModule,
     WaveModule,
+    EmployeeInfoModule,
+    ConnectionModule,
+    SenderResolverModule,
   ],
   controllers: [MailingServiceController],
 })

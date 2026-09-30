@@ -56,7 +56,12 @@ export class XpController {
 
   @RabbitSubscribe({
     exchange: 'mailing-event-exchange',
-    routingKey: ['mailing.batch_send', 'mailing.batch_schedule'],
+    routingKey: [
+      'mailing.batch_send',
+      'mailing.batch_schedule',
+      'mailing.send',
+      'mailing.schedule',
+    ],
     queue: 'xp-email-details-queue',
   })
   async eventCreateEmailDetails(event: MailingBatchEventDto): Promise<void> {

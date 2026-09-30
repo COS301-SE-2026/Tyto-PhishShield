@@ -10,5 +10,6 @@ Link Requirements:
 - Include exactly ONE anchor tag.
 - The anchor tag MUST literally use href="{{tracking_link}}" (do not URL-encode the braces, do not alter the variable name, and do not replace it with a real URL).
 - Replace only "link text" with wording appropriate to the tone and message type (e.g., "Reset Your Password", "Review Document").
-- Example structure: <a href="{{tracking_link}}">Reset Your Password</a>
+- The link must appear on its own line, not embedded mid-paragraph: place it in its own <p> tag, separate from the surrounding body text.
+- Example structure: <p><a href="{{tracking_link}}">Reset Your Password</a></p>
 - Include no other links.`;

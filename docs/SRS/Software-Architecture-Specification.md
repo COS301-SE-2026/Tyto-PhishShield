@@ -195,7 +195,7 @@ In the images above you can see the lighthouse accessibility and best practices 
 
 **Uptime**  
 ![Image showing uptime of last 30 days](./img/uptime-img.png)  
-As of demo 3 we have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
+As of demo 4 we have a 99.895% over the last 30 days. Although it is slightly less than 99.9% the difference is minuscule and it is a top priority for us going forward to fix this and ensure a 99.9% uptime. Our new tactic with the green blue deployment method will hopefully allow us to achieve the 99.9% uptime.
 
 #### NFR 6 Quality attribute: Flexibility:
 1. The system must be able to scale up to 500 concurrent users without any of the core services becoming unresponsive. 
@@ -224,7 +224,7 @@ No core services became unresponsive with 500 concurrent users.
 - Code coverage of 80% is reached.
 
 **Test Coverage**
-As of demo 3 we have an average backend coverage of 73.77%. This is below our NFR requirement of 80%.
+As of demo 4 we have an average backend coverage of 73.77%. This is below our NFR requirement of 80%.
 
 
 ### NFR Quality Requirement Matrix

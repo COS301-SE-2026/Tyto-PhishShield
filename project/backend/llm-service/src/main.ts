@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   app.setGlobalPrefix('api');
 
@@ -28,8 +31,8 @@ async function bootstrap() {
     });
   }
 
-  await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3000);
+  await app.startAllMicroservices();
   console.log('llm-service listening on port: ' + process.env.PORT);
   console.log('llm tcp service listening on port: ' + process.env.TCP_PORT);
 }

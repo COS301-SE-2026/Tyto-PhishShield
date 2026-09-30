@@ -3,11 +3,18 @@ import { isErrorResponse } from './send-email';
 
 const EDUCATION_BASE = `${API_BASE}/education`;
 
+export type EducationCategory =
+    | 'login_details_leaked'
+    | 'secrets_leaked'
+    | 'pii_leaked'
+    | 'financial_info_leaked';
+
 export interface Question{
     id: string;
     questionText: string;
     options: string[];
     correctOptionIndex: number;
+    category: EducationCategory | null;
     createdAt: string;
 }
 
@@ -39,6 +46,7 @@ export interface CreateQuestionRequest {
     questionText: string;
     options: string[];
     correctOptionIndex: number;
+    category?: EducationCategory;
 }
 
 export interface SubmitAnswersRequest {

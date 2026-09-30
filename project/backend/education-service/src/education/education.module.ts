@@ -6,10 +6,11 @@ import { Assignment } from './entities/assignment.entity';
 import { EducationService } from './education.service';
 import { EducationController } from './education.controller';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
+import { IncorrectQuestion } from './entities/incorrect-question.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Question, Assignment]),
+    TypeOrmModule.forFeature([Question, Assignment, IncorrectQuestion]),
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -18,6 +19,7 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
         exchanges: [
           { name: 'xp-event-exchange', type: 'topic' },
           { name: 'education-event-exchange', type: 'topic' },
+          { name: 'llm-event-exchange', type: 'topic' },
         ],
         enableControllerDiscovery: true,
         connectionInitOptions: {

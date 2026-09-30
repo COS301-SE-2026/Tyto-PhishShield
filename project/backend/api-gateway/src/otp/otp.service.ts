@@ -64,7 +64,7 @@ export class OtpService {
   private async sendOtpEmail(email: string, code: string): Promise<boolean> {
     try {
       await this.resend.emails.send({
-        from: 'noreply@capstone-five-guys.dns.net.za',
+        from: 'noreply@example-compnay.xyz',
         to: email,
         subject: 'Tyto-PhishShield OTP Code',
         html: `

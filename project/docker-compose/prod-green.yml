@@ -1,6 +1,6 @@
 services:
   mailing_app:
-    image: fiveguys301/mailing:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/mailing:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
@@ -17,6 +17,8 @@ services:
       - RABBITMQ_URL=amqp://prod_rabbitmq:5672
       - BUSINESS_NAME=${BUSINESS_NAME}
       - TRACKING_LINK=${TRACKING_LINK}
+      - BUSINESS_SENDING_DOMAIN=${BUSINESS_SENDING_DOMAIN}
+      - SCHEDULE_MIN_LEAD_MINUTES=${SCHEDULE_MIN_LEAD_MINUTES}
     volumes:
       - ./src:/app/src
     deploy:
@@ -29,7 +31,7 @@ services:
       - infrastructure
   
   accounts_app:
-    image: fiveguys301/accounts:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/accounts:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
@@ -66,13 +68,16 @@ services:
       - green
 
   api_app1:
-    image: fiveguys301/api:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/api:e286bf49da4347f6b43d355313873ed0c9b4a11f
     restart: on-failure
     container_name: green_${GATEWAY_APP_CONTAINER}_1
     environment:
-      - VERSION=green_1-b22f1d8d94afaaa577568ecd3e95792553dc9419
+      - VERSION=green_1-e286bf49da4347f6b43d355313873ed0c9b4a11f
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
+      - RESEND_WEBHOOK_SKIP_VERIFY=${RESEND_WEBHOOK_SKIP_VERIFY}
+      - NODE_ENV=${ENVIRONMENT}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://green_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://green_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
@@ -82,6 +87,7 @@ services:
       - ANALYTICS_SERVICE_URL=http://green_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - LLM_SERVICE_URL=http://green_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
       - COMPANY_SERVICE_URL=http://green_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - COMMS_SERVICE_URL=http://green_${COMMS_APP_CONTAINER}:${COMMS_SERVICE_PORT}
       - XP_HOST=green_${XP_APP_CONTAINER}
       - REPORT_HOST=green_${REPORT_APP_CONTAINER}
       - MAILING_HOST=green_${MAILING_APP_CONTAINER}
@@ -90,6 +96,7 @@ services:
       - ANALYTICS_HOST=green_${ANALYTICS_APP_CONTAINER}
       - LLM_HOST=green_${LLM_APP_CONTAINER}
       - COMPANY_HOST=green_${COMPANY_APP_CONTAINER}
+      - COMMS_HOST=green_${COMMS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -98,6 +105,7 @@ services:
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - LLM_TCP_PORT=${LLM_TCP_PORT}
       - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
+      - COMMS_TCP_PORT=${COMMS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
@@ -133,13 +141,16 @@ services:
       - infrastructure
 
   api_app2:
-    image: fiveguys301/api:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/api:e286bf49da4347f6b43d355313873ed0c9b4a11f
     restart: on-failure
     container_name: green_${GATEWAY_APP_CONTAINER}_2
     environment:
-      - VERSION=green_2-b22f1d8d94afaaa577568ecd3e95792553dc9419
+      - VERSION=green_2-e286bf49da4347f6b43d355313873ed0c9b4a11f
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
+      - RESEND_WEBHOOK_SKIP_VERIFY=${RESEND_WEBHOOK_SKIP_VERIFY}
+      - NODE_ENV=${ENVIRONMENT}
       - API_GATEWAY_PORT=${API_GATEWAY_PORT}
       - ACCOUNTS_SERVICE_URL=http://green_${ACCOUNTS_APP_CONTAINER}:${ACCOUNTS_SERVICE_PORT}
       - MAILING_SERVICE_URL=http://green_${MAILING_APP_CONTAINER}:${MAILING_SERVICE_PORT}
@@ -149,6 +160,7 @@ services:
       - ANALYTICS_SERVICE_URL=http://green_${ANALYTICS_APP_CONTAINER}:${ANALYTICS_SERVICE_PORT}
       - LLM_SERVICE_URL=http://green_${LLM_APP_CONTAINER}:${LLM_SERVICE_PORT}
       - COMPANY_SERVICE_URL=http://green_${COMPANY_APP_CONTAINER}:${COMPANY_SERVICE_PORT}
+      - COMMS_SERVICE_URL=http://green_${COMMS_APP_CONTAINER}:${COMMS_SERVICE_PORT}
       - XP_HOST=green_${XP_APP_CONTAINER}
       - REPORT_HOST=green_${REPORT_APP_CONTAINER}
       - MAILING_HOST=green_${MAILING_APP_CONTAINER}
@@ -157,6 +169,7 @@ services:
       - ANALYTICS_HOST=green_${ANALYTICS_APP_CONTAINER}
       - LLM_HOST=green_${LLM_APP_CONTAINER}
       - COMPANY_HOST=green_${COMPANY_APP_CONTAINER}
+      - COMMS_HOST=green_${COMMS_APP_CONTAINER}
       - XP_TCP_PORT=${XP_TCP_PORT}
       - REPORT_TCP_PORT=${REPORT_TCP_PORT}
       - MAILING_TCP_PORT=${MAILING_TCP_PORT}
@@ -165,6 +178,7 @@ services:
       - ANALYTICS_TCP_PORT=${ANALYTICS_TCP_PORT}
       - LLM_TCP_PORT=${LLM_TCP_PORT}
       - COMPANY_TCP_PORT=${COMPANY_TCP_PORT}
+      - COMMS_TCP_PORT=${COMMS_TCP_PORT}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - AUTH0_M2M_CLIENT_ID=${AUTH0_M2M_CLIENT_ID}
@@ -200,7 +214,7 @@ services:
       - infrastructure
 
   report_app:
-    image: fiveguys301/report:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/report:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
@@ -226,7 +240,7 @@ services:
       - infrastructure
 
   xp_app:
-    image: fiveguys301/xp:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/xp:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
@@ -238,6 +252,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - XP_DB_NAME=${XP_DB_NAME}
       - DB_SYNC=${DB_SYNC}
+      - RESEND_API_KEY=${RESEND_API_KEY}
     volumes:
       - ./src:/app/src
     deploy:
@@ -250,7 +265,7 @@ services:
       - infrastructure
       
   education_app:
-    image: fiveguys301/education:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/education:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
@@ -275,7 +290,7 @@ services:
       - infrastructure
       
   analytics_app:
-    image: fiveguys301/analytics:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/analytics:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
@@ -300,7 +315,7 @@ services:
       - infrastructure
 
   website:
-    image: fiveguys301/website:b22f1d8d94afaaa577568ecd3e95792553dc9419-prod
+    image: fiveguys301/website:e286bf49da4347f6b43d355313873ed0c9b4a11f-prod
     restart: on-failure
     container_name: green_website
     deploy:
@@ -313,7 +328,7 @@ services:
       - proxy
   
   outlook_addin:
-    image: fiveguys301/addin:b22f1d8d94afaaa577568ecd3e95792553dc9419-prod
+    image: fiveguys301/addin:e286bf49da4347f6b43d355313873ed0c9b4a11f-prod
     restart: on-failure
     container_name: green_addin
     deploy:
@@ -326,7 +341,7 @@ services:
       - proxy
 
   llm_app:
-    image: fiveguys301/llm:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/llm:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${LLM_APP_CONTAINER}
     environment:
       - PORT=${LLM_SERVICE_PORT}
@@ -339,6 +354,14 @@ services:
       - LLM_GATEWAY_URL=${LLM_GATEWAY_URL}
       - LLM_GATEWAY_KEY=${LLM_GATEWAY_KEY}
       - RABBITMQ_URL=amqp://prod_rabbitmq:5672
+      - LOCAL_LLM_URL=http://ollama:11434
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - CLASSIFICATION_MIN_CONFIDENCE=${CLASSIFICATION_MIN_CONFIDENCE}
+      - LLM_MODEL_CHAIN=${LLM_MODEL_CHAIN}
+      - LOCAL_NUM_CTX=${LOCAL_NUM_CTX}
+      - LOCAL_NUM_THREAD=${LOCAL_NUM_THREAD}
+      - DB_SYNC=${DB_SYNC}
     deploy:
       resources:
         limits:
@@ -346,10 +369,11 @@ services:
           memory: '128M'
     networks:
       - green
+      - local-llm
       - infrastructure
     
   company_app:
-    image: fiveguys301/company:b22f1d8d94afaaa577568ecd3e95792553dc9419
+    image: fiveguys301/company:e286bf49da4347f6b43d355313873ed0c9b4a11f
     container_name: green_${COMPANY_APP_CONTAINER}
     environment:
       - PORT=${COMPANY_SERVICE_PORT}
@@ -370,6 +394,30 @@ services:
       - green
       - infrastructure
       - local-llm
+
+  comms_app:
+    image: fiveguys301/comms:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    container_name: green_${COMMS_APP_CONTAINER}
+    environment:
+      - PORT=${COMMS_SERVICE_PORT}
+      - TCP_PORT=${COMMS_TCP_PORT}
+      - DB_HOST=${COMMS_DB_CONTAINER}
+      - DB_PORT=${INTERNAL_DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${COMMS_DB_NAME}
+      - RABBITMQ_URL=amqp://prod_rabbitmq:5672
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '128M'
+    networks:
+      - green
+      - infrastructure
 
 networks:
   proxy:

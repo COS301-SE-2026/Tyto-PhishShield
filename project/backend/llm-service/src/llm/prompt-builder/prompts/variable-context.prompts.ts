@@ -1,6 +1,9 @@
 import { TemplateVariable } from '../../dto/difficulty-llm-generation.dto';
 
 export const VARIABLE_CONTEXT_PROMPTS: Record<TemplateVariable, string> = {
-  [TemplateVariable.NAME]: `{{name}} is the recipient's first name, use it for direct address, e.g. a greeting.`,
+  [TemplateVariable.NAME]: `{{name}} is the recipient's first name. Use it for informal or direct address, e.g. "Hi {{name}}". Never place a personal title in front of it (do not write "Mr {{name}}"). If {{title}} and {{surname}} are also provided, choose between "{{name}}" and "{{title}} {{surname}}" according to the requested tone. If only {{name}} and {{surname}} are provided, use {{name}} alone for a greeting; the full name "{{name}} {{surname}}" is only appropriate in a very formal message.`,
+  [TemplateVariable.SURNAME]: `{{surname}} is the recipient's last name. Use it for formal address together with {{title}}, e.g. "Dear {{title}} {{surname}}". If {{title}} is not provided, do not address the recipient by surname alone. Use {{name}} instead if it is provided. If neither {{name}} nor {{title}} is provided, do not use {{surname}} in the greeting; use a generic greeting such as "Hello,".`,
   [TemplateVariable.DEPARTMENT]: `{{department}} is the recipient's department, reference it to make the message feel department-specific.`,
+  [TemplateVariable.JOB_TITLE]: `{{job_title}} is the recipient's working title within the business (e.g. "Finance Manager"), reference it to tailor the message to their role and responsibilities. Do not use it as a form of address or as a substitute for their name.`,
+  [TemplateVariable.TITLE]: `{{title}} is the recipient's personal title (e.g. "Mr", "Mrs", "Dr"). Only ever use it directly followed by {{surname}}, e.g. "Dear {{title}} {{surname}}". Never use it on its own, and never with the first name. If {{surname}} is not provided, ignore {{title}} completely and address the recipient by {{name}} if available. Do not confuse it with their job title.`,
 };

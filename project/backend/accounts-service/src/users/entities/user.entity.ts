@@ -27,6 +27,12 @@ export class User {
   name!: string;
 
   @Column({ nullable: true })
+  firstName!: string;
+
+  @Column({ nullable: true })
+  lastName!: string;
+
+  @Column({ nullable: true })
   department!: Department;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
@@ -37,6 +43,9 @@ export class User {
 
   @Column({ default: true })
   isActive!: boolean;
+
+  @Column({ default: false })
+  weeklyDigestOptIn!: boolean;
 
   @CreateDateColumn()
   createdAt!: Date;

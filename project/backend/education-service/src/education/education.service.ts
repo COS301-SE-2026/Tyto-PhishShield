@@ -6,13 +6,19 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Question } from './entities/question.entity';
 import { Assignment, AssignmentStatus } from './entities/assignment.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
 import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import {
+  ACTIONABLE_MISTAKE_CATEGORIES,
+  MistakeCategory,
+} from './types/mistake-category.enum';
+import { IncorrectQuestion } from './entities/incorrect-question.entity';
+import { IncorrectCategoryCount } from '@phishshield/dto';
 //can change this at anytime to get more robust stuff this is for now, but I think more questions
 // would also be appropriate sinc e then we can do more with it.
 const QUESTIONS_PER_ASSIGNMENT = 3;
@@ -27,7 +33,8 @@ export class EducationService {
     private readonly questionRepo: Repository<Question>,
     @InjectRepository(Assignment)
     private readonly assignmentRepo: Repository<Assignment>,
-
+    @InjectRepository(IncorrectQuestion)
+    private readonly incorrectQRepo: Repository<IncorrectQuestion>,
     private readonly amqpConnection: AmqpConnection,
   ) {}
   //my idea here is that we will be creating assignments which will consist of about 3-4 questions and then an array of answers to get the right answers. Everything will have its own ID and all that jazz as well.
@@ -45,22 +52,26 @@ export class EducationService {
     return this.questionRepo.find({ order: { createdAt: 'DESC' } });
   }
 
-  async createAssignment(auth0Id: string): Promise<Assignment> {
+  async createAssignment(
+    auth0Id: string,
+    category?: MistakeCategory,
+  ): Promise<Assignment> {
     const existing = await this.assignmentRepo.findOne({
       where: { auth0Id, status: AssignmentStatus.PENDING },
     });
     if (existing) {
       throw new ConflictException('You already have existing assignment');
     }
-    // should this be await?.... yes, yes it should
-    const allQuestions = await this.questionRepo.find();
-    if (allQuestions.length === 0) {
+
+    const questionPool = await this.buildQuestionPool(category);
+
+    if (questionPool.length === 0) {
       throw new BadRequestException(
         'No questions available yet, please contact an admin',
       );
     }
 
-    const selected = this.randomSubset(allQuestions, QUESTIONS_PER_ASSIGNMENT); // no sonarqube stuff here for some reason, but thats nice.
+    const selected = this.randomSubset(questionPool, QUESTIONS_PER_ASSIGNMENT);
 
     const assignment = this.assignmentRepo.create({
       auth0Id,
@@ -69,6 +80,48 @@ export class EducationService {
     });
 
     return this.assignmentRepo.save(assignment);
+  }
+
+  /**
+   * Builds the pool of questions to draw from.
+   *
+   * - No category, or a non-actionable category → all questions.
+   * - Actionable category → category-specific questions first, then top up
+   *   with general (null category) questions if there aren't enough.
+   */
+  private async buildQuestionPool(
+    category?: MistakeCategory,
+  ): Promise<Question[]> {
+    const isActionable =
+      category !== undefined &&
+      ACTIONABLE_MISTAKE_CATEGORIES.includes(category);
+
+    if (!isActionable) {
+      return this.questionRepo.find();
+    }
+
+    const specific = await this.questionRepo.find({
+      where: { category },
+    });
+
+    if (specific.length >= QUESTIONS_PER_ASSIGNMENT) {
+      return specific;
+    }
+
+    // Not enough category-specific questions — pad with general ones.
+    const general = await this.questionRepo.find({
+      where: { category: IsNull() },
+    });
+
+    // Dedupe in case category-specific questions also match the general
+    // criteria (they won't with IsNull, but defensive against future
+    // schema changes).
+    const seen = new Set(specific.map((q) => q.id));
+    const combined = [...specific];
+    for (const q of general) {
+      if (!seen.has(q.id)) combined.push(q);
+    }
+    return combined;
   }
   //have to think about admin view since they wont have this which will take up most of the normal user stuff.
   async getMyAssignment(
@@ -140,6 +193,15 @@ export class EducationService {
     for (let i = 0; i < questions.length; i++) {
       if (dto.answers[i] === questions[i].correctOptionIndex) {
         correctCount++;
+      } else {
+        if (questions[i].category) {
+          const incorrect = this.incorrectQRepo.create({
+            auth0Id,
+            questionId: questions[i].id,
+            category: questions[i].category as MistakeCategory,
+          });
+          await this.incorrectQRepo.save(incorrect);
+        }
       }
     }
     //check with the exchange stuff with Darius and Josua before demo 2.
@@ -203,5 +265,36 @@ export class EducationService {
   private randomSubset<T>(arr: T[], size: number): T[] {
     const shuffled = [...arr].sort(() => crypto.randomInt(-1, 2));
     return shuffled.slice(0, Math.min(size, arr.length));
+  }
+
+  async getIncorrectQuestionCategoryCount(auth0Id: string) {
+    const incorrect: IncorrectQuestion[] = await this.incorrectQRepo.find({
+      where: {
+        auth0Id: auth0Id,
+      },
+    });
+
+    const countPerCategory: IncorrectCategoryCount[] = [];
+
+    for (let i = 0; i < incorrect.length; i++) {
+      const element = incorrect[i];
+
+      if (!element.category) {
+        continue;
+      }
+      const index = countPerCategory.findIndex(
+        (item) => item.category === element.category,
+      );
+      if (index === -1) {
+        countPerCategory.push({
+          category: element.category,
+          count: 1,
+        });
+      } else {
+        countPerCategory[index].count++;
+      }
+    }
+
+    return countPerCategory;
   }
 }

@@ -39,6 +39,7 @@ export class AppService {
       ),
       llmService: await this.checkServiceHealth(this.proxy.llmClient),
       companyService: await this.checkServiceHealth(this.proxy.companyClient),
+      commsService: await this.checkServiceHealth(this.proxy.commsClient),
     };
 
     return healthServices;
@@ -55,7 +56,7 @@ export class AppService {
   async contactSales(dto: ContactSalesDto): Promise<{ message: string }> {
     try {
       await this.resend.emails.send({
-        from: 'noreply@capstone-five-guys.dns.net.za',
+        from: 'noreply@example-compnay.xyz',
         to: dto.workEmail,
         replyTo: this.salesEmail,
         subject: `Bringing PhishShield to ${dto.companyName}`,

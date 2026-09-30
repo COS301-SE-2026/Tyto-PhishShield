@@ -1,6 +1,7 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
-import { FilePenLine, Sparkles, Send, CalendarClock, LucideIcon } from 'lucide-react'
+import { useAuth } from '../../context/auth-context';
+import { FilePenLine, Sparkles, Send, CalendarClock, ClipboardCheck, Crosshair, type LucideIcon } from 'lucide-react'
 
 interface EmailsProps {
   readonly onNavigate: (path: string) => void;
@@ -73,6 +74,9 @@ function EmailActionCard({
 }
 
 export function Emails({ onNavigate, activePath }: EmailsProps) {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
+
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Emails"
       subtitle="Create, send, and manage phishing simulation emails"
@@ -80,7 +84,7 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
           gap: 16,
         }}
       >
@@ -100,13 +104,15 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           onClick={() => onNavigate('/emails/generate')}
         />
 
-        <EmailActionCard
-          title='Send Existing Email'
-          description='Select an existing email template and send it to specific users.'
-          buttonLabel='Send Email'
-          icon={Send}
-          onClick={() => onNavigate('/waves/send-email')}
-        />
+        {isAdmin && (
+          <EmailActionCard
+            title='Send Existing Email'
+            description='Select an existing email template and send it to specific users.'
+            buttonLabel='Send Email'
+            icon={Send}
+            onClick={() => onNavigate('/waves/send-email')}
+          />
+        )}
 
         <EmailActionCard
           title='Schedule a Phishing Wave'
@@ -114,6 +120,22 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           buttonLabel='Schedule Wave'
           icon={CalendarClock}
           onClick={() => onNavigate('/waves/schedule')}
+        />
+
+        <EmailActionCard
+          title='Needs Review'
+          description='Review employee attachments and replies that were flagged during phishing simulations.'
+          buttonLabel='Review Replies'
+          icon={ClipboardCheck}
+          onClick={() => onNavigate('/emails/needs-review')}
+        />
+
+        <EmailActionCard
+          title='Spear Phishing'
+          description='Generate and schedule personalised phishing emails using AI and recommended company senders.'
+          buttonLabel='Generate Spear Phishing Email'
+          icon={Crosshair}
+          onClick={() => onNavigate('/emails/spear-phishing')}
         />
       </div>  
     </AppLayout>

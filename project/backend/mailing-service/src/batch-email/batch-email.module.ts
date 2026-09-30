@@ -15,15 +15,23 @@ import { EmailTemplateEntity } from '../entities/email-template.entity';
 import { mailingRabbitMQModule } from '../rabbitmq.module';
 import { UserEntity } from '../entities/user.entity';
 import { WaveModule } from '../wave/wave.module';
+import { EmployeeInfoEntity } from '../entities/employee-info.entity';
+import { ConnectionEntity } from '../entities/connection.entity';
+import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 
 @Module({
   imports: [
     EmailModule,
     WaveModule,
-    TypeOrmModule.forFeature([EmailTemplateEntity, UserEntity]),
+    TypeOrmModule.forFeature([
+      EmailTemplateEntity,
+      UserEntity,
+      EmployeeInfoEntity,
+      ConnectionEntity,
+    ]),
     mailingRabbitMQModule,
   ],
   controllers: [BatchEmailController],
-  providers: [BatchEmailService],
+  providers: [BatchEmailService, SenderResolverService],
 })
 export class BatchEmailModule {}

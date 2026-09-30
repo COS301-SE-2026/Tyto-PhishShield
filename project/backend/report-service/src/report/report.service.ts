@@ -12,6 +12,12 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { Reportable } from './entities/reportable.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
+const SIMULATION_DOMAINS = [
+  'capstone-five-guys.dns.net.za',
+  'example-compnay.xyz',
+  'gmaill.co.za',
+] as const;
+
 interface ReporterUser {
   auth0Id: string;
   email: string;
@@ -107,10 +113,10 @@ export class ReportService {
     //  where: { messageId: dto.outlookMessageId ?? '' },
     // });
 
-    const isPhishingSimulation = dto.emailSender
-      ?.toLowerCase()
-      .endsWith('@capstone-five-guys.dns.net.za'); //might change in future, temporary for demo 2, reportable table for future.
-
+    const senderLower = dto.emailSender?.toLowerCase() ?? '';
+    const isPhishingSimulation = SIMULATION_DOMAINS.some((domain) =>
+      senderLower.endsWith(`@${domain}`),
+    );
     if (isPhishingSimulation) {
       saved.status = ReportStatus.CONFIRMED_PHISHING;
       await this.repo.save(saved);

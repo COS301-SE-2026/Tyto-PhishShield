@@ -29,6 +29,8 @@ export interface CreateUserInput {
   auth0Id: string;
   email: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   role?: UserRole;
   department?: Department;
   isVerified?: boolean;
@@ -52,6 +54,8 @@ export class UsersService {
         id: savedUser.id,
         auth0Id: savedUser.auth0Id,
         name: savedUser.name,
+        firstName: savedUser.firstName,
+        lastName: savedUser.lastName,
         email: savedUser.email,
         department: input.department ?? Department.HR,
         role: savedUser.role,
@@ -93,6 +97,8 @@ export class UsersService {
         id: saved.id,
         auth0Id: saved.auth0Id,
         name: saved.name,
+        firstName: saved.firstName,
+        lastName: saved.lastName,
         email: saved.email,
         department: saved.department,
         role: saved.role,
@@ -106,13 +112,14 @@ export class UsersService {
 
   async updateProfile(
     auth0Id: string,
-    data: { name?: string; email?: string; department?: Department },
+    data: { name?: string; email?: string; department?: Department; weeklyDigestOptIn?: boolean },
   ): Promise<User> {
     const user = await this.repo.findOne({ where: { auth0Id } });
     if (!user) throw new NotFoundException('User not found');
     if (data.name !== undefined) user.name = data.name;
     if (data.email !== undefined) user.email = data.email;
     if (data.department !== undefined) user.department = data.department;
+    if (data.weeklyDigestOptIn !== undefined) user.weeklyDigestOptIn = data.weeklyDigestOptIn;
 
     const saved = await this.repo.save(user);
     this.event
@@ -120,6 +127,8 @@ export class UsersService {
         id: saved.id,
         auth0Id: saved.auth0Id,
         name: saved.name,
+        firstName: saved.firstName,
+        lastName: saved.lastName,
         email: saved.email,
         department: saved.department,
         role: saved.role,
