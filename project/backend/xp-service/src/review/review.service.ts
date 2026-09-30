@@ -177,20 +177,22 @@ export class ReviewService {
       where: { email: review.sender.toLowerCase() },
     });
 
-    if (user) {
-      const penalty = review.severity
-        ? SEVERITY_XP_PENALTY[review.severity]
-        : -10;
-      await this.xpService.giveXp({
-        auth0Id: user.auth0Id,
-        amount: penalty,
-        reason: XpReason.COMPROMISED,
-      });
-    } else {
+    if (!user) {
       this.logger.warn(
-        `Could not resolve user for ${review.sender}, skipping XP deduction`,
+        `Could not resolve user, skipping XP deduction for detected mistake`,
       );
+      return;
     }
+
+    const penalty = review.severity
+      ? SEVERITY_XP_PENALTY[review.severity]
+      : -10;
+    await this.xpService.giveXp({
+      auth0Id: user.auth0Id,
+      amount: penalty,
+      reason: XpReason.COMPROMISED,
+    });
+    this.logger.log(`Subtracted ${penalty} from user`);
 
     const mailingPayload: SendReplyEmailEvent = {
       kind: ReplyEmailKind.FAILED_DEFAULT,
@@ -209,10 +211,11 @@ export class ReviewService {
       'reply.email',
       mailingPayload,
     );
+    this.logger.log('published to reply.email');
 
     const mistakePayload: MistakeDetectedEvent = {
       emailId: review.emailId,
-      sender: review.sender,
+      sender: user.auth0Id,
       categories: review.categories,
       severity: review.severity,
       confidence: review.confidence,
@@ -224,6 +227,7 @@ export class ReviewService {
       'reply.mistake',
       mistakePayload,
     );
+    this.logger.log('published to reply.mistake');
   }
 
   private async handleNoLeak(review: ReviewEntity): Promise<void> {
