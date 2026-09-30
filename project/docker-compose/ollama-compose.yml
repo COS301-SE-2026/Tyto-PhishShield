@@ -4,6 +4,8 @@ services:
     container_name: ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_KEEP_ALIVE=-1
+      - OLLAMA_NUM_PARALLEL=1
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
@@ -13,7 +15,7 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: '4G'
+          memory: '3G'
     networks:
       - local-llm
 
@@ -26,7 +28,7 @@ services:
       - OLLAMA_HOST=http://ollama:11434
     entrypoint: /bin/sh
     command: >
-      -c "sleep 5 && ollama pull gemma2:2b"
+      -c "sleep 5 && ollama pull qwen2.5:1.5b"
     depends_on:
       - ollama
     networks:
