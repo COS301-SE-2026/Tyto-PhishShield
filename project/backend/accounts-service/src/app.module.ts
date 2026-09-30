@@ -7,6 +7,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
@@ -15,10 +16,12 @@ import { AppService } from './app.service';
 import { VerifiedDevice } from './otp/device.entity';
 import { EventProducerModule } from './event-producer/event-producer.module';
 import { UserSyncService } from './users/user-sync.service';
+import { DigestModule } from './digest/digest.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -36,6 +39,7 @@ import { UserSyncService } from './users/user-sync.service';
     AuthModule,
     UsersModule,
     EventProducerModule,
+    DigestModule,
   ],
   controllers: [AppController],
   providers: [AppService, UserSyncService],
