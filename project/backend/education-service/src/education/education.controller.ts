@@ -50,7 +50,28 @@ export class EducationController {
   })
   async handleEducationAssignment(payload: { auth0Id: string }) {
     this.logger.log(`Received education.assign for user ${payload.auth0Id}`);
-    await this.educationService.createAssignment(payload.auth0Id);
+    try {
+      await this.educationService.createAssignment(payload.auth0Id);
+      this.logger.log(`Created assignment for ${payload.auth0Id}`);
+    } catch (error) {
+      // User already has a pending assignment — the message is fine to
+      // ack, this is a legitimate no-op. Requeueing would spin forever.
+      if (error instanceof ConflictException) {
+        this.logger.log(
+          `User ${payload.auth0Id} already has a pending assignment — skipping`,
+        );
+        return;
+      }
+      // No questions in the bank — also unrecoverable by requeueing.
+      if (error instanceof BadRequestException) {
+        this.logger.warn(
+          `Cannot create assignment for ${payload.auth0Id}: ${error.message}`,
+        );
+        return;
+      }
+      // Genuinely unexpected — let RabbitMQ retry.
+      throw error;
+    }
   }
 
   @RabbitSubscribe({
