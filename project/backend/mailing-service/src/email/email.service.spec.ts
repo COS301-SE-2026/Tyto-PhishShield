@@ -20,7 +20,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   NotFoundException,
   InternalServerErrorException,
-  BadRequestException,
+  BadRequestException, UnprocessableEntityException,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
@@ -336,17 +336,17 @@ describe('EmailService', () => {
 
       await expect(
         service.sendEmail('PHISH-001', 'unknown-auth0-id'),
-      ).rejects.toThrow(InternalServerErrorException);
+      ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw an InternalServerErrorException', async () => {
+    it('should propagate NotFoundException when no eligible sender is found', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
       mockSenderResolverService.resolveFromAddress.mockImplementation(() => {
         throw new NotFoundException('No eligible sender found');
       });
 
-      await expect(service.sendEmail('PHISH-001', mockUser.auth0Id)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.sendEmail('PHISH-001', mockUser.auth0Id)).rejects.toThrow(NotFoundException);
     });
 
     it('should propagate an unsupported-variable error from the resolver', async () => {
@@ -391,21 +391,22 @@ describe('EmailService', () => {
 
       await expect(
         service.scheduleSendEmail('PHISH-001', 'unknown-auth0-id', new Date()),
-      ).rejects.toThrow(InternalServerErrorException);
+      ).rejects.toThrow(NotFoundException);
       expect(mockEmailRepository.findOne).not.toHaveBeenCalled();
     });
 
     it('should throw error when Resend returns an error', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockEmailRepository.findOne.mockResolvedValue(mockEmail);
-      mockResendSend.mockResolvedValueOnce({
-        data: null,
-        error: { message: 'invalid scheduledAt' },
+      mockVariableResolverService.substitute.mockImplementationOnce(() => {
+        throw new UnprocessableEntityException(
+      'User does not have a value for variable: surname',
+        );
       });
 
       await expect(
         service.scheduleSendEmail('PHISH-001', mockUser.auth0Id, new Date()),
-      ).rejects.toThrow(InternalServerErrorException);
+      ).rejects.toThrow(UnprocessableEntityException);
     });
 
     it('should throw an InternalServerErrorException if scheduling fails', async () => {
