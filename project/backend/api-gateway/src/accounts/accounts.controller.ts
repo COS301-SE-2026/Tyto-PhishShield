@@ -236,6 +236,19 @@ export class AccountsController {
     });
   }
 
+  @Post('auth/digest/send-now')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Send a test weekly digest email to yourself now' })
+  sendDigestNow(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/digest/send-now`,
+      method: 'POST',
+      headers: authHeader(req),
+    });
+  }
+
   @Post('auth/forgot-password')
   @HttpCode(200)
   @ApiOperation({ summary: 'Send a password reset email' })
