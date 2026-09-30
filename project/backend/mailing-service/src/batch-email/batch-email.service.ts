@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -498,10 +499,13 @@ export class BatchEmailService {
 
       return { dto: item, token };
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof HttpException) {
         throw error;
       }
-      this.logger.error(`Failed to find user: ${dispatch.auth0Id}`);
+      this.logger.error(
+        `Failed to build email for user: ${dispatch.auth0Id}`,
+        error,
+      );
       throw new InternalServerErrorException(error);
     }
   }

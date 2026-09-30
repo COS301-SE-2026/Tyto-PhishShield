@@ -160,9 +160,10 @@ export class LlmService {
       this.logger.log(`Reply ${dto.emailId} is an auto-reply, skipping`);
       return;
     }
-
-    if (!reply.replyText) {
-      this.logger.log(`Reply ${dto.emailId} has no new text, skipping`);
+    if (!reply.replyText && dto.attachments.length === 0) {
+      this.logger.log(
+        `Reply ${dto.emailId} has no new text or attachments, skipping`,
+      );
       return;
     }
 
@@ -248,6 +249,7 @@ export class LlmService {
       severity: classification.severity,
       confidence: classification.confidence,
       occurredAt: new Date(),
+      quotedText: reply.quotedText,
     };
 
     try {

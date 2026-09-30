@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserEntity } from '../entities/user.entity';
@@ -45,18 +46,10 @@ export class VariableResolverService {
         return match;
       }
 
-      const value = this.resolveVariable(variableName, user, employeeInfo);
-
-      if (value === undefined) {
-        this.logger.error(
-          `Template uses an unsupported or unavailable variable: ${variableName}`,
-        );
-        throw new InternalServerErrorException(
-          `Template contains an unsupported or unavailable variable: ${variableName}`,
-        );
-      }
-
-      return value;
+      return this.requireValue(
+        this.resolveVariable(variableName, user, employeeInfo),
+        variableName,
+      );
     });
   }
 
@@ -74,26 +67,43 @@ export class VariableResolverService {
         return match;
       }
 
-      const value = this.resolveSpearVariable(variableName, recipient, sender);
-
-      if (value === undefined) {
-        this.logger.error(
-          `Spear template uses an unsupported or unavailable variable: ${variableName}`,
-        );
-        throw new InternalServerErrorException(
-          `Template contains an unsupported or unavailable variable: ${variableName}`,
-        );
-      }
-
-      return value;
+      return this.requireValue(
+        this.resolveSpearVariable(variableName, recipient, sender),
+        variableName,
+      );
     });
+  }
+
+  private requireValue(
+    value: string | null | undefined,
+    variableName: string,
+  ): string {
+    if (value === undefined) {
+      this.logger.error(
+        `Template uses an unsupported variable: ${variableName}`,
+      );
+      throw new InternalServerErrorException(
+        `Template contains an unsupported variable: ${variableName}`,
+      );
+    }
+
+    if (value === null || value.trim() === '') {
+      this.logger.warn(
+        `User does not have a value for variable: ${variableName}`,
+      );
+      throw new UnprocessableEntityException(
+        `User does not have a value for variable: ${variableName}`,
+      );
+    }
+
+    return value;
   }
 
   private resolveSpearVariable(
     variableName: string,
     recipient: PersonContext,
     sender: PersonContext,
-  ): string | undefined {
+  ): string | null | undefined {
     if (variableName === 'business_name') {
       return this.businessName;
     }
@@ -123,29 +133,25 @@ export class VariableResolverService {
     variableName: string,
     user: UserEntity,
     employeeInfo?: EmployeeInfoEntity,
-  ): string | undefined {
+  ): string | null | undefined {
     switch (variableName) {
       case 'business_name':
         return this.businessName;
 
       case 'name':
-        if (!user.firstName) {
-          return user.name;
-        } else {
-          return user.firstName;
-        }
+        return user.firstName || user.name || null;
 
       case 'surname':
-        return user.lastName;
+        return user.lastName ?? null;
 
       case 'department':
-        return user.department;
+        return user.department ?? null;
 
       case 'job_title':
-        return employeeInfo?.jobTitle;
+        return employeeInfo?.jobTitle ?? null;
 
       case 'title':
-        return employeeInfo?.title;
+        return employeeInfo?.title ?? null;
 
       default:
         return undefined;
