@@ -34,11 +34,39 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
   const [pwError, setPwError] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
 
+  // Notification preferences
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [digestSending, setDigestSending] = useState(false);
+
   const handleSaveProfile = async () => {
     setProfileLoading(true);
     await new Promise(r => setTimeout(r, 700));
     addToast({ type: 'success', title: 'Profile updated' });
     setProfileLoading(false);
+  };
+
+  const handleSaveNotifPreferences = async () => {
+    setNotifSaving(true);
+    try {
+      await authApi.updateProfile({ weeklyDigestOptIn: notifPreferences.digest });
+      addToast({ type: 'success', title: 'Notification preferences saved' });
+    } catch {
+      addToast({ type: 'error', title: 'Could not save preferences', message: 'Please try again.' });
+    } finally {
+      setNotifSaving(false);
+    }
+  };
+
+  const handleSendDigestNow = async () => {
+    setDigestSending(true);
+    try {
+      await authApi.sendDigestNow();
+      addToast({ type: 'success', title: 'Digest sent', message: 'Check your inbox for the test email.' });
+    } catch {
+      addToast({ type: 'error', title: 'Could not send digest', message: 'Please try again.' });
+    } finally {
+      setDigestSending(false);
+    }
   };
 
   const handleChangePw = async () => {
@@ -256,15 +284,17 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
                 desc="Show a notification in the bell whenever you gain or lose XP." />
               <Toggle value={notifPreferences.digest} onChange={v => setNotifPreferences({ ...notifPreferences, digest: v })}
                 label="Weekly security digest"
-                desc="A weekly email summary of your performance and security score — not available yet." />
-              <Button onClick={() => addToast({ type: 'success', title: 'Notification preferences saved' })}
-                style={{ 
-                  marginTop: 20, 
-                  alignSelf: 'flex-start',
-                  minWidth: 80,
-                }}>
-                Save Preferences
-              </Button>
+                desc="A weekly email summary of your performance and security score, sent every week if enabled." />
+              <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+                <Button onClick={() => void handleSaveNotifPreferences()} disabled={notifSaving}
+                  style={{ alignSelf: 'flex-start', minWidth: 80 }}>
+                  {notifSaving ? 'Saving...' : 'Save Preferences'}
+                </Button>
+                <Button onClick={() => void handleSendDigestNow()} disabled={digestSending} variant="secondary"
+                  style={{ alignSelf: 'flex-start', minWidth: 80 }}>
+                  {digestSending ? 'Sending...' : 'Send test digest now'}
+                </Button>
+              </div>
             </div>
           )}
 

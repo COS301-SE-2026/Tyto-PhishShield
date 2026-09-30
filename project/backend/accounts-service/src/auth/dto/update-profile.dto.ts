@@ -1,5 +1,5 @@
 import { Department } from '@phishshield/dto';
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsString()
@@ -13,4 +13,8 @@ export class UpdateProfileDto {
   @IsEnum(Department)
   @IsOptional()
   department?: Department;
+
+  @IsBoolean()
+  @IsOptional()
+  weeklyDigestOptIn?: boolean;
 }
