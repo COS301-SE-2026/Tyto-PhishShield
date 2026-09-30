@@ -77,7 +77,7 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
     event: SlackMessageEvent,
     client: WebClient,
   ): Promise<void> {
-    if (!event.user) return;
+    if (!event.user) return;// cehck again here as well.
     if (event.subtype) return;
     if (event.bot_id) return;
 
@@ -119,7 +119,7 @@ export class SlackProvider implements OnModuleInit, OnModuleDestroy {
 
     await this.commsService.recordCommunication({
       source: CommsSource.SLACK,
-      externalMessageId: event.ts,
+      externalMessageId: event.ts,// didnt work at first but did later...
       senderAuth0Id,
 
       receiverAuth0Ids,

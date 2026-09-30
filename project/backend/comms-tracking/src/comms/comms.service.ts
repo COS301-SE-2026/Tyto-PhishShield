@@ -98,7 +98,7 @@ export class CommsService {
 
     receiverAuth0Id: string,
     when: Date,
-  ): Promise<void> {
+  ): Promise<void> {//cehck with this sql to make sure.
     const result: Array<{ message_count: string | number }> =
       await this.dataSource.query(
         `
@@ -174,7 +174,7 @@ export class CommsService {
     nodes: { id: string; label: string; department?: string }[];
     edges: {
       source: string;
-      target: string;
+      target: string;// this only worked later on dont know why , might be sothing to look at.
       weight: number;
       lastInteractionAt: string;
     }[];
@@ -242,7 +242,7 @@ export class CommsService {
 
     const fetchLimit = options.receiverAuth0Id
       ? options.limit * 3
-      : options.limit;
+      : options.limit;// fetch more if filtering by receiver, since we filter after fetching
 
     const rows = await this.commRepo.find({
       where,
@@ -272,7 +272,8 @@ export class CommsService {
     );
   }
 // to convert from slackID to actual names, just check with Frikkie if this is fine. This is used for spearfishing analysis in mailing.
-  private async resolveMentionsInText(text: string): Promise<string> {
+  private async resolveMentionsInText(text: string): Promise<string> 
+  {
     if (!text) return text;
   
     const regex = /<@([A-Z0-9]+)(?:\|[^>]+)?>/g;
@@ -284,19 +285,21 @@ export class CommsService {
     }
   
     if (slackIds.size === 0) return text;
+
   // also just mak sure user mapper is working for this.
     const users = await this.userRepo.find({
       where: { slackId: In([...slackIds]) },
     });
     const nameBySlackId = new Map(
       users
-        .filter((u) => u.slackId)
+        .filter((u) => u.slackId)//whoops why did this not work at first??
         .map((u) => [u.slackId!, u.name ?? u.email ?? u.slackId!]),
     );
   
     return text.replace(regex, (_full, id: string) => {
       const name = nameBySlackId.get(id);
       return name ? `@${name}` : `@${id}`;
+
     });
   }
 }
