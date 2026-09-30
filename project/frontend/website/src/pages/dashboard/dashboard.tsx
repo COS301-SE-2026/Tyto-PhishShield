@@ -339,30 +339,53 @@ function UserDashboard({ onNavigate, onXpGained }: { onNavigate: (p: string) => 
   const [xpHistory, setXpHistory]           = useState<UserXpEntry[]>([]);
   const [assignment, setAssignment]         = useState<PendingAssignment | null | 'none'>(null);
   useEffect(() => {
-    if (!user) return;
-    const load = async (): Promise<void> => {
-      const [xpRes, reportsRes, assignmentRes] = await Promise.all([
-        authFetch(`${API_BASE}/xp/${user.auth0Id}`),
-        authFetch(`${API_BASE}/report/mine`),
-        authFetch(`${API_BASE}/education/assignment/mine`),
-      ]);
+  if (!user) return;
+
+  const load = async (): Promise<void> => {
+    try {
+      const xpRes = await authFetch(`${API_BASE}/xp/${user.auth0Id}`);
+
       if (xpRes.ok) {
         const entries = await xpRes.json() as UserXpEntry[];
         setXpHistory(entries);
         setStreak(computeStreak(entries));
       }
+    } catch {
+      setXpHistory([]);
+      setStreak(0);
+    }
+
+    try {
+      const reportsRes = await authFetch(`${API_BASE}/report/mine`);
+
       if (reportsRes.ok) {
         const reports = await reportsRes.json() as UserReport[];
         setReportsCount(reports.length);
+      } else {
+        setReportsCount(0);
       }
+    } catch {
+      setReportsCount(0);
+    }
+
+    try {
+      const assignmentRes = await authFetch(
+        `${API_BASE}/education/assignment/mine`,
+      );
+
       if (assignmentRes.ok) {
-        setAssignment(await assignmentRes.json() as PendingAssignment);
+        const data = await assignmentRes.json() as PendingAssignment;
+        setAssignment(data);
       } else {
         setAssignment('none');
       }
-    };
-    void load();
-  }, [user]);
+    } catch {
+      setAssignment('none');
+    }
+  };
+
+  void load();
+}, [user]);
   const xpBars = useMemo(() => buildXpBars(xpHistory), [xpHistory]);
   const xpBarMax = Math.max(...xpBars.map(b => b.xp), 1);
   const statsCards = [
