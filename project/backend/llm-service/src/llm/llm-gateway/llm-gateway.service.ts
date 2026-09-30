@@ -138,8 +138,8 @@ export class LlmGatewayService {
         format: request.format,
         options: {
           temperature: request.temperature ?? 0,
-          num_ctx: this.config.get('LOCAL_NUM_CTX', 4096),
-          num_thread: this.config.get('LOCAL_NUM_THREAD', 2)
+          num_ctx: this.config.get<number>('LOCAL_NUM_CTX', 4096),
+          num_thread: this.config.get<number>('LOCAL_NUM_THREAD', 2)
         },
       });
 
