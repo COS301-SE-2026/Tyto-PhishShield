@@ -283,7 +283,7 @@ export class LlmService {
       categories: classification.categories,
       severity: classification.severity,
       confidence: classification.confidence,
-      occurredAt: new Date(),
+      occurredAt: new Date().toISOString(),
     };
 
     const mailingPayload: SendReplyEmailEvent = {

@@ -11,6 +11,7 @@ import {
   ReviewListItemDto,
 } from '../dto/review-list-item.dto';
 import {
+  MistakeCategory,
   MistakeDetectedEvent,
   ReplyEmailKind,
   ReplyValidatedEvent,
@@ -184,16 +185,6 @@ export class ReviewService {
       return;
     }
 
-    const penalty = review.severity
-      ? SEVERITY_XP_PENALTY[review.severity]
-      : -10;
-    await this.xpService.giveXp({
-      auth0Id: user.auth0Id,
-      amount: penalty,
-      reason: XpReason.COMPROMISED,
-    });
-    this.logger.log(`Subtracted ${penalty} from user`);
-
     const mailingPayload: SendReplyEmailEvent = {
       kind: ReplyEmailKind.FAILED_DEFAULT,
       emailId: review.emailId,
@@ -216,10 +207,10 @@ export class ReviewService {
     const mistakePayload: MistakeDetectedEvent = {
       emailId: review.emailId,
       sender: user.auth0Id,
-      categories: review.categories,
+      categories: [...review.categories, MistakeCategory.SECRETS_LEAKED],
       severity: review.severity,
       confidence: review.confidence,
-      occurredAt: new Date(),
+      occurredAt: new Date().toISOString(),
     };
 
     await this.amqpConnection.publish(
@@ -269,7 +260,7 @@ export class ReviewService {
       return;
     }
 
-    const penalty = event.severity ? SEVERITY_XP_PENALTY[event.severity] : 0;
+    const penalty = event.severity ? SEVERITY_XP_PENALTY[event.severity] : -10;
 
     await this.xpService.giveXp({
       auth0Id: user.auth0Id,

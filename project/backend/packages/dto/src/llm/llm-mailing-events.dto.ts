@@ -47,8 +47,8 @@ export class MistakeDetectedEvent {
   @IsNumber()
   confidence!: number;
 
-  @IsDate()
-  occurredAt!: Date;
+  @IsString()
+  occurredAt!: string;
 }
 
 export class SendReplyEmailEvent {
