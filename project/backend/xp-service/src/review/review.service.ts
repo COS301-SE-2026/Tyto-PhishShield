@@ -174,13 +174,13 @@ export class ReviewService {
 
   private async handleLeak(review: ReviewEntity): Promise<void> {
     const user = await this.userRepository.findOne({
-      where: { email: review.sender },
+      where: { email: review.sender.toLowerCase() },
     });
 
     if (user) {
       const penalty = review.severity
         ? SEVERITY_XP_PENALTY[review.severity]
-        : 0;
+        : -10;
       await this.xpService.giveXp({
         auth0Id: user.auth0Id,
         amount: penalty,
@@ -208,6 +208,21 @@ export class ReviewService {
       'llm-event-exchange',
       'reply.email',
       mailingPayload,
+    );
+
+    const mistakePayload: MistakeDetectedEvent = {
+      emailId: review.emailId,
+      sender: review.sender,
+      categories: review.categories,
+      severity: review.severity,
+      confidence: review.confidence,
+      occurredAt: new Date(),
+    };
+
+    await this.amqpConnection.publish(
+      'llm-event-exchange',
+      'reply.mistake',
+      mistakePayload,
     );
   }
 
