@@ -17,6 +17,8 @@ services:
       - RABBITMQ_URL=amqp://prod_rabbitmq:5672
       - BUSINESS_NAME=${BUSINESS_NAME}
       - TRACKING_LINK=${TRACKING_LINK}
+      - BUSINESS_SENDING_DOMAIN=${BUSINESS_SENDING_DOMAIN}
+      - SCHEDULE_MIN_LEAD_MINUTES=${SCHEDULE_MIN_LEAD_MINUTES}
     volumes:
       - ./src:/app/src
     deploy:
@@ -356,6 +358,8 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER}
       - CLASSIFICATION_MIN_CONFIDENCE=${CLASSIFICATION_MIN_CONFIDENCE}
+      - LLM_MODEL_CHAIN=${LLM_MODEL_CHAIN}
+      - DB_SYNC=${DB_SYNC}
     deploy:
       resources:
         limits:
