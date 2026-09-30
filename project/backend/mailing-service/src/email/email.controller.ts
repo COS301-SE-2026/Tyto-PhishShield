@@ -26,6 +26,7 @@ import {
   Delete,
   NotFoundException,
   Logger,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import {
@@ -59,11 +60,13 @@ export class EmailController {
     try {
       await this.emailService.handleSendReply(event);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof UnprocessableEntityException
+      ) {
         this.logger.warn(`Dropping reply.email event: ${error.message}`);
         return;
       }
-      throw error;
     }
   }
 

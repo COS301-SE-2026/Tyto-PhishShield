@@ -15,6 +15,7 @@
  */
 
 import {
+  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -296,6 +297,11 @@ export class EmailService {
         `Failed to send email referencing ${referenceNumber}`,
         error,
       );
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       const diagnosticMessage =
         error instanceof Error ? error.message : 'Failed to send email';
       throw new InternalServerErrorException(diagnosticMessage);
@@ -356,15 +362,18 @@ export class EmailService {
         message: `Email referencing ${referenceNumber} has been successfully scheduled for ${scheduledAt.toISOString()}`,
         deliveryId: data.id || '',
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error(
         `Failed to schedule email referencing ${referenceNumber}`,
         error,
       );
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       const diagnosticMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to process email scheduling';
+        error instanceof Error ? error.message : 'Failed to schedule email';
       throw new InternalServerErrorException(diagnosticMessage);
     }
   }
