@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, JSX } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Badge, Card, Button, Modal, Input, Select, XpAnimationOverlay, Spinner } from '../../components/ui';
+import { Badge, Card, Button, XpAnimationOverlay, Spinner } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { fetchXpNet, computeMyXpRank, type XpNetEntry } from './dashboard.service';
@@ -92,65 +92,7 @@ const STATUS_BADGE: Record<string, JSX.Element> = {
   scheduled: <Badge variant="warning">Scheduled</Badge>,
 };
 
-function NewWaveModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { addToast } = useToast();
-  const [form, setForm] = useState({ name: '', emailSubject: '', emailBody: '', departments: 'all', scheduledDate: '' });
-  const [loading, setLoading] = useState(false);
-  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
-  const valid = !!form.name.trim() && !!form.emailSubject.trim() && !!form.emailBody.trim();
-
-  const handleCreate = async () => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    addToast({ type: 'success', title: 'Wave created', message: `"${form.name}" saved as draft.` });
-    setLoading(false);
-    onClose();
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="New Wave" maxWidth={560}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Input label="Wave name" placeholder="e.g. IT Support Reset" value={form.name}
-          onChange={e => set('name', e.target.value)} required />
-        <Select label="Target departments" value={form.departments} onChange={e => set('departments', e.target.value)}
-          options={[
-            { value: 'all',        label: 'All departments' },
-            { value: 'it',         label: 'IT & Security' },
-            { value: 'finance',    label: 'Finance' },
-            { value: 'hr',         label: 'Human Resources' },
-            { value: 'legal',      label: 'Legal & Compliance' },
-            { value: 'operations', label: 'Operations' },
-            { value: 'executive',  label: 'Executive' },
-          ]}
-        />
-        <Input label="Email subject line" placeholder="e.g. URGENT: Password reset required"
-          value={form.emailSubject} onChange={e => set('emailSubject', e.target.value)} required />
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: 5, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            Email body <span style={{ color: 'var(--color-danger)' }}>*</span>
-          </label>
-          <textarea rows={5} placeholder="Paste the phishing email content here."
-            value={form.emailBody} onChange={e => set('emailBody', e.target.value)}
-            style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--text-primary)', background: 'var(--bg-input)', fontFamily: 'Inter, system-ui, sans-serif', resize: 'vertical', outline: 'none', lineHeight: 1.5 }}
-          />
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>
-            AI-generated email selection will be available once the generation microservice is ready.
-          </p>
-        </div>
-        <Input label="Schedule date (optional)" type="date" value={form.scheduledDate}
-          onChange={e => set('scheduledDate', e.target.value)} />
-        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-          <Button variant="ghost" onClick={onClose} style={{ flex: '0 0 auto' }}>Cancel</Button>
-          <Button fullWidth loading={loading} disabled={!valid} onClick={() => { void handleCreate(); }}>
-            Save as Draft
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => void; onNewWave: () => void }) {
+function AdminDashboard({ onNavigate }: { onNavigate: (p: string) => void; }) {
   const { addToast } = useToast();
   const [period, setPeriod]       = useState<Period>('30d');
   const [loading, setLoading]     = useState(true);
@@ -268,7 +210,7 @@ function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => 
         <Card>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Recent Phishing Waves</h2>
-            <Button onClick={onNewWave} icon={
+            <Button onClick={() => onNavigate('/waves/schedule')} icon={
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             }>New Wave</Button>
           </div>
@@ -331,15 +273,7 @@ function AdminDashboard({ onNavigate, onNewWave }: { onNavigate: (p: string) => 
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
               {highRisk.length} {highRisk.length === 1 ? 'user is' : 'users are'} at high risk.{' '}
             </span>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Assign them a Spear Phishing awareness module.
-            </span>
           </div>
-          <Button size="sm"
-            onClick={() => addToast({ type: 'info', title: 'Training assigned', message: `${highRisk.length} users have been assigned the Spear Phishing module.` })}
-            style={{ background: 'var(--color-warning)', color: '#fff', border: 'none', whiteSpace: 'nowrap' }}>
-            Assign Training
-          </Button>
         </div>
       )}
     </>
@@ -521,7 +455,6 @@ function UserDashboard({ onNavigate, onXpGained }: { onNavigate: (p: string) => 
 
 export function Dashboard({ onNavigate, activePath }: DashboardProps) {
   const { canAccess } = useAuth();
-  const [newWaveOpen, setNewWaveOpen] = useState(false);
   const [showXpAnim, setShowXpAnim]   = useState(false);
   const [xpAnimDelta, setXpAnimDelta] = useState(0);
   const handleXpGained = useCallback((amount: number) => {
@@ -534,11 +467,10 @@ export function Dashboard({ onNavigate, activePath }: DashboardProps) {
     <>
       <AppLayout activePath={activePath} onNavigate={onNavigate} title="Dashboard" subtitle={today}>
         {isAdminOrAnalyst
-          ? <AdminDashboard onNavigate={onNavigate} onNewWave={() => setNewWaveOpen(true)} />
+          ? <AdminDashboard onNavigate={onNavigate} />
           : <UserDashboard  onNavigate={onNavigate} onXpGained={handleXpGained} />
         }
       </AppLayout>
-      <NewWaveModal isOpen={newWaveOpen} onClose={() => setNewWaveOpen(false)} />
       {showXpAnim && <XpAnimationOverlay delta={xpAnimDelta} onDone={() => setShowXpAnim(false)} />}
     </>
   );
