@@ -55,7 +55,6 @@ export class LlmController {
   @Post('received_reply')
   @HttpCode(HttpStatus.ACCEPTED)
   receivedReply(@Body() body: ReceivedReplyDto): { accepted: true } {
-    this.logger.warn(`body in llm gateway: `, body);
     if (!this.replyGuardService.claimEvent(body.webhookEventId)) {
       this.logger.warn(
         `Duplicate webhook event ${body.webhookEventId} ignored`,

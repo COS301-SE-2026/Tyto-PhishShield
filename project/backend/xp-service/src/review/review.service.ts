@@ -101,7 +101,7 @@ export class ReviewService {
 
   private async resolveUser(senderEmail: string) {
     const user = await this.userRepository.findOne({
-      where: { email: senderEmail },
+      where: { email: senderEmail.toLowerCase() },
     });
     if (!user) return null;
 
