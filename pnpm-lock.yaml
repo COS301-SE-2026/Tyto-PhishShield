@@ -563,7 +563,7 @@ importers:
         version: 11.0.1(@nestjs/common@11.1.21(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.21)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.29(pg@8.20.0)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3)))
       '@slack/bolt':
         specifier: ^5.1.0
-        version: 5.1.0(@types/express@5.0.6)(undici@8.10.2)
+        version: 5.1.0(@types/express@5.0.6)(undici@8.11.2)
       '@slack/web-api':
         specifier: ^8.1.1
         version: 8.1.1
@@ -1011,6 +1011,9 @@ importers:
       typeorm:
         specifier: ^0.3.29
         version: 0.3.29(pg@8.20.0)(ts-node@10.9.2(@types/node@24.12.4)(typescript@5.9.3))
+      undici:
+        specifier: ^8.11.2
+        version: 8.11.2
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -10455,6 +10458,10 @@ packages:
     resolution: {integrity: sha512-/y4/bH9YNU5hi9NIrpOuvGXFcxrj3CMrV+/AYpowAYTpHn8gX/XPFjNy766FPoYY0miQhdW977JFWKGNhBdwyQ==}
     engines: {node: '>=22.19.0'}
 
+  undici@8.11.2:
+    resolution: {integrity: sha512-u4UB2/IrKdU6lFxumHmmo1a3fCQO5tzQllRorfoRS63txhrB7xTpSn1PftwC4qEHkOaqP95fCWW4lJzwErwzhQ==}
+    engines: {node: '>=22.19.0'}
+
   unicode-canonical-property-names-ecmascript@2.0.1:
     resolution: {integrity: sha512-dA8WbNeb2a6oQzAQ55YlT5vQAWGV9WXOsi3SskE3bcCdM0P4SDd+24zS/OCacdRq5BkdsRj9q3Pg6YyQoxIGqg==}
     engines: {node: '>=4'}
@@ -15101,11 +15108,11 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@slack/bolt@5.1.0(@types/express@5.0.6)(undici@8.10.2)':
+  '@slack/bolt@5.1.0(@types/express@5.0.6)(undici@8.11.2)':
     dependencies:
       '@slack/logger': 5.0.0
       '@slack/oauth': 4.0.0
-      '@slack/socket-mode': 3.0.1(undici@8.10.2)
+      '@slack/socket-mode': 3.0.1(undici@8.11.2)
       '@slack/types': 3.1.0
       '@slack/web-api': 8.1.1
       '@types/express': 5.0.6
@@ -15129,13 +15136,13 @@ snapshots:
       '@types/node': 26.5.1
       jsonwebtoken: 9.0.3
 
-  '@slack/socket-mode@3.0.1(undici@8.10.2)':
+  '@slack/socket-mode@3.0.1(undici@8.11.2)':
     dependencies:
       '@slack/logger': 5.0.0
       '@slack/web-api': 8.1.1
       '@types/node': 26.5.1
       eventemitter3: 5.0.4
-      undici: 8.10.2
+      undici: 8.11.2
 
   '@slack/types@3.1.0': {}
 
@@ -23303,6 +23310,8 @@ snapshots:
   undici@7.25.0: {}
 
   undici@8.10.2: {}
+
+  undici@8.11.2: {}
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 

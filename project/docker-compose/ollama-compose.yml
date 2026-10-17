@@ -6,6 +6,8 @@ services:
       - OLLAMA_HOST=0.0.0.0
       - OLLAMA_KEEP_ALIVE=-1
       - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_KV_CACHE_TYPE=q8_0
+      - OLLAMA_FLASH_ATTENTION=1
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
@@ -14,7 +16,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
+          cpus: '2.5'
           memory: '3G'
     networks:
       - local-llm

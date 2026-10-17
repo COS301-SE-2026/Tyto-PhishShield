@@ -467,6 +467,8 @@ services:
       - LLM_MODEL_CHAIN=${LLM_MODEL_CHAIN}
       - LOCAL_NUM_CTX=${LOCAL_NUM_CTX}
       - LOCAL_NUM_THREAD=${LOCAL_NUM_THREAD}
+      - LOCAL_NUM_PREDICT=${LOCAL_NUM_PREDICT}
+      - LOCAL_LLM_TIMEOUT_MS=${LOCAL_LLM_TIMEOUT_MS}
       - DB_SYNC=${DB_SYNC}
     deploy:
       resources:
