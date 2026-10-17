@@ -6,6 +6,7 @@ import {
   importEmployeesCsv,
   type EmployeeCsvMapping,
 } from '../../services/company';
+import posthog from '../../lib/posthog';
 
 interface Props {
   isOpen: boolean;
@@ -142,6 +143,9 @@ export function ImportUsersModal({ isOpen, onClose, onImported }: Props) {
     try {
       // Send explicit mapping for every selected field, even if headers match.
       await importEmployeesCsv(file, mapping as EmployeeCsvMapping);
+      posthog.capture('users_imported', {
+        mapped_field_count: values.length,
+      });
       addToast({
         type: 'success',
         title: 'Import submitted',

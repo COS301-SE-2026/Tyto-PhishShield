@@ -3,6 +3,7 @@ import { AppLayout } from "../../components/layout/app-layout";
 import { Badge, Card, Button, Input, Select, Spinner } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
 import { createQuestion, getAllQuestions, type Question, type EducationCategory } from "../../services/education";
+import posthog from '../../lib/posthog';
 
 interface AdminTrainingProps {
   onNavigate: (path: string) => void;
@@ -134,6 +135,10 @@ export function AdminTraining({
             setOptions(['','','','']);
             setCorrectOptionIndex(0);
             setCategory('');
+            posthog.capture('training_question_created', {
+                category: category || 'general',
+                option_count: trimmedOptions.length,
+            });
 
             addToast({
                 type: 'success',
