@@ -8,11 +8,7 @@ interface AiGenerationCapture {
 }
 
 function createTraceId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
-  }
-
-  return `ai-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export function captureAiGeneration({
