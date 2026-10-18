@@ -99,6 +99,8 @@ jobs:
                 build-args: |
                   VITE_API_GATEWAY_URL=${{ matrix.api-url }}
                   VITE_BASE_PATH=${{ matrix.base }}
+                  VITE_POSTHOG_PROJECT_TOKEN=${{ secrets.VITE_POSTHOG_PROJECT_TOKEN }}
+                  VITE_POSTHOG_HOST= ${{ secrets.VITE_POSTHOG_HOST }}
 
     build-and-push-addin:
         strategy:
