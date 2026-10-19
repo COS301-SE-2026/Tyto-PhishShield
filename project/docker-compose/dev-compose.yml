@@ -202,6 +202,11 @@ services:
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=dev
       - LOG_DIR=/var/log/api-gateway
+      - POSTHOG_PROJECT_TOKEN=${VITE_POSTHOG_PROJECT_TOKEN}
+      - POSTHOG_HOST=${VITE_POSTHOG_HOST}
+      - POSTHOG_CLI_API_KEY=${POSTHOG_CLI_API_KEY}
+      - POSTHOG_CLI_PROJECT_ID=${POSTHOG_CLI_PROJECT_ID}
+      - POSTHOG_CLI_HOST=${POSTHOG_CLI_HOST}
     deploy:
       resources:
         limits:

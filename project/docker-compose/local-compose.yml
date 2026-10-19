@@ -186,6 +186,13 @@ services:
     build:
       context: ../../
       dockerfile: project/backend/api-gateway/Dockerfile
+      args:
+        POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN}
+        POSTHOG_HOST: ${VITE_POSTHOG_HOST}
+        POSTHOG_CLI_API_KEY: ${POSTHOG_CLI_API_KEY}
+        POSTHOG_CLI_PROJECT_ID: ${POSTHOG_CLI_PROJECT_ID}
+        POSTHOG_CLI_HOST: ${POSTHOG_CLI_HOST}
+        POSTHOG_RELEASE_VERSION: Local-Build
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
@@ -236,6 +243,11 @@ services:
       - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
       - RESEND_WEBHOOK_SKIP_VERIFY=${RESEND_WEBHOOK_SKIP_VERIFY}
       - NODE_ENV=${NODE_ENV}
+      - POSTHOG_PROJECT_TOKEN=${VITE_POSTHOG_PROJECT_TOKEN}
+      - POSTHOG_HOST=${VITE_POSTHOG_HOST}
+      - POSTHOG_CLI_API_KEY=${POSTHOG_CLI_API_KEY}
+      - POSTHOG_CLI_PROJECT_ID=${POSTHOG_CLI_PROJECT_ID}
+      - POSTHOG_CLI_HOST=${POSTHOG_CLI_PROJECT_ID}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     deploy:

@@ -4,6 +4,7 @@ import { HttpException } from '@nestjs/common';
 import { ReportController } from './report.controller';
 import { ProxyService } from '../proxy/proxy.service';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
+import { PostHogService } from '../posthog.service';
 
 describe('ReportController', () => {
   let controller: ReportController;
@@ -24,11 +25,13 @@ describe('ReportController', () => {
           useValue: {
             get: jest.fn((key: string) => {
               if (key === 'REPORT_SERVICE_URL') return 'http://report-service:3004';
-
+              if (key === 'POSTHOG_PROJECT_TOKEN') return 'post_hog_test';
+              if (key === 'POSTHOG_HOST') return 'post_hog_test';
               return null;
             }),
           },
         },
+        PostHogService,
       ],
     }).compile();
 

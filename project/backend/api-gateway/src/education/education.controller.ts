@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { PostHogService } from '../posthog.service';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -35,6 +36,7 @@ export class EducationController {
   constructor(
     private readonly proxy: ProxyService,
     private readonly config: ConfigService,
+    private readonly posthog: PostHogService,
   ) {
     this.educationServiceUrl = this.config.get<string>(
       'EDUCATION_SERVICE_URL',
@@ -64,13 +66,18 @@ export class EducationController {
       },
     },
   })
-  createQuestion(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
-    return this.proxy.forward({
+  async createQuestion(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+  ) {
+    const question = await this.proxy.forward({
       url: `${this.educationServiceUrl}/api/education/questions`,
       method: 'POST',
       data: body,
       headers: authHeader(req),
     });
+    this.posthog.client?.capture({ event: 'education_question_created' });
+    return question;
   }
 
   @Get('questions')
@@ -89,12 +96,14 @@ export class EducationController {
   @ApiOperation({
     summary: 'Create an education assignment for the current user',
   })
-  createAssignment(@Req() req: AuthenticatedRequest) {
-    return this.proxy.forward({
+  async createAssignment(@Req() req: AuthenticatedRequest) {
+    const assignment = await this.proxy.forward({
       url: `${this.educationServiceUrl}/api/education/assignments`,
       method: 'POST',
       headers: authHeader(req),
     });
+    this.posthog.client?.capture({ event: 'education_assignment_created' });
+    return assignment;
   }
 
   @Get('assignment/mine')
@@ -134,12 +143,14 @@ export class EducationController {
       },
     },
   })
-  submitAnswers(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
-    return this.proxy.forward({
+  async submitAnswers(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    const result = await this.proxy.forward({
       url: `${this.educationServiceUrl}/api/education/answers`,
       method: 'POST',
       data: body,
       headers: authHeader(req),
     });
+    this.posthog.client?.capture({ event: 'education_answers_submitted' });
+    return result;
   }
 }

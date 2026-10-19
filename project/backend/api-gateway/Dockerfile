@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM ghcr.io/pnpm/pnpm:11.1.1@sha256:18bcf6373f2ca9b74f13d939951f02b4514ec10a6f548fec8cfe28eb02cc4b4f AS build
 
 RUN groupadd phishshield && useradd -m -g phishshield appuser
@@ -27,7 +28,17 @@ COPY project/backend/api-gateway/ ./project/backend/api-gateway/
 
 WORKDIR /app/project/backend/api-gateway
 
-RUN rm -f tsconfig.build.tsbuildinfo && pnpm run build
+ARG POSTHOG_CLI_PROJECT_ID
+ARG POSTHOG_CLI_HOST
+ARG POSTHOG_RELEASE_VERSION
+ARG POSTHOG_CLI_API_KEY
+ENV POSTHOG_CLI_PROJECT_ID=$POSTHOG_CLI_PROJECT_ID \
+    POSTHOG_CLI_HOST=$POSTHOG_CLI_HOST \
+    POSTHOG_RELEASE_VERSION=$POSTHOG_RELEASE_VERSION \
+    POSTHOG_CLI_API_KEY=$POSTHOG_CLI_API_KEY
+
+RUN rm -f tsconfig.build.tsbuildinfo && \
+    pnpm run build
 
 RUN pnpm deploy --filter api-gateway --prod /out
 
