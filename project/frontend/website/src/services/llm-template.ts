@@ -1,4 +1,6 @@
 import { API_BASE } from './api';
+import { captureAiGeneration } from '../lib/posthog-ai';
+import { posthogLogs } from '../lib/posthog-logs';
 
 const LLM_BASE = `${API_BASE}/llm`;
 
@@ -36,6 +38,9 @@ export interface GenerateTemplatesResponse {
 
 export async function generateTemplates(request: GenerateTemplatesRequest): Promise<GenerateTemplatesResponse> {
     const token = localStorage.getItem('access_token');
+    const startedAt = performance.now();
+
+    posthogLogs.templateGenerationStarted(request.count, request.difficulty);
 
     const response = await fetch(
         `${LLM_BASE}/difficulty_generation`,
@@ -52,7 +57,22 @@ export async function generateTemplates(request: GenerateTemplatesRequest): Prom
     );
 
     if (!response.ok) {
+        posthogLogs.templateGenerationRejected();
         throw new Error('Failed to generate templates');
     }
-    return response.json() as Promise<GenerateTemplatesResponse>;
+
+    const result = await response.json() as GenerateTemplatesResponse;
+    posthogLogs.templateGenerationCompleted(
+        result.requested,
+        result.generated,
+        result.failed,
+    );
+    captureAiGeneration({
+        spanName: 'difficulty_generation',
+        input: request,
+        output: result.templates.map(({ subject, body }) => ({ subject, body })),
+        latencyMs: performance.now() - startedAt,
+    });
+
+    return result;
 }

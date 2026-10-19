@@ -596,6 +596,10 @@ services:
       - LLM_PROVIDER=${LLM_PROVIDER}
       - CLASSIFICATION_MIN_CONFIDENCE=${CLASSIFICATION_MIN_CONFIDENCE}
       - LLM_MODEL_CHAIN=${LLM_MODEL_CHAIN}
+      - LOCAL_NUM_CTX=${LOCAL_NUM_CTX}
+      - LOCAL_NUM_THREAD=${LOCAL_NUM_THREAD}
+      - LOCAL_NUM_PREDICT=${LOCAL_NUM_PREDICT}
+      - LOCAL_LLM_TIMEOUT_MS=${LOCAL_LLM_TIMEOUT_MS}
       - DB_SYNC=${DB_SYNC}
     ports:
       - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
@@ -765,6 +769,8 @@ services:
       args:
         VITE_API_GATEWAY_URL: "https://localhost"
         VITE_BASE_PATH: "/"
+        VITE_POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN}
+        VITE_POSTHOG_HOST: ${VITE_POSTHOG_HOST}
     restart: on-failure
     container_name: website
     ports:

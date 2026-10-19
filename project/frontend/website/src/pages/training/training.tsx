@@ -5,6 +5,7 @@ import { useToast } from "../../context/toast-context";
 import { getMyAssignment, submitAnswers, getMyEducationHistory, type Assignment, type PendingAssignment, type SubmitAnswerResponse, type AssignmentStatus } from "../../services/education";
 import { useAuth } from "../../context/auth-context";
 import { AdminTraining } from "./admin-training";
+import posthog from '../../lib/posthog';
 
 interface TrainingProps {
   onNavigate: (path: string) => void;
@@ -117,6 +118,12 @@ export function UserTraining({
       });
 
       setResult(submissionResult);
+      posthog.capture('training_assignment_completed', {
+        passed: submissionResult.passed,
+        correct_count: submissionResult.correctCount,
+        question_count: submissionResult.total,
+        xp_awarded: submissionResult.xpAwarded,
+      });
       setAnswers({});
       setAssignment(null);
 

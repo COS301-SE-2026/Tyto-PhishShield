@@ -210,7 +210,12 @@ export class LlmService {
     }
 
     if (!classification.categories.includes(MistakeCategory.VALID_RESPONSE)) {
-      await this.publishMistakeDetected(updatedData, reply, classification);
+      await this.publishMistakeDetected(
+        updatedData,
+        reply,
+        classification,
+        sentMessage.recipientAuth0Id,
+      );
       return;
     }
 
@@ -270,14 +275,15 @@ export class LlmService {
     dto: ReceivedReplyDto,
     reply: ParsedReply,
     classification: ClassificationResult,
+    auth0Id: string,
   ): Promise<void> {
     const mistakePayload: MistakeDetectedEvent = {
       emailId: dto.emailId,
-      sender: this.extractAddress(reply.from),
+      sender: auth0Id,
       categories: classification.categories,
       severity: classification.severity,
       confidence: classification.confidence,
-      occurredAt: new Date(),
+      occurredAt: new Date().toISOString(),
     };
 
     const mailingPayload: SendReplyEmailEvent = {

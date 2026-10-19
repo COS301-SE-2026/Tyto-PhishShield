@@ -11,6 +11,7 @@ import {
   ReviewListItemDto,
 } from '../dto/review-list-item.dto';
 import {
+  MistakeCategory,
   MistakeDetectedEvent,
   ReplyEmailKind,
   ReplyValidatedEvent,
@@ -177,19 +178,11 @@ export class ReviewService {
       where: { email: review.sender.toLowerCase() },
     });
 
-    if (user) {
-      const penalty = review.severity
-        ? SEVERITY_XP_PENALTY[review.severity]
-        : -10;
-      await this.xpService.giveXp({
-        auth0Id: user.auth0Id,
-        amount: penalty,
-        reason: XpReason.COMPROMISED,
-      });
-    } else {
+    if (!user) {
       this.logger.warn(
-        `Could not resolve user for ${review.sender}, skipping XP deduction`,
+        `Could not resolve user, skipping XP deduction for detected mistake`,
       );
+      return;
     }
 
     const mailingPayload: SendReplyEmailEvent = {
@@ -209,14 +202,15 @@ export class ReviewService {
       'reply.email',
       mailingPayload,
     );
+    this.logger.log('published to reply.email');
 
     const mistakePayload: MistakeDetectedEvent = {
       emailId: review.emailId,
-      sender: review.sender,
-      categories: review.categories,
+      sender: user.auth0Id,
+      categories: [...review.categories, MistakeCategory.SECRETS_LEAKED],
       severity: review.severity,
       confidence: review.confidence,
-      occurredAt: new Date(),
+      occurredAt: new Date().toISOString(),
     };
 
     await this.amqpConnection.publish(
@@ -224,6 +218,7 @@ export class ReviewService {
       'reply.mistake',
       mistakePayload,
     );
+    this.logger.log('published to reply.mistake');
   }
 
   private async handleNoLeak(review: ReviewEntity): Promise<void> {
@@ -265,7 +260,7 @@ export class ReviewService {
       return;
     }
 
-    const penalty = event.severity ? SEVERITY_XP_PENALTY[event.severity] : 0;
+    const penalty = event.severity ? SEVERITY_XP_PENALTY[event.severity] : -10;
 
     await this.xpService.giveXp({
       auth0Id: user.auth0Id,
