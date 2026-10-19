@@ -1,6 +1,6 @@
 import { useState, useMemo, type CSSProperties, useEffect, useCallback } from "react";
 import { AppLayout } from "../../components/layout/app-layout";
-import { Button, Card, Input, Select, Badge } from "../../components/ui";
+import { Button, Card, Input, Select, Badge, Spinner } from "../../components/ui";
 import { useToast } from "../../context/toast-context";
 import {
   sendBatchRandomDifferentEmail,
@@ -13,6 +13,8 @@ import {
   getEmailTemplates,
   type EmailTemplate,
 } from "../../services/email-template";
+import { SenderSelector, getSenderOptions, initialSenderSelection, type SenderSelection } from "../../components/email/sender-selector";
+import posthog from '../../lib/posthog';
 
 interface ScheduleWaveProps {
   readonly onNavigate: (path: string) => void;
@@ -36,6 +38,7 @@ interface FormErrors {
   scheduledFrom?: string;
   scheduledTo?: string;
   referenceNumber?: string;
+  sender?: string;
 }
 
 const DISTRIBUTION_OPTIONS = [
@@ -81,6 +84,7 @@ export function ScheduleWave({
   );
   const [templateLoading, setTemplateLoading] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [senderSelection, setSenderSelection] = useState<SenderSelection>(initialSenderSelection);
 
   const fetchUsers = useCallback(async () => {
     setUserLoading(true);
@@ -344,6 +348,14 @@ export function ScheduleWave({
       nextErrors.referenceNumber = 'Select or find an email template.';
     }
 
+    if (senderSelection.mode === 'custom' && !senderSelection.customName.trim()) {
+      nextErrors.sender = "Enter a custom sender name.";
+    }
+
+    if (senderSelection.mode === 'company' && !senderSelection.senderAuth0Id) {
+      nextErrors.sender = "Select a company user to spoof.";
+    }
+
     const scheduledTo = form.scheduledTo ? new Date(form.scheduledTo) : null;
     const scheduledFrom = form.scheduledFrom
       ? new Date(form.scheduledFrom)
@@ -389,6 +401,8 @@ export function ScheduleWave({
 
       const scheduledTo = new Date(form.scheduledTo).toISOString();
 
+      const senderOptions = getSenderOptions(senderSelection);
+
       let response;
 
       if (form.emailDistribution === 'different') {
@@ -399,6 +413,7 @@ export function ScheduleWave({
           scheduledTo,
           form.randomisedTimes,
           form.waveName.trim(),
+          senderOptions,
         );
       }else {
         response = await sendBatchRandomSameEmail(
@@ -409,8 +424,17 @@ export function ScheduleWave({
           form.randomisedTimes,
           form.waveName.trim(),
           form.emailDistribution === 'specific' ? selectedEmail?.referenceNumber: undefined,
+          senderOptions,
         );
       }
+
+      posthog.capture('phishing_wave_scheduled', {
+        recipient_count: selectedAuth0Ids.length,
+        email_distribution: form.emailDistribution,
+        difficulty: form.difficulty,
+        randomised_times: form.randomisedTimes,
+        sender_mode: senderSelection.mode,
+      });
 
       addToast({
         type: "success",
@@ -651,7 +675,7 @@ export function ScheduleWave({
                         color:'var(--text-secondary)',
                       }}
                     >
-                      {selectedEmail.alias ? `${selectedEmail.alias} <${selectedEmail.sender}>` : selectedEmail.sender}
+                      Sender domain: @{selectedEmail.sender}
                     </div>
 
                     <div
@@ -667,6 +691,34 @@ export function ScheduleWave({
                 )}
               </div>
             )}
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                padding: 16,
+                gap: 16,
+                background: 'var(--bg-hover)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+              }}
+            >
+              <SenderSelector
+                users={users}
+                userLoading={userLoading}
+                value={senderSelection}
+                onChange={(selection) => {setSenderSelection(selection)
+                  setErrors((previous) => ({
+                    ...previous,
+                    sender: undefined,
+                  }));
+                }}
+                domain={selectedEmail?.sender}
+              />
+              {errors.sender && (
+                <p style={errorStyle}>{errors.sender}</p>
+              )}
+            </div>
 
             <div>
               <label style={labelStyle}>
@@ -760,9 +812,9 @@ export function ScheduleWave({
                   }}
                 >
                   {userLoading ? (
-                    <p style={{...supportingTextStyle, padding: 16}}>
-                      Loading users...
-                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: 16 }}>
+                      <Spinner size={24} />
+                    </div>
                   ) : filteredUsers.length === 0 ? (
                     <p style={{...supportingTextStyle, padding: 16}}>
                       No users found.

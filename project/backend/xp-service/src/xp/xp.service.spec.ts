@@ -6,7 +6,7 @@ import {
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { XpService } from './xp.service';
 import { XpEntity, XpReason } from '../entities/xp.entity';
-import { Department, UserEntity } from '../entities/user.entity';
+import { Department, UserEntity, UserRole } from '../entities/user.entity';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { EmailDetailsEntity } from '../entities/email-details.entity';
 
@@ -14,8 +14,11 @@ const mockUser: Partial<UserEntity> = {
   id: '1',
   auth0Id: 'auth0|123',
   name: 'Alice',
+  firstName: 'test_first',
+  lastName: 'test_last',
   email: 'test@example.com',
   department: Department.FINANCE,
+  role: UserRole.USER,
 };
 const mockXpEntry: Partial<XpEntity> = {
   id: '1',

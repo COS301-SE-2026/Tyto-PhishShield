@@ -12,8 +12,10 @@ import { GeneratedTemplatesResponseDto } from './dto/generated-templates-respons
 import { ClassifyReplyDto } from './dto/classify-reply.dto';
 import { ReplyClassificationDto } from './dto/reply-classification.dto';
 import { ClassificationService } from './classification/classification.service';
-import { ReceivedReplyDto } from '@phishshield/dto';
+import { ReceivedReplyDto, ReplyValidatedEvent } from '@phishshield/dto';
 import { ReplyGuardService } from './reply-guard/reply-guard.service';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
 
 @Controller('llm')
 export class LlmController {
@@ -24,6 +26,15 @@ export class LlmController {
     private readonly classificationService: ClassificationService,
     private readonly replyGuardService: ReplyGuardService,
   ) {}
+
+  @RabbitSubscribe({
+    exchange: 'llm-event-exchange',
+    routingKey: 'reply.valid',
+    queue: 'llm-review-queue',
+  })
+  async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
+    await this.llmService.handleReplyValidated(event);
+  }
 
   @Post('difficulty_generation')
   @HttpCode(HttpStatus.OK)
@@ -44,7 +55,6 @@ export class LlmController {
   @Post('received_reply')
   @HttpCode(HttpStatus.ACCEPTED)
   receivedReply(@Body() body: ReceivedReplyDto): { accepted: true } {
-    this.logger.warn(`body in llm gateway: `, body);
     if (!this.replyGuardService.claimEvent(body.webhookEventId)) {
       this.logger.warn(
         `Duplicate webhook event ${body.webhookEventId} ignored`,
@@ -54,6 +64,21 @@ export class LlmController {
     void this.llmService.processReceivedReply(body).catch((err) => {
       this.logger.error(
         `Processing reply for email ${body.emailId} failed: ${err}`,
+      );
+    });
+
+    return { accepted: true };
+  }
+
+  @Post('spear_phishing')
+  @HttpCode(HttpStatus.ACCEPTED)
+  handleSpearPhishing(@Body() dto: GenerateSpearPhishingDto): {
+    accepted: true;
+  } {
+    this.llmService.processSpearPhishing(dto).catch((err: Error) => {
+      this.logger.error(
+        `Spear-phishing generation failed: ${err.message}`,
+        err.stack,
       );
     });
 

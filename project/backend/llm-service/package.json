@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "^9.0.2",
+    "@golevelup/ts-jest": "^3.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",
@@ -38,7 +39,8 @@
     "reflect-metadata": "^0.2.2",
     "resend": "^6.12.3",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.29"
+    "typeorm": "^0.3.29",
+    "undici": "^8.11.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

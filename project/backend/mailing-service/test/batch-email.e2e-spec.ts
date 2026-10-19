@@ -14,11 +14,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { MailingServiceModule } from '../src/mailing-service.module';
-import {
-  EmailDifficulty,
-  EmailTemplateEntity,
-} from '../src/entities/email-template.entity';
-import { Department, UserEntity } from '../src/entities/user.entity';
+import { EmailDifficulty, EmailTemplateEntity, } from '../src/entities/email-template.entity';
+import { Department, UserEntity, UserRole } from '../src/entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { WaveEntity } from '../src/entities/wave.entity';
@@ -74,16 +71,22 @@ describe('BatchEmail service integration tests', () => {
       TEST_AUTH0_IDS.map((auth0Id) => ({
         auth0Id,
         name: 'Batch E2E Test User',
+        firstName: 'E2E_first',
+        lastName: 'E2E_last',
         email: TEST_RECIPIENT_EMAIL,
         department: Department.FINANCE,
+        role: UserRole.USER,
       })),
     );
 
     await userRepository.save({
       auth0Id: TEST_SENDER_AUTH0_ID,
       name: 'Batch E2E Test Sender',
+      firstName: 'E2E_first',
+      lastName: 'E2E_last',
       email: `sender@${TEST_SENDER}`,
       department: Department.IT_SECURITY,
+      role: UserRole.USER,
     });
 
   await employeeInfoRepository.save(

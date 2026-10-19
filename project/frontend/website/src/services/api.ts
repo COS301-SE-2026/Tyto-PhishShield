@@ -102,7 +102,30 @@ export const authApi = {
     });
     return parseResponse<{ message: string }>(res);
   },
-  
+
+  updateProfile: async (dto: { name?: string; email?: string; department?: string; weeklyDigestOptIn?: boolean }): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/accounts/auth/profile`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    return parseResponse<{ message: string }>(res);
+  },
+
+  sendDigestNow: async (): Promise<{ message: string }> => {
+    const res = await fetch(`${API_BASE}/accounts/auth/digest/send-now`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+    });
+    return parseResponse<{ message: string }>(res);
+  },
+
   contactSales: async (dto: { companyName: string; workEmail: string; message?: string }): Promise<{ message: string }> => {
     const res = await fetch(`${API_BASE}/company/contact-sales`, {
       method: 'POST',

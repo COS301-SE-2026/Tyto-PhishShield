@@ -7,6 +7,7 @@ import { EducationModule } from './education/education.module';
 import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { IncorrectQuestion } from './education/entities/incorrect-question.entity';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { AppService } from './app.service';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [Question, Assignment],
+        entities: [Question, Assignment, IncorrectQuestion],
         synchronize: true,
       }),
     }),

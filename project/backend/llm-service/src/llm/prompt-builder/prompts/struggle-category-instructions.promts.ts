@@ -1,0 +1,3 @@
+export function buildStruggleCategoryInstructions(category: string): string {
+  return `Additional (optional) context: in past simulations, this recipient has shown a mild tendency to fall for messages touching on "${category}" more than other categories. If it fits naturally alongside the message type and scenario above, let it lightly shape the angle of the email, a detail, a pretext, or a specific ask that leans that direction. This is a subtle influence only: it must never override or contradict the message type or scenario. If the two don't sit together naturally, ignore this and prioritize a coherent, natural email instead.`;
+}

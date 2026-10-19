@@ -21,6 +21,7 @@ import { Question } from './entities/question.entity';
 import { Assignment, AssignmentStatus } from './entities/assignment.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAnswersDto } from './dto/submit-answers.dto';
+import { IncorrectQuestion } from './entities/incorrect-question.entity';
 
 const mockQuestionRepo = {
   create: jest.fn(),
@@ -36,6 +37,12 @@ const mockAssignmentRepo = {
   findOne: jest.fn(),
 };
 
+const mockIncorrectRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  find: jest.fn(),
+};
+
 const mockAmqpConnection = {
   publish: jest.fn(),
 };
@@ -44,6 +51,7 @@ describe('EducationService', () => {
   let service: EducationService;
   let questionRepo: jest.Mocked<typeof mockQuestionRepo>;
   let assignmentRepo: jest.Mocked<typeof mockAssignmentRepo>;
+  let incorrectRepo: jest.Mocked<typeof mockIncorrectRepo>;
   let amqpConnection: jest.Mocked<typeof mockAmqpConnection>;
 
   beforeEach(async () => {
@@ -55,6 +63,10 @@ describe('EducationService', () => {
           provide: getRepositoryToken(Assignment),
           useValue: mockAssignmentRepo,
         },
+        {
+          provide: getRepositoryToken(IncorrectQuestion),
+          useValue: mockIncorrectRepo,
+        },
         { provide: AmqpConnection, useValue: mockAmqpConnection },
       ],
     }).compile();
@@ -62,6 +74,7 @@ describe('EducationService', () => {
     service = module.get<EducationService>(EducationService);
     questionRepo = module.get(getRepositoryToken(Question));
     assignmentRepo = module.get(getRepositoryToken(Assignment));
+    incorrectRepo = module.get(getRepositoryToken(IncorrectQuestion));
     amqpConnection = module.get(AmqpConnection);
   });
 

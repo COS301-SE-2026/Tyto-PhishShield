@@ -41,6 +41,9 @@ export class Communication {
   @Column({ nullable: true })
   parentExternalId?: string;
 
+  @Column({ type: 'text', nullable: true })
+  text?: string | null;
+
   @Index()
   @Column({ type: 'timestamptz' })
   occurredAt!: Date;

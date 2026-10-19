@@ -1,20 +1,31 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 import { Department } from '../entities/user.entity';
+import { UserRole } from '@phishshield/dto';
 
 export class User {
   @IsString()
-  id: string;
+  id!: string;
 
   @IsString()
-  auth0Id: string;
+  auth0Id!: string;
 
   @IsString()
-  name: string;
+  name!: string;
+
+  @IsString()
+  firstName!: string;
+
+  @IsString()
+  lastName!: string;
 
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsOptional()
-  department: Department;
+  department!: Department;
+
+  @IsString()
+  @IsOptional()
+  role?: UserRole;
 }

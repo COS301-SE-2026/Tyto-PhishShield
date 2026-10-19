@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card } from '../../components/ui';
-import { LayoutDashboard, BookOpen, Trophy, Mail, BookMarked, Library, BarChart2 } from 'lucide-react';
+import { useAuth } from '../../context/auth-context';
+import { LayoutDashboard, BookOpen, Trophy, Mail, BookMarked, Library, BarChart2, ArrowLeft } from 'lucide-react';
 
 interface HelpProps {
   onNavigate: (path: string) => void;
@@ -257,6 +258,7 @@ function FaqAccordionItem({ faq }: Readonly<{ faq: Faq }>) {
 }
 
 export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
+  const { isAuthenticated } = useAuth();
   const quickLinks: QuickLink[] = [
     {
       label: 'Dashboard',
@@ -305,6 +307,23 @@ export function Help({ onNavigate, activePath }: Readonly<HelpProps>) {
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Help Centre" subtitle="Guides, tutorials, and answers to common questions">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+        {!isAuthenticated && (
+          <button type="button"
+            onClick={() => {
+              if (window.history.length > 1) window.history.back();
+              else onNavigate('/login');
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+              padding: '8px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)',
+              background: 'var(--bg-card)', color: 'var(--text-secondary)', cursor: 'pointer',
+              fontSize: 12.5, fontWeight: 600, fontFamily: 'Inter, system-ui, sans-serif',
+            }}
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            Back
+          </button>
+        )}
         <section>
           <SectionHeading>Quick Links</SectionHeading>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>

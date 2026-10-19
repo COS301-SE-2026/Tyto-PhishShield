@@ -31,6 +31,8 @@ describe('AccountsController', () => {
         id: 'user-1',
         auth0Id: 'auth0|123',
         name: 'test',
+        firstName: 'test_first',
+        lastName: 'test_last',
         email: 'test@example.com',
         department: Department.FINANCE,
       };
@@ -48,6 +50,8 @@ describe('AccountsController', () => {
         id: 'user-1',
         auth0Id: 'auth0|123',
         name: 'test',
+        firstName: 'test_first',
+        lastName: 'test_last',
         email: 'test@example.com',
         department: Department.FINANCE,
       });

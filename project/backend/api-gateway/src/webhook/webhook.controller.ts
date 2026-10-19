@@ -17,6 +17,7 @@ import { ResendReceivedWebhookPayloadDto } from '@phishshield/dto';
 import { randomUUID } from 'node:crypto';
 import { toReceivedReply } from './received-reply.mapper';
 import { ResendWebhookGuard } from './resend-webhook.guard';
+import { isAllowedReceivedReplyDomain } from './allowlist';
 
 interface ResendWebhookPayload {
   type: string;
@@ -68,6 +69,14 @@ export class WebhookController {
     @Headers('svix-id') svixId: string,
     @Body() payload: ResendWebhookPayload,
   ) {
+    if (payload.type === 'email.sent' && payload.data.message_id) {
+      this.backFillSentMessageId(
+        payload.data.email_id,
+        payload.data.message_id,
+      );
+      this.logger.warn('backFillSentMessage published');
+    }
+
     return this.proxy.forward({
       url: `${this.analyticsServiceUrl}/api/email-status/create`,
       method: 'POST',
@@ -80,6 +89,20 @@ export class WebhookController {
         occurredAt: payload.data.created_at,
       },
     });
+  }
+
+  private backFillSentMessageId(emailId: string, messageId: string): void {
+    this.proxy
+      .forward({
+        url: `${this.llmServiceUrl}/api/mailing-event/confirm-message-id`,
+        method: 'POST',
+        data: { emailId, messageId },
+      })
+      .catch((err) =>
+        this.logger.warn(
+          `Failed to notify llm-service of confirmed message id: ${err}`,
+        ),
+      );
   }
 
   @Public()
@@ -120,6 +143,13 @@ export class WebhookController {
   ) {
     if (body.type !== 'email.received') {
       this.logger.warn(`ignore triggered in api-gateway`);
+      return { ignored: true };
+    }
+
+    if (!isAllowedReceivedReplyDomain([body.data.from])) {
+      this.logger.warn(
+        `Ignoring received reply for disallowed domain(s): ${body.data.to.join(', ')}`,
+      );
       return { ignored: true };
     }
 

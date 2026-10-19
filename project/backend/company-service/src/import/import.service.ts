@@ -48,7 +48,7 @@ export class ImportService {
     externalId: 'externalId',
     title: 'title',
     auth0Id: 'auth0Id',
-  }
+  };
 
   async create(createImportDto: CreateImportDto, file: Express.Multer.File) {
     const extension = path.extname(file.originalname).toLowerCase();
@@ -108,8 +108,13 @@ export class ImportService {
     }
 
     for (const [systemField, csvField] of Object.entries(this.fullMap)) {
-      if (!parsedMap[systemField as keyof MappingDto] && csvField && headers.includes(csvField)) {
-        parsedMap = {...parsedMap, [systemField]: csvField};
+      const field = csvField as string;
+      if (
+        !parsedMap[systemField as keyof MappingDto] &&
+        field &&
+        headers.includes(field)
+      ) {
+        parsedMap = { ...parsedMap, [systemField]: field };
       }
     }
 

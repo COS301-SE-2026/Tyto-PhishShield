@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from '../../context/auth-context';
+import { Spinner } from '../ui';
 import type { UserRole } from '../../types';
 
 interface ProtectedRouteProps {
@@ -13,9 +14,7 @@ function LoadingScreen() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
       height: '100vh', background: 'var(--bg-page)', }}>
-      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid var(--border)',
-        borderTopColor: 'var(--color-primary)', animation: 'spin 0.7s linear infinite', }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <Spinner size={40} />
     </div>
   );
 }

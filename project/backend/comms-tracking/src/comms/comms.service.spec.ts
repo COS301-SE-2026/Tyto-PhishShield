@@ -104,7 +104,7 @@ describe('CommsService', () => {
       const created = { id: 'comm-1', ...baseMessage };
       commRepo.create.mockReturnValue(created as any);
       commRepo.save.mockResolvedValue(created as any);
-      dataSource.query.mockResolvedValue(undefined);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
       eventProducer.publishCommunicationRecorded.mockResolvedValue(undefined);
 
       await service.recordCommunication(baseMessage);
@@ -117,6 +117,7 @@ describe('CommsService', () => {
         channelExternalId: baseMessage.channelExternalId,
         isReply: baseMessage.isReply,
         parentExternalId: baseMessage.parentExternalId,
+        text: null,
         occurredAt: baseMessage.occurredAt,
       });
       expect(commRepo.save).toHaveBeenCalled();
@@ -136,6 +137,7 @@ describe('CommsService', () => {
         source: CommsSource.SLACK,
         senderAuth0Id: baseMessage.senderAuth0Id,
         receiverAuth0Ids: baseMessage.receiverAuth0Ids,
+        text: null,
         occurredAt: baseMessage.occurredAt.toISOString(),
       });
     });
@@ -144,7 +146,7 @@ describe('CommsService', () => {
       commRepo.findOne.mockResolvedValue(null);
       commRepo.create.mockReturnValue({} as any);
       commRepo.save.mockResolvedValue({} as any);
-      dataSource.query.mockResolvedValue(undefined);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
       eventProducer.publishCommunicationRecorded.mockResolvedValue(undefined);
 
       const multi: NormalizedMessage = {
@@ -163,7 +165,7 @@ describe('CommsService', () => {
       commRepo.findOne.mockResolvedValue(null);
       commRepo.create.mockReturnValue({} as any);
       commRepo.save.mockResolvedValue({} as any);
-      dataSource.query.mockResolvedValue(undefined);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
       eventProducer.publishCommunicationRecorded.mockRejectedValue(
         new Error('broker down'),
       );
@@ -171,6 +173,45 @@ describe('CommsService', () => {
       await expect(
         service.recordCommunication(baseMessage),
       ).resolves.toBeUndefined();
+    });
+
+    it('persists and publishes the message text when present', async () => {
+      commRepo.findOne.mockResolvedValue(null);
+      commRepo.create.mockReturnValue({} as any);
+      commRepo.save.mockResolvedValue({} as any);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
+      eventProducer.publishCommunicationRecorded.mockResolvedValue(undefined);
+
+      const withText: NormalizedMessage = {
+        ...baseMessage,
+        text: 'Hey @bob, take a look',
+      };
+
+      await service.recordCommunication(withText);
+
+      expect(commRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ text: 'Hey @bob, take a look' }),
+      );
+      expect(eventProducer.publishCommunicationRecorded).toHaveBeenCalledWith(
+        expect.objectContaining({ text: 'Hey @bob, take a look' }),
+      );
+    });
+
+    it('coerces undefined text to null', async () => {
+      commRepo.findOne.mockResolvedValue(null);
+      commRepo.create.mockReturnValue({} as any);
+      commRepo.save.mockResolvedValue({} as any);
+      dataSource.query.mockResolvedValue([{ message_count: 1 }]);
+      eventProducer.publishCommunicationRecorded.mockResolvedValue(undefined);
+
+      await service.recordCommunication(baseMessage); // no text field
+
+      expect(commRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ text: null }),
+      );
+      expect(eventProducer.publishCommunicationRecorded).toHaveBeenCalledWith(
+        expect.objectContaining({ text: null }),
+      );
     });
   });
 

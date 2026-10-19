@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback,
   type ReactNode, } from 'react';
 import type { AuthenticatedUser, LoginResponse, UserRole } from '../types';
 import { authApi } from '../services/api'
+import posthog from '../lib/posthog';
 
 interface AuthContextValue {
   user: AuthenticatedUser | null;
@@ -24,6 +25,16 @@ interface Token {
 
 const ROLE_LEVEL: Record<UserRole, number> = { admin: 3, analyst: 2, user: 1 };
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+const identifyUser = (user: AuthenticatedUser) => {
+  if (!user.auth0Id) return;
+
+  posthog.identify(user.auth0Id, {
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  });
+};
 
 const isTokenExpired = () => {
   const expiry = localStorage.getItem('token_expiry');
@@ -68,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('token_expiry', String(Date.now() + expires_in * 1000));
       const me: AuthenticatedUser = await authApi.getMe();
+      identifyUser(me);
       setUser(me);
     } else {
       setToken({
@@ -94,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('access_token', token?.access_token ?? '');
     localStorage.setItem('token_expiry', String(token?.tokenExpiry));
     const me: AuthenticatedUser = await authApi.getMe();
+    identifyUser(me);
     setUser(me);
   };
 
@@ -106,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
+    posthog.reset();
     localStorage.removeItem('access_token');
     localStorage.removeItem('token_expiry');
     setUser(null);

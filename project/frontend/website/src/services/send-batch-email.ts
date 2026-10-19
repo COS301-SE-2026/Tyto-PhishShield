@@ -11,7 +11,13 @@ export interface BatchEmailResponse{
 
 export type EmailDifficulty = 'easy' | 'medium' | 'hard';
 
-interface RandomBatchRequest {
+export interface SenderOptions {
+  senderCustomName?: string;
+  senderAuth0Id?: string;
+  alias?: string;
+}
+
+interface RandomBatchRequest extends SenderOptions{
   auth0Id: string[];
   difficulty: EmailDifficulty;
   scheduledFrom: string;
@@ -22,6 +28,10 @@ interface RandomBatchRequest {
 
 interface RandomSameBatchRequest extends RandomBatchRequest {
   referenceNumber?: string;
+}
+
+interface BatchWithReferenceRequest extends SenderOptions {
+  auth0Id: string[];
 }
 
 async function postBatchEmail(
@@ -52,30 +62,17 @@ async function postBatchEmail(
   return data as BatchEmailResponse;
 }
 
-export async function sendBatchWithReference(referenceNumber: string, auth0Ids: string[],): Promise<BatchEmailResponse> {
-  const token = localStorage.getItem('access_token');
-
-  const response = await fetch(
-    `${BATCH_EMAIL_BASE}/${referenceNumber}/send-batch-with-reference`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        auth0Id: auth0Ids,
-      })
-    }
-  );
-
-  const data: unknown = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(isErrorResponse(data) ? (data).message : 'Failed to send batch email');
+export async function sendBatchWithReference(referenceNumber: string, auth0Ids: string[], senderOptions: SenderOptions = {}): Promise<BatchEmailResponse> {
+  const request: BatchWithReferenceRequest = {
+    auth0Id: auth0Ids,
+    ...senderOptions,
   }
 
-  return data as BatchEmailResponse;
+  return postBatchEmail(
+    `${encodeURIComponent(referenceNumber)}/send-batch-with-reference`,
+    request,
+    'Failed to send batch email',
+  );
 }
 
 export async function sendBatchRandomSameEmail(
@@ -86,6 +83,7 @@ export async function sendBatchRandomSameEmail(
     randomisedTimes: boolean,
     waveName: string,
     referenceNumber?: string,
+    senderOptions: SenderOptions = {},
 ): Promise<BatchEmailResponse> {
   const request: RandomSameBatchRequest = {
     auth0Id: auth0Ids,
@@ -95,6 +93,7 @@ export async function sendBatchRandomSameEmail(
     randomisedTimes,
     waveName,
     ...(referenceNumber ? {referenceNumber} : {}),
+    ...senderOptions,
   };
 
   return postBatchEmail(
@@ -111,6 +110,7 @@ export async function sendBatchRandomDifferentEmail(
     scheduledTo: string, 
     randomisedTimes: boolean,
     waveName: string,
+    senderOptions: SenderOptions = {},
 ): Promise<BatchEmailResponse> {
   const request: RandomBatchRequest = {
     auth0Id: auth0Ids,
@@ -119,6 +119,7 @@ export async function sendBatchRandomDifferentEmail(
     scheduledTo,
     randomisedTimes,
     waveName,
+    ...senderOptions,
   };
 
   return postBatchEmail(

@@ -43,9 +43,17 @@ localhost, phishshield.local {
         }
     }
 
+    handle /addin/ {
+        redir /addin/ /addin/manifest.xml 302
+    }
+
     handle /addin/* {
         uri strip_prefix /addin
         reverse_proxy outlook-addin:8080
+    }
+
+    handle /favicon.ico {
+        redir /favicon.ico /favicon.svg 301
     }
 
     handle {

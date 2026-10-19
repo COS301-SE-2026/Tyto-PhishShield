@@ -65,9 +65,6 @@ export class ClassificationService {
     try {
       parsed = JSON.parse(raw) as RawClassificationOutput;
     } catch {
-      this.logger.warn(
-        `Local LLM returned non-JSON classification output: ${raw}`,
-      );
       return this.fallback();
     }
 

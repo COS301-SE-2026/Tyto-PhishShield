@@ -63,7 +63,7 @@ describe('sendEmail', () => {
 
         const result = await sendEmail(
             'PHISH-123',
-            'recipient@example.com',
+            'auth0|test-user-123',
         );
 
         expect(result).toEqual(backendResponse);
@@ -77,7 +77,7 @@ describe('sendEmail', () => {
                     Authorization: 'Bearer test-token',
                 },
                 body: JSON.stringify({
-                    recipient: 'recipient@example.com',
+                    auth0Id: 'auth0|test-user-123',
                 }),
             },
         );
@@ -92,7 +92,7 @@ describe('sendEmail', () => {
 
         await sendEmail(
             'PHISH-123',
-            'recipient@example.com',
+            'auth0|test-user-123',
         );
 
         expect(mockFetch).toHaveBeenCalledWith(
@@ -111,7 +111,7 @@ describe('sendEmail', () => {
         }));
 
         await expect(
-            sendEmail('INVALID', 'recipient@example.com'),
+            sendEmail('INVALID', 'auth0|test-user-123'),
         ).rejects.toThrow('Email referennce was not found');
     });
 
@@ -121,7 +121,7 @@ describe('sendEmail', () => {
         }));
 
         await expect(
-            sendEmail('PHISH-123', 'recipient@example.com'),
+            sendEmail('PHISH-123', 'auth0|test-user-123'),
         ).rejects.toThrow('Failed to send email');
     });
 
@@ -136,7 +136,7 @@ describe('sendEmail', () => {
         mockFetch.mockResolvedValue(response);
 
         await expect(
-            sendEmail('PHISH-123', 'recipient@example.com'),
+            sendEmail('PHISH-123', 'auth0|test-user-123'),
         ).rejects.toThrow('Failed to send email');
     });
 });
@@ -165,7 +165,7 @@ describe('scheduleEmail', () => {
 
         const result = await scheduleEmail(
             'PHISH-567',
-            'recipient@example.com',
+            'auth0|test-user-123',
             '2026-10-20T10:30:00.000Z',
         );
 
@@ -180,7 +180,7 @@ describe('scheduleEmail', () => {
                     Authorization: 'Bearer test-token',
                 },
                 body: JSON.stringify({
-                    recipient: 'recipient@example.com',
+                    auth0Id: 'auth0|test-user-123',
                     scheduledAt: '2026-10-20T10:30:00.000Z',
                 }),
             },
@@ -196,7 +196,7 @@ describe('scheduleEmail', () => {
 
         await scheduleEmail(
             'PHISH-567',
-            'recipient@example.com',
+            'auth0|test-user-123',
             '2026-10-20T10:30:00.000Z',
         );
 
@@ -218,7 +218,7 @@ describe('scheduleEmail', () => {
         await expect(
             scheduleEmail(
                 'PHISH-567',
-                'recipient@example.com',
+                'auth0|test-user-123',
                 '2020-01-01T10:30:00.000Z',
             ),
         ).rejects.toThrow('The scheduled date must be in the future');
@@ -232,7 +232,7 @@ describe('scheduleEmail', () => {
         await expect(
             scheduleEmail(
                 'PHISH-567', 
-                'recipient@example.com',
+                'auth0|test-user-123',
                 '2026-10-20T10:30:00.000Z',
             ),
         ).rejects.toThrow('Failed to schedule single email');
@@ -251,7 +251,7 @@ describe('scheduleEmail', () => {
         await expect(
             scheduleEmail(
                 'PHISH-567', 
-                'recipient@example.com',
+                'auth0|test-user-123',
                 '2026-10-20T10:30:00.000Z',
             ),
         ).rejects.toThrow('Failed to schedule single email');

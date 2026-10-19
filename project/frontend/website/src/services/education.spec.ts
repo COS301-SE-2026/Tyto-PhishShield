@@ -88,6 +88,7 @@ describe('education service', () => {
         const createdQuestion: Question = {
             id: 'question-1',
             ...request,
+            category:null,
             createdAt: '2026-07-27T10:00:00.000Z',
         };
 
@@ -123,6 +124,7 @@ describe('education service', () => {
                     'Option C',
                 ],
                 correctOptionIndex: 0,
+                category: null,
                 createdAt: '2026-07-27T10:00:00.000Z',
             },
             {
@@ -134,6 +136,7 @@ describe('education service', () => {
                     'Option C',
                 ],
                 correctOptionIndex: 0,
+                category: "secrets_leaked",
                 createdAt: '2026-07-27T11:00:00.000Z',
             },
         ];

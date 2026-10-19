@@ -1,5 +1,5 @@
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Button } from '../../components/ui';
+import { Card, Button, Spinner } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useState, useEffect } from 'react';
 import { useToast } from '../../context/toast-context';
@@ -342,8 +342,8 @@ export function UserProfile({ onNavigate, activePath, userId }: UserProfileProps
   if (!isOwnProfile && loadingUser) {
     return (
       <AppLayout activePath={activePath} onNavigate={onNavigate} title="Loading…">
-        <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, system-ui, sans-serif' }}>
-          Loading user profile.
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+          <Spinner size={28} />
         </div>
       </AppLayout>
     );

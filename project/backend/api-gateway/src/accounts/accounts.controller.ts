@@ -70,7 +70,8 @@ export class AccountsController {
         email: { type: 'string', example: 'test@example.com' },
         password: { type: 'string', example: 'Password123!' },
         employeeId: { type: 'string', example: 'emp-id.0123456789' },
-        name: { type: 'string', example: 'Test User' },
+        firstName: { type: 'string', example: 'Test' },
+        lastName: { type: 'string', example: 'User' },
         department: {
           type: 'string',
           enum: [
@@ -231,6 +232,19 @@ export class AccountsController {
       url: `${this.accountsServiceUrl}/api/auth/profile`,
       method: 'PATCH',
       data: body,
+      headers: authHeader(req),
+    });
+  }
+
+  @Post('auth/digest/send-now')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Send a test weekly digest email to yourself now' })
+  sendDigestNow(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.accountsServiceUrl}/api/auth/digest/send-now`,
+      method: 'POST',
       headers: authHeader(req),
     });
   }

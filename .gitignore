@@ -16,6 +16,9 @@ Thumbs.db
 *.env
 secrets.yml
 credentials.json
+secrets/
+password
+provisioner_password
 
 # Logs
 *.log
@@ -75,3 +78,7 @@ jest-cache/
 project/docker-compose/dc.ps1
 project/docker-compose/local-compose.override.yml
 root.crt
+project/backend/databases-seeds/analytics/seed.sql
+/project/backend/databases-seeds/analytics
+project/backend/databases-seeds/analytics/seed.sql
+project/backend/databases-seeds/analytics/seed.sql

@@ -4,6 +4,7 @@ import { AccountsService } from './accounts.service';
 import { Department, UserEntity } from '../entities/user.entity';
 import { User } from '../dto/user.dto';
 import { InternalServerErrorException } from '@nestjs/common';
+import { UserRole } from '@phishshield/dto';
 
 const mockQueryBuilder = {
   insert: jest.fn().mockReturnThis(),
@@ -44,8 +45,11 @@ describe('AccountsService', () => {
       id: 'user-1',
       auth0Id: 'auth0|123',
       name: 'test',
+      firstName: 'test_first',
+      lastName: 'test_last',
       email: 'test@example.com',
       department: Department.FINANCE,
+      role: UserRole.USER,
     };
 
     it('should upsert the user with the correct data', async () => {
@@ -60,11 +64,14 @@ describe('AccountsService', () => {
         id: user.id,
         auth0Id: user.auth0Id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         department: user.department,
+        role: user.role,
       });
       expect(mockQueryBuilder.orUpdate).toHaveBeenCalledWith(
-        ['name', 'email', 'department'],
+        ['name', 'firstName', 'lastName', 'email', 'department', 'role'],
         ['auth0Id'],
         { skipUpdateIfNoValuesChanged: true },
       );

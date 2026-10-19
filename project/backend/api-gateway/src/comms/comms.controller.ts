@@ -46,13 +46,41 @@ export class CommsController {
     summary: 'Directed communication graph for the admin dashboard',
   })
   @ApiQuery({ name: 'period', required: false, example: '30d' })
-  getGraph(
-    @Req() req: AuthenticatedRequest,
-    @Query('period') period?: string,
-  ) {
+  getGraph(@Req() req: AuthenticatedRequest, @Query('period') period?: string) {
     const qs = period ? `?period=${period}` : '';
     return this.proxy.forward({
       url: `${this.commsServiceUrl}/api/comms/graph${qs}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
+  @Get('messages')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'analyst')
+  @ApiOperation({
+    summary: 'Recent recorded messages with content (admin/analyst only)',
+  })
+  @ApiQuery({ name: 'limit', required: false, example: '50' })
+  @ApiQuery({ name: 'senderAuth0Id', required: false })
+  @ApiQuery({ name: 'receiverAuth0Id', required: false })
+  @ApiQuery({ name: 'sinceDays', required: false, example: '30' })
+  getMessages(
+    @Req() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+    @Query('senderAuth0Id') senderAuth0Id?: string,
+    @Query('receiverAuth0Id') receiverAuth0Id?: string,
+    @Query('sinceDays') sinceDays?: string,
+  ) {
+    const params = new URLSearchParams();
+    if (limit) params.set('limit', limit);
+    if (senderAuth0Id) params.set('senderAuth0Id', senderAuth0Id);
+    if (receiverAuth0Id) params.set('receiverAuth0Id', receiverAuth0Id);
+    if (sinceDays) params.set('sinceDays', sinceDays);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+
+    return this.proxy.forward({
+      url: `${this.commsServiceUrl}/api/comms/messages${qs}`,
       method: 'GET',
       headers: authHeader(req),
     });

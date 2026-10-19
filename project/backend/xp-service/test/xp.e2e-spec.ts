@@ -14,13 +14,12 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
-import { Response } from 'supertest';
+import request, { Response } from 'supertest';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Server } from 'http';
 import { AppModule } from '../src/app.module';
-import { Department, UserEntity } from '../src/entities/user.entity';
+import { Department, UserEntity, UserRole } from '../src/entities/user.entity';
 import { XpEntity } from '../src/entities/xp.entity';
 import { XpResponseDto } from '../src/dto/xp-response.dto';
 import { NetXpResponseDto } from '../src/dto/net-xp-response.dto';
@@ -54,8 +53,11 @@ describe('XP service integration test', () => {
         id: '550e8400-e29b-41d4-a716-446655440000',
         auth0Id: TEST_AUTH0_ID,
         name: 'XP E2E Tester',
+        firstName: 'E2E_first',
+        lastName: 'E2E_last',
         email: 'xp-e2e@example.com',
         department: Department.FINANCE,
+        role: UserRole.USER,
       });
       seededUser = await userRepository.save(newUser);
       console.log('Successfully seeded user:', JSON.stringify(seededUser));

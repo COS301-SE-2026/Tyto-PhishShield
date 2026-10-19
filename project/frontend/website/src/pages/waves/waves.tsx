@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { AppLayout } from '../../components/layout/app-layout';
-import { Card, Badge, Button } from '../../components/ui';
+import { Card, Badge, Button, Spinner } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../context/toast-context';
 import { getWave, getWaves, type Wave } from '../../services/wave';
@@ -185,15 +185,8 @@ export function Waves({ onNavigate, activePath}: WavesProps) {
         }}
       >
         {loading ? (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: 48,
-              fontSize: 13,
-              color: 'var(--text-muted)'
-            }}
-          >
-            Loading Phishing waves...
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+            <Spinner size={28} />
           </div>
         ) : (
           displayed.map((wave) => {
@@ -367,14 +360,8 @@ export function WaveDetail({onNavigate, activePath, waveId}: WaveDetailProps){
         onNavigate={onNavigate}
         title="Phishing Wave"
       >
-        <div
-          style={{
-            textAlign: 'center',
-            padding: 48,
-            color: 'var(--text-muted)'
-          }}
-        >
-          Loading Wave...
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+          <Spinner size={28} />
         </div>
       </AppLayout>
     );
