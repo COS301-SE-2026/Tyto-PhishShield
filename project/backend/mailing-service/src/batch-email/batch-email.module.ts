@@ -18,6 +18,7 @@ import { WaveModule } from '../wave/wave.module';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 import { ConnectionEntity } from '../entities/connection.entity';
 import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
+import { ScheduleResolverService } from '../shared-services/schedule-resolver.service';
 
 @Module({
   imports: [
@@ -28,10 +29,15 @@ import { SenderResolverService } from '../sender-resolver/sender-resolver.servic
       UserEntity,
       EmployeeInfoEntity,
       ConnectionEntity,
+      ScheduleResolverService,
     ]),
     mailingRabbitMQModule,
   ],
   controllers: [BatchEmailController],
-  providers: [BatchEmailService, SenderResolverService],
+  providers: [
+    BatchEmailService,
+    SenderResolverService,
+    ScheduleResolverService,
+  ],
 })
 export class BatchEmailModule {}

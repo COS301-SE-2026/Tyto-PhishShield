@@ -22,6 +22,7 @@ import { WaveService } from '../wave/wave.service';
 import { VariableResolverService } from '../shared-services/variable-resolver.service';
 import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
+import { ScheduleResolverService } from '../shared-services/schedule-resolver.service';
 import { Department } from '@phishshield/dto';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 
@@ -100,6 +101,7 @@ describe('BatchEmailService', () => {
   const mockVariableResolverService = { substitute: jest.fn((text: string) => text) };
   const mockSenderResolverService = { resolveFromAddress: jest.fn().mockReturnValue('resolved-sender@domain.com') };
   const mockTrackingLinkService = { replace: jest.fn((content: string) => ({ content, token: 'mock-token' })) };
+  const mockScheduleResolverService = { pickWeightedTime: jest.fn((fromMs: number) => new Date(fromMs)) };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -113,6 +115,7 @@ describe('BatchEmailService', () => {
         { provide: VariableResolverService, useValue: mockVariableResolverService },
         { provide: SenderResolverService, useValue: mockSenderResolverService },
         { provide: TrackingLinkService, useValue: mockTrackingLinkService },
+        { provide: ScheduleResolverService, useValue: mockScheduleResolverService },
         { provide: getRepositoryToken(EmployeeInfoEntity), useValue: mockEmployeeInfoRepository},
       ],
     }).compile();
@@ -125,6 +128,7 @@ describe('BatchEmailService', () => {
     mockVariableResolverService.substitute.mockImplementation((text: string) => text);
     mockSenderResolverService.resolveFromAddress.mockReturnValue('resolved-sender@domain.com');
     mockTrackingLinkService.replace.mockImplementation((content: string) => ({ content, token: 'mock-token' }));
+    mockScheduleResolverService.pickWeightedTime.mockImplementation((fromMs: number) => new Date(fromMs));
     mockUserRepository.find.mockResolvedValue([
       { auth0Id: 'auth0|1', email: 'test@example.com', name: 'Test User 1', department: 'IT' },
       { auth0Id: 'auth0|2', email: 'test@example.com', name: 'Test User 2', department: 'HR' },
@@ -279,6 +283,49 @@ describe('BatchEmailService', () => {
         );
       });
     });
+
+    it('should ask the schedule resolver for a weighted time per recipient when randomisedTimes=true', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
+
+      await service.sendBatchRandomSameEmail(
+        auth0Ids, EmailDifficulty.MEDIUM, FUTURE_DATE_FROM, FUTURE_DATE_TO, true, 'Test wave', undefined,
+      );
+
+      expect(mockScheduleResolverService.pickWeightedTime).toHaveBeenCalledTimes(auth0Ids.length);
+      expect(mockScheduleResolverService.pickWeightedTime).toHaveBeenCalledWith(
+        FUTURE_DATE_FROM.getTime(),
+        FUTURE_DATE_TO.getTime(),
+      );
+    });
+
+    it('should draw one weighted time shared by every recipient when randomisedTimes=false', async () => {
+      const sharedTime = new Date(FUTURE_DATE_FROM.getTime() + 60 * 60 * 1000);
+      mockScheduleResolverService.pickWeightedTime.mockReturnValueOnce(sharedTime);
+      mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
+
+      await service.sendBatchRandomSameEmail(
+        auth0Ids, EmailDifficulty.MEDIUM, FUTURE_DATE_FROM, FUTURE_DATE_TO, false, 'Test wave', undefined,
+      );
+
+      expect(mockScheduleResolverService.pickWeightedTime).toHaveBeenCalledTimes(1);
+      const [payload] = mockResendBatchSend.mock.calls[0];
+      payload.forEach((item: any) => {
+        expect(item.scheduledAt).toBe(sharedTime.toISOString());
+      });
+    });
+
+    it('should not call the schedule resolver when scheduledFrom equals scheduledTo', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockEmail]);
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
+
+      await service.sendBatchRandomSameEmail(
+        auth0Ids, EmailDifficulty.MEDIUM, FUTURE_DATE_FROM, FUTURE_DATE_FROM, true, 'Test wave', undefined,
+      );
+
+      expect(mockScheduleResolverService.pickWeightedTime).not.toHaveBeenCalled();
+    });
   });
 
   describe('sendBatchRandomDifferentEmail', () => {
@@ -305,6 +352,21 @@ describe('BatchEmailService', () => {
       const [payload] = mockResendBatchSend.mock.calls[0];
       expect(payload).toHaveLength(auth0Ids.length);
       expect(result.success).toBe(true);
+    });
+
+    it('should ask the schedule resolver for a weighted time per recipient when randomisedTimes=true', async () => {
+      const mockEmails = [
+        { ...mockEmail, referenceNumber: 'PHISH-AAA' },
+        { ...mockEmail, referenceNumber: 'PHISH-BBB' },
+      ];
+      mockQueryBuilder.getMany.mockResolvedValue(mockEmails);
+      mockEmailRepository.find.mockResolvedValue(mockEmails);
+
+      await service.sendBatchRandomDifferentEmail(
+        auth0Ids, EmailDifficulty.MEDIUM, FUTURE_DATE_FROM, FUTURE_DATE_TO, true, 'Test wave',
+      );
+
+      expect(mockScheduleResolverService.pickWeightedTime).toHaveBeenCalledTimes(auth0Ids.length);
     });
   });
 
