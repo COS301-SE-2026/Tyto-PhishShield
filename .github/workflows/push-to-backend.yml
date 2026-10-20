@@ -7,3 +7,4 @@ on:
 jobs:
     backend:
         uses: ./.github/workflows/ci-backend.yml
+        secrets: inherit
