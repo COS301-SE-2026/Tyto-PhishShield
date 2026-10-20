@@ -12,6 +12,10 @@
  * - {@link scheduleSendEmail} - Verifies scheduled dispatch with a future date and API failure handling.
  * - {@link getAllEmails} - Verifies all email records are fetched from the repository.
  * - {@link updateEmail} - Verifies partial updates are applied and the updated record returned.
+ * - {@link deleteEmail} - Verifies deletion, not-found handling, and database failure handling.
+ *
+ * Template variable validation (unknown {{variables}} rejected on create/update) is covered in
+ * the createEmail and updateEmail suites; the resolver itself is mocked here.
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -61,6 +65,7 @@ describe('EmailService', () => {
     save: jest.fn(),
     find: jest.fn(),
     findOne: jest.fn(),
+    delete: jest.fn(),
   };
 
   const mockUserRepository = {
@@ -84,7 +89,10 @@ describe('EmailService', () => {
     findOne: jest.fn().mockResolvedValue(null),
   }
 
-  const mockVariableResolverService = { substitute: jest.fn((text: string) => text) };
+  const mockVariableResolverService = {
+    substitute: jest.fn((text: string) => text),
+    validateTemplate: jest.fn(),
+  };
   const mockSenderResolverService = { resolveFromAddress: jest.fn().mockReturnValue('resolved-sender@domain.com') };
   const mockTrackingLinkService = { replace: jest.fn((content: string) => ({ content, token: 'mock-token' })) };
 
@@ -151,6 +159,7 @@ describe('EmailService', () => {
   afterEach(() => {
     jest.clearAllMocks();
     mockVariableResolverService.substitute.mockImplementation((text: string) => text);
+    mockVariableResolverService.validateTemplate.mockImplementation(() => undefined);
     mockSenderResolverService.resolveFromAddress.mockReturnValue('resolved-sender@domain.com');
     mockTrackingLinkService.replace.mockImplementation((content: string) => ({ content, token: 'mock-token' }));
     mockEmployeeInfoRepository.findOne.mockResolvedValue(null);
@@ -199,6 +208,46 @@ describe('EmailService', () => {
       await expect(service.createEmail(createDto)).rejects.toThrow(
         InternalServerErrorException,
       );
+    });
+
+    it('should validate the subject and content for unknown variables before saving', async () => {
+      const createDto: EmailsDto = {
+        sender: 'domain.com',
+        subject: 'Hi {{name}}',
+        content: '<p>Welcome to {{business_name}}</p>',
+        difficulty: EmailDifficulty.HARD,
+      };
+
+      mockEmailRepository.create.mockReturnValue(mockEmail);
+      mockEmailRepository.save.mockResolvedValue(mockEmail);
+
+      await service.createEmail(createDto);
+
+      expect(mockVariableResolverService.validateTemplate).toHaveBeenCalledWith(
+        createDto.subject,
+        createDto.content,
+      );
+    });
+
+    it('should throw BadRequestException and not save when the template has an unknown variable', async () => {
+      const createDto: EmailsDto = {
+        sender: 'domain.com',
+        subject: 'Action Required',
+        content: '<p>Hello {{favoriteColor}}</p>',
+        difficulty: EmailDifficulty.HARD,
+      };
+
+      mockVariableResolverService.validateTemplate.mockImplementationOnce(() => {
+        throw new BadRequestException(
+          'Template contains unknown variable(s): {{favoriteColor}}',
+        );
+      });
+
+      await expect(service.createEmail(createDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(mockEmailRepository.create).not.toHaveBeenCalled();
+      expect(mockEmailRepository.save).not.toHaveBeenCalled();
     });
   });
 
@@ -358,6 +407,17 @@ describe('EmailService', () => {
 
       await expect(service.sendEmail('PHISH-001', mockUser.auth0Id, 'it-support')).rejects.toThrow(InternalServerErrorException);
     });
+
+    it('should propagate a BadRequestException from the resolver (malformed or unknown placeholder)', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockEmailRepository.findOne.mockResolvedValue(mockEmail);
+      mockVariableResolverService.substitute.mockImplementationOnce(() => {
+        throw new BadRequestException('Template contains unknown variable(s): {{first-name}}');
+      });
+
+      await expect(service.sendEmail('PHISH-001', mockUser.auth0Id)).rejects.toThrow(BadRequestException);
+      expect(mockResendSend).not.toHaveBeenCalled();
+    });
   });
 
   describe('scheduleSendEmail', () => {
@@ -495,6 +555,62 @@ describe('EmailService', () => {
       await expect(
         service.updateEmail('PHISH-001', { subject: 'New subject' }),
       ).rejects.toThrow(InternalServerErrorException);
+    });
+
+    it('should validate only the fields being updated', async () => {
+      mockEmailRepository.findOne.mockResolvedValue({ ...mockEmail });
+      mockEmailRepository.save.mockResolvedValue(mockEmail);
+
+      await service.updateEmail('PHISH-001', { subject: 'Hi {{name}}' });
+
+      expect(mockVariableResolverService.validateTemplate).toHaveBeenCalledWith(
+        'Hi {{name}}',
+        undefined,
+      );
+    });
+
+    it('should throw BadRequestException and not save when the update contains an unknown variable', async () => {
+      mockVariableResolverService.validateTemplate.mockImplementationOnce(() => {
+        throw new BadRequestException(
+          'Template contains unknown variable(s): {{favoriteColor}}',
+        );
+      });
+
+      await expect(
+        service.updateEmail('PHISH-001', { content: '<p>{{favoriteColor}}</p>' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockEmailRepository.findOne).not.toHaveBeenCalled();
+      expect(mockEmailRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteEmail', () => {
+    it('should delete the email and return the result', async () => {
+      const deleteResult = { affected: 1, raw: [] };
+      mockEmailRepository.delete.mockResolvedValue(deleteResult);
+
+      const result = await service.deleteEmail('PHISH-001');
+
+      expect(mockEmailRepository.delete).toHaveBeenCalledWith({
+        referenceNumber: 'PHISH-001',
+      });
+      expect(result).toEqual(deleteResult);
+    });
+
+    it('should throw NotFoundException (not a 500) when no email matches the reference', async () => {
+      mockEmailRepository.delete.mockResolvedValue({ affected: 0, raw: [] });
+
+      await expect(service.deleteEmail('INVALID')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw InternalServerErrorException when the database fails', async () => {
+      mockEmailRepository.delete.mockRejectedValue(new Error('db unavailable'));
+
+      await expect(service.deleteEmail('PHISH-001')).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });

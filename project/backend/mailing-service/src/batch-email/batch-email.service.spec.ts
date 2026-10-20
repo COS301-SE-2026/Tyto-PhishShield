@@ -180,6 +180,19 @@ describe('BatchEmailService', () => {
 
       await expect(service.sendBatchWithReference('PHISH-001', auth0Ids, 'it-support')).rejects.toThrow(InternalServerErrorException);
     });
+
+    it('should propagate a BadRequestException when the resolver rejects a malformed or unknown placeholder, without sending', async () => {
+      mockEmailRepository.find.mockResolvedValue([mockEmail]);
+      mockVariableResolverService.substitute.mockImplementationOnce(() => {
+        throw new BadRequestException(
+          'Template contains unknown variable(s): {{first-name}}',
+        );
+      });
+
+      await expect(service.sendBatchWithReference('PHISH-001', auth0Ids, 'it-support')).rejects.toThrow(BadRequestException);
+      expect(mockResendBatchSend).not.toHaveBeenCalled();
+      expect(mockAmqpConnection.publish).not.toHaveBeenCalled();
+    });
   });
 
   describe('sendBatchRandomSameEmail', () => {
