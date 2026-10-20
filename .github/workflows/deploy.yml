@@ -82,12 +82,11 @@ jobs:
                   ${{ vars.DOCKERHUB_USERNAME }}/api:latest
                   ${{ vars.DOCKERHUB_USERNAME }}/api:${{ github.sha }}
                 build-args: |
-                  POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_POSTHOG_PROJECT_TOKEN }}
-                  POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
-                  POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
-                  POSTHOG_CLI_PROJECT_ID: ${{ secrets.POSTHOG_CLI_PROJECT_ID }}
-                  POSTHOG_CLI_HOST: ${{ secrets.POSTHOG_CLI_HOST }}
-                  POSTHOG_RELEASE_VERSION: ${{ github.sha }}
+                  POSTHOG_CLI_PROJECT_ID=${{ secrets.POSTHOG_CLI_PROJECT_ID }}
+                  POSTHOG_CLI_HOST=${{ secrets.POSTHOG_CLI_HOST }}
+                  POSTHOG_RELEASE_VERSION=${{ github.sha }}
+                secrets: |
+                  POSTHOG_CLI_API_KEY=${{ secrets.POSTHOG_CLI_API_KEY }}
 
     build-and-push-website:
         runs-on: ubuntu-24.04
@@ -128,10 +127,9 @@ jobs:
                   VITE_API_GATEWAY_URL=${{ matrix.api-url }}
                   VITE_BASE_PATH=${{ matrix.base }}
                   VITE_POSTHOG_PROJECT_TOKEN=${{ secrets.VITE_POSTHOG_PROJECT_TOKEN }}
-                  VITE_POSTHOG_HOST= ${{ secrets.VITE_POSTHOG_HOST }}
-                  POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
-                  POSTHOG_CLI_PROJECT_ID: ${{ secrets.POSTHOG_CLI_PROJECT_ID }}
-                  POSTHOG_CLI_HOST: ${{ secrets.POSTHOG_CLI_HOST }}
+                  VITE_POSTHOG_HOST=${{ secrets.VITE_POSTHOG_HOST }}
+                secrets: |
+                  POSTHOG_API_KEY=${{ secrets.POSTHOG_CLI_API_KEY }}
 
     build-and-push-addin:
         strategy:

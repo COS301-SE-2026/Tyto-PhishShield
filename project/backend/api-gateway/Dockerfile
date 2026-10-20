@@ -31,13 +31,12 @@ WORKDIR /app/project/backend/api-gateway
 ARG POSTHOG_CLI_PROJECT_ID
 ARG POSTHOG_CLI_HOST
 ARG POSTHOG_RELEASE_VERSION
-ARG POSTHOG_CLI_API_KEY
 ENV POSTHOG_CLI_PROJECT_ID=$POSTHOG_CLI_PROJECT_ID \
     POSTHOG_CLI_HOST=$POSTHOG_CLI_HOST \
-    POSTHOG_RELEASE_VERSION=$POSTHOG_RELEASE_VERSION \
-    POSTHOG_CLI_API_KEY=$POSTHOG_CLI_API_KEY
+    POSTHOG_RELEASE_VERSION=$POSTHOG_RELEASE_VERSION
 
-RUN rm -f tsconfig.build.tsbuildinfo && \
+RUN --mount=type=secret,id=POSTHOG_CLI_API_KEY,env=POSTHOG_CLI_API_KEY \
+    rm -f tsconfig.build.tsbuildinfo && \
     pnpm run build
 
 RUN pnpm deploy --filter api-gateway --prod /out

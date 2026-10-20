@@ -187,12 +187,11 @@ services:
       context: ../../
       dockerfile: project/backend/api-gateway/Dockerfile
       args:
-        POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN}
-        POSTHOG_HOST: ${VITE_POSTHOG_HOST}
-        POSTHOG_CLI_API_KEY: ${POSTHOG_CLI_API_KEY}
         POSTHOG_CLI_PROJECT_ID: ${POSTHOG_CLI_PROJECT_ID}
         POSTHOG_CLI_HOST: ${POSTHOG_CLI_HOST}
         POSTHOG_RELEASE_VERSION: Local-Build
+      secrets:
+        - POSTHOG_CLI_API_KEY
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
@@ -245,9 +244,6 @@ services:
       - NODE_ENV=${NODE_ENV}
       - POSTHOG_PROJECT_TOKEN=${VITE_POSTHOG_PROJECT_TOKEN}
       - POSTHOG_HOST=${VITE_POSTHOG_HOST}
-      - POSTHOG_CLI_API_KEY=${POSTHOG_CLI_API_KEY}
-      - POSTHOG_CLI_PROJECT_ID=${POSTHOG_CLI_PROJECT_ID}
-      - POSTHOG_CLI_HOST=${POSTHOG_CLI_PROJECT_ID}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     deploy:
@@ -783,6 +779,8 @@ services:
         VITE_BASE_PATH: "/"
         VITE_POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN}
         VITE_POSTHOG_HOST: ${VITE_POSTHOG_HOST}
+      secrets:
+        - POSTHOG_API_KEY
     restart: on-failure
     container_name: website
     ports:
@@ -883,3 +881,9 @@ networks:
   local-llm:
     external: true
     name: local-llm
+
+secrets:
+  POSTHOG_API_KEY:
+    environment: POSTHOG_API_KEY
+  POSTHOG_CLI_API_KEY:
+    environment: POSTHOG_CLI_API_KEY
