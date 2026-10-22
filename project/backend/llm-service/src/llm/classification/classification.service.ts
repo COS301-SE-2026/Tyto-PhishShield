@@ -10,6 +10,7 @@ import {
   Severity,
   SEVERITY_ORDER,
 } from '../dto/reply-classification.dto';
+import { redactSensitiveText } from '../filter/filter.service';
 
 interface RawClassificationOutput {
   categories?: unknown;
@@ -19,7 +20,6 @@ interface RawClassificationOutput {
 @Injectable()
 export class ClassificationService {
   private readonly logger = new Logger(ClassificationService.name);
-  private readonly localModel: string;
   private readonly minConfidence: number;
 
   constructor(
@@ -27,7 +27,6 @@ export class ClassificationService {
     private readonly promptBuilderService: PromptBuilderService,
     private readonly config: ConfigService,
   ) {
-    this.localModel = this.config.get<string>('LOCAL_LLM_MODEL', 'gemma2:2b');
     this.minConfidence = this.config.get<number>(
       'CLASSIFICATION_MIN_CONFIDENCE',
       0.6,
@@ -38,22 +37,23 @@ export class ClassificationService {
     const systemInstructions =
       this.promptBuilderService.buildClassificationPrompt();
 
-    const userContent = dto.originalSubject
-      ? `Original email subject: "${dto.originalSubject}"\nReply to classify:\n"""${dto.replyText}"""`
-      : `Reply to classify:\n"""${dto.replyText}"""`;
-
     let raw: string;
     try {
-      raw = await this.llmGatewayService.sendLocal({
-        model: this.localModel,
+      const { redactedText } = await redactSensitiveText(dto.replyText);
+      const userContent = dto.originalSubject
+        ? `Original email subject: "${dto.originalSubject}"\nReply to classify:\n"""${redactedText}"""`
+        : `Reply to classify:\n"""${redactedText}"""`;
+
+      const response = await this.llmGatewayService.sendWithFallback({
         messages: [
           { role: 'system', content: systemInstructions },
           { role: 'user', content: userContent },
         ],
-        format: 'json',
+        response_format: { type: 'json_object' },
       });
+      raw = response.choices[0]?.message?.content ?? '';
     } catch (err) {
-      this.logger.warn(`Local LLM classification request failed: ${err}`);
+      this.logger.warn(`Cloud LLM classification request failed: ${err}`);
       return this.fallback();
     }
 

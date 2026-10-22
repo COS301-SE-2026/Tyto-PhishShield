@@ -17,3 +17,5 @@ allowBuilds:
   cpu-features: true
   ssh2: true
   '@posthog/cli': false
+  onnxruntime-node: true
+  sharp: true

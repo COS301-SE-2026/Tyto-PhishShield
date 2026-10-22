@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { LlmGatewayService } from '../llm-gateway/llm-gateway.service';
 import { PromptBuilderService } from '../prompt-builder/prompt-builder.service';
 import {
@@ -7,11 +6,11 @@ import {
   OkLlmGatewayResponse,
 } from '../dto/llm-gateway.dto';
 import {
-  RawRedactionItem,
   RedactionItem,
   RedactionItemType,
   RedactionResult,
 } from '../dto/redacted.dto';
+import { detectSensitiveWords } from '../filter/filter.service';
 
 // We are redacting with [...] where the redaction type will be inside the brackets.
 const REDACTION_TOKEN = /\[[A-Z_]+_\d+\]/;
@@ -19,9 +18,19 @@ const REDACTION_TOKEN = /\[[A-Z_]+_\d+\]/;
 // There can be multiple names mentioned, and they are kept apart to provide more context to the cloud llm.
 const NAME_TOKEN = /\[NAME_\d+\]/g;
 
-// Just incase local llm missed certain values, we do our own checks.
+// Keep deterministic checks for values the entity detector may miss.
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const PHONE_RE = /(?:\+?\d[\d\s().-]{7,}\d)/g;
+
+const ENTITY_TAG_TO_REDACTION_TYPE: Record<string, RedactionItemType> = {
+  '<NAME>': RedactionItemType.NAME,
+  '<BUSINESS_NAME>': RedactionItemType.BUSINESS_NAME,
+  '<EMAIL>': RedactionItemType.EMAIL,
+  '<PHONE>': RedactionItemType.PHONE,
+  '<ADDRESS>': RedactionItemType.ADDRESS,
+  '<ID_NUMBER>': RedactionItemType.ID_NUMBER,
+  '<OTHER>': RedactionItemType.OTHER,
+};
 
 export interface GeneratedReply {
   subject: string;
@@ -31,15 +40,11 @@ export interface GeneratedReply {
 @Injectable()
 export class ReplyGenerationService {
   private readonly logger = new Logger(ReplyGenerationService.name);
-  private readonly localModel: string;
 
   constructor(
     private readonly llmGatewayService: LlmGatewayService,
-    private readonly config: ConfigService,
     private readonly promptBuilderService: PromptBuilderService,
-  ) {
-    this.localModel = this.config.get<string>('LOCAL_LLM_MODEL', 'gemma2:2b');
-  }
+  ) {}
 
   async generateSafeReply(params: {
     replyText: string;
@@ -95,36 +100,14 @@ export class ReplyGenerationService {
 
   private async detectSensitiveItems(text: string): Promise<RedactionItem[]> {
     try {
-      const raw = await this.llmGatewayService.sendLocal({
-        model: this.localModel,
-        messages: [
-          {
-            role: 'system',
-            content: this.promptBuilderService.buildRedactionPrompt(),
-          },
-          { role: 'user', content: text },
-        ],
-        format: 'json',
-      });
+      const detected = await detectSensitiveWords(text);
 
-      const parsed = JSON.parse(raw) as { items?: RawRedactionItem[] };
-      if (!Array.isArray(parsed.items)) return [];
-
-      return parsed.items
-        .filter(
-          (i): i is { text: string; type: string } =>
-            typeof i.text === 'string' && typeof i.type === 'string',
-        )
-        .map((i) => ({
-          text: i.text,
-          type: Object.values(RedactionItemType).includes(
-            i.type as RedactionItemType,
-          )
-            ? (i.type as RedactionItemType)
-            : RedactionItemType.OTHER,
-        }));
+      return detected.map(({ word, tag }) => ({
+        text: word,
+        type: ENTITY_TAG_TO_REDACTION_TYPE[tag] ?? RedactionItemType.OTHER,
+      }));
     } catch (err) {
-      this.logger.warn(`Local LLM redaction detection failed: ${err}`);
+      this.logger.warn(`GLiNER redaction detection failed: ${err}`);
       // We fall to the Regex.
       return [];
     }
