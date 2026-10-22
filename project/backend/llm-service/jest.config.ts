@@ -14,6 +14,9 @@ const config: Config = {
       },
     ],
   },
+  moduleNameMapper: {
+    '^sharp$': '<rootDir>/test/sharp.mock.ts',
+  },
   setupFilesAfterEnv: ['<rootDir>/test/jest.setup.ts'],
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: '<rootDir>/coverage',
