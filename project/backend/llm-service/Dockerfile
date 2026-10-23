@@ -10,7 +10,8 @@ RUN chown -R appuser:phishshield /app
 
 ARG GLINER_MODEL_URL=https://huggingface.co/onnx-community/gliner_small-v2/resolve/6b17161d3a8ef6737ee6492659a095daed73d868/onnx/model.onnx
 
-RUN curl -L --fail --retry 5 \
+RUN curl --fail --retry 5 --location \
+    --proto '=https' --proto-redir '=https' --tlsv1.2 \
     "$GLINER_MODEL_URL" \
     -o /tmp/model.onnx
 
@@ -42,7 +43,7 @@ RUN pnpm deploy --filter llm-service --prod /out
 
 FROM node:24.19-bookworm-slim AS runtime
 
-RUN addgroup -S phishshield && adduser -S appuser -G phishshield
+RUN addgroup --system phishshield && adduser --system --ingroup phishshield appuser
 
 WORKDIR /app
 
