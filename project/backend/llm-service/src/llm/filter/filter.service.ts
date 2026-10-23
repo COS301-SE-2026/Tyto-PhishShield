@@ -1,3 +1,4 @@
+import 'onnxruntime-node';
 import { Gliner } from 'gliner/node';
 import { RedactionItemType } from '../dto/redacted.dto';
 

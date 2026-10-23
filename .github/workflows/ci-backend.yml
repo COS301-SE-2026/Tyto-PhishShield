@@ -120,7 +120,7 @@ jobs:
               node-version: 24
               cache: "pnpm"
           - name: Install dependencies
-            run: pnpm install --frozen-lockfile --ignore-scripts
+            run: pnpm install --frozen-lockfile
           - name: Build shared packages
             run: pnpm build:shared
           - name: ${{ matrix.service }} ${{ matrix.type }}

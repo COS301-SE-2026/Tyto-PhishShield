@@ -8,6 +8,12 @@ WORKDIR /app
 
 RUN chown -R appuser:phishshield /app
 
+ARG GLINER_MODEL_URL=https://huggingface.co/onnx-community/gliner_small-v2/resolve/6b17161d3a8ef6737ee6492659a095daed73d868/onnx/model.onnx
+
+RUN curl -L --fail --retry 5 \
+    "$GLINER_MODEL_URL" \
+    -o /tmp/model.onnx
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY project/backend/llm-service/package.json ./project/backend/llm-service/package.json
 COPY project/backend/packages/dto/package.json ./project/backend/packages/dto/package.json
@@ -18,7 +24,7 @@ RUN pnpm config set fetch-retries 8 -g \
  && pnpm config set fetch-retry-maxtimeout 120000 -g \
  && pnpm config set fetch-timeout 120000 -g \
  && pnpm config set network-concurrency 8 -g \
- && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+ && pnpm install --frozen-lockfile --prefer-offline
 
 COPY project/backend/packages/eventHandler/ ./project/backend/packages/eventHandler/
 
@@ -34,7 +40,7 @@ RUN rm -f tsconfig.build.tsbuildinfo && pnpm run build
 
 RUN pnpm deploy --filter llm-service --prod /out
 
-FROM node:24.19-alpine3.24@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS runtime
+FROM node:24.19-bookworm-slim AS runtime
 
 RUN addgroup -S phishshield && adduser -S appuser -G phishshield
 
@@ -42,6 +48,7 @@ WORKDIR /app
 
 RUN chown -R appuser:phishshield /app
 
+COPY --from=build /tmp/model.onnx /app/model.onnx
 COPY --from=build /out ./
 COPY --from=build /app/project/backend/llm-service/dist/ ./dist/
 
