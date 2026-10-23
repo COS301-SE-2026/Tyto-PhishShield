@@ -53,6 +53,9 @@ COPY --from=build /tmp/model.onnx /app/model.onnx
 COPY --from=build /out ./
 COPY --from=build /app/project/backend/llm-service/dist/ ./dist/
 
+RUN mkdir -p /app/node_modules/.pnpm/@xenova+transformers@2.17.2/node_modules/@xenova/transformers/.cache \
+ && chown appuser:phishshield /app/node_modules/.pnpm/@xenova+transformers@2.17.2/node_modules/@xenova/transformers/.cache
+
 USER appuser
 
 CMD ["node", "dist/main.js"]
