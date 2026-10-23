@@ -32,6 +32,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiRegisterDto } from '../dto/register.dto';
 import { RegisterDto } from '@phishshield/dto';
+import { PostHogService } from '../posthog.service';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -52,6 +53,7 @@ export class AccountsController {
     private readonly routes: RouteResolver,
     private readonly config: ConfigService,
     private readonly accountsService: AccountsService,
+    private readonly posthog: PostHogService,
   ) {
     this.accountsServiceUrl = this.config.get<string>(
       'ACCOUNTS_SERVICE_URL',
@@ -100,11 +102,16 @@ export class AccountsController {
           method: 'POST',
           data: accountsRegister,
         });
-      if (register.response === 'ok')
+      if (register.response === 'ok') {
         await this.accountsService.updateEmployeeAsRegistered(
           body.employeeId,
           register.auth0Id,
         );
+        this.posthog.client?.capture({
+          distinctId: register.auth0Id,
+          event: 'account_registered',
+        });
+      }
 
       return { response: register.response, message: register.message };
     }
@@ -227,13 +234,15 @@ export class AccountsController {
       },
     },
   })
-  updateProfile(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
-    return this.proxy.forward({
+  async updateProfile(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    const profile = await this.proxy.forward({
       url: `${this.accountsServiceUrl}/api/auth/profile`,
       method: 'PATCH',
       data: body,
       headers: authHeader(req),
     });
+    this.posthog.client?.capture({ event: 'profile_updated' });
+    return profile;
   }
 
   @Post('auth/digest/send-now')

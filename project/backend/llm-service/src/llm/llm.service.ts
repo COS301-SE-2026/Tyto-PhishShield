@@ -32,6 +32,7 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ReplyGenerationService } from './reply-generation/reply-generation.service';
 import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
 import { MailingEventService } from '../mailing-event/mailing-event.service';
+import { redactSensitiveText } from './filter/filter.service';
 
 const TRACKING_LINK_ANCHOR =
   /<a\s[^>]*href=["']\{\{tracking_link\}\}["'][^>]*>[\s\S]*?<\/a>/i;
@@ -469,12 +470,15 @@ export class LlmService {
   }
 
   private async sanitizeContext(context?: string): Promise<string | undefined> {
-    if (!context || context.trim() === '') {
+    const trimmedContext = context?.trim();
+    if (!trimmedContext) {
       return undefined;
     }
+
     try {
+      const { redactedText } = await redactSensitiveText(trimmedContext);
       const result = await this.classificationService.classify({
-        replyText: context,
+        replyText: redactedText,
       });
 
       const clean =
@@ -488,7 +492,7 @@ export class LlmService {
         return undefined;
       }
 
-      return context.trim();
+      return redactedText;
     } catch (err) {
       this.logger.warn(
         `Context classification failed, dropping context to be safe. Error: ${err}`,
