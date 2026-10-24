@@ -44,7 +44,7 @@ async function main() {
 
         switchCaddyfiles(active, target);
 
-        checkSystemHealth(active, target);
+        await runSmokeTests(active, target);
 
         fs.writeFileSync('./prod/state/active-environment', target);
     } finally {
@@ -52,38 +52,96 @@ async function main() {
     }
 }
 
-async function checkSystemHealth(active, target) {
-    let healthy = false;
+async function runSmokeTests(active, target) {
+    const endpoints = [
+        {
+            name: 'API health',
+            url: 'https://capstone-five-guys.dns.net.za/api/health',
+            validate: async response => {
+                if (response.status !== 200) {
+                    throw new Error(`returned HTTP ${response.status}`);
+                }
 
-        for (let i = 0; i < 6; i++) {
-            await sleep(2000);
+                const body = await response.json();
+                if (!body || typeof body.services !== 'object' || Object.keys(body.services).length === 0) {
+                    throw new Error('returned an invalid health payload');
+                }
+            },
+        },
+        {
+            name: 'website',
+            url: 'https://capstone-five-guys.dns.net.za/',
+            validate: async response => {
+                if (response.status !== 200) {
+                    throw new Error(`returned HTTP ${response.status}`);
+                }
 
-            const apiResponse = await fetch('https://capstone-five-guys.dns.net.za/api/health');
+                const body = await response.text();
+                if (!body.includes('<html')) {
+                    throw new Error('did not return an HTML document');
+                }
+            },
+        },
+        {
+            name: 'Outlook add-in manifest',
+            url: 'https://capstone-five-guys.dns.net.za/addin/manifest.xml',
+            validate: async response => {
+                if (response.status !== 200) {
+                    throw new Error(`returned HTTP ${response.status}`);
+                }
 
-            const addinResponse = await fetch('https://capstone-five-guys.dns.net.za/addin/manifest.xml');
+                const body = await response.text();
+                if (!body.includes('<OfficeApp')) {
+                    throw new Error('did not return an Office add-in manifest');
+                }
+            },
+        },
+    ];
 
-            const websiteResponse = await fetch('https://capstone-five-guys.dns.net.za/');
-            
-            healthy = websiteResponse.status === 200 && addinResponse.status === 200 && apiResponse.status === 200;
+    let lastError;
+    for (let attempt = 1; attempt <= 6; attempt++) {
+        try {
+            await Promise.all(endpoints.map(async endpoint => {
+                const response = await fetch(endpoint.url, {
+                    signal: AbortSignal.timeout(10000),
+                });
+                try {
+                    await endpoint.validate(response);
+                } catch (error) {
+                    throw new Error(`${endpoint.name} ${error.message}`, {cause: error});
+                }
+            }));
+            return;
+        } catch (error) {
+            lastError = error;
+            console.warn(`Smoke tests attempt ${attempt}/6 failed: ${error.message}`);
+            if (attempt < 6) {
+                await sleep(2000);
+            }
         }
-        
-        if (!healthy) {
-            execSync(
-                `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${target}`, {stdio: 'inherit'}
-            );
+    }
 
-            execSync(
-                `cp ./prod/prod-caddy-conf/Caddyfile.${active} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
-            );
+    try {
+        restoreCaddyfile(active, target);
+    } catch (error) {
+        throw new Error(`Smoke tests failed and Caddy rollback failed: ${error.message}`, {cause: error});
+    }
 
-            execSync(
-                `docker exec prod_caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
-            );
+    throw new Error(`Smoke tests failed after deployment: ${lastError.message}`, {cause: lastError});
+}
 
-            await sleep(1000);
+function restoreCaddyfile(active, target) {
+    execSync(
+        `cp ./prod/prod-caddy-conf/Caddyfile ./prod/prod-caddy-conf/Caddyfile.${target}`, {stdio: 'inherit'}
+    );
 
-            throw new Error('system not reachable through caddy!');
-        }
+    execSync(
+        `cp ./prod/prod-caddy-conf/Caddyfile.${active} ./prod/prod-caddy-conf/Caddyfile`, {stdio: 'inherit'}
+    );
+
+    execSync(
+        `docker exec prod_caddy caddy reload --config /etc/caddy/Caddyfile`, {stdio: 'inherit'}
+    );
 }
 
 async function switchCaddyfiles(active, target) {
@@ -154,5 +212,3 @@ main().catch(err => {
     console.error(err);
     process.exit(1);
 });
-
-

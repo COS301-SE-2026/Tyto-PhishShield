@@ -32,6 +32,7 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ReplyGenerationService } from './reply-generation/reply-generation.service';
 import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
 import { MailingEventService } from '../mailing-event/mailing-event.service';
+import { redactSensitiveText } from './filter/filter.service';
 
 const TRACKING_LINK_ANCHOR =
   /<a\s[^>]*href=["']\{\{tracking_link\}\}["'][^>]*>[\s\S]*?<\/a>/i;
@@ -405,7 +406,6 @@ export class LlmService {
     );
 
     const safeContext = await this.sanitizeContext(dto.extraContext);
-    this.logger.warn(safeContext);
     if (dto.extraContext && !safeContext) {
       this.logger.log(
         `Proceeding with spear-phishing generation WITHOUT extra context for ${dto.recipientAuth0Id}`,
@@ -424,6 +424,9 @@ export class LlmService {
     let generatedTemplate: GeneratedTemplateDto | null = null;
 
     try {
+      this.logger.log(
+        `Sending spear-phishing email generation request to the LLM gateway for recipient ${dto.recipientAuth0Id}`,
+      );
       const response =
         await this.llmGatewayService.sendWithFallback(requestBody);
       generatedTemplate = this.parseTemplate(response, false);
@@ -469,12 +472,21 @@ export class LlmService {
   }
 
   private async sanitizeContext(context?: string): Promise<string | undefined> {
-    if (!context || context.trim() === '') {
+    const trimmedContext = context?.trim();
+    if (!trimmedContext) {
       return undefined;
     }
+
     try {
+      this.logger.log(
+        `Filtering sensitive information from spear-phishing context`,
+      );
+      const { redactedText, items } = await redactSensitiveText(trimmedContext);
+      this.logger.log(
+        `Sensitive-information filtering completed for spear-phishing context: ${items.length} item(s) redacted`,
+      );
       const result = await this.classificationService.classify({
-        replyText: context,
+        replyText: redactedText,
       });
 
       const clean =
@@ -488,7 +500,7 @@ export class LlmService {
         return undefined;
       }
 
-      return context.trim();
+      return redactedText;
     } catch (err) {
       this.logger.warn(
         `Context classification failed, dropping context to be safe. Error: ${err}`,

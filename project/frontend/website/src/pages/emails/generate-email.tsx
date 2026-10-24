@@ -5,6 +5,7 @@ import { useToast } from '../../context/toast-context';
 import { createEmailTemplate, type Department as EmailTemplateDepartment } from '../../services/email-template';
 import { generateTemplates, type Difficulty, type Department, type MessageType, type MessageTone, type TemplateVariable, type GeneratedTemplate } from '../../services/llm-template';
 import { SenderDomainSelect } from "../../components/email/sender-domain-select";
+import posthog from '../../lib/posthog';
 
 interface GenerateEmailProps {
   readonly onNavigate: (path: string) => void;
@@ -167,6 +168,15 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
       setSelectedTemplateIds([]);
       setGeneratedDifficulty(form.difficulty);
       setGeneratedDepartment(form.senderDepartment);
+      posthog.capture('email_templates_generated', {
+        requested_count: result.requested,
+        generated_count: result.generated,
+        failed_count: result.failed,
+        difficulty: form.difficulty,
+        tone: form.tone,
+        message_type: form.messageType,
+        has_sender_department: Boolean(form.senderDepartment),
+      });
 
       if (result.failed > 0) {
         addToast({
@@ -234,6 +244,12 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
       if (savedCount === 0) {
         throw new Error('None of the selected templates could be saved.')
       }
+
+      posthog.capture('generated_email_templates_saved', {
+        selected_count: selectedTemplates.length,
+        saved_count: savedCount,
+        failed_count: failedCount,
+      });
 
       if (failedCount > 0) {
         const failedTemplateIds = results.flatMap(

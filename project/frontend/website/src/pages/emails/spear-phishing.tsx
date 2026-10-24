@@ -6,6 +6,7 @@ import { getUsers, type User } from '../../services/user';
 import { getSenderRecommendations, type SenderRecommendation } from '../../services/sender-recommendations';
 import { generateSpearPhishing } from '../../services/spear-phishing';
 import type { Department, MessageType } from '../../services/llm-template';
+import posthog from '../../lib/posthog';
 
 interface SpearPhishingProps {
   readonly onNavigate: (path: string) => void;
@@ -242,6 +243,14 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
       });
 
       if (!response.accepted) throw new Error('The backend did not confirm acceptance.');
+      posthog.capture('spear_phishing_requested', {
+        message_type: messageType,
+        delivery_mode: sendImmediately ? 'immediate' : 'scheduled',
+        recipient_department: recipientDepartment,
+        sender_department: senderDepartment,
+        sender_is_manager: sender.isManager === true,
+        has_extra_context: Boolean(extraContext.trim()),
+      });
       addToast({
         type: 'success', 
         title: 'Generation request accepted',

@@ -8,6 +8,7 @@ import { AccountsService } from './accounts.service';
 import { LoginDto } from '../dto/login.dto';
 import { RouteResolver } from '../proxy/proxy.routes';
 import { Request } from 'express';
+import { PostHogService } from '../posthog.service';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
@@ -26,6 +27,8 @@ describe('AccountsController', () => {
             get: jest.fn((key: string, defaultValue?: string) => {
               if (key === 'ACCOUNTS_SERVICE_URL') return 'http://accounts-service:3002';
               if (key === 'AUTH0_DOMAIN') return 'Domain';
+              if (key === 'POSTHOG_PROJECT_TOKEN') return 'post_hog_test';
+              if (key === 'POSTHOG_HOST') return 'post_hog_test';
               return defaultValue;
             }),
             getOrThrow: jest.fn((key: string, defaultValue?: string) => {
@@ -47,6 +50,7 @@ describe('AccountsController', () => {
             })
           } 
         },
+        PostHogService,
       ],
     }).compile();
 

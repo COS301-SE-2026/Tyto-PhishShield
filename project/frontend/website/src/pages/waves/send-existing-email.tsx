@@ -16,6 +16,7 @@ import {
 import { sendBatchWithReference } from "../../services/send-batch-email";
 import { getUsers, type User } from "../../services/user";
 import { SenderSelector, getSenderOptions, initialSenderSelection, type SenderSelection } from "../../components/email/sender-selector";
+import posthog from '../../lib/posthog';
 
 interface SendEmailProps {
   onNavigate: (path: string) => void;
@@ -323,6 +324,11 @@ export function SendEmail({ onNavigate, activePath }: SendEmailProps) {
         selectedAuth0Ids,
         senderOptions,
       );
+      posthog.capture('email_batch_sent', {
+        recipient_count: selectedAuth0Ids.length,
+        difficulty: selectedEmail.difficulty,
+        sender_mode: senderSelection.mode,
+      });
 
       addToast({
         type: "success",

@@ -1,0 +1,45 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Releases
+
+Releases describe a single deployment. They contain the artefacts you uploaded, the version that produced them, and any build metadata PostHog can infer. You should [upload sourcemaps](/docs/error-tracking/upload-source-maps.md) and create a release for each deployment of your application.
+
+Error tracking displays this release info over stack traces to help you track down the root cause of an issue, down to the commit and version that produced it.
+
+![Error tracking releases](https://res.cloudinary.com/dmukukwp6/image/upload/w_1600,c_limit,q_auto,f_auto/release_light_d5955d3b5e.png)
+
+## Creating releases
+
+Release information is automatically created when you [upload sourcemaps](/docs/error-tracking/upload-source-maps.md) using `posthog-cli sourcemap upload`. If you use frameworks with a PostHog package like [Next.js](/docs/error-tracking/upload-source-maps/nextjs.md) or [Nuxt](/docs/error-tracking/upload-source-maps/nuxt.md), this is handled for you.
+
+The CLI finds or creates the release for the project and version it detects, and stores that link inside each sourcemap. You can specify `--release-name` and `--release-version` yourself; otherwise the CLI inspects Git metadata (like the repo name and commit SHA) to choose sensible values. You can also pass `--build` to record a build number (e.g. `CFBundleVersion` on iOS, `versionCode` on Android). The build number is stored as release metadata and displayed separately from the version in the UI. Artefacts are locked to their release once written, so they cannot move between releases later.
+
+Python, Ruby, and PHP apps have no source maps to upload. For these, create the release when you deploy and give its ID to the app in the `POSTHOG_RELEASE_ID` environment variable. See the guides for [Python](/docs/error-tracking/link-releases/python.md), [Ruby](/docs/error-tracking/link-releases/ruby.md), and [PHP](/docs/error-tracking/link-releases/php.md).
+
+## Uploading artefacts
+
+When you [upload sourcemaps](/docs/error-tracking/upload-source-maps.md) using `posthog-cli sourcemap upload`, the artefacts are associated with a release if it was injected. You can then see release details on issues, link between stack traces and code files, and filter issues based on release information.
+
+## Release context in error tracking
+
+Other than a specific release version that you define, captured exceptions inherit the release information recorded during injection. PostHog attaches the release, project, and Git metadata to each exception captured as we capture it in our ingestion pipeline.
+
+## Source linking
+
+Releases enable source linking in stack traces. When you create a release with repository information, PostHog can link each stack frame to the exact file and line in your GitHub or GitLab repository.
+
+To use source linking:
+
+1.  Set up a [GitHub or GitLab integration](/docs/error-tracking/integrations.md)
+2.  Create a release that includes your repository and commit information
+3.  PostHog automatically adds **View commit** buttons to stack traces
+
+This makes it faster to investigate errors by jumping directly from the stack trace to your source code. Learn more about [stack traces](/docs/error-tracking/stack-traces.md#source-linking).
+
+### Still have questions?
+
+Ask PostHog AI
+
+### Was this page useful?
+
+HelpfulCould be better

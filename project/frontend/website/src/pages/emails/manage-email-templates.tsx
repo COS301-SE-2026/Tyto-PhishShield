@@ -7,6 +7,7 @@ import { deleteEmailTemplate, getEmailTemplates, updateEmailTemplate, type Email
 import type { EmailDifficulty } from "../../services/send-batch-email";
 import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
 import { SenderDomainSelect } from "../../components/email/sender-domain-select";
+import posthog from '../../lib/posthog';
 
 interface ManageEmailTemplatesProps {
     readonly onNavigate: (path: string) => void;
@@ -219,6 +220,10 @@ export function ManageEmailTemplates({
                 content: updated.content,
                 difficulty: updated.difficulty,
             });
+            posthog.capture('email_template_updated', {
+                difficulty: updated.difficulty,
+                has_sender_department: Boolean(updated.senderDepartment),
+            });
 
             addToast({
                 type: 'success',
@@ -264,6 +269,9 @@ export function ManageEmailTemplates({
             setSelectedReference('');
             setForm(null);
             setErrors({});
+            posthog.capture('email_template_deleted', {
+                difficulty: selectedTemplate.difficulty,
+            });
 
             addToast({
                 type: 'success',
