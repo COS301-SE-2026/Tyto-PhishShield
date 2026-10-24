@@ -43,11 +43,18 @@ RUN pnpm deploy --filter llm-service --prod /out
 
 FROM node:24.19-bookworm-slim AS runtime
 
-RUN addgroup --system phishshield && adduser --system --ingroup phishshield appuser
+RUN apt-get update \
+ && apt-get install --yes --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && addgroup --system phishshield \
+ && adduser --system --home /home/appuser --ingroup phishshield appuser
 
 WORKDIR /app
 
-RUN chown -R appuser:phishshield /app
+ENV HOME=/home/appuser
+
+RUN mkdir -p /home/appuser /app \
+ && chown -R appuser:phishshield /home/appuser /app
 
 COPY --from=build /tmp/model.onnx /app/model.onnx
 COPY --from=build /out ./
