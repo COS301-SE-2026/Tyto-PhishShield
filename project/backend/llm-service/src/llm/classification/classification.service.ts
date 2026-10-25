@@ -34,12 +34,10 @@ export class ClassificationService {
   }
 
   async classify(dto: ClassifyReplyDto): Promise<ReplyClassificationDto> {
-    const [redactedReply, redactedSubject] = await Promise.all([
-      redactSensitiveText(dto.replyText),
-      dto.originalSubject
-        ? redactSensitiveText(dto.originalSubject)
-        : Promise.resolve(undefined),
-    ]);
+    const redactedReply = await redactSensitiveText(dto.replyText);
+    const redactedSubject = dto.originalSubject
+      ? await redactSensitiveText(dto.originalSubject)
+      : undefined;
 
     return this.classifyRedacted({
       replyText: redactedReply.redactedText,
@@ -65,9 +63,7 @@ export class ClassificationService {
         ],
         response_format: { type: 'json_object' },
       });
-      return this.parseAndValidate(
-        response.choices[0]?.message?.content ?? '',
-      );
+      return this.parseAndValidate(response.choices[0]?.message?.content ?? '');
     } catch (err) {
       this.logger.warn(`Cloud LLM classification request failed: ${err}`);
       return this.fallback();
