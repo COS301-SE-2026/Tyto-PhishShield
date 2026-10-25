@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -107,4 +108,8 @@ export class DifficultyLlmGenerationDto {
   @IsEnum(Department)
   @IsOptional()
   senderDepartment?: Department;
+
+  @IsBoolean()
+  @IsOptional()
+  isExternal?: boolean;
 }
