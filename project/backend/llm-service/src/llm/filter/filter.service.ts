@@ -17,31 +17,40 @@ export const ENTITY_TAG_MAP: Record<string, string> = {
   other: '<OTHER>',
 };
 
-let glinerInstance: Gliner | null = null;
+let glinerInitialization: Promise<Gliner> | null = null;
 
 /**
  * Initializes GLiNER once on startup.
  */
-export async function initGliner() {
-  if (!glinerInstance) {
-    const modelPath = process.env.GLINER_MODEL_PATH;
-    if (!modelPath) {
-      throw new Error(
-        'GLINER_MODEL_PATH must point to the local GLiNER ONNX model',
-      );
-    }
-
-    glinerInstance = new Gliner({
-      tokenizerPath:
-        process.env.GLINER_TOKENIZER_PATH ?? 'onnx-community/gliner_small-v2',
-      onnxSettings: { modelPath },
-      transformersSettings: {
-        allowLocalModels: true,
-        useBrowserCache: false,
-      },
+export function initGliner(): Promise<Gliner> {
+  if (glinerInitialization === null) {
+    glinerInitialization = initializeGliner().catch((error: unknown) => {
+      glinerInitialization = null;
+      throw error;
     });
-    await glinerInstance.initialize();
   }
+
+  return glinerInitialization;
+}
+
+async function initializeGliner(): Promise<Gliner> {
+  const modelPath = process.env.GLINER_MODEL_PATH;
+  if (!modelPath) {
+    throw new Error(
+      'GLINER_MODEL_PATH must point to the local GLiNER ONNX model',
+    );
+  }
+
+  const glinerInstance = new Gliner({
+    tokenizerPath:
+      process.env.GLINER_TOKENIZER_PATH ?? 'onnx-community/gliner_small-v2',
+    onnxSettings: { modelPath },
+    transformersSettings: {
+      allowLocalModels: true,
+      useBrowserCache: false,
+    },
+  });
+  await glinerInstance.initialize();
   return glinerInstance;
 }
 
