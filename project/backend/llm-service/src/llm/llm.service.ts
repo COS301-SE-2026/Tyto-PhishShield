@@ -29,7 +29,10 @@ import {
 import { ClassificationService } from './classification/classification.service';
 import { MistakeCategory } from './dto/reply-classification.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ReplyGenerationService } from './reply-generation/reply-generation.service';
+import {
+  RedactedReplyContext,
+  ReplyGenerationService,
+} from './reply-generation/reply-generation.service';
 import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
 import { MailingEventService } from '../mailing-event/mailing-event.service';
 import { redactSensitiveText } from './filter/filter.service';
@@ -193,10 +196,12 @@ export class LlmService {
       return;
     }
 
-    const classification = await this.classificationService.classify({
+    const analysis = await this.replyGenerationService.analyzeReply({
       replyText: reply.replyText,
+      quotedText: reply.quotedText,
       originalSubject: reply.subject,
     });
+    const classification = analysis.classification;
 
     const hasAttachments = dto.attachments.length > 0;
     const llmFlagged =
@@ -220,7 +225,7 @@ export class LlmService {
       return;
     }
 
-    await this.handleValidReply(updatedData, reply);
+    await this.handleValidReply(updatedData, reply, analysis);
   }
 
   private async publishReviewNeeded(
@@ -324,12 +329,10 @@ export class LlmService {
   private async handleValidReply(
     dto: ReceivedReplyDto,
     reply: ParsedReply,
+    redactedReply: RedactedReplyContext,
   ): Promise<void> {
-    const generated = await this.replyGenerationService.generateSafeReply({
-      replyText: reply.replyText,
-      quotedText: reply.quotedText,
-      originalSubject: reply.subject,
-    });
+    const generated =
+      await this.replyGenerationService.generateRedactedReply(redactedReply);
 
     if (!generated) {
       this.logger.warn(
@@ -363,11 +366,14 @@ export class LlmService {
   }
 
   async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
-    const generated = await this.replyGenerationService.generateSafeReply({
-      replyText: event.replyText,
-      quotedText: event.quotedText,
-      originalSubject: event.subject,
-    });
+    const redactedContext =
+      await this.replyGenerationService.sanitizeReplyContext({
+        replyText: event.replyText,
+        quotedText: event.quotedText,
+        originalSubject: event.subject,
+      });
+    const generated =
+      await this.replyGenerationService.generateRedactedReply(redactedContext);
 
     if (!generated) {
       this.logger.warn(
@@ -485,7 +491,7 @@ export class LlmService {
       this.logger.log(
         `Sensitive-information filtering completed for spear-phishing context: ${items.length} item(s) redacted`,
       );
-      const result = await this.classificationService.classify({
+      const result = await this.classificationService.classifyRedacted({
         replyText: redactedText,
       });
 
