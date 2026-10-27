@@ -1,7 +1,7 @@
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button } from '../../components/ui';
 import { useAuth } from '../../context/auth-context';
-import { FilePenLine, Sparkles, Send, CalendarClock, ClipboardCheck, type LucideIcon } from 'lucide-react'
+import { FilePenLine, Sparkles, Send, CalendarClock, ClipboardCheck, Crosshair, type LucideIcon } from 'lucide-react'
 
 interface EmailsProps {
   readonly onNavigate: (path: string) => void;
@@ -84,7 +84,7 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
           gap: 16,
         }}
       >
@@ -128,6 +128,14 @@ export function Emails({ onNavigate, activePath }: EmailsProps) {
           buttonLabel='Review Replies'
           icon={ClipboardCheck}
           onClick={() => onNavigate('/emails/needs-review')}
+        />
+
+        <EmailActionCard
+          title='Spear Phishing'
+          description='Generate and schedule personalised phishing emails using AI and recommended company senders.'
+          buttonLabel='Generate Spear Phishing Email'
+          icon={Crosshair}
+          onClick={() => onNavigate('/emails/spear-phishing')}
         />
       </div>  
     </AppLayout>

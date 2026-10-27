@@ -15,6 +15,7 @@ import { ReceivedEmailService } from './received-email/received-email.service';
 import { ClassificationService } from './classification/classification.service';
 import { rabbitMQModule } from '../rabbitmq.module';
 import { ReplyGenerationService } from './reply-generation/reply-generation.service';
+import { MailingEventService } from '../mailing-event/mailing-event.service';
 
 describe('LlmService', () => {
   let service: LlmService;
@@ -22,9 +23,20 @@ describe('LlmService', () => {
   const mockPromptBuilderService = {
     buildSystemPrompt: jest.fn(),
   };
+  // Helper function to create a valid gateway response
+  const createValidGatewayResponse = (subject: string, body: string) => ({
+    choices: [
+      {
+        message: {
+          content: JSON.stringify({ subject, body }),
+        },
+      },
+    ],
+  });
 
   const mockLlmGatewayService = {
     send: jest.fn(),
+    sendWithFallback: jest.fn(),
   };
 
   // Mock ConfigService to return a specific LLM provider
@@ -47,6 +59,21 @@ describe('LlmService', () => {
 
   };
 
+  const mockMailingEventService = {
+
+  };
+
+  const mockEnv = jest.fn((key: string) => {
+          switch(key) {
+              case 'LLM_MODEL_CHAIN': return 'model chain';
+              default: throw Error('unexpected key');
+          }});
+
+  const config = {
+      getOrThrow: mockEnv,
+      get: mockEnv,
+  }
+
   const baseDto: DifficultyLlmGenerationDto = {
     difficulty: Difficulty.MEDIUM,
     tone: MessageTone.URGENT,
@@ -55,17 +82,6 @@ describe('LlmService', () => {
     count: 2,
     senderDepartment: Department.IT_SECURITY,
   };
-
-  // Helper function to create a valid gateway response
-  const createValidGatewayResponse = (subject: string, body: string) => ({
-    choices: [
-      {
-        message: {
-          content: JSON.stringify({ subject, body }),
-        },
-      },
-    ],
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -78,6 +94,8 @@ describe('LlmService', () => {
         { provide: ReceivedEmailService, useValue: mockRecievedEmailService },
         { provide: ClassificationService, useValue: mockClassificationService },
         { provide: ReplyGenerationService, useValue: mockReplyGenerationService },
+        { provide: MailingEventService, useValue: mockMailingEventService },
+        { provide: ConfigService, useValue: config},
       ],
     }).compile();
 
@@ -100,7 +118,7 @@ describe('LlmService', () => {
 
       const validHtmlBody =
         '<p>Click <a href="{{tracking_link}}">here</a>.</p>';
-      mockLlmGatewayService.send.mockResolvedValue(
+      mockLlmGatewayService.sendWithFallback.mockResolvedValue(
         createValidGatewayResponse('Valid Subject', validHtmlBody),
       );
 
@@ -109,7 +127,7 @@ describe('LlmService', () => {
       expect(mockPromptBuilderService.buildSystemPrompt).toHaveBeenCalledWith(
         baseDto,
       );
-      expect(mockLlmGatewayService.send).toHaveBeenCalledTimes(2);
+      expect(mockLlmGatewayService.sendWithFallback).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
         requested: 2,
         generated: 2,
@@ -136,7 +154,7 @@ describe('LlmService', () => {
 
       const validHtmlBody = '<a href="{{tracking_link}}">Link</a>';
 
-      mockLlmGatewayService.send
+      mockLlmGatewayService.sendWithFallback
         .mockResolvedValueOnce(
           createValidGatewayResponse('Success', validHtmlBody),
         )
@@ -157,7 +175,7 @@ describe('LlmService', () => {
       );
 
       const invalidHtmlBody = '<p>No link</p>';
-      mockLlmGatewayService.send.mockResolvedValue(
+      mockLlmGatewayService.sendWithFallback.mockResolvedValue(
         createValidGatewayResponse('Valid Subject', invalidHtmlBody),
       );
 
@@ -171,7 +189,7 @@ describe('LlmService', () => {
         'System prompt',
       );
 
-      mockLlmGatewayService.send.mockResolvedValue({
+      mockLlmGatewayService.sendWithFallback.mockResolvedValue({
         choices: [
           {
             message: {
@@ -190,7 +208,7 @@ describe('LlmService', () => {
       mockPromptBuilderService.buildSystemPrompt.mockReturnValue(
         'System prompt',
       );
-      mockLlmGatewayService.send.mockRejectedValue(new Error('Network Error'));
+      mockLlmGatewayService.sendWithFallback.mockRejectedValue(new Error('Network Error'));
 
       await expect(service.generateTemplates(baseDto)).rejects.toThrow(
         'No templates generated',

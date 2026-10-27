@@ -11,13 +11,16 @@ describe('LlmGatewayService', () => {
   let service: LlmGatewayService;
   let mockFetch: jest.SpyInstance;
 
-  const mockConfigService = {
-    getOrThrow: jest.fn((key: string) => {
+  const envs = jest.fn((key: string) => {
       if (key === 'LLM_GATEWAY_KEY') return 'test-api-key';
       if (key === 'LLM_GATEWAY_URL') return 'https://api.gateway.com';
       if (key === 'LOCAL_LLM_URL') return 'http://local-llm';
+      if (key === 'LLM_MODEL_CHAIN') return 'http://modelchain-llm';
       return 'default';
-    }),
+    });
+  const mockConfigService = {
+    getOrThrow: envs,
+    get: envs,
   };
 
   beforeEach(async () => {

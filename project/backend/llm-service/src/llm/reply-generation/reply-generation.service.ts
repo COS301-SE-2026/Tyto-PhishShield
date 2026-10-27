@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { LlmGatewayService } from '../llm-gateway/llm-gateway.service';
 import { PromptBuilderService } from '../prompt-builder/prompt-builder.service';
 import {
@@ -7,11 +6,13 @@ import {
   OkLlmGatewayResponse,
 } from '../dto/llm-gateway.dto';
 import {
-  RawRedactionItem,
   RedactionItem,
   RedactionItemType,
   RedactionResult,
 } from '../dto/redacted.dto';
+import { detectSensitiveWords } from '../filter/filter.service';
+import { ClassificationService } from '../classification/classification.service';
+import { ReplyClassificationDto } from '../dto/reply-classification.dto';
 
 // We are redacting with [...] where the redaction type will be inside the brackets.
 const REDACTION_TOKEN = /\[[A-Z_]+_\d+\]/;
@@ -19,53 +20,105 @@ const REDACTION_TOKEN = /\[[A-Z_]+_\d+\]/;
 // There can be multiple names mentioned, and they are kept apart to provide more context to the cloud llm.
 const NAME_TOKEN = /\[NAME_\d+\]/g;
 
-// Just incase local llm missed certain values, we do our own checks.
+// Keep deterministic checks for values the entity detector may miss.
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const PHONE_RE = /(?:\+?\d[\d\s().-]{7,}\d)/g;
+
+const ENTITY_TAG_TO_REDACTION_TYPE: Record<string, RedactionItemType> = {
+  '<NAME>': RedactionItemType.NAME,
+  '<BUSINESS_NAME>': RedactionItemType.BUSINESS_NAME,
+  '<EMAIL>': RedactionItemType.EMAIL,
+  '<PHONE>': RedactionItemType.PHONE,
+  '<ADDRESS>': RedactionItemType.ADDRESS,
+  '<ID_NUMBER>': RedactionItemType.ID_NUMBER,
+  '<OTHER>': RedactionItemType.OTHER,
+};
 
 export interface GeneratedReply {
   subject: string;
   body: string;
 }
 
+export interface RedactedReplyContext {
+  redactedReplyText: string;
+  redactedQuotedText: string;
+  originalSubject: string;
+}
+
+export interface ReplyAnalysis extends RedactedReplyContext {
+  classification: ReplyClassificationDto;
+}
+
 @Injectable()
 export class ReplyGenerationService {
   private readonly logger = new Logger(ReplyGenerationService.name);
-  private readonly localModel: string;
-  private readonly cloudModel: string;
 
   constructor(
     private readonly llmGatewayService: LlmGatewayService,
-    private readonly config: ConfigService,
     private readonly promptBuilderService: PromptBuilderService,
-  ) {
-    this.localModel = this.config.get<string>('LOCAL_LLM_MODEL', 'gemma2:2b');
-    this.cloudModel = this.config.get<string>(
-      'LLM_PROVIDER',
-      'google-ai-studio/gemini-3.1-flash-lite',
-    );
-  }
+    private readonly classificationService: ClassificationService,
+  ) {}
 
   async generateSafeReply(params: {
     replyText: string;
     quotedText: string;
     originalSubject: string;
   }): Promise<GeneratedReply | null> {
+    const analysis = await this.analyzeReply(params);
+    if (analysis.classification.needsReview) {
+      this.logger.warn(
+        `Reply generation blocked because cloud confidence was below the configured threshold`,
+      );
+      return null;
+    }
+
+    return this.generateRedactedReply(analysis);
+  }
+
+  async analyzeReply(params: {
+    replyText: string;
+    quotedText: string;
+    originalSubject: string;
+  }): Promise<ReplyAnalysis> {
+    const redactedContext = await this.sanitizeReplyContext(params);
+    const classification = await this.classificationService.classifyRedacted({
+      replyText: redactedContext.redactedReplyText,
+      originalSubject: redactedContext.originalSubject,
+    });
+
+    return {
+      ...redactedContext,
+      classification,
+    };
+  }
+
+  async sanitizeReplyContext(params: {
+    replyText: string;
+    quotedText: string;
+    originalSubject: string;
+  }): Promise<RedactedReplyContext> {
     const [redactedReply, redactedQuoted] = await Promise.all([
       this.redact(params.replyText),
       this.redact(params.quotedText),
     ]);
+    const redactedSubject = await this.redact(params.originalSubject);
 
     this.logger.log(
       `Redacted ${redactedReply.items.length} item(s) from reply, ` +
         `${redactedQuoted.items.length} from quoted text`,
     );
 
-    return this.generate({
+    return {
       redactedReplyText: redactedReply.redactedText,
-      originalSubject: params.originalSubject,
+      originalSubject: redactedSubject.redactedText,
       redactedQuotedText: redactedQuoted.redactedText,
-    });
+    };
+  }
+
+  async generateRedactedReply(
+    params: RedactedReplyContext,
+  ): Promise<GeneratedReply | null> {
+    return this.generate(params);
   }
 
   private async redact(text: string): Promise<RedactionResult> {
@@ -100,36 +153,14 @@ export class ReplyGenerationService {
 
   private async detectSensitiveItems(text: string): Promise<RedactionItem[]> {
     try {
-      const raw = await this.llmGatewayService.sendLocal({
-        model: this.localModel,
-        messages: [
-          {
-            role: 'system',
-            content: this.promptBuilderService.buildRedactionPrompt(),
-          },
-          { role: 'user', content: text },
-        ],
-        format: 'json',
-      });
+      const detected = await detectSensitiveWords(text);
 
-      const parsed = JSON.parse(raw) as { items?: RawRedactionItem[] };
-      if (!Array.isArray(parsed.items)) return [];
-
-      return parsed.items
-        .filter(
-          (i): i is { text: string; type: string } =>
-            typeof i.text === 'string' && typeof i.type === 'string',
-        )
-        .map((i) => ({
-          text: i.text,
-          type: Object.values(RedactionItemType).includes(
-            i.type as RedactionItemType,
-          )
-            ? (i.type as RedactionItemType)
-            : RedactionItemType.OTHER,
-        }));
+      return detected.map(({ word, tag }) => ({
+        text: word,
+        type: ENTITY_TAG_TO_REDACTION_TYPE[tag] ?? RedactionItemType.OTHER,
+      }));
     } catch (err) {
-      this.logger.warn(`Local LLM redaction detection failed: ${err}`);
+      this.logger.warn(`GLiNER redaction detection failed: ${err}`);
       // We fall to the Regex.
       return [];
     }
@@ -168,15 +199,14 @@ export class ReplyGenerationService {
 
     let response: OkLlmGatewayResponse;
     try {
-      response = await this.llmGatewayService.send({
-        model: this.cloudModel,
+      response = await this.llmGatewayService.sendWithFallback({
         messages: [
           { role: 'system', content: systemInstructions },
           { role: 'user', content: userContent },
         ],
         temperature: 0.6,
         response_format: { type: 'json_object' },
-      } satisfies LlmGatewayRequestBody);
+      } satisfies Omit<LlmGatewayRequestBody, 'model'>);
     } catch (err) {
       this.logger.warn(`Cloud LLM reply generation request failed: ${err}`);
       return null;

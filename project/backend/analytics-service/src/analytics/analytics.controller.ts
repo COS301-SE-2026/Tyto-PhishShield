@@ -73,7 +73,7 @@ interface MailingPayload {
   scheduledAt?: string;
   emailId?: string;
   auth0Id?: string;
-
+  from?: string;
   campaignId?: string;
   entries?: {
     referenceNumber: string;

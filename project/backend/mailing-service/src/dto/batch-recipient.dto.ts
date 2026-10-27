@@ -32,4 +32,8 @@ export class BatchRecipientDto {
   @IsString()
   @IsOptional()
   alias?: string;
+
+  @IsString()
+  @IsOptional()
+  from?: string;
 }

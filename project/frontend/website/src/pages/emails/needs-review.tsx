@@ -12,6 +12,7 @@ import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button, Badge } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
 import { getNeedsReviews, resolveReview, deleteReview, type ReviewListItem, type ReviewDecision, type Severity } from '../../services/needs-review';
+import posthog from '../../lib/posthog';
 
 interface NeedsReviewProps {
   readonly onNavigate: (path: string) => void;
@@ -163,6 +164,12 @@ export function NeedsReview({
 
       setReviews(remaining);
       setSelectedId(remaining[0]?.id ?? null);
+      posthog.capture('review_resolved', {
+        decision,
+        review_type: selectedReview.reviewType,
+        severity: selectedReview.severity ?? 'unclassified',
+        category_count: selectedReview.categories?.length ?? 0,
+      });
 
       addToast({
         type: 'success',

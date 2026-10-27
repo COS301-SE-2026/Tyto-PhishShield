@@ -9,9 +9,10 @@ import { ReplyGuardService } from './reply-guard/reply-guard.service';
 import { ReceivedEmailService } from './received-email/received-email.service';
 import { rabbitMQModule } from '../rabbitmq.module';
 import { ReplyGenerationService } from './reply-generation/reply-generation.service';
+import { MailingEventModule } from '../mailing-event/mailing-event.module';
 
 @Module({
-  imports: [LlmGatewayModule, ConfigModule, rabbitMQModule],
+  imports: [LlmGatewayModule, ConfigModule, rabbitMQModule, MailingEventModule],
   controllers: [LlmController],
   providers: [
     LlmService,

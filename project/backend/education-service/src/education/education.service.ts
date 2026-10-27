@@ -33,7 +33,7 @@ export class EducationService {
     private readonly questionRepo: Repository<Question>,
     @InjectRepository(Assignment)
     private readonly assignmentRepo: Repository<Assignment>,
-    @InjectRepository(Assignment)
+    @InjectRepository(IncorrectQuestion)
     private readonly incorrectQRepo: Repository<IncorrectQuestion>,
     private readonly amqpConnection: AmqpConnection,
   ) {}
@@ -194,12 +194,14 @@ export class EducationService {
       if (dto.answers[i] === questions[i].correctOptionIndex) {
         correctCount++;
       } else {
-        const incorrect = this.incorrectQRepo.create({
-          auth0Id,
-          questionId: questions[i].id,
-          category: questions[i].category as MistakeCategory,
-        });
-        await this.incorrectQRepo.save(incorrect);
+        if (questions[i].category) {
+          const incorrect = this.incorrectQRepo.create({
+            auth0Id,
+            questionId: questions[i].id,
+            category: questions[i].category as MistakeCategory,
+          });
+          await this.incorrectQRepo.save(incorrect);
+        }
       }
     }
     //check with the exchange stuff with Darius and Josua before demo 2.
