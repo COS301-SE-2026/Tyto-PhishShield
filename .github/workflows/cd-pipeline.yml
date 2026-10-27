@@ -7,6 +7,7 @@ on:
 jobs:
     backend:
         uses: ./.github/workflows/ci-backend.yml
+        secrets: inherit
     frontend:
         uses: ./.github/workflows/ci-frontend.yml
     

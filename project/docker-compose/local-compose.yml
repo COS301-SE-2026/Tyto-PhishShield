@@ -187,6 +187,12 @@ services:
     build:
       context: ../../
       dockerfile: project/backend/api-gateway/Dockerfile
+      args:
+        POSTHOG_CLI_PROJECT_ID: ${POSTHOG_CLI_PROJECT_ID}
+        POSTHOG_CLI_HOST: ${POSTHOG_CLI_HOST}
+        POSTHOG_RELEASE_VERSION: Local-Build
+      secrets:
+        - POSTHOG_CLI_API_KEY
     restart: on-failure
     container_name: ${GATEWAY_APP_CONTAINER}
     environment:
@@ -237,6 +243,8 @@ services:
       - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
       - RESEND_WEBHOOK_SKIP_VERIFY=${RESEND_WEBHOOK_SKIP_VERIFY}
       - NODE_ENV=${NODE_ENV}
+      - POSTHOG_PROJECT_TOKEN=${VITE_POSTHOG_PROJECT_TOKEN}
+      - POSTHOG_HOST=${VITE_POSTHOG_HOST}
     ports:
       - '${API_GATEWAY_PORT}:${API_GATEWAY_PORT}'
     deploy:
@@ -602,14 +610,16 @@ services:
       - LOCAL_NUM_PREDICT=${LOCAL_NUM_PREDICT}
       - LOCAL_LLM_TIMEOUT_MS=${LOCAL_LLM_TIMEOUT_MS}
       - DB_SYNC=${DB_SYNC}
+      - GLINER_MODEL_PATH=/app/model.onnx
+      - GLINER_TOKENIZER_PATH=onnx-community/gliner_small-v2
     ports:
       - "${LLM_SERVICE_PORT}:${LLM_SERVICE_PORT}"
 
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: '128M'
+          cpus: '2.5'
+          memory: '1024M'
 
     depends_on:
       llm_db:
@@ -772,6 +782,8 @@ services:
         VITE_BASE_PATH: "/"
         VITE_POSTHOG_PROJECT_TOKEN: ${VITE_POSTHOG_PROJECT_TOKEN}
         VITE_POSTHOG_HOST: ${VITE_POSTHOG_HOST}
+      secrets:
+        - POSTHOG_API_KEY
     restart: on-failure
     container_name: website
     ports:
@@ -872,3 +884,9 @@ networks:
   local-llm:
     external: true
     name: local-llm
+
+secrets:
+  POSTHOG_API_KEY:
+    environment: POSTHOG_API_KEY
+  POSTHOG_CLI_API_KEY:
+    environment: POSTHOG_CLI_API_KEY

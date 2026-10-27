@@ -45,6 +45,7 @@ import { ScheduleSingleEmailDto } from '@phishshield/dto';
 class UpdateEmailDto extends PartialType(EmailsDto) {}
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { PostHogService } from '../../posthog.service';
 
 @ApiTags('Emails')
 @Controller('emails')
@@ -57,6 +58,7 @@ export class EmailController {
   constructor(
     private readonly proxy: ProxyService,
     private readonly config: ConfigService,
+    private readonly posthog: PostHogService,
   ) {
     this.mailingServiceUrl = this.config.get<string>(
       'MAILING_SERVICE_URL',
@@ -83,12 +85,17 @@ export class EmailController {
       },
     },
   })
-  createEmail(@Body() body: EmailsDto) {
-    return this.proxy.forward({
+  async createEmail(@Body() body: EmailsDto) {
+    const email = await this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails`,
       method: 'POST',
       data: body,
     });
+    this.posthog.client?.capture({
+      event: 'phishing_template_created',
+      properties: { difficulty: body.difficulty },
+    });
+    return email;
   }
 
   @Get()
@@ -134,25 +141,32 @@ export class EmailController {
       },
     },
   })
-  updateEmail(
+  async updateEmail(
     @Param('referenceNumber') referenceNumber: string,
     @Body() body: Partial<EmailsDto>,
   ) {
-    return this.proxy.forward({
+    const email = await this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}`,
       method: 'PATCH',
       data: body,
     });
+    this.posthog.client?.capture({
+      event: 'phishing_template_updated',
+      properties: { difficulty: body.difficulty },
+    });
+    return email;
   }
 
   @Delete(':referenceNumber')
   @ApiOperation({ summary: 'Deletes email template' })
   @ApiParam({ name: 'referenceNumber', type: 'string', example: 'PHISH-001' })
-  deleteEmail(@Param('referenceNumber') referenceNumber: string) {
-    return this.proxy.forward({
+  async deleteEmail(@Param('referenceNumber') referenceNumber: string) {
+    const result = await this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}`,
       method: 'DELETE',
     });
+    this.posthog.client?.capture({ event: 'phishing_template_deleted' });
+    return result;
   }
 
   @Post(':referenceNumber/send-single')
@@ -170,15 +184,17 @@ export class EmailController {
       },
     },
   })
-  sendEmail(
+  async sendEmail(
     @Param('referenceNumber') referenceNumber: string,
     @Body() body: SendSingleEmailDto,
   ) {
-    return this.proxy.forward({
+    const result = await this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}/send-single`,
       method: 'POST',
       data: body,
     });
+    this.posthog.client?.capture({ event: 'phishing_email_sent' });
+    return result;
   }
 
   @Post(':referenceNumber/schedule-send-single')
@@ -199,14 +215,16 @@ export class EmailController {
       },
     },
   })
-  scheduleSendEmail(
+  async scheduleSendEmail(
     @Param('referenceNumber') referenceNumber: string,
     @Body() body: ScheduleSingleEmailDto,
   ) {
-    return this.proxy.forward({
+    const result = await this.proxy.forward({
       url: `${this.mailingServiceUrl}/emails/${referenceNumber}/schedule-send-single`,
       method: 'POST',
       data: body,
     });
+    this.posthog.client?.capture({ event: 'phishing_email_scheduled' });
+    return result;
   }
 }

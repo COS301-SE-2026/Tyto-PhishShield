@@ -6,6 +6,7 @@
  */
 
 import { NestFactory } from '@nestjs/core';
+import { setupExpressRequestContext } from 'posthog-node';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -14,6 +15,8 @@ import { logger } from './logger/logger.service';
 import { requestIdMiddleware } from './middleware';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import { PostHogService } from './posthog.service';
+import { PostHogLogsService } from './posthog-logs.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -22,6 +25,11 @@ async function bootstrap() {
 
   if (process.env.ENVIRONMENT != 'local') {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
+
+  const posthog = app.get(PostHogService).client;
+  if (posthog) {
+    setupExpressRequestContext(posthog, app.getHttpAdapter().getInstance());
   }
 
   app.useGlobalPipes(
@@ -50,7 +58,12 @@ async function bootstrap() {
       else return callback(null, false);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-POSTHOG-DISTINCT-ID',
+      'X-POSTHOG-SESSION-ID',
+    ],
   });
 
   app.setGlobalPrefix('api');
@@ -84,13 +97,13 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(process.env.API_GATEWAY_PORT ?? 3001);
+  const port = process.env.API_GATEWAY_PORT ?? 3001;
+  await app.listen(port);
 
   app.set('trust proxy', 1);
+  app.get(PostHogLogsService).logGatewayListening(port);
 
-  logger.info(
-    `API Gateway running on port ${process.env.API_GATEWAY_PORT ?? 3001}`,
-  );
+  logger.info(`API Gateway running on port ${port}`);
 }
 
 void bootstrap();
