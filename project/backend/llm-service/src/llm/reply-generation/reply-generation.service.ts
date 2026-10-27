@@ -11,6 +11,8 @@ import {
   RedactionResult,
 } from '../dto/redacted.dto';
 import { detectSensitiveWords } from '../filter/filter.service';
+import { ClassificationService } from '../classification/classification.service';
+import { ReplyClassificationDto } from '../dto/reply-classification.dto';
 
 // We are redacting with [...] where the redaction type will be inside the brackets.
 const REDACTION_TOKEN = /\[[A-Z_]+_\d+\]/;
@@ -37,6 +39,16 @@ export interface GeneratedReply {
   body: string;
 }
 
+export interface RedactedReplyContext {
+  redactedReplyText: string;
+  redactedQuotedText: string;
+  originalSubject: string;
+}
+
+export interface ReplyAnalysis extends RedactedReplyContext {
+  classification: ReplyClassificationDto;
+}
+
 @Injectable()
 export class ReplyGenerationService {
   private readonly logger = new Logger(ReplyGenerationService.name);
@@ -44,6 +56,7 @@ export class ReplyGenerationService {
   constructor(
     private readonly llmGatewayService: LlmGatewayService,
     private readonly promptBuilderService: PromptBuilderService,
+    private readonly classificationService: ClassificationService,
   ) {}
 
   async generateSafeReply(params: {
@@ -51,21 +64,61 @@ export class ReplyGenerationService {
     quotedText: string;
     originalSubject: string;
   }): Promise<GeneratedReply | null> {
+    const analysis = await this.analyzeReply(params);
+    if (analysis.classification.needsReview) {
+      this.logger.warn(
+        `Reply generation blocked because cloud confidence was below the configured threshold`,
+      );
+      return null;
+    }
+
+    return this.generateRedactedReply(analysis);
+  }
+
+  async analyzeReply(params: {
+    replyText: string;
+    quotedText: string;
+    originalSubject: string;
+  }): Promise<ReplyAnalysis> {
+    const redactedContext = await this.sanitizeReplyContext(params);
+    const classification = await this.classificationService.classifyRedacted({
+      replyText: redactedContext.redactedReplyText,
+      originalSubject: redactedContext.originalSubject,
+    });
+
+    return {
+      ...redactedContext,
+      classification,
+    };
+  }
+
+  async sanitizeReplyContext(params: {
+    replyText: string;
+    quotedText: string;
+    originalSubject: string;
+  }): Promise<RedactedReplyContext> {
     const [redactedReply, redactedQuoted] = await Promise.all([
       this.redact(params.replyText),
       this.redact(params.quotedText),
     ]);
+    const redactedSubject = await this.redact(params.originalSubject);
 
     this.logger.log(
       `Redacted ${redactedReply.items.length} item(s) from reply, ` +
         `${redactedQuoted.items.length} from quoted text`,
     );
 
-    return this.generate({
+    return {
       redactedReplyText: redactedReply.redactedText,
-      originalSubject: params.originalSubject,
+      originalSubject: redactedSubject.redactedText,
       redactedQuotedText: redactedQuoted.redactedText,
-    });
+    };
+  }
+
+  async generateRedactedReply(
+    params: RedactedReplyContext,
+  ): Promise<GeneratedReply | null> {
+    return this.generate(params);
   }
 
   private async redact(text: string): Promise<RedactionResult> {

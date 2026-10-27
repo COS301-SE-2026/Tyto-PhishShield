@@ -1,4 +1,5 @@
 import 'onnxruntime-node';
+import { Logger } from '@nestjs/common';
 import { Gliner } from 'gliner/node';
 import { RedactionItemType } from '../dto/redacted.dto';
 
@@ -17,32 +18,62 @@ export const ENTITY_TAG_MAP: Record<string, string> = {
   other: '<OTHER>',
 };
 
-let glinerInstance: Gliner | null = null;
+let glinerInitialization: Promise<Gliner> | null = null;
+const logger = new Logger('GlinerFilter');
 
 /**
  * Initializes GLiNER once on startup.
  */
-export async function initGliner() {
-  if (!glinerInstance) {
-    const modelPath = process.env.GLINER_MODEL_PATH;
-    if (!modelPath) {
-      throw new Error(
-        'GLINER_MODEL_PATH must point to the local GLiNER ONNX model',
-      );
-    }
-
-    glinerInstance = new Gliner({
-      tokenizerPath:
-        process.env.GLINER_TOKENIZER_PATH ?? 'onnx-community/gliner_small-v2',
-      onnxSettings: { modelPath },
-      transformersSettings: {
-        allowLocalModels: true,
-        useBrowserCache: false,
-      },
-    });
-    await glinerInstance.initialize();
+export function initGliner(): Promise<Gliner> {
+  if (glinerInitialization === null) {
+    logger.log('Starting GLiNER initialization');
+    glinerInitialization = initializeGliner()
+      .then((instance) => {
+        logger.log('GLiNER initialization completed');
+        return instance;
+      })
+      .catch((error: unknown) => {
+        glinerInitialization = null;
+        logger.error(
+          `GLiNER initialization failed: ${describeError(error)}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+        throw error;
+      });
   }
+
+  return glinerInitialization;
+}
+
+async function initializeGliner(): Promise<Gliner> {
+  const modelPath = process.env.GLINER_MODEL_PATH;
+  if (!modelPath) {
+    throw new Error(
+      'GLINER_MODEL_PATH must point to the local GLiNER ONNX model',
+    );
+  }
+
+  const glinerInstance = new Gliner({
+    tokenizerPath:
+      process.env.GLINER_TOKENIZER_PATH ?? 'onnx-community/gliner_small-v2',
+    onnxSettings: { modelPath },
+    transformersSettings: {
+      allowLocalModels: true,
+      useBrowserCache: false,
+    },
+  });
+  logger.log(
+    `Initializing GLiNER with model ${modelPath} and tokenizer ${
+      process.env.GLINER_TOKENIZER_PATH ?? 'onnx-community/gliner_small-v2'
+    }`,
+  );
+  await glinerInstance.initialize();
   return glinerInstance;
+}
+
+function describeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return JSON.stringify(error) ?? `Unknown ${typeof error} error`;
 }
 
 export interface RedactionItem {
@@ -83,12 +114,21 @@ export async function detectSensitiveWords(
 
   const labels = Object.keys(ENTITY_TAG_MAP);
 
-  const [entities] = await model.inference({
-    texts: [text],
-    entities: labels,
-    threshold: 0.4,
-    flatNer: true,
-  });
+  let entities: Awaited<ReturnType<Gliner['inference']>>[0];
+  try {
+    [entities] = await model.inference({
+      texts: [text],
+      entities: labels,
+      threshold: 0.4,
+      flatNer: true,
+    });
+  } catch (error) {
+    logger.error(
+      `GLiNER inference failed: ${describeError(error)}`,
+      error instanceof Error ? error.stack : undefined,
+    );
+    throw error;
+  }
 
   const results: RedactionItem[] = [];
   const seenWords = new Set<string>();

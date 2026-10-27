@@ -34,15 +34,27 @@ export class ClassificationService {
   }
 
   async classify(dto: ClassifyReplyDto): Promise<ReplyClassificationDto> {
+    const redactedReply = await redactSensitiveText(dto.replyText);
+    const redactedSubject = dto.originalSubject
+      ? await redactSensitiveText(dto.originalSubject)
+      : undefined;
+
+    return this.classifyRedacted({
+      replyText: redactedReply.redactedText,
+      originalSubject: redactedSubject?.redactedText,
+    });
+  }
+
+  async classifyRedacted(
+    dto: ClassifyReplyDto,
+  ): Promise<ReplyClassificationDto> {
     const systemInstructions =
       this.promptBuilderService.buildClassificationPrompt();
 
-    let raw: string;
     try {
-      const { redactedText } = await redactSensitiveText(dto.replyText);
       const userContent = dto.originalSubject
-        ? `Original email subject: "${dto.originalSubject}"\nReply to classify:\n"""${redactedText}"""`
-        : `Reply to classify:\n"""${redactedText}"""`;
+        ? `Original email subject: "${dto.originalSubject}"\nReply to classify:\n"""${dto.replyText}"""`
+        : `Reply to classify:\n"""${dto.replyText}"""`;
 
       const response = await this.llmGatewayService.sendWithFallback({
         messages: [
@@ -51,13 +63,11 @@ export class ClassificationService {
         ],
         response_format: { type: 'json_object' },
       });
-      raw = response.choices[0]?.message?.content ?? '';
+      return this.parseAndValidate(response.choices[0]?.message?.content ?? '');
     } catch (err) {
       this.logger.warn(`Cloud LLM classification request failed: ${err}`);
       return this.fallback();
     }
-
-    return this.parseAndValidate(raw);
   }
 
   private parseAndValidate(raw: string): ReplyClassificationDto {

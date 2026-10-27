@@ -379,8 +379,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: '128M'
+          cpus: '2.5'
+          memory: '1028M'
     networks:
       - green
       - local-llm
