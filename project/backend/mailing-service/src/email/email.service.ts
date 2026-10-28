@@ -59,6 +59,8 @@ export class EmailService {
   }
 
   async createEmail(dto: EmailsDto): Promise<EmailTemplateEntity> {
+    this.variableResolver.validateTemplate(dto.subject, dto.content);
+
     try {
       const uniqueHash = crypto.randomBytes(4).toString('hex').toUpperCase();
       const generatedReference = `PHISH-${uniqueHash}`;
@@ -128,6 +130,8 @@ export class EmailService {
     referenceNumber: string,
     dto: Partial<EmailsDto>,
   ): Promise<EmailTemplateEntity> {
+    this.variableResolver.validateTemplate(dto.subject, dto.content);
+
     const email = await this.getEmailByReference(referenceNumber);
     Object.assign(email, dto);
 
@@ -155,6 +159,10 @@ export class EmailService {
 
       return entry;
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       this.logger.error(
         `Failed to delete email with reference number: ${referenceNumber}`,
         error,

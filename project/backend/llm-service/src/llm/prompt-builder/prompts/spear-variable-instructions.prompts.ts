@@ -91,6 +91,7 @@ Rules:
 1. Make the email appear as an internal communication from the sender's department to the recipient's department.
 2. Weave every placeholder naturally into the text, it should read as an ordinary detail in a real email, never as a filled-in slot.
 3. Do not invent specific business processes, named forms, internal systems, or procedural steps beyond what the message type and any provided context actually imply. You don't know exactly how this business operates, keep details as generic as the context supports (e.g. "the document", "this request") rather than fabricating specifics like named forms or systems. Only get concrete where the message type or provided context already gives you something concrete to work with.
+4. If a placeholder's value is needed more than once in the email, reuse the exact same placeholder token each time (e.g. {{business_name}} in both the body and the sign-off). Never create numbered or modified variants such as {{business_name_1}} or {{business_name_2}}.
 `.trim();
 }
 
