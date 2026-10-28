@@ -4,7 +4,6 @@ import { useState, type CSSProperties } from 'react';
 import { useToast } from '../../context/toast-context';
 import { createEmailTemplate, type Department as EmailTemplateDepartment } from '../../services/email-template';
 import { generateTemplates, type Difficulty, type Department, type MessageType, type MessageTone, type TemplateVariable, type GeneratedTemplate } from '../../services/llm-template';
-import { SenderDomainSelect } from "../../components/email/sender-domain-select";
 import posthog from '../../lib/posthog';
 
 interface GenerateEmailProps {
@@ -77,8 +76,14 @@ const COUNT_OPTIONS = Array.from({length: 6 }, (_, index) => ({
   label: `${index + 1} template${index === 0 ? '' : 's'}`
 }));
 
+const SENDER_DOMAIN_OPTIONS = [
+  { value: '', label: 'Select sender domain' },
+  { value: 'example-compny.xyz', label: '@example-compny.xyz' },
+  { value: 'gmaill.co.za', label: '@gmaill.co.za' },
+];
+
 const INITIAL_FORM: GenerateEmailForm = {
-  sender: 'capstone-five-guys.dns.net.za',
+  sender: '',
   difficulty: 'easy',
   tone: 'professional',
   messageType: 'announcement',
@@ -86,10 +91,16 @@ const INITIAL_FORM: GenerateEmailForm = {
   count: 1,
 }
 
+const isExternalSenderDomain = (sender: string): boolean => {
+  const domain = sender.trim().toLowerCase().replace(/^@/, '');
+  return domain === 'gmaill.co.za';
+};
+
 export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   const { addToast } = useToast();
 
   const [form, setForm] = useState<GenerateEmailForm>(INITIAL_FORM);
+  const isExternal = isExternalSenderDomain(form.sender);
   const [templateVariables, setTemplateVariables] = useState<TemplateVariable[]>([]);
   const [templates, setTemplates] = useState<GeneratedTemplate[]>([]);
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
@@ -98,12 +109,16 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   const [saving, setSaving] = useState(false);
   const [generatedDifficulty, setGeneratedDifficulty] = useState<Difficulty | null>(null);
   const [generatedDepartment, setGeneratedDepartment] = useState<Department | ''>('');
+  const [generatedSender, setGeneratedSender] = useState(INITIAL_FORM.sender);
 
   const setField = <K extends keyof GenerateEmailForm>(field: K, value: GenerateEmailForm[K]): void => {
-    setForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
+    setForm((previous) => {
+      const updated = { ...previous, [field]: value };
+      if (field === 'sender' && isExternalSenderDomain(String(value))) {
+        updated.senderDepartment = '';
+      }
+      return updated;
+    });
 
     if (field === 'sender') {
       setErrors((previous) => ({
@@ -139,8 +154,8 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   const validateForm = (): boolean => {
     const nextErrors: FormErrors = {};
 
-    if (!form.sender.trim()) {
-      nextErrors.sender = 'Sender domain is required.'
+    if (!SENDER_DOMAIN_OPTIONS.some((option) => option.value !== '' && option.value === form.sender)) {
+      nextErrors.sender = 'Please select a sender domain.'
     }
 
     setErrors(nextErrors);
@@ -161,13 +176,15 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
         messageType: form.messageType,
         templateVariable: templateVariables,
         count: form.count,
-        senderDepartment: form.senderDepartment || undefined
+        isExternal,
+        senderDepartment: isExternal ? undefined : form.senderDepartment || undefined,
       });
 
       setTemplates(result.templates);
       setSelectedTemplateIds([]);
       setGeneratedDifficulty(form.difficulty);
-      setGeneratedDepartment(form.senderDepartment);
+      setGeneratedDepartment(isExternal ? '' : form.senderDepartment);
+      setGeneratedSender(form.sender);
       posthog.capture('email_templates_generated', {
         requested_count: result.requested,
         generated_count: result.generated,
@@ -175,7 +192,8 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
         difficulty: form.difficulty,
         tone: form.tone,
         message_type: form.messageType,
-        has_sender_department: Boolean(form.senderDepartment),
+        has_sender_department: !isExternal && Boolean(form.senderDepartment),
+        is_external: isExternal,
       });
 
       if (result.failed > 0) {
@@ -205,13 +223,18 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
   };
 
   const handleSaveSelected = async (): Promise<void> => {
-    if (!validateForm()) {
-      return;
-    }
-
     const selectedTemplates = templates.filter((template) =>
       selectedTemplateIds.includes(template.id),
     );
+
+    if (!SENDER_DOMAIN_OPTIONS.some((option) => option.value !== '' && option.value === generatedSender)) {
+      addToast({
+        type: 'error',
+        title: 'Sender domain required',
+        message: 'Generate templates after selecting a valid sender domain.',
+      });
+      return;
+    }
 
     if (selectedTemplates.length === 0){
       addToast({
@@ -229,7 +252,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
       const results = await Promise.allSettled(
         selectedTemplates.map((template) => 
           createEmailTemplate({
-            sender: form.sender.trim(),
+            sender: generatedSender.trim(),
             subject: template.subject,
             content: template.body,
             difficulty: generatedDifficulty ?? form.difficulty,
@@ -364,11 +387,15 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
               gap: 16,
             }}
           >
-            <SenderDomainSelect
-              value={form.sender}
-              onChange={(value) => setField('sender', value)}
-              error={errors.sender}
-            />
+            <div>
+              <Select
+                label="Sender domain"
+                value={form.sender}
+                options={SENDER_DOMAIN_OPTIONS}
+                onChange={(event) => setField('sender', event.target.value)}
+              />
+              {errors.sender && <p style={errorStyle}>{errors.sender}</p>}
+            </div>
 
             <div
               style={{
@@ -406,12 +433,35 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
               />
             </div>
 
-            <Select
-              label='Sender department (Optional)'
-              value={form.senderDepartment}
-              options={DEPARTMENT_OPTIONS}
-              onChange={(event) => setField('senderDepartment', event.target.value as Department | '')}
-            />
+            <div>
+              <fieldset
+                disabled={isExternal}
+                style={{
+                  border: 'none',
+                  padding: 0,
+                  margin: 0,
+                  minWidth: 0,
+                  opacity: isExternal ? 0.5 : 1,
+                }}
+              >
+                <Select
+                  label='Sender department (Optional)'
+                  value={isExternal ? '' : form.senderDepartment}
+                  options={DEPARTMENT_OPTIONS}
+                  onChange={(event) => setField('senderDepartment', event.target.value as Department | '')}
+                />
+              </fieldset>
+              {isExternal && (
+                <p style={{
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  color: 'var(--text-secondary)',
+                  marginTop: 8,
+                }}>
+                  Sender departments are unavailable for external sender domains.
+                </p>
+              )}
+            </div>
 
             <div>
               <label style={labelStyle}>
@@ -488,7 +538,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
 
             <Button
               loading={generating}
-              disabled={generating || saving}
+              disabled={generating || saving || !form.sender}
               onClick={() => void handleGenerate()}
             >
               {templates.length > 0 ? 'Generate Again' : 'Generate Templates'}
@@ -670,7 +720,7 @@ export function GenerateEmail({ onNavigate, activePath}: GenerateEmailProps){
 
               <Button
                 loading={saving}
-                disabled={saving || generating || selectedTemplateIds.length === 0}
+                disabled={saving || generating || selectedTemplateIds.length === 0 || !generatedSender}
                 onClick={() => void handleSaveSelected()}
               >
                 Save Selected Templates

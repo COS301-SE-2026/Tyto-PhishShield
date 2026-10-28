@@ -141,7 +141,7 @@ export function Sidebar({ activePath, onNavigate, securityScore = 0, collapsed =
         })}
       </nav>
       {/* Security score */}
-      {!collapsed && (
+      {!collapsed && user?.role === 'user' && (
         <div style={{ padding: '0 10px 16px', flexShrink: 0 }}>
           <div style={{
             background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)',

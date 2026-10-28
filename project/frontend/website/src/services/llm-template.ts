@@ -14,6 +14,7 @@ export type TemplateVariable = 'name' |'department';
 
 export type Department = 'it_&_security'|'finance'|'human_resources'|'legal_&_compliance'|'operations'|'executive';
 
+
 export interface GenerateTemplatesRequest {
     difficulty: Difficulty;
     tone: MessageTone;
@@ -21,6 +22,7 @@ export interface GenerateTemplatesRequest {
     templateVariable: TemplateVariable[];
     count: number;
     senderDepartment?: Department;
+    isExternal?: boolean;
 }
 
 export interface GeneratedTemplate {
