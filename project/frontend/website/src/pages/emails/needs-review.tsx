@@ -6,12 +6,11 @@ import{
   ExternalLink,
   AlertTriangle,
   CheckCircle2,
-  Trash2,
 } from 'lucide-react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Card, Button, Badge } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
-import { getNeedsReviews, resolveReview, deleteReview, type ReviewListItem, type ReviewDecision, type Severity } from '../../services/needs-review';
+import { getNeedsReviews, resolveReview, type ReviewListItem, type ReviewDecision, type Severity } from '../../services/needs-review';
 import posthog from '../../lib/posthog';
 
 interface NeedsReviewProps {
@@ -183,38 +182,6 @@ export function NeedsReview({
         type: 'error',
         title: 'Could not resolve review',
         message: error instanceof Error ? error.message : 'The review could not be Resolved.',
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleDelete = async (): Promise<void> => {
-    if (!selectedReview || processing) {
-      return;
-    }
-
-    const reviewId = selectedReview.id;
-    setProcessing(true);
-
-    try {
-      await deleteReview(reviewId);
-
-      const remaining = reviews.filter((review) => review.id !== reviewId);
-
-      setReviews(remaining);
-      setSelectedId(remaining[0]?.id ?? null);
-      addToast({
-        type: 'success',
-        title: 'Review Deleted',
-        message: 'The review was deleted successfully'
-      });
-    } catch (error) {
-      console.error(error);
-      addToast({
-        type: 'error',
-        title: 'Could not delete review',
-        message: error instanceof Error ? error.message : 'The review could not be deleted',
       });
     } finally {
       setProcessing(false);
@@ -744,18 +711,6 @@ export function NeedsReview({
                     >
                       <CheckCircle2 size={15} />
                       No Leak
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      disabled={processing}
-                      onClick={() => void handleDelete()}
-                      style={{
-                        color: 'var(--color-danger)',
-                      }}
-                    >
-                      <Trash2 size={16} />
-                      Delete
                     </Button>
                   </div>
                 </Card>
