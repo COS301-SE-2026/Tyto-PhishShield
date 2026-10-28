@@ -158,6 +158,9 @@ export class LlmService {
     this.logger.log(
       `Processing reply event ${dto.webhookEventId} (received email ${dto.emailId})`,
     );
+    this.logger.log(
+      `Received reply email ${dto.emailId}: from=${this.extractAddress(dto.from ?? '')} to=${dto.to.join(', ')}`,
+    );
     const reply = await this.receivedEmailService.fetchAndParse(dto);
 
     if (reply.isAutoReply) {
@@ -196,11 +199,17 @@ export class LlmService {
       return;
     }
 
+    this.logger.log(
+      `Filtering reply content for email ${dto.emailId} before classification and generation`,
+    );
     const analysis = await this.replyGenerationService.analyzeReply({
       replyText: reply.replyText,
       quotedText: reply.quotedText,
       originalSubject: reply.subject,
     });
+    this.logger.log(
+      `Reply content filtered for email ${dto.emailId}; sanitized reply length=${analysis.redactedReplyText.length}`,
+    );
     const classification = analysis.classification;
 
     const hasAttachments = dto.attachments.length > 0;
@@ -331,6 +340,9 @@ export class LlmService {
     reply: ParsedReply,
     redactedReply: RedactedReplyContext,
   ): Promise<void> {
+    this.logger.log(
+      `Generating follow-up reply for validated email ${dto.emailId}`,
+    );
     const generated =
       await this.replyGenerationService.generateRedactedReply(redactedReply);
 
@@ -340,6 +352,10 @@ export class LlmService {
       );
       return;
     }
+
+    this.logger.log(
+      `Generated follow-up reply for email ${dto.emailId}: subject="${generated.subject}"`,
+    );
 
     const mailingPayload: SendReplyEmailEvent = {
       kind: ReplyEmailKind.GENERATED,
@@ -355,10 +371,16 @@ export class LlmService {
     };
 
     try {
+      this.logger.log(
+        `Sending reply email event for email ${dto.emailId} to routing key reply.email`,
+      );
       await this.amqpConnection.publish(
         'llm-event-exchange',
         'reply.email',
         mailingPayload,
+      );
+      this.logger.log(
+        `Sent reply email event for email ${dto.emailId} to routing key reply.email`,
       );
     } catch (error) {
       this.logger.error(`Failed to publish generated reply event`, error);
@@ -366,12 +388,18 @@ export class LlmService {
   }
 
   async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
+    this.logger.log(
+      `Received manually validated reply email ${event.emailId} for generation`,
+    );
     const redactedContext =
       await this.replyGenerationService.sanitizeReplyContext({
         replyText: event.replyText,
         quotedText: event.quotedText,
         originalSubject: event.subject,
       });
+    this.logger.log(
+      `Filtered manually validated reply content for email ${event.emailId}; sanitized text length=${redactedContext.redactedReplyText.length}`,
+    );
     const generated =
       await this.replyGenerationService.generateRedactedReply(redactedContext);
 
@@ -396,10 +424,16 @@ export class LlmService {
     };
 
     try {
+      this.logger.log(
+        `Sending reply email event for email ${event.emailId} to routing key reply.email`,
+      );
       await this.amqpConnection.publish(
         'llm-event-exchange',
         'reply.email',
         mailingPayload,
+      );
+      this.logger.log(
+        `Sent reply email event for email ${event.emailId} to routing key reply.email`,
       );
     } catch (error) {
       this.logger.error(`Failed to publish generated reply event`, error);
