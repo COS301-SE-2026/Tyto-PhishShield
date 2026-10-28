@@ -29,7 +29,14 @@
  * - analytics.getUserStats, analytics.getOverview
  */
 
-import { Controller, Get, Query, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Param,
+  Logger,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -107,6 +114,7 @@ interface WaveEventPayload {
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
+  private readonly logger = new Logger(AnalyticsController.name);
 
   @RabbitSubscribe({
     exchange: 'report-event-exchange',
@@ -114,7 +122,19 @@ export class AnalyticsController {
     queue: 'analytics-report-submitted-queue',
   })
   async onReportSubmitted(payload: ReportCreatedPayload) {
-    //FIXME: if email is missing we should get it from accounts services, but gateway sends it so should be fine for now.
+    if (
+      await this.analyticsService.isRecentDuplicate(
+        AnalyticsEventType.REPORT_SUBMITTED,
+        payload.auth0Id,
+        payload as unknown as Record<string, unknown>,
+        10 * 60_000,
+      )
+    ) {
+      this.logger.debug(
+        `Duplicate report.submitted ${payload.reportId}, ignoring`,
+      );
+      return;
+    }
     await this.analyticsService.recordEvent({
       eventType: AnalyticsEventType.REPORT_SUBMITTED,
       auth0Id: payload.auth0Id,
@@ -134,7 +154,7 @@ export class AnalyticsController {
       AnalyticsEventType.XP_GIVEN,
       payload.auth0Id,
       payload as unknown as Record<string, unknown>,
-      60_000,
+      10 * 60_000,
     );
     if (duplicate) {
       return; // already processed this exact event
@@ -212,7 +232,7 @@ export class AnalyticsController {
         AnalyticsEventType.EDUCATION_COMPLETED,
         payload.auth0Id,
         payload as unknown as Record<string, unknown>,
-        60_000,
+        10 * 60_000,
       )
     ) {
       return;

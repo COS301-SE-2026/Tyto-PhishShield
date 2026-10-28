@@ -662,7 +662,8 @@ describe('AnalyticsService', () => {
   });
 
   describe('recordClickFromAuth0Id', () => {
-    it('creates click event with placeholder refereceNumber', async () => {
+    it('creates click event with placeholder referenceNumber', async () => {
+      clickRepo.findOne.mockResolvedValue(null); // ← ADD THIS LINE
       clickRepo.create.mockReturnValue({
         referenceNumber: 'unknown',
         auth0Id: 'auth0|1',

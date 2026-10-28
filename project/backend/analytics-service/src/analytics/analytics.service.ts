@@ -1027,8 +1027,26 @@ export class AnalyticsService {
   }
 
   async recordClickFromAuth0Id(auth0Id: string): Promise<void> {
+    // A click event with referenceNumber "unknown" can only come from the XP
+    // compromised path. If we already recorded one for this user in the last
+    // 5 minutes, another xp.given(compromised) for the same user is a
+    // redelivery, not a new click.
+    const since = new Date(Date.now() - 5 * 60_000);
+    const recent = await this.clickRepo.findOne({
+      where: {
+        auth0Id,
+        referenceNumber: 'unknown',
+        clickedAt: MoreThanOrEqual(since),
+      },
+    });
+    if (recent) {
+      this.logger.warn(
+        `Click already recorded for ${auth0Id} within 5 min, skipping`,
+      );
+      return;
+    }
     const click = this.clickRepo.create({
-      referenceNumber: 'unknown', // no emailId available, use placeholder
+      referenceNumber: 'unknown',
       auth0Id,
     });
     await this.clickRepo.save(click);
@@ -1042,16 +1060,25 @@ export class AnalyticsService {
   ): Promise<boolean> {
     const since = new Date(Date.now() - windowMs);
     const events = await this.repo.find({
-      where: {
-        eventType,
-        auth0Id,
-        occurredAt: MoreThanOrEqual(since),
-      },
+      where: { eventType, auth0Id, occurredAt: MoreThanOrEqual(since) },
       order: { occurredAt: 'DESC' },
-      take: 10,
+      take: 50, // was 10 — avoids missing the duplicate when a user has bursty activity
     });
+    const target = this.normalizePayload(payload);
     return events.some(
-      (e) => JSON.stringify(e.payload) === JSON.stringify(payload),
+      (e) => this.normalizePayload(e.payload ?? {}) === target,
     );
+  }
+
+  /**
+   * Key-order-insensitive payload serialisation for dedup comparison.
+   * Prevents false negatives when the same logical event has keys in
+   * different orders (e.g. different JSON serialisation between services).
+   */
+  private normalizePayload(payload: Record<string, unknown>): string {
+    const keys = Object.keys(payload).sort();
+    const ordered: Record<string, unknown> = {};
+    for (const k of keys) ordered[k] = payload[k];
+    return JSON.stringify(ordered);
   }
 }
