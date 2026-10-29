@@ -7,6 +7,7 @@ import { useAccessibility } from '../../context/accessibility-context';
 import { useToast } from '../../context/toast-context';
 import { useNotifications } from '../../context/notification-context';
 import { authApi } from '../../services/api';
+import posthog from '../../lib/posthog';
 import { User, Lock, Palette, Accessibility, Bell, Sun, Moon } from 'lucide-react';
 
 interface SettingsProps { onNavigate: (path: string) => void; activePath: string; }
@@ -49,6 +50,11 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
     setNotifSaving(true);
     try {
       await authApi.updateProfile({ weeklyDigestOptIn: notifPreferences.digest });
+      posthog.capture('notification_preferences_saved', {
+        training_reminders_enabled: notifPreferences.training,
+        leaderboard_updates_enabled: notifPreferences.leaderboard,
+        weekly_digest_enabled: notifPreferences.digest,
+      });
       addToast({ type: 'success', title: 'Notification preferences saved' });
     } catch {
       addToast({ type: 'error', title: 'Could not save preferences', message: 'Please try again.' });
@@ -77,6 +83,7 @@ export function Settings({ onNavigate, activePath }: SettingsProps) {
     setPwLoading(true);
     try {
       await authApi.changePassword(currentPw, newPw);
+      posthog.capture('password_changed');
       addToast({ type: 'success', title: 'Password changed', message: 'Your password has been updated.' });
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
     } catch (err) {

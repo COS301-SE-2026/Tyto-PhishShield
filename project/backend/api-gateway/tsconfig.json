@@ -12,6 +12,7 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
+    "inlineSources": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "incremental": true,

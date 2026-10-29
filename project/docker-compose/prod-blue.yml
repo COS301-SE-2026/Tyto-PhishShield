@@ -1,6 +1,6 @@
 services:
   mailing_app:
-    image: fiveguys301/mailing:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/mailing:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
@@ -29,7 +29,7 @@ services:
       - infrastructure
   
   accounts_app:
-    image: fiveguys301/accounts:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/accounts:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
@@ -64,11 +64,11 @@ services:
       - infrastructure
 
   api_app1:
-    image: fiveguys301/api:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/api:0353bd857b43ab76f7fb973fae852c1474b61a2a
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_1
     environment:
-      - VERSION=blue_1-e286bf49da4347f6b43d355313873ed0c9b4a11f
+      - VERSION=blue_1-0353bd857b43ab76f7fb973fae852c1474b61a2a
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
@@ -113,6 +113,11 @@ services:
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=prod
       - LOG_DIR=/var/log/api-gateway
+      - POSTHOG_PROJECT_TOKEN=${VITE_POSTHOG_PROJECT_TOKEN}
+      - POSTHOG_HOST=${VITE_POSTHOG_HOST}
+      - POSTHOG_CLI_API_KEY=${POSTHOG_CLI_API_KEY}
+      - POSTHOG_CLI_PROJECT_ID=${POSTHOG_CLI_PROJECT_ID}
+      - POSTHOG_CLI_HOST=${POSTHOG_CLI_HOST}
     healthcheck:
       test:
         [
@@ -137,11 +142,11 @@ services:
       - infrastructure
 
   api_app2:
-    image: fiveguys301/api:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/api:0353bd857b43ab76f7fb973fae852c1474b61a2a
     restart: on-failure
     container_name: blue_${GATEWAY_APP_CONTAINER}_2
     environment:
-      - VERSION=blue_2-e286bf49da4347f6b43d355313873ed0c9b4a11f
+      - VERSION=blue_2-0353bd857b43ab76f7fb973fae852c1474b61a2a
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
@@ -186,6 +191,11 @@ services:
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=prod
       - LOG_DIR=/var/log/api-gateway
+      - POSTHOG_PROJECT_TOKEN=${VITE_POSTHOG_PROJECT_TOKEN}
+      - POSTHOG_HOST=${VITE_POSTHOG_HOST}
+      - POSTHOG_CLI_API_KEY=${POSTHOG_CLI_API_KEY}
+      - POSTHOG_CLI_PROJECT_ID=${POSTHOG_CLI_PROJECT_ID}
+      - POSTHOG_CLI_HOST=${POSTHOG_CLI_PROJECT_ID}
     healthcheck:
       test:
         [
@@ -210,7 +220,7 @@ services:
       - infrastructure
 
   report_app:
-    image: fiveguys301/report:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/report:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
@@ -234,7 +244,7 @@ services:
       - infrastructure
 
   xp_app:
-    image: fiveguys301/xp:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/xp:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
@@ -257,7 +267,7 @@ services:
       - infrastructure
       
   education_app:
-    image: fiveguys301/education:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/education:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
@@ -280,7 +290,7 @@ services:
       - infrastructure
       
   analytics_app:
-    image: fiveguys301/analytics:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/analytics:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
@@ -303,7 +313,7 @@ services:
       - infrastructure
 
   llm_app:
-    image: fiveguys301/llm:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/llm:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${LLM_APP_CONTAINER}
     environment:
       - PORT=${LLM_SERVICE_PORT}
@@ -323,19 +333,23 @@ services:
       - LLM_MODEL_CHAIN=${LLM_MODEL_CHAIN}
       - LOCAL_NUM_CTX=${LOCAL_NUM_CTX}
       - LOCAL_NUM_THREAD=${LOCAL_NUM_THREAD}
+      - LOCAL_NUM_PREDICT=${LOCAL_NUM_PREDICT}
+      - LOCAL_LLM_TIMEOUT_MS=${LOCAL_LLM_TIMEOUT_MS}
       - DB_SYNC=${DB_SYNC}
+      - GLINER_MODEL_PATH=/app/model.onnx
+      - GLINER_TOKENIZER_PATH=onnx-community/gliner_small-v2
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: '128M'
+          cpus: '2.5'
+          memory: '1028M'
     networks:
       - blue
       - infrastructure
       - local-llm
     
   company_app:
-    image: fiveguys301/company:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/company:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${COMPANY_APP_CONTAINER}
     environment:
       - PORT=${COMPANY_SERVICE_PORT}
@@ -356,7 +370,7 @@ services:
       - infrastructure
 
   comms_app:
-    image: fiveguys301/comms:e286bf49da4347f6b43d355313873ed0c9b4a11f
+    image: fiveguys301/comms:0353bd857b43ab76f7fb973fae852c1474b61a2a
     container_name: blue_${COMMS_APP_CONTAINER}
     environment:
       - PORT=${COMMS_SERVICE_PORT}
@@ -380,7 +394,7 @@ services:
       - infrastructure
 
   website:
-    image: fiveguys301/website:e286bf49da4347f6b43d355313873ed0c9b4a11f-prod
+    image: fiveguys301/website:0353bd857b43ab76f7fb973fae852c1474b61a2a-prod
     restart: on-failure
     container_name: blue_website
     deploy:
@@ -393,7 +407,7 @@ services:
       - proxy
   
   outlook_addin:
-    image: fiveguys301/addin:e286bf49da4347f6b43d355313873ed0c9b4a11f-prod
+    image: fiveguys301/addin:0353bd857b43ab76f7fb973fae852c1474b61a2a-prod
     restart: on-failure
     container_name: blue_addin
     deploy:

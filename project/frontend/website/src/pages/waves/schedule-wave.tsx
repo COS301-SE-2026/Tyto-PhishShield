@@ -14,6 +14,7 @@ import {
   type EmailTemplate,
 } from "../../services/email-template";
 import { SenderSelector, getSenderOptions, initialSenderSelection, type SenderSelection } from "../../components/email/sender-selector";
+import posthog from '../../lib/posthog';
 
 interface ScheduleWaveProps {
   readonly onNavigate: (path: string) => void;
@@ -426,6 +427,14 @@ export function ScheduleWave({
           senderOptions,
         );
       }
+
+      posthog.capture('phishing_wave_scheduled', {
+        recipient_count: selectedAuth0Ids.length,
+        email_distribution: form.emailDistribution,
+        difficulty: form.difficulty,
+        randomised_times: form.randomisedTimes,
+        sender_mode: senderSelection.mode,
+      });
 
       addToast({
         type: "success",

@@ -11,10 +11,14 @@
  * - PATCH /emails/:referenceNumber - Updates fields on an existing email record.
  * - POST /emails/:referenceNumber/send-single - Immediately dispatches an email via Resend.
  * - POST /emails/:referenceNumber/schedule-send-single - Schedules an email for future delivery via Resend.
+ * - Template variable validation - POST/PATCH /emails reject unknown or malformed {{variables}} with 400;
+ *   sending a template that already contains one (seeded directly in the DB) also returns 400.
+ * - DELETE /emails/:referenceNumber - Deletes a template; 404 for an unknown reference.
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe, } from '@nestjs/common';
 import request from 'supertest';
+import * as crypto from 'crypto';
 import { MailingServiceModule } from '../src/mailing-service.module';
 import { EmailDifficulty, EmailTemplateEntity, } from '../src/entities/email-template.entity';
 import { In, Repository } from 'typeorm';
@@ -122,6 +126,23 @@ describe('Email service integration test', () => {
       });
   }
 
+  function seedTemplateBypassingValidation(overrides: Partial<{
+    subject: string;
+    content: string;
+    difficulty: EmailDifficulty;
+  }> = {}) {
+    return emailTemplateRepository.save(
+      emailTemplateRepository.create({
+        referenceNumber: `PHISH-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+        sender: TEST_SENDER_DOMAIN,
+        subject: 'Test',
+        content: '<p>Test</p>',
+        difficulty: EmailDifficulty.HARD,
+        ...overrides,
+      }),
+    );
+  }
+
   // Helper Function to expect success
   function expectSuccess(res: request.Response) {
     expect(res.body.success).toBe(true);
@@ -215,7 +236,7 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post(`/emails/${testReferenceNumber}/send-single`)
       .send({ auth0Id: 'auth0|non-existent' })
-      .expect(500);
+      .expect(404);
   });
 
   it('/emails/:referenceNumber/send-single (POST) - should send using an explicit senderAuth0Id', () => {
@@ -234,7 +255,7 @@ describe('Email service integration test', () => {
         senderCustomName: 'e2e-sender',
         senderAuth0Id: TEST_SENDER_AUTH0_ID,
       })
-      .expect(500);
+      .expect(400);
   });
 
   it('/emails/:referenceNumber/schedule-send-single (POST) - should schedule email via Resend', () => {
@@ -278,7 +299,7 @@ describe('Email service integration test', () => {
         auth0Id: 'auth0|non-existent',
         scheduledAt: futureDate.toISOString(),
       })
-      .expect(500);
+      .expect(404);
   });
 
   it('/emails/:referenceNumber/send-single (POST) - should substitute supported variables and send successfully', async () => {
@@ -307,19 +328,150 @@ describe('Email service integration test', () => {
       .expect(expectSuccess);
   });
 
-  it('/emails/:referenceNumber/send-single (POST) - should fail when the template contains an unsupported variable', async () => {
-    const createRes = await createEmailTemplate({
-      subject: 'Test',
+  it('/emails/:referenceNumber/send-single (POST) - should return 400 when a stored template contains an unsupported variable', async () => {
+    const template = await seedTemplateBypassingValidation({
       content: '<p>Hello {{incorrectVariable}}</p>',
+    });
+
+    return request(app.getHttpServer())
+      .post(`/emails/${template.referenceNumber}/send-single`)
+      .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
+      .expect(400);
+  });
+
+  it('/emails/:referenceNumber/send-single (POST) - should return 400 when a stored template contains a malformed placeholder', async () => {
+    const template = await seedTemplateBypassingValidation({
+      subject: 'Hi {{first-name}}',
+    });
+
+    return request(app.getHttpServer())
+      .post(`/emails/${template.referenceNumber}/send-single`)
+      .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
+      .expect(400);
+  });
+
+  it('/emails (POST) - should return 400 and not save when the content contains an unsupported variable', async () => {
+    const subject = 'E2E unsupported variable in content';
+
+    await createEmailTemplate({
+      subject,
+      content: '<p>Hello {{incorrectVariable}}</p>',
+    })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toContain('incorrectVariable');
+      });
+
+    expect(await emailTemplateRepository.findOne({ where: { subject } })).toBeNull();
+  });
+
+  it('/emails (POST) - should return 400 and not save when the subject contains an unsupported variable', async () => {
+    const subject = 'E2E unsupported {{incorrectVariable}} in subject';
+
+    await createEmailTemplate({ subject, content: '<p>Fine</p>' }).expect(400);
+
+    expect(await emailTemplateRepository.findOne({ where: { subject } })).toBeNull();
+  });
+
+  it('/emails (POST) - should list every unsupported variable in the error message', () => {
+    return createEmailTemplate({
+      subject: 'E2E multiple unsupported variables',
+      content: '<p>{{foo}} and {{bar}}</p>',
+    })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toContain('foo');
+        expect(res.body.message).toContain('bar');
+      });
+  });
+
+  it('/emails (POST) - should return 400 for malformed placeholders such as {{first-name}} or {{}}', async () => {
+    await createEmailTemplate({
+      subject: 'E2E malformed hyphen',
+      content: '<p>Hello {{first-name}}</p>',
+    }).expect(400);
+
+    await createEmailTemplate({
+      subject: 'E2E malformed empty',
+      content: '<p>Hello {{}}</p>',
+    }).expect(400);
+  });
+
+  it('/emails (POST) - should accept every supported variable, including the reserved tracking_link', () => {
+    return createEmailTemplate({
+      subject: 'E2E all variables {{name}} {{surname}}',
+      content:
+        '<p>{{name}} {{surname}} {{department}} {{job_title}} {{title}} {{business_name}} {{tracking_link}}</p>',
+    }).expect(201);
+  });
+
+  it('/emails/:referenceNumber (PATCH) - should return 400 and leave the template unchanged when updating to an unsupported variable', async () => {
+    const createRes = await createEmailTemplate({
+      subject: 'E2E patch original subject',
+      content: '<p>Original</p>',
+    }).expect(201);
+    const reference = createRes.body.referenceNumber;
+
+    await request(app.getHttpServer())
+      .patch(`/emails/${reference}`)
+      .send({ content: '<p>Hello {{incorrectVariable}}</p>' })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .get(`/emails/${reference}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.content).toEqual('<p>Original</p>');
+      });
+  });
+
+  it('/emails/:referenceNumber (PATCH) - should accept an update that uses supported variables', async () => {
+    const createRes = await createEmailTemplate({
+      subject: 'E2E patch supported variables',
+      content: '<p>Original</p>',
     }).expect(201);
 
     return request(app.getHttpServer())
-      .post(`/emails/${createRes.body.referenceNumber}/send-single`)
-      .send({ auth0Id: TEST_AUTH0_ID, senderCustomName: 'e2e-sender' })
-      .expect(500);
+      .patch(`/emails/${createRes.body.referenceNumber}`)
+      .send({ subject: 'Hi {{name}}', content: '<p>{{department}} {{tracking_link}}</p>' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.subject).toEqual('Hi {{name}}');
+      });
   });
 
-  it('/emails/:referenceNumber/send-single (POST) - should fail when senderDepartment has no sender available', async () => {
+  it('/emails/:referenceNumber (PATCH) - should still allow updating other fields on a template that already contains a bad variable', async () => {
+    const template = await seedTemplateBypassingValidation({
+      content: '<p>Hello {{legacyVariable}}</p>',
+    });
+
+    return request(app.getHttpServer())
+      .patch(`/emails/${template.referenceNumber}`)
+      .send({ difficulty: EmailDifficulty.EASY })
+      .expect(200);
+  });
+
+  it('/emails/:referenceNumber (DELETE) - should delete an existing template', async () => {
+    const createRes = await createEmailTemplate({
+      subject: 'E2E delete me',
+    }).expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/emails/${createRes.body.referenceNumber}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/emails/${createRes.body.referenceNumber}`)
+      .expect(404);
+  });
+
+  it('/emails/:referenceNumber (DELETE) - should return 404 for an unknown reference', () => {
+    return request(app.getHttpServer())
+      .delete('/emails/PHISH-NOTAREF')
+      .expect(404);
+  });
+
+  it('/emails/:referenceNumber/send-single (POST) - should return 404 when senderDepartment has no sender available', async () => {
     const createRes = await createEmailTemplate({
       subject: 'Test',
       content: '<p>Test</p>',
@@ -329,6 +481,6 @@ describe('Email service integration test', () => {
     return request(app.getHttpServer())
       .post(`/emails/${createRes.body.referenceNumber}/send-single`)
       .send({ auth0Id: TEST_AUTH0_ID })
-      .expect(500);
+      .expect(404);
   });
 });

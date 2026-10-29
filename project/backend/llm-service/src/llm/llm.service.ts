@@ -29,15 +29,45 @@ import {
 import { ClassificationService } from './classification/classification.service';
 import { MistakeCategory } from './dto/reply-classification.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ReplyGenerationService } from './reply-generation/reply-generation.service';
+import {
+  RedactedReplyContext,
+  ReplyGenerationService,
+} from './reply-generation/reply-generation.service';
 import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
 import { MailingEventService } from '../mailing-event/mailing-event.service';
+import { redactSensitiveText } from './filter/filter.service';
 
 const TRACKING_LINK_ANCHOR =
   /<a\s[^>]*href=["']\{\{tracking_link\}\}["'][^>]*>[\s\S]*?<\/a>/i;
 
 // Anything that looks like a link: an anchor tag, a URL, or the tracking placeholder.
 const NO_LINK_ALLOWED = /<a\s|https?:\/\/|www\.|tracking_link/i;
+
+const ALLOWED_SPEAR_VARS = new Set([
+  'name_recipient',
+  'surname_recipient',
+  'title_recipient',
+  'department_recipient',
+  'job_title_recipient',
+  'name_sender',
+  'surname_sender',
+  'department_sender',
+  'job_title_sender',
+  'business_name',
+  'tracking_link',
+]);
+
+const SPEAR_GENERATION_MAX_ATTEMPTS = 2;
+
+function extractPlaceholders(text: string): string[] {
+  return [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]);
+}
+
+function hasUnknownPlaceholder(subject: string, body: string): boolean {
+  return [...extractPlaceholders(subject), ...extractPlaceholders(body)].some(
+    (v) => !ALLOWED_SPEAR_VARS.has(v),
+  );
+}
 
 interface ClassificationResult {
   needsReview: boolean;
@@ -59,6 +89,8 @@ export class LlmService {
     private readonly replyGenerationService: ReplyGenerationService,
     private readonly mailingEventService: MailingEventService,
   ) {}
+
+  // Template generation (standard difficulty-based flow)
 
   async generateTemplates(
     dto: DifficultyLlmGenerationDto,
@@ -150,9 +182,14 @@ export class LlmService {
     }
   }
 
+  // Reply handling
+
   async processReceivedReply(dto: ReceivedReplyDto): Promise<void> {
     this.logger.log(
       `Processing reply event ${dto.webhookEventId} (received email ${dto.emailId})`,
+    );
+    this.logger.log(
+      `Received reply email ${dto.emailId}: from=${this.extractAddress(dto.from ?? '')} to=${dto.to.join(', ')}`,
     );
     const reply = await this.receivedEmailService.fetchAndParse(dto);
 
@@ -192,10 +229,18 @@ export class LlmService {
       return;
     }
 
-    const classification = await this.classificationService.classify({
+    this.logger.log(
+      `Filtering reply content for email ${dto.emailId} before classification and generation`,
+    );
+    const analysis = await this.replyGenerationService.analyzeReply({
       replyText: reply.replyText,
+      quotedText: reply.quotedText,
       originalSubject: reply.subject,
     });
+    this.logger.log(
+      `Reply content filtered for email ${dto.emailId}; sanitized reply length=${analysis.redactedReplyText.length}`,
+    );
+    const classification = analysis.classification;
 
     const hasAttachments = dto.attachments.length > 0;
     const llmFlagged =
@@ -219,7 +264,7 @@ export class LlmService {
       return;
     }
 
-    await this.handleValidReply(updatedData, reply);
+    await this.handleValidReply(updatedData, reply, analysis);
   }
 
   private async publishReviewNeeded(
@@ -323,12 +368,13 @@ export class LlmService {
   private async handleValidReply(
     dto: ReceivedReplyDto,
     reply: ParsedReply,
+    redactedReply: RedactedReplyContext,
   ): Promise<void> {
-    const generated = await this.replyGenerationService.generateSafeReply({
-      replyText: reply.replyText,
-      quotedText: reply.quotedText,
-      originalSubject: reply.subject,
-    });
+    this.logger.log(
+      `Generating follow-up reply for validated email ${dto.emailId}`,
+    );
+    const generated =
+      await this.replyGenerationService.generateRedactedReply(redactedReply);
 
     if (!generated) {
       this.logger.warn(
@@ -336,6 +382,10 @@ export class LlmService {
       );
       return;
     }
+
+    this.logger.log(
+      `Generated follow-up reply for email ${dto.emailId}: subject="${generated.subject}"`,
+    );
 
     const mailingPayload: SendReplyEmailEvent = {
       kind: ReplyEmailKind.GENERATED,
@@ -351,10 +401,16 @@ export class LlmService {
     };
 
     try {
+      this.logger.log(
+        `Sending reply email event for email ${dto.emailId} to routing key reply.email`,
+      );
       await this.amqpConnection.publish(
         'llm-event-exchange',
         'reply.email',
         mailingPayload,
+      );
+      this.logger.log(
+        `Sent reply email event for email ${dto.emailId} to routing key reply.email`,
       );
     } catch (error) {
       this.logger.error(`Failed to publish generated reply event`, error);
@@ -362,11 +418,20 @@ export class LlmService {
   }
 
   async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
-    const generated = await this.replyGenerationService.generateSafeReply({
-      replyText: event.replyText,
-      quotedText: event.quotedText,
-      originalSubject: event.subject,
-    });
+    this.logger.log(
+      `Received manually validated reply email ${event.emailId} for generation`,
+    );
+    const redactedContext =
+      await this.replyGenerationService.sanitizeReplyContext({
+        replyText: event.replyText,
+        quotedText: event.quotedText,
+        originalSubject: event.subject,
+      });
+    this.logger.log(
+      `Filtered manually validated reply content for email ${event.emailId}; sanitized text length=${redactedContext.redactedReplyText.length}`,
+    );
+    const generated =
+      await this.replyGenerationService.generateRedactedReply(redactedContext);
 
     if (!generated) {
       this.logger.warn(
@@ -389,15 +454,23 @@ export class LlmService {
     };
 
     try {
+      this.logger.log(
+        `Sending reply email event for email ${event.emailId} to routing key reply.email`,
+      );
       await this.amqpConnection.publish(
         'llm-event-exchange',
         'reply.email',
         mailingPayload,
       );
+      this.logger.log(
+        `Sent reply email event for email ${event.emailId} to routing key reply.email`,
+      );
     } catch (error) {
       this.logger.error(`Failed to publish generated reply event`, error);
     }
   }
+
+  // Spear-phishing generation
 
   async processSpearPhishing(dto: GenerateSpearPhishingDto): Promise<void> {
     this.logger.log(
@@ -405,7 +478,6 @@ export class LlmService {
     );
 
     const safeContext = await this.sanitizeContext(dto.extraContext);
-    this.logger.warn(safeContext);
     if (dto.extraContext && !safeContext) {
       this.logger.log(
         `Proceeding with spear-phishing generation WITHOUT extra context for ${dto.recipientAuth0Id}`,
@@ -416,27 +488,19 @@ export class LlmService {
       dto,
       safeContext,
     );
-
     const requestBody = this.buildGatewayRequest(
       systemPrompt,
       SPEAR_TEMPLATE_SCHEMA,
     );
-    let generatedTemplate: GeneratedTemplateDto | null = null;
 
-    try {
-      const response =
-        await this.llmGatewayService.sendWithFallback(requestBody);
-      generatedTemplate = this.parseTemplate(response, false);
-    } catch (error) {
-      this.logger.error(
-        `Cloud LLM request failed for spear-phishing generation: ${error}`,
-      );
-      return;
-    }
+    const generatedTemplate = await this.generateSpearTemplateWithRetry(
+      requestBody,
+      dto.recipientAuth0Id,
+    );
 
     if (!generatedTemplate) {
       this.logger.error(
-        `Failed to parse generated spear-phishing template for recipient ${dto.recipientAuth0Id}. Validation failed.`,
+        `Failed to generate a valid spear-phishing template for recipient ${dto.recipientAuth0Id} after ${SPEAR_GENERATION_MAX_ATTEMPTS} attempt(s).`,
       );
       return;
     }
@@ -445,6 +509,62 @@ export class LlmService {
       `Spear-phishing template generated successfully. Subject: "${generatedTemplate.subject}"`,
     );
 
+    await this.publishSpearPhishingEvent(dto, generatedTemplate);
+  }
+
+  /**
+   * Requests a spear-phishing template from the LLM gateway, validating both
+   * schema/link shape (parseTemplate) and placeholder safety
+   * (hasUnknownPlaceholder). Retries once on either a gateway error or a
+   * validation failure, since this path is fire-and-forget (queue-triggered,
+   * no caller to surface a failure to) and the generation is non-deterministic
+   * enough that a second attempt often succeeds.
+   */
+  private async generateSpearTemplateWithRetry(
+    requestBody: Omit<LlmGatewayRequestBody, 'model'>,
+    recipientAuth0Id: string,
+    attempt = 1,
+  ): Promise<GeneratedTemplateDto | null> {
+    try {
+      this.logger.log(
+        `Sending spear-phishing email generation request to the LLM gateway for recipient ${recipientAuth0Id} (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS})`,
+      );
+      const response =
+        await this.llmGatewayService.sendWithFallback(requestBody);
+      const parsed = this.parseTemplate(response, false);
+
+      if (!parsed) {
+        this.logger.warn(
+          `Spear-phishing template failed schema/link validation (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS}) for recipient ${recipientAuth0Id}`,
+        );
+      } else if (hasUnknownPlaceholder(parsed.subject, parsed.body)) {
+        this.logger.warn(
+          `Spear-phishing template used an unsupported placeholder (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS}) for recipient ${recipientAuth0Id}`,
+        );
+      } else {
+        return parsed;
+      }
+    } catch (error) {
+      this.logger.error(
+        `Cloud LLM request failed for spear-phishing generation (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS}): ${error}`,
+      );
+    }
+
+    if (attempt >= SPEAR_GENERATION_MAX_ATTEMPTS) {
+      return null;
+    }
+
+    return this.generateSpearTemplateWithRetry(
+      requestBody,
+      recipientAuth0Id,
+      attempt + 1,
+    );
+  }
+
+  private async publishSpearPhishingEvent(
+    dto: GenerateSpearPhishingDto,
+    generatedTemplate: GeneratedTemplateDto,
+  ): Promise<void> {
     const spearPhishingEvent: SendSpearPhishingEvent = {
       recipientAuth0Id: dto.recipientAuth0Id,
       senderAuth0Id: dto.senderAuth0Id,
@@ -469,12 +589,21 @@ export class LlmService {
   }
 
   private async sanitizeContext(context?: string): Promise<string | undefined> {
-    if (!context || context.trim() === '') {
+    const trimmedContext = context?.trim();
+    if (!trimmedContext) {
       return undefined;
     }
+
     try {
-      const result = await this.classificationService.classify({
-        replyText: context,
+      this.logger.log(
+        `Filtering sensitive information from spear-phishing context`,
+      );
+      const { redactedText, items } = await redactSensitiveText(trimmedContext);
+      this.logger.log(
+        `Sensitive-information filtering completed for spear-phishing context: ${items.length} item(s) redacted`,
+      );
+      const result = await this.classificationService.classifyRedacted({
+        replyText: redactedText,
       });
 
       const clean =
@@ -488,7 +617,7 @@ export class LlmService {
         return undefined;
       }
 
-      return context.trim();
+      return redactedText;
     } catch (err) {
       this.logger.warn(
         `Context classification failed, dropping context to be safe. Error: ${err}`,

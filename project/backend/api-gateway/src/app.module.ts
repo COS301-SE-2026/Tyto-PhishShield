@@ -14,7 +14,12 @@ import { MailingModule } from './mailing/mailing.module';
 
 import { ReportModule } from './report/report.module';
 import { EducationModule } from './education/education.module';
-import { APP_GUARD, Reflector } from '@nestjs/core';
+import {
+  APP_FILTER,
+  APP_GUARD,
+  APP_INTERCEPTOR,
+  Reflector,
+} from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { XpModule } from './xp/xp.module';
 import { WebsocketModule } from './websocket/websocket.module';
@@ -25,10 +30,15 @@ import { LlmModule } from './llm/llm.module';
 import { CompanyModule } from './company/company.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { CommsModule } from './comms/comms.module';
+import { PostHogUserContextInterceptor } from './posthog.service';
+import { PostHogExceptionFilter } from './posthog-exception.filter';
+import { PostHogModule } from './posthog.module';
+import { PostHogLogsService } from './posthog-logs.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PostHogModule,
     AccountsModule,
     MailingModule,
     ReportModule,
@@ -51,6 +61,15 @@ import { CommsModule } from './comms/comms.module';
       useClass: JwtAuthGuard,
     },
     AppService,
+    PostHogLogsService,
+    {
+      provide: APP_FILTER,
+      useClass: PostHogExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PostHogUserContextInterceptor,
+    },
   ],
 })
 export class AppModule {}

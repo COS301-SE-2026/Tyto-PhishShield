@@ -6,6 +6,7 @@ import type { EmailDifficulty } from "../../services/send-batch-email";
 import { createEmailTemplate, type CreateEmailTemplateRequest, type EmailTemplate, type Department } from '../../services/email-template';
 import { EMAIL_PLACEHOLDERS } from "./email-placeholders";
 import { SenderDomainSelect } from "../../components/email/sender-domain-select";
+import posthog from '../../lib/posthog';
 
 interface CreateEmailProps {
     onNavigate: (path: string) => void;
@@ -140,6 +141,10 @@ export function CreateEmail({
 
             const template = await createEmailTemplate(request);
             setCreatedTemplate(template);
+            posthog.capture('email_template_created', {
+                difficulty: form.difficulty,
+                has_sender_department: Boolean(form.senderDepartment),
+            });
 
             addToast({
                 type: 'success',

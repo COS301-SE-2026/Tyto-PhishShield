@@ -18,6 +18,7 @@ import type { GatewayUser } from '../auth/strategies/jwt.strategy';
 import { Public } from '../auth/public.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { PostHogService } from '../posthog.service';
 
 interface AuthenticatedRequest extends Request {
   user: GatewayUser;
@@ -36,6 +37,7 @@ export class ReportController {
   constructor(
     private readonly proxy: ProxyService,
     private readonly config: ConfigService,
+    private readonly posthog: PostHogService,
   ) {
     this.reportServiceUrl = this.config.get<string>(
       'REPORT_SERVICE_URL',
@@ -78,13 +80,15 @@ export class ReportController {
       },
     },
   })
-  create(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
-    return this.proxy.forward({
+  async create(@Req() req: AuthenticatedRequest, @Body() body: unknown) {
+    const report = await this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report`,
       method: 'POST',
       data: body,
       headers: authHeader(req),
     });
+    this.posthog.client?.capture({ event: 'phishing_report_submitted' });
+    return report;
   }
 
   @Get()
@@ -142,16 +146,18 @@ export class ReportController {
       },
     },
   })
-  updateStatus(
+  async updateStatus(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
     @Body() body: unknown,
   ) {
-    return this.proxy.forward({
+    const report = await this.proxy.forward({
       url: `${this.reportServiceUrl}/api/report/${id}/status`,
       method: 'PATCH',
       data: body,
       headers: authHeader(req),
     });
+    this.posthog.client?.capture({ event: 'phishing_report_status_updated' });
+    return report;
   }
 }

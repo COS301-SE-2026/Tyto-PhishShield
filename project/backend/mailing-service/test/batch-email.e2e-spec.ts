@@ -9,10 +9,13 @@
  * - POST /batch-emails/:referenceNumber/send-batch-with-reference - Sends one template to all recipients immediately; also tests 404 for unknown reference.
  * - POST /batch-emails/send-batch-random-same-email - Sends the same random template to all recipients; tests shared time, independent random times, and invalid date range (400).
  * - POST /batch-emails/send-batch-random-different-email - Sends a different random template per recipient; tests shared time, independent random times, and invalid date range (400).
+ * - Template variable validation - POST /emails rejects unknown or malformed {{variables}} with 400;
+ *   a batch send using a template that already contains one (seeded directly in the DB) also returns 400.
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import * as crypto from 'crypto';
 import { MailingServiceModule } from '../src/mailing-service.module';
 import { EmailDifficulty, EmailTemplateEntity, } from '../src/entities/email-template.entity';
 import { Department, UserEntity, UserRole } from '../src/entities/user.entity';
@@ -59,7 +62,7 @@ describe('BatchEmail service integration tests', () => {
     emailTemplateRepository = moduleFixture.get<
       Repository<EmailTemplateEntity>
     >(getRepositoryToken(EmailTemplateEntity));
-    
+
     employeeInfoRepository = moduleFixture.get<
       Repository<EmployeeInfoEntity>
     >(getRepositoryToken(EmployeeInfoEntity));
@@ -135,6 +138,23 @@ describe('BatchEmail service integration tests', () => {
         difficulty: EmailDifficulty.HARD,
         ...overrides,
       });
+  }
+
+  function seedTemplateBypassingValidation(overrides: Partial<{
+    subject: string;
+    content: string;
+    difficulty: EmailDifficulty;
+  }> = {}) {
+    return emailTemplateRepository.save(
+      emailTemplateRepository.create({
+        referenceNumber: `PHISH-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+        sender: TEST_SENDER,
+        subject: 'Test',
+        content: '<p>Test</p>',
+        difficulty: EmailDifficulty.HARD,
+        ...overrides,
+      }),
+    );
   }
 
   // Helper Function to expect success
@@ -361,16 +381,41 @@ describe('BatchEmail service integration tests', () => {
       .expect(expectSuccess);
   });
 
-  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should fail when the template contains an unsupported variable`, async () => {
-    const createRes = await createEmailTemplate({
-      subject: 'Test',
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 400 when a stored template contains an unsupported variable`, async () => {
+    const template = await seedTemplateBypassingValidation({
       content: '<p>Hello {{favoriteColor}}</p>',
-    }).expect(201);
+    });
 
     return request(app.getHttpServer())
-      .post(`/batch-emails/${createRes.body.referenceNumber}/send-batch-with-reference`)
+      .post(`/batch-emails/${template.referenceNumber}/send-batch-with-reference`)
       .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
-      .expect(500);
+      .expect(400);
+  });
+
+  it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should return 400 when a stored template contains a malformed placeholder`, async () => {
+    const template = await seedTemplateBypassingValidation({
+      subject: 'Hi {{first-name}}',
+    });
+
+    return request(app.getHttpServer())
+      .post(`/batch-emails/${template.referenceNumber}/send-batch-with-reference`)
+      .send({ auth0Id: TEST_AUTH0_IDS, senderCustomName: 'batch-e2e-sender' })
+      .expect(400);
+  });
+
+  it(`/emails (POST) - should reject creating a template with an unsupported variable, so it can never reach a batch`, async () => {
+    const subject = 'Batch E2E unsupported variable';
+
+    await createEmailTemplate({
+      subject,
+      content: '<p>Hello {{favoriteColor}}</p>',
+    })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toContain('favoriteColor');
+      });
+
+    expect(await emailTemplateRepository.findOne({ where: { subject } })).toBeNull();
   });
 
   it(`/batch-emails/:referenceNumber/send-batch-with-reference (POST) - should send using an explicit senderAuth0Id`, () => {

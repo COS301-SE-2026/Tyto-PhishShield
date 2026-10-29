@@ -11,6 +11,11 @@ jobs:
     lint-test-build:
       name: Matrix lint, test and build
       runs-on: ubuntu-24.04
+      env:
+        POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+        POSTHOG_CLI_PROJECT_ID: ${{ secrets.POSTHOG_CLI_PROJECT_ID }}
+        POSTHOG_CLI_HOST: ${{ secrets.POSTHOG_CLI_HOST }}
+        POSTHOG_RELEASE_VERSION: ${{ github.sha }}
       strategy:
         matrix:
           include:

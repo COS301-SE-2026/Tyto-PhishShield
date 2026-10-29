@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Info, CheckCircle2, ArrowDown } from 'lucide-react';
 import { AppLayout } from '../../components/layout/app-layout';
 import { Button, Card, Input, Select, Badge } from '../../components/ui';
 import { useToast } from '../../context/toast-context';
@@ -6,6 +7,7 @@ import { getUsers, type User } from '../../services/user';
 import { getSenderRecommendations, type SenderRecommendation } from '../../services/sender-recommendations';
 import { generateSpearPhishing } from '../../services/spear-phishing';
 import type { Department, MessageType } from '../../services/llm-template';
+import posthog from '../../lib/posthog';
 
 interface SpearPhishingProps {
   readonly onNavigate: (path: string) => void;
@@ -101,6 +103,9 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
   const [recommendationsLoaded, setRecommendationsLoaded] = useState(false);
   const [recommendationsError, setRecommendationsError] = useState('');
   const [senderId, setSenderId] = useState('');
+  const [manualSenderId, setManualSenderId] = useState('');
+  const [manualSenderSearch, setManualSenderSearch] = useState('');
+  const [manualSenderDepartment, setManualSenderDepartment] = useState<Department | ''>('');
   const [messageType, setMessageType] = useState<MessageType>('document_request');
   const [extraContext, setExtraContext] = useState('');
   const [scheduledFrom, setScheduledFrom] = useState('');
@@ -109,6 +114,7 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const recommendationRequest = useRef(0);
+  const [showContextHelp, setShowContextHelp] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -128,7 +134,21 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
   useEffect(() => { void fetchUsers(); }, [fetchUsers]);
 
   const recipient = users.find((user) => user.auth0Id === recipientId);
-  const sender = recommendations.find((item) => item.auth0Id === senderId);
+  const recommendedSender = recommendations.find((item) => item.auth0Id === senderId);
+  const manualSender = users.find((item) => item.auth0Id === manualSenderId);
+  const noEligibleSender = /no eligible sender/i.test(recommendationsError);
+  const useManualSender = recommendationsLoaded && (!recommendationsError || noEligibleSender) && recommendations.length === 0;
+  const sender = useManualSender ? manualSender : recommendedSender;
+  const senderDepartment = useManualSender
+    ? manualSenderDepartment
+    : toLlmDepartment(recommendedSender?.department);
+  const filteredManualSenders = useMemo(() => {
+    const query = manualSenderSearch.trim().toLowerCase();
+    return users.filter((user) => user.auth0Id !== recipientId && (
+      !query || user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) || user.auth0Id.toLowerCase().includes(query)
+    ));
+  }, [users, recipientId, manualSenderSearch]);
   const filteredUsers = useMemo(() => {
     const query = userSearch.trim().toLowerCase();
     return users.filter((user) =>
@@ -141,6 +161,9 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
     recommendationRequest.current += 1;
     setRecommendations([]);
     setSenderId('');
+    setManualSenderId('');
+    setManualSenderDepartment('');
+    setManualSenderSearch('');
     setRecommendationsLoaded(false);
     setRecommendationsError('');
     setRecommendationsLoading(false);
@@ -166,6 +189,8 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
     setRecommendationsError('');
     setRecommendations([]);
     setSenderId('');
+    setManualSenderId('');
+    setManualSenderDepartment('');
     try {
       const result = await getSenderRecommendations(recipientId, departmentFilter || undefined);
       if (requestId !== recommendationRequest.current) return;
@@ -176,11 +201,27 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
       const message = error instanceof Error ? error.message : 'Could not retrieve recommendations.';
       setRecommendationsError(message);
       setRecommendationsLoaded(true);
-      addToast({ type: 'error', title: 'Recommendations unavailable', message });
+      if (!/no eligible sender/i.test(message)) {
+        addToast({ type: 'error', title: 'Recommendations unavailable', message });
+      }
     } finally {
       if (requestId === recommendationRequest.current) setRecommendationsLoading(false);
     }
   };
+
+  // Automatically fetch recommendations whenever the recipient or sender filter changes.
+  // The request counter prevents stale responses from replacing newer results.
+  useEffect(() => {
+    if (!recipientId || !recipientDepartment) return;
+    void loadRecommendations();
+    // loadRecommendations intentionally uses the latest selected recipient/filter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipientId, recipientDepartment, departmentFilter]);
+
+  const readyForSubmission = Boolean(
+    recipientId && recipientDepartment && sender && senderDepartment &&
+    (sendImmediately || (scheduledFrom && scheduledTo)),
+  );
 
   const validate = (): boolean => {
     const next: FormErrors = {};
@@ -190,7 +231,9 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
     }
 
     if (!sender) {
-        next.sender = 'Select a recommended sender.';
+        next.sender = 'Select a sender to spoof.';
+    } else if (!senderDepartment) {
+        next.sender = 'Select a valid sender department.';
     }
 
     if (!sendImmediately){
@@ -212,17 +255,7 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
   };
 
   const handleSubmit = async () => {
-  if (!validate() || !sender || !recipientDepartment) return;
-
-  const senderDepartment = toLlmDepartment(sender.department);
-
-  if (!senderDepartment) {
-    setErrors((previous) => ({
-      ...previous,
-      sender: 'The selected sender has an invalid department.',
-    }));
-    return;
-  }
+  if (!validate() || !sender || !recipientDepartment || !senderDepartment) return;
 
   setSubmitting(true);
 
@@ -238,10 +271,18 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
             scheduledFrom: new Date(scheduledFrom).toISOString(),
             scheduledTo: new Date(scheduledTo).toISOString(),
         }),
-        isManager: sender.isManager === true,
+        isManager: !useManualSender && recommendedSender?.isManager === true,
       });
 
       if (!response.accepted) throw new Error('The backend did not confirm acceptance.');
+      posthog.capture('spear_phishing_requested', {
+        message_type: messageType,
+        delivery_mode: sendImmediately ? 'immediate' : 'scheduled',
+        recipient_department: recipientDepartment,
+        sender_department: senderDepartment,
+        sender_is_manager: !useManualSender && recommendedSender?.isManager === true,
+        has_extra_context: Boolean(extraContext.trim()),
+      });
       addToast({
         type: 'success', 
         title: 'Generation request accepted',
@@ -269,6 +310,16 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
       breadcrumbs={[{ label: 'Emails', path: '/emails' }, { label: 'Spear Phishing' }]}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 960, width: '100%' }}>
+        <Card style={{ padding: 20 }}>
+          <h2 style={headingStyle}>Create a spear-phishing simulation</h2>
+          <p style={textStyle}>Follow the four steps below. Sender recommendations load automatically once you choose a recipient.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+            <Badge variant={recipientId && recipientDepartment ? 'success' : 'warning'}>1. Recipient {recipientId && recipientDepartment ? '✓' : ''}</Badge>
+            <Badge variant={sender ? 'success' : 'neutral'}>2. Sender {sender ? '✓' : ''}</Badge>
+            <Badge variant="neutral">3. Details</Badge>
+            <Badge variant={readyForSubmission ? 'success' : 'neutral'}>4. Delivery</Badge>
+          </div>
+        </Card>
         <Card style={{ padding: 24 }}>
           <h2 style={headingStyle}>1. Select recipient</h2>
           <p style={{ ...textStyle, marginBottom: 16 }}>Choose one active company user for this simulation.</p>
@@ -310,31 +361,98 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
             />
           </div>}
           {errors.recipient && <p style={errorStyle}>{errors.recipient}</p>}
+          {recipient && recipientDepartment && (
+            <div style={{ ...panelStyle, marginTop: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle2 size={17} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
+              <span style={textStyle}><strong>{recipient.name}</strong> selected. Sender recommendations will appear in Step 2 below.</span>
+              <ArrowDown size={15} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+            </div>
+          )}
+          {recipient && !recipientDepartment && (
+            <p style={{ ...textStyle, marginTop: 12 }}>Select a recipient department to continue to Step 2.</p>
+          )}
         </Card>
 
         <Card style={{ padding: 24 }}>
-          <h2 style={headingStyle}>2. Select recommended sender</h2>
-          <p style={{ ...textStyle, marginBottom: 16 }}>Recommendations use existing company relationships. Choose the sender for this recipient.</p>
+          <h2 style={headingStyle}>2. Select sender</h2>
+          <p style={{ ...textStyle, marginBottom: 16 }}>After you choose a recipient, we find suitable senders based on existing company relationships. Select one to continue.</p>
+          {!recipientId && <p style={{ ...panelStyle, ...textStyle, marginBottom: 12 }}>First, select a recipient in Step 1.</p>}
+          {recipientId && !recipientDepartment && <p style={{ ...panelStyle, ...textStyle, marginBottom: 12 }}>Choose the recipient's department in Step 1 to load recommendations.</p>}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, alignItems: 'end' }}>
             <Select
               label="Filter sender department (optional)"
               value={departmentFilter}
               options={[{ value: '', label: 'All departments' }, ...DEPARTMENTS]}
               onChange={(event) => { setDepartmentFilter(event.target.value as Department | ''); resetRecommendations(); }}
-              disabled={!recipientId || submitting}
+              disabled={!recipientId || !recipientDepartment || submitting}
             />
             <Button
               variant="ghost"
               loading={recommendationsLoading}
-              disabled={!recipientId || recommendationsLoading || submitting}
+              disabled={!recipientId || !recipientDepartment || recommendationsLoading || submitting}
               onClick={() => void loadRecommendations()}
             >
               {recommendationsLoaded ? 'Refresh recommendations' : 'Find recommended senders'}
             </Button>
           </div>
-          {recommendationsError && <p style={{ ...errorStyle, marginTop: 12 }}>{recommendationsError}</p>}
-          {recommendationsLoaded && !recommendationsError && recommendations.length === 0 && (
-            <p style={{ ...textStyle, marginTop: 16 }}>No eligible senders were returned. Try another department filter.</p>
+          {recommendationsLoading && <p style={{ ...textStyle, marginTop: 12 }}>Finding recommended senders for your recipient...</p>}
+          {recommendationsError && !noEligibleSender && <p style={{ ...errorStyle, marginTop: 12 }}>{recommendationsError}</p>}
+          {useManualSender && (
+            <p style={{ ...textStyle, marginTop: 16 }}>No recommended senders were returned. You can change the filter or choose a company sender manually below.</p>
+          )}
+          {useManualSender && (
+            <div style={{ ...panelStyle, marginTop: 16 }}>
+              <h3 style={{ ...headingStyle, fontSize: 13 }}>Choose a company sender manually</h3>
+              <p style={{ ...textStyle, marginBottom: 12 }}>
+                No recommended senders were found. Select another active company user whose identity
+                will be used for this simulation. The recipient cannot be selected as the sender.
+              </p>
+              <Input
+                label="Search company senders"
+                placeholder="Search by name or email"
+                value={manualSenderSearch}
+                onChange={(event) => setManualSenderSearch(event.target.value)}
+                disabled={submitting}
+              />
+              <div style={{ maxHeight: 220, overflowY: 'auto', marginTop: 12, border: '1px solid var(--border)', borderRadius: 8 }}>
+                {filteredManualSenders.length === 0 ? (
+                  <p style={{ ...textStyle, padding: 12 }}>No eligible company users found.</p>
+                ) : filteredManualSenders.map((user) => (
+                  <label key={user.auth0Id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, borderBottom: '1px solid var(--border)', cursor: 'pointer', background: manualSenderId === user.auth0Id ? 'var(--bg-hover)' : 'transparent' }}>
+                    <input
+                      type="radio"
+                      name="manual-spear-sender"
+                      checked={manualSenderId === user.auth0Id}
+                      onChange={() => {
+                        setManualSenderId(user.auth0Id);
+                        setManualSenderDepartment(toLlmDepartment(user.department) ?? '');
+                        setErrors((previous) => ({ ...previous, sender: undefined }));
+                      }}
+                      disabled={submitting}
+                    />
+                    <span style={{ minWidth: 0 }}>
+                      <strong style={{ fontSize: 13, color: 'var(--text-primary)' }}>{user.name}</strong>
+                      <span style={{ ...textStyle, display: 'block', overflowWrap: 'anywhere' }}>{user.email}{user.department ? ` - ${user.department}` : ''}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {manualSender && (
+                <div style={{ marginTop: 14 }}>
+                  <Select
+                    label="Sender department"
+                    value={manualSenderDepartment}
+                    options={[{ value: '', label: 'Select sender department' }, ...DEPARTMENTS]}
+                    onChange={(event) => {
+                      setManualSenderDepartment(event.target.value as Department | '');
+                      setErrors((previous) => ({ ...previous, sender: undefined }));
+                    }}
+                    disabled={submitting}
+                  />
+                  {!manualSenderDepartment && <p style={errorStyle}>Choose a department for the sender to continue.</p>}
+                </div>
+              )}
+            </div>
           )}
           {recommendations.length > 0 && <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
             {recommendations.map((candidate) => (
@@ -372,6 +490,13 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
             ))}
           </div>}
           {errors.sender && <p style={errorStyle}>{errors.sender}</p>}
+          {sender && (
+            <div style={{ ...panelStyle, marginTop: 14, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <CheckCircle2 size={17} style={{ color: 'var(--color-success)', flexShrink: 0 }} />
+              <span style={textStyle}>Sender selected: <strong>{sender.email}</strong>. Continue to Step 3.</span>
+              <ArrowDown size={15} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+            </div>
+          )}
         </Card>
 
         <Card style={{ padding: 24 }}>
@@ -384,11 +509,45 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
             onChange={(event) => setMessageType(event.target.value as MessageType)}
             disabled={submitting}
           />
-          <label htmlFor="spear-context" style={{ ...headingStyle, display: 'block', fontSize: 12, marginTop: 16 }}>Additional context (optional)</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 16, marginBottom: 8 }}>
+            <label htmlFor="spear-context" style={{ ...headingStyle, fontSize: 12, marginBottom: 0 }}>
+              Additional context (optional)
+            </label>
+            <div
+              style={{ position: 'relative', display: 'inline-flex' }}
+              onMouseEnter={() => setShowContextHelp(true)}
+              onMouseLeave={() => setShowContextHelp(false)}
+            >
+              <button
+                type="button"
+                aria-label="Information about additional context"
+                aria-expanded={showContextHelp}
+                aria-controls="spear-context-help"
+                onFocus={() => setShowContextHelp(true)}
+                onBlur={() => setShowContextHelp(false)}
+                onClick={() => setShowContextHelp((previous) => !previous)}
+                style={{ display: 'inline-flex', padding: 4, cursor: 'pointer', border: 'none', background: 'transparent', color: 'var(--text-secondary)' }}
+              >
+                <Info size={16} />
+              </button>
+              {showContextHelp && (
+                <div
+                  id="spear-context-help"
+                  role="tooltip"
+                  style={{ ...panelStyle, position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, width: 280, maxWidth: '75vw', zIndex: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}
+                >
+                  <strong style={{ ...textStyle, color: 'var(--text-primary)' }}>What should I include?</strong>
+                  <p style={{ ...textStyle, marginTop: 8 }}>Use general, non-sensitive background to make the training simulation more realistic.</p>
+                  <p style={{ ...textStyle, marginTop: 8 }}><strong>Example:</strong> The recipient works in Finance and regularly receives invoice approval requests.</p>
+                  <p style={{ ...textStyle, marginTop: 8 }}><strong>Privacy:</strong> Do not enter passwords, API keys, confidential documents, real financial details, or other sensitive information you would not want an AI service to process.</p>
+                </div>
+              )}
+            </div>
+          </div>
           <textarea
             id="spear-context" value={extraContext}
             onChange={(event) => setExtraContext(event.target.value)}
-            placeholder="Optional training scenario context"
+            placeholder="e.g. The recipient works in Finance and regularly receives invoice approval requests."
             rows={5} disabled={submitting}
             style={{ width: '100%', boxSizing: 'border-box', padding: 12, border: '1px solid var(--border)', borderRadius: 8, resize: 'vertical', background: 'var(--bg-input)', color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', fontSize: 12 }}
           />
@@ -580,10 +739,13 @@ export function SpearPhishing({ onNavigate, activePath }: SpearPhishingProps) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <Button variant="ghost" disabled={submitting} onClick={() => onNavigate('/emails')}>Cancel</Button>
-          <Button loading={submitting} disabled={submitting || usersLoading || recommendationsLoading}
-            onClick={() => void handleSubmit()}>
-            Submit generation request
-          </Button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+            <Button loading={submitting} disabled={submitting || usersLoading || recommendationsLoading || !readyForSubmission}
+              onClick={() => void handleSubmit()}>
+              Submit generation request
+            </Button>
+            {!readyForSubmission && <span style={textStyle}>Complete the recipient, sender and delivery selections to submit.</span>}
+          </div>
         </div>
       </div>
     </AppLayout>

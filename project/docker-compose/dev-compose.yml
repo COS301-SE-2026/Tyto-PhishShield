@@ -75,6 +75,7 @@ services:
       - TRACKING_LINK=${TRACKING_LINK}
       - BUSINESS_SENDING_DOMAIN=${BUSINESS_SENDING_DOMAIN}
       - SCHEDULE_MIN_LEAD_MINUTES=${SCHEDULE_MIN_LEAD_MINUTES}
+      - SCHEDULE_TIMEZONE=${SCHEDULE_TIMEZONE}
 
     depends_on:
       mailing_db:
@@ -202,6 +203,11 @@ services:
       - OUTLOOK_ADDIN_CORS=
       - ENVIRONMENT=dev
       - LOG_DIR=/var/log/api-gateway
+      - POSTHOG_PROJECT_TOKEN=${VITE_POSTHOG_PROJECT_TOKEN}
+      - POSTHOG_HOST=${VITE_POSTHOG_HOST}
+      - POSTHOG_CLI_API_KEY=${POSTHOG_CLI_API_KEY}
+      - POSTHOG_CLI_PROJECT_ID=${POSTHOG_CLI_PROJECT_ID}
+      - POSTHOG_CLI_HOST=${POSTHOG_CLI_HOST}
     deploy:
       resources:
         limits:
@@ -467,12 +473,16 @@ services:
       - LLM_MODEL_CHAIN=${LLM_MODEL_CHAIN}
       - LOCAL_NUM_CTX=${LOCAL_NUM_CTX}
       - LOCAL_NUM_THREAD=${LOCAL_NUM_THREAD}
+      - LOCAL_NUM_PREDICT=${LOCAL_NUM_PREDICT}
+      - LOCAL_LLM_TIMEOUT_MS=${LOCAL_LLM_TIMEOUT_MS}
       - DB_SYNC=${DB_SYNC}
+      - GLINER_MODEL_PATH=/app/model.onnx
+      - GLINER_TOKENIZER_PATH=onnx-community/gliner_small-v2
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: '128M'
+          cpus: '2.5'
+          memory: '1024M'
 
     depends_on:
       llm_db:
