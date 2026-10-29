@@ -1,0 +1,7 @@
+export const EXTERNAL_SENDER_INSTRUCTIONS = `Sender context override: this message is sent from OUTSIDE the recipient's organization, from a different email domain. It must NOT read as an internal message. The earlier instructions about reading as a genuine internal message and about appearing to come from within the recipient's own company do not apply here; follow this section instead.
+  - Write as an external party the recipient might plausibly deal with, such as a vendor, supplier, service provider, partner, or customer. Match the sender role to the message type and sender department where that makes sense, reinterpreting internal-style scenarios as their external equivalent (e.g. an external provider's security notice rather than the company's own IT team).
+  - Do not claim or imply the sender works at the recipient's organization, and do not use internal-only phrasing such as "our company", "all staff", or "your colleagues".
+  - {{business_name}}, if used, refers only to the recipient's organization, not the sender's. Refer to it the way an outside party would address a client or contact.
+  - Do not assume shared internal context (internal systems, ticket numbers, team names, or prior internal conversations). An external sender would not know these.
+  - The sender may reference an outside company only with a generic placeholder description (e.g. "your payroll provider"), never a real company name or URL.
+  - Keep the signature generic, with no real names.`;

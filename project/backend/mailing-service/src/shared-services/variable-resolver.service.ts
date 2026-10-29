@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -11,6 +12,8 @@ import { EmployeeInfoEntity } from '../entities/employee-info.entity';
 // Looks for a variable like {{...}}, for example, {{name}}.
 const VARIABLE_PATTERN = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
 
+const PLACEHOLDER_PATTERN = /{{\s*([^{}]*?)\s*}}/g;
+
 const RECIPIENT_SUFFIX = '_recipient';
 const SENDER_SUFFIX = '_sender';
 
@@ -18,6 +21,11 @@ export interface PersonContext {
   user: UserEntity;
   employeeInfo?: EmployeeInfoEntity;
 }
+
+type VariableGetter = (
+  user: UserEntity,
+  employeeInfo?: EmployeeInfoEntity,
+) => string | null;
 
 @Injectable()
 export class VariableResolverService {
@@ -32,6 +40,15 @@ export class VariableResolverService {
     );
   }
 
+  private readonly variables = new Map<string, VariableGetter>([
+    ['business_name', () => this.businessName],
+    ['name', (user) => user.firstName || user.name || null],
+    ['surname', (user) => user.lastName ?? null],
+    ['department', (user) => user.department ?? null],
+    ['job_title', (_user, employeeInfo) => employeeInfo?.jobTitle ?? null],
+    ['title', (_user, employeeInfo) => employeeInfo?.title ?? null],
+  ]);
+
   substitute(
     text: string,
     user: UserEntity,
@@ -40,6 +57,8 @@ export class VariableResolverService {
     if (!text) {
       return text;
     }
+
+    this.validateTemplate(text);
 
     return text.replace(VARIABLE_PATTERN, (match, variableName: string) => {
       if (this.reservedVariables.has(variableName)) {
@@ -61,6 +80,8 @@ export class VariableResolverService {
     if (!text) {
       return text;
     }
+
+    this.validateSpearTemplate(text);
 
     return text.replace(VARIABLE_PATTERN, (match, variableName: string) => {
       if (this.reservedVariables.has(variableName)) {
@@ -134,27 +155,54 @@ export class VariableResolverService {
     user: UserEntity,
     employeeInfo?: EmployeeInfoEntity,
   ): string | null | undefined {
-    switch (variableName) {
-      case 'business_name':
-        return this.businessName;
+    const getter = this.variables.get(variableName);
+    return getter ? getter(user, employeeInfo) : undefined;
+  }
 
-      case 'name':
-        return user.firstName || user.name || null;
+  validateTemplate(...texts: Array<string | null | undefined>): void {
+    this.assertKnown(texts, (name) => this.isKnownVariable(name));
+  }
 
-      case 'surname':
-        return user.lastName ?? null;
+  validateSpearTemplate(...texts: Array<string | null | undefined>): void {
+    this.assertKnown(texts, (name) => this.isKnownSpearVariable(name));
+  }
 
-      case 'department':
-        return user.department ?? null;
+  private isKnownVariable(name: string): boolean {
+    return this.reservedVariables.has(name) || this.variables.has(name);
+  }
 
-      case 'job_title':
-        return employeeInfo?.jobTitle ?? null;
+  private isKnownSpearVariable(name: string): boolean {
+    if (name === 'business_name' || this.reservedVariables.has(name)) {
+      return true;
+    }
+    for (const suffix of [RECIPIENT_SUFFIX, SENDER_SUFFIX]) {
+      if (name.endsWith(suffix)) {
+        const base = name.slice(0, -suffix.length);
+        return base !== 'business_name' && this.variables.has(base);
+      }
+    }
+    return false;
+  }
 
-      case 'title':
-        return employeeInfo?.title ?? null;
+  private assertKnown(
+    texts: Array<string | null | undefined>,
+    isKnown: (name: string) => boolean,
+  ): void {
+    const unknown = new Set<string>();
 
-      default:
-        return undefined;
+    for (const text of texts) {
+      if (!text) continue;
+      for (const [, name] of text.matchAll(PLACEHOLDER_PATTERN)) {
+        if (!isKnown(name)) unknown.add(name);
+      }
+    }
+
+    if (unknown.size > 0) {
+      const list = [...unknown].map((v) => `{{${v}}}`).join(', ');
+      this.logger.warn(`Template rejected, unknown variable(s): ${list}`);
+      throw new BadRequestException(
+        `Template contains unknown variable(s): ${list}`,
+      );
     }
   }
 }

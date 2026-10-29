@@ -14,7 +14,6 @@ import {
   EmailTemplateEntity,
 } from '../entities/email-template.entity';
 import { In, Repository } from 'typeorm';
-import * as crypto from 'crypto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { UserEntity } from '../entities/user.entity';
 import { BatchSendResultDto } from '../dto/batch-send-result.dto';
@@ -25,6 +24,7 @@ import { VariableResolverService } from '../shared-services/variable-resolver.se
 import { SenderResolverService } from '../sender-resolver/sender-resolver.service';
 import { TrackingLinkService } from '../shared-services/tracking-link.service';
 import { EmployeeInfoEntity } from '../entities/employee-info.entity';
+import { ScheduleResolverService } from '../shared-services/schedule-resolver.service';
 
 const MAILING_EVENT_EXCHANGE = 'mailing-event-exchange';
 
@@ -46,6 +46,7 @@ export class BatchEmailService {
     private readonly variableResolver: VariableResolverService,
     private readonly senderResolver: SenderResolverService,
     private readonly trackingLinkService: TrackingLinkService,
+    private readonly scheduleResolver: ScheduleResolverService,
   ) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     this.resend = new Resend(apiKey);
@@ -604,9 +605,6 @@ export class BatchEmailService {
   }
 
   private randomDateBetween(from: Date, to: Date): Date {
-    const fromTime = from.getTime();
-    const toTime = to.getTime();
-    const randomTime = crypto.randomInt(fromTime, toTime + 1);
-    return new Date(randomTime);
+    return this.scheduleResolver.pickWeightedTime(from.getTime(), to.getTime());
   }
 }

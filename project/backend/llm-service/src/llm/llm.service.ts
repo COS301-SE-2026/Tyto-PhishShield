@@ -43,6 +43,32 @@ const TRACKING_LINK_ANCHOR =
 // Anything that looks like a link: an anchor tag, a URL, or the tracking placeholder.
 const NO_LINK_ALLOWED = /<a\s|https?:\/\/|www\.|tracking_link/i;
 
+const ALLOWED_SPEAR_VARS = new Set([
+  'name_recipient',
+  'surname_recipient',
+  'title_recipient',
+  'department_recipient',
+  'job_title_recipient',
+  'name_sender',
+  'surname_sender',
+  'department_sender',
+  'job_title_sender',
+  'business_name',
+  'tracking_link',
+]);
+
+const SPEAR_GENERATION_MAX_ATTEMPTS = 2;
+
+function extractPlaceholders(text: string): string[] {
+  return [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]);
+}
+
+function hasUnknownPlaceholder(subject: string, body: string): boolean {
+  return [...extractPlaceholders(subject), ...extractPlaceholders(body)].some(
+    (v) => !ALLOWED_SPEAR_VARS.has(v),
+  );
+}
+
 interface ClassificationResult {
   needsReview: boolean;
   categories: MistakeCategory[];
@@ -63,6 +89,8 @@ export class LlmService {
     private readonly replyGenerationService: ReplyGenerationService,
     private readonly mailingEventService: MailingEventService,
   ) {}
+
+  // Template generation (standard difficulty-based flow)
 
   async generateTemplates(
     dto: DifficultyLlmGenerationDto,
@@ -153,6 +181,8 @@ export class LlmService {
       return null;
     }
   }
+
+  // Reply handling
 
   async processReceivedReply(dto: ReceivedReplyDto): Promise<void> {
     this.logger.log(
@@ -440,6 +470,8 @@ export class LlmService {
     }
   }
 
+  // Spear-phishing generation
+
   async processSpearPhishing(dto: GenerateSpearPhishingDto): Promise<void> {
     this.logger.log(
       `Starting spear-phishing generation for recipient ${dto.recipientAuth0Id}`,
@@ -456,30 +488,19 @@ export class LlmService {
       dto,
       safeContext,
     );
-
     const requestBody = this.buildGatewayRequest(
       systemPrompt,
       SPEAR_TEMPLATE_SCHEMA,
     );
-    let generatedTemplate: GeneratedTemplateDto | null = null;
 
-    try {
-      this.logger.log(
-        `Sending spear-phishing email generation request to the LLM gateway for recipient ${dto.recipientAuth0Id}`,
-      );
-      const response =
-        await this.llmGatewayService.sendWithFallback(requestBody);
-      generatedTemplate = this.parseTemplate(response, false);
-    } catch (error) {
-      this.logger.error(
-        `Cloud LLM request failed for spear-phishing generation: ${error}`,
-      );
-      return;
-    }
+    const generatedTemplate = await this.generateSpearTemplateWithRetry(
+      requestBody,
+      dto.recipientAuth0Id,
+    );
 
     if (!generatedTemplate) {
       this.logger.error(
-        `Failed to parse generated spear-phishing template for recipient ${dto.recipientAuth0Id}. Validation failed.`,
+        `Failed to generate a valid spear-phishing template for recipient ${dto.recipientAuth0Id} after ${SPEAR_GENERATION_MAX_ATTEMPTS} attempt(s).`,
       );
       return;
     }
@@ -488,6 +509,62 @@ export class LlmService {
       `Spear-phishing template generated successfully. Subject: "${generatedTemplate.subject}"`,
     );
 
+    await this.publishSpearPhishingEvent(dto, generatedTemplate);
+  }
+
+  /**
+   * Requests a spear-phishing template from the LLM gateway, validating both
+   * schema/link shape (parseTemplate) and placeholder safety
+   * (hasUnknownPlaceholder). Retries once on either a gateway error or a
+   * validation failure, since this path is fire-and-forget (queue-triggered,
+   * no caller to surface a failure to) and the generation is non-deterministic
+   * enough that a second attempt often succeeds.
+   */
+  private async generateSpearTemplateWithRetry(
+    requestBody: Omit<LlmGatewayRequestBody, 'model'>,
+    recipientAuth0Id: string,
+    attempt = 1,
+  ): Promise<GeneratedTemplateDto | null> {
+    try {
+      this.logger.log(
+        `Sending spear-phishing email generation request to the LLM gateway for recipient ${recipientAuth0Id} (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS})`,
+      );
+      const response =
+        await this.llmGatewayService.sendWithFallback(requestBody);
+      const parsed = this.parseTemplate(response, false);
+
+      if (!parsed) {
+        this.logger.warn(
+          `Spear-phishing template failed schema/link validation (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS}) for recipient ${recipientAuth0Id}`,
+        );
+      } else if (hasUnknownPlaceholder(parsed.subject, parsed.body)) {
+        this.logger.warn(
+          `Spear-phishing template used an unsupported placeholder (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS}) for recipient ${recipientAuth0Id}`,
+        );
+      } else {
+        return parsed;
+      }
+    } catch (error) {
+      this.logger.error(
+        `Cloud LLM request failed for spear-phishing generation (attempt ${attempt}/${SPEAR_GENERATION_MAX_ATTEMPTS}): ${error}`,
+      );
+    }
+
+    if (attempt >= SPEAR_GENERATION_MAX_ATTEMPTS) {
+      return null;
+    }
+
+    return this.generateSpearTemplateWithRetry(
+      requestBody,
+      recipientAuth0Id,
+      attempt + 1,
+    );
+  }
+
+  private async publishSpearPhishingEvent(
+    dto: GenerateSpearPhishingDto,
+    generatedTemplate: GeneratedTemplateDto,
+  ): Promise<void> {
     const spearPhishingEvent: SendSpearPhishingEvent = {
       recipientAuth0Id: dto.recipientAuth0Id,
       senderAuth0Id: dto.senderAuth0Id,

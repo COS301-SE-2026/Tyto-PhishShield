@@ -127,6 +127,16 @@ export class AnalyticsController {
     });
   }
 
+  @Get('me')
+  @ApiOperation({ summary: 'Per-user analytics for the logged-in user' })
+  getMyStats(@Req() req: AuthenticatedRequest) {
+    return this.proxy.forward({
+      url: `${this.analyticsServiceUrl}/api/analytics/users/${req.user.auth0Id}`,
+      method: 'GET',
+      headers: authHeader(req),
+    });
+  }
+
   @Get('users/:auth0Id')
   @UseGuards(RolesGuard)
   @Roles('admin', 'analyst')

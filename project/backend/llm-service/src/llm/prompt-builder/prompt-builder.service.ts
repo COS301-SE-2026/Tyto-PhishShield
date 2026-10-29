@@ -26,6 +26,7 @@ import { SPEAR_TYPE_PROMPTS } from './prompts/spear-type.prompts';
 import { SPEAR_SUBTLE_INSTRUCTIONS } from './prompts/spear-subtle-instructions.prompts';
 import { SPEAR_MANAGER_INSTRUCTIONS } from './prompts/spear-manager-instructions.prompts';
 import { buildStruggleCategoryInstructions } from './prompts/struggle-category-instructions.promts';
+import { EXTERNAL_SENDER_INSTRUCTIONS } from './prompts/external-sender-instructions.prompts';
 
 const BUSINESS_NAME_CONTEXT = `{{business_name}} is the recipient's business/organization name. Use it to make the message feel like it's coming from within their own company (If applicable).`;
 
@@ -39,6 +40,7 @@ export class PromptBuilderService {
       TYPE_PROMPTS[dto.messageType],
       this.buildSenderDepartmentSection(dto.senderDepartment),
       this.buildVariableSection(dto.templateVariable, dto.difficulty),
+      dto.isExternal ? EXTERNAL_SENDER_INSTRUCTIONS : null,
       LINK_INSTRUCTIONS,
       OUTPUT_FORMAT,
     ];
