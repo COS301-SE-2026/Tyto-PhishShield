@@ -29,9 +29,13 @@ import {
 import { ClassificationService } from './classification/classification.service';
 import { MistakeCategory } from './dto/reply-classification.dto';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ReplyGenerationService } from './reply-generation/reply-generation.service';
+import {
+  RedactedReplyContext,
+  ReplyGenerationService,
+} from './reply-generation/reply-generation.service';
 import { GenerateSpearPhishingDto } from './dto/generate-spear-phishing.dto';
 import { MailingEventService } from '../mailing-event/mailing-event.service';
+import { redactSensitiveText } from './filter/filter.service';
 
 const TRACKING_LINK_ANCHOR =
   /<a\s[^>]*href=["']\{\{tracking_link\}\}["'][^>]*>[\s\S]*?<\/a>/i;
@@ -154,6 +158,9 @@ export class LlmService {
     this.logger.log(
       `Processing reply event ${dto.webhookEventId} (received email ${dto.emailId})`,
     );
+    this.logger.log(
+      `Received reply email ${dto.emailId}: from=${this.extractAddress(dto.from ?? '')} to=${dto.to.join(', ')}`,
+    );
     const reply = await this.receivedEmailService.fetchAndParse(dto);
 
     if (reply.isAutoReply) {
@@ -192,10 +199,18 @@ export class LlmService {
       return;
     }
 
-    const classification = await this.classificationService.classify({
+    this.logger.log(
+      `Filtering reply content for email ${dto.emailId} before classification and generation`,
+    );
+    const analysis = await this.replyGenerationService.analyzeReply({
       replyText: reply.replyText,
+      quotedText: reply.quotedText,
       originalSubject: reply.subject,
     });
+    this.logger.log(
+      `Reply content filtered for email ${dto.emailId}; sanitized reply length=${analysis.redactedReplyText.length}`,
+    );
+    const classification = analysis.classification;
 
     const hasAttachments = dto.attachments.length > 0;
     const llmFlagged =
@@ -219,7 +234,7 @@ export class LlmService {
       return;
     }
 
-    await this.handleValidReply(updatedData, reply);
+    await this.handleValidReply(updatedData, reply, analysis);
   }
 
   private async publishReviewNeeded(
@@ -323,12 +338,13 @@ export class LlmService {
   private async handleValidReply(
     dto: ReceivedReplyDto,
     reply: ParsedReply,
+    redactedReply: RedactedReplyContext,
   ): Promise<void> {
-    const generated = await this.replyGenerationService.generateSafeReply({
-      replyText: reply.replyText,
-      quotedText: reply.quotedText,
-      originalSubject: reply.subject,
-    });
+    this.logger.log(
+      `Generating follow-up reply for validated email ${dto.emailId}`,
+    );
+    const generated =
+      await this.replyGenerationService.generateRedactedReply(redactedReply);
 
     if (!generated) {
       this.logger.warn(
@@ -336,6 +352,10 @@ export class LlmService {
       );
       return;
     }
+
+    this.logger.log(
+      `Generated follow-up reply for email ${dto.emailId}: subject="${generated.subject}"`,
+    );
 
     const mailingPayload: SendReplyEmailEvent = {
       kind: ReplyEmailKind.GENERATED,
@@ -351,10 +371,16 @@ export class LlmService {
     };
 
     try {
+      this.logger.log(
+        `Sending reply email event for email ${dto.emailId} to routing key reply.email`,
+      );
       await this.amqpConnection.publish(
         'llm-event-exchange',
         'reply.email',
         mailingPayload,
+      );
+      this.logger.log(
+        `Sent reply email event for email ${dto.emailId} to routing key reply.email`,
       );
     } catch (error) {
       this.logger.error(`Failed to publish generated reply event`, error);
@@ -362,11 +388,20 @@ export class LlmService {
   }
 
   async handleReplyValidated(event: ReplyValidatedEvent): Promise<void> {
-    const generated = await this.replyGenerationService.generateSafeReply({
-      replyText: event.replyText,
-      quotedText: event.quotedText,
-      originalSubject: event.subject,
-    });
+    this.logger.log(
+      `Received manually validated reply email ${event.emailId} for generation`,
+    );
+    const redactedContext =
+      await this.replyGenerationService.sanitizeReplyContext({
+        replyText: event.replyText,
+        quotedText: event.quotedText,
+        originalSubject: event.subject,
+      });
+    this.logger.log(
+      `Filtered manually validated reply content for email ${event.emailId}; sanitized text length=${redactedContext.redactedReplyText.length}`,
+    );
+    const generated =
+      await this.replyGenerationService.generateRedactedReply(redactedContext);
 
     if (!generated) {
       this.logger.warn(
@@ -389,10 +424,16 @@ export class LlmService {
     };
 
     try {
+      this.logger.log(
+        `Sending reply email event for email ${event.emailId} to routing key reply.email`,
+      );
       await this.amqpConnection.publish(
         'llm-event-exchange',
         'reply.email',
         mailingPayload,
+      );
+      this.logger.log(
+        `Sent reply email event for email ${event.emailId} to routing key reply.email`,
       );
     } catch (error) {
       this.logger.error(`Failed to publish generated reply event`, error);
@@ -405,7 +446,6 @@ export class LlmService {
     );
 
     const safeContext = await this.sanitizeContext(dto.extraContext);
-    this.logger.warn(safeContext);
     if (dto.extraContext && !safeContext) {
       this.logger.log(
         `Proceeding with spear-phishing generation WITHOUT extra context for ${dto.recipientAuth0Id}`,
@@ -424,6 +464,9 @@ export class LlmService {
     let generatedTemplate: GeneratedTemplateDto | null = null;
 
     try {
+      this.logger.log(
+        `Sending spear-phishing email generation request to the LLM gateway for recipient ${dto.recipientAuth0Id}`,
+      );
       const response =
         await this.llmGatewayService.sendWithFallback(requestBody);
       generatedTemplate = this.parseTemplate(response, false);
@@ -469,12 +512,21 @@ export class LlmService {
   }
 
   private async sanitizeContext(context?: string): Promise<string | undefined> {
-    if (!context || context.trim() === '') {
+    const trimmedContext = context?.trim();
+    if (!trimmedContext) {
       return undefined;
     }
+
     try {
-      const result = await this.classificationService.classify({
-        replyText: context,
+      this.logger.log(
+        `Filtering sensitive information from spear-phishing context`,
+      );
+      const { redactedText, items } = await redactSensitiveText(trimmedContext);
+      this.logger.log(
+        `Sensitive-information filtering completed for spear-phishing context: ${items.length} item(s) redacted`,
+      );
+      const result = await this.classificationService.classifyRedacted({
+        replyText: redactedText,
       });
 
       const clean =
@@ -488,7 +540,7 @@ export class LlmService {
         return undefined;
       }
 
-      return context.trim();
+      return redactedText;
     } catch (err) {
       this.logger.warn(
         `Context classification failed, dropping context to be safe. Error: ${err}`,

@@ -475,11 +475,13 @@ services:
       - LOCAL_NUM_PREDICT=${LOCAL_NUM_PREDICT}
       - LOCAL_LLM_TIMEOUT_MS=${LOCAL_LLM_TIMEOUT_MS}
       - DB_SYNC=${DB_SYNC}
+      - GLINER_MODEL_PATH=/app/model.onnx
+      - GLINER_TOKENIZER_PATH=onnx-community/gliner_small-v2
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: '128M'
+          cpus: '2.5'
+          memory: '1024M'
 
     depends_on:
       llm_db:
