@@ -8,6 +8,7 @@ import { fetchAllUsers, type AccountUser } from './reports.service';
 import { computePredictedRisk } from './predictive-risk';
 import { fetchCommsGraph, type CommsGraph } from '../../services/comms';
 import { CommsNetworkGraph } from './comms-network';
+import { DepartmentRadar } from './department-radar';
 
 interface AnalyticsProps { onNavigate: (path: string) => void; activePath: string; }
 
@@ -128,6 +129,10 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
 
   const maxSeriesValue = series?.length ? Math.max(...series.flatMap(p => [p.reports, p.emailsSent])) : 0;
   const predictedRisk = users && departments ? computePredictedRisk(users, departments, atRiskUsers ?? []) : [];
+  // Admins/analysts aren't phishing-simulation targets in the same sense regular
+  // users are, so they're excluded from the at-risk list even if backend data exists for them.
+  const roleByAuth0Id = new Map(users?.map(u => [u.auth0Id, u.role]));
+  const visibleAtRiskUsers = atRiskUsers?.filter(u => roleByAuth0Id.get(u.auth0Id) === 'user' || !roleByAuth0Id.has(u.auth0Id));
 
   return (
     <AppLayout activePath={activePath} onNavigate={onNavigate} title="Analytics"
@@ -241,37 +246,42 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Inter, system-ui, sans-serif' }}>Departmental Risk Heatmap</h2>
         <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>Greener is safer, redder needs attention: shaded by detection rate and click rate.</p>
         <SectionState loading={loading} isEmpty={departments?.length === 0} emptyLabel="No department activity recorded in this period yet.">
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DEPARTMENT</th>
-                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>SENT</th>
-                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>REPORTED</th>
-                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DETECTION RATE</th>
-                  <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>CLICK RATE</th>
-                </tr>
-              </thead>
-              <tbody>
-                {departments?.map(d => (
-                  <tr key={d.department} style={{ borderTop: '1px solid var(--border)' }}>
-                    <td style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.department}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.sent}</td>
-                    <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.reported}</td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <div style={{ background: riskTint(d.detectionRate, true), borderRadius: 6, padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'inline-block', minWidth: 48, textAlign: 'center' }}>
-                        {Math.round(d.detectionRate)}%
-                      </div>
-                    </td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <div style={{ background: riskTint(d.clickRate, false), borderRadius: 6, padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'inline-block', minWidth: 48, textAlign: 'center' }}>
-                        {Math.round(d.clickRate)}%
-                      </div>
-                    </td>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' }}>
+            <div style={{ flex: '1 1 380px', minWidth: 300, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DEPARTMENT</th>
+                    <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>SENT</th>
+                    <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>REPORTED</th>
+                    <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>DETECTION RATE</th>
+                    <th style={{ padding: '8px 12px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', fontFamily: 'Inter, system-ui, sans-serif' }}>CLICK RATE</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {departments?.map(d => (
+                    <tr key={d.department} style={{ borderTop: '1px solid var(--border)' }}>
+                      <td style={{ padding: '10px 12px', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.department}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.sent}</td>
+                      <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{d.reported}</td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <div style={{ background: riskTint(d.detectionRate, true), borderRadius: 6, padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'inline-block', minWidth: 48, textAlign: 'center' }}>
+                          {Math.round(d.detectionRate)}%
+                        </div>
+                      </td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <div style={{ background: riskTint(d.clickRate, false), borderRadius: 6, padding: '6px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'inline-block', minWidth: 48, textAlign: 'center' }}>
+                          {Math.round(d.clickRate)}%
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ flex: '1 1 320px', minWidth: 280 }}>
+              {departments && <DepartmentRadar departments={departments} />}
+            </div>
           </div>
         </SectionState>
       </Card>
@@ -337,7 +347,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>Users Most At Risk</h2>
         </div>
-        <SectionState loading={loading} isEmpty={atRiskUsers?.length === 0} emptyLabel="No users currently meet the at-risk click-rate threshold.">
+        <SectionState loading={loading} isEmpty={visibleAtRiskUsers?.length === 0} emptyLabel="No users currently meet the at-risk click-rate threshold.">
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -349,7 +359,7 @@ export function Analytics({ onNavigate, activePath }: AnalyticsProps) {
                 </tr>
               </thead>
               <tbody>
-                {atRiskUsers?.map(u => (
+                {visibleAtRiskUsers?.map(u => (
                   <tr key={u.auth0Id} style={{ borderTop: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.name ?? u.auth0Id}</td>
                     <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, system-ui, sans-serif' }}>{u.department ?? '—'}</td>

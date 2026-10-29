@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { GraphCanvas, type GraphNode, type GraphEdge, type InternalGraphEdge } from 'reagraph';
 import { Badge, Spinner } from '../../components/ui';
-import { fetchCommsMessages, type CommsGraph, type CommsEdge, type CommsMessage } from '../../services/comms';
+import { fetchCommsMessages, type CommsGraph, type CommsMessage } from '../../services/comms';
 import type { Period } from './analytics.service';
 
+// Sequential blue ramp (palette.md) — identity comes from the direct label on
+// every node, so color is free to carry magnitude (who the hub communicators
+// are) instead of department, which fails all-pairs CVD separation past 3 hues.
+// Department is still visually grouped via reagraph's own clusterAttribute.
 const ACTIVITY_STEPS = ['#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#1c5cab', '#0d366b'];
-const SELECTED_COLOR = '#2a78d6';
+const EDGE_COLOR = '#898781';
 
 function activityFill(ratio: number): string {
   const index = Math.min(ACTIVITY_STEPS.length - 1, Math.floor(ratio * ACTIVITY_STEPS.length));
@@ -13,7 +18,7 @@ function activityFill(ratio: number): string {
 
 function shortLabel(label: string): string {
   const name = label.split('@')[0];
-  return name.length > 18 ? `${name.slice(0, 17)}…` : name;
+  return name.length > 22 ? `${name.slice(0, 21)}…` : name;
 }
 
 function truncateText(text: string, max = 60): string {
@@ -26,12 +31,6 @@ const SOURCE_LABEL: Record<CommsMessage['source'], string> = {
   email: 'Email',
 };
 
-const EDGE_COLOR = '#898781';
-const SIZE = 400;
-const CENTER = SIZE / 2;
-const NODE_RADIUS = 130;
-const LABEL_RADIUS = NODE_RADIUS + 16;
-
 interface SelectedEdge {
   source: string;
   target: string;
@@ -39,8 +38,15 @@ interface SelectedEdge {
   targetLabel: string;
 }
 
+interface EdgeData {
+  sourceId: string;
+  targetId: string;
+}
+
 export function CommsNetworkGraph({ graph, period }: { readonly graph: CommsGraph; readonly period: Period }) {
   const { nodes, edges } = graph;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [excludedDepartments, setExcludedDepartments] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<SelectedEdge | null>(null);
   const [messages, setMessages] = useState<CommsMessage[] | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(false);
@@ -65,77 +71,139 @@ export function CommsNetworkGraph({ graph, period }: { readonly graph: CommsGrap
     return () => { cancelled = true; };
   }, [selected, period]);
 
-  const angleStep = nodes.length > 0 ? (2 * Math.PI) / nodes.length : 0;
-  const positions = new Map(nodes.map((n, i) => {
-    const angle = i * angleStep - Math.PI / 2;
-    return [n.id, { angle, x: CENTER + NODE_RADIUS * Math.cos(angle), y: CENTER + NODE_RADIUS * Math.sin(angle) }];
-  }));
+  const allDepartments = useMemo(
+    () => [...new Set(nodes.map(n => n.department).filter((d): d is string => Boolean(d)))].sort(),
+    [nodes],
+  );
 
-  const maxWeight = Math.max(1, ...edges.map(e => e.weight));
-  const activity = new Map<string, number>();
-  for (const e of edges) {
-    activity.set(e.source, (activity.get(e.source) ?? 0) + e.weight);
-    activity.set(e.target, (activity.get(e.target) ?? 0) + e.weight);
-  }
-  const maxActivity = Math.max(1, ...activity.values());
   const labelOf = (id: string) => nodes.find(n => n.id === id)?.label ?? id;
 
-  function selectEdge(e: CommsEdge): void {
-    setSelected({ source: e.source, target: e.target, sourceLabel: labelOf(e.source), targetLabel: labelOf(e.target) });
+  // Department filter, then an ego-network search filter on top — the two
+  // levers that let someone with 100+ users find a person's connections fast
+  // instead of staring at an unreadable hairball.
+  const { visibleNodes, visibleEdges } = useMemo(() => {
+    const deptNodeIds = new Set(
+      nodes.filter(n => !excludedDepartments.has(n.department ?? '')).map(n => n.id),
+    );
+    const deptEdges = edges.filter(e => deptNodeIds.has(e.source) && deptNodeIds.has(e.target));
+
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) {
+      return { visibleNodes: nodes.filter(n => deptNodeIds.has(n.id)), visibleEdges: deptEdges };
+    }
+
+    const matchIds = new Set(
+      nodes.filter(n => deptNodeIds.has(n.id) && n.label.toLowerCase().includes(term)).map(n => n.id),
+    );
+    const neighborIds = new Set<string>();
+    for (const e of deptEdges) {
+      if (matchIds.has(e.source)) neighborIds.add(e.target);
+      if (matchIds.has(e.target)) neighborIds.add(e.source);
+    }
+    const keepIds = new Set([...matchIds, ...neighborIds]);
+    return {
+      visibleNodes: nodes.filter(n => keepIds.has(n.id)),
+      visibleEdges: deptEdges.filter(e => matchIds.has(e.source) || matchIds.has(e.target)),
+    };
+  }, [nodes, edges, excludedDepartments, searchTerm]);
+
+  const { graphNodes, graphEdges } = useMemo(() => {
+    const maxWeight = Math.max(1, ...visibleEdges.map(e => e.weight));
+    const activity = new Map<string, number>();
+    for (const e of visibleEdges) {
+      activity.set(e.source, (activity.get(e.source) ?? 0) + e.weight);
+      activity.set(e.target, (activity.get(e.target) ?? 0) + e.weight);
+    }
+    const maxActivity = Math.max(1, ...activity.values());
+
+    const gNodes: GraphNode[] = visibleNodes.map(n => {
+      const act = activity.get(n.id) ?? 0;
+      return {
+        id: n.id,
+        label: shortLabel(n.label),
+        data: { department: n.department ?? 'Unknown' },
+        size: 6 + (act / maxActivity) * 10,
+        fill: activityFill(act / maxActivity),
+      };
+    });
+    const gEdges: GraphEdge[] = visibleEdges.map(e => ({
+      id: `${e.source}__${e.target}`,
+      source: e.source,
+      target: e.target,
+      size: 1 + (e.weight / maxWeight) * 3,
+      fill: EDGE_COLOR,
+      data: { sourceId: e.source, targetId: e.target } satisfies EdgeData,
+    }));
+    return { graphNodes: gNodes, graphEdges: gEdges };
+  }, [visibleNodes, visibleEdges]);
+
+  function toggleDepartment(dept: string): void {
+    setExcludedDepartments(prev => {
+      const next = new Set(prev);
+      if (next.has(dept)) next.delete(dept); else next.add(dept);
+      return next;
+    });
+  }
+
+  function handleEdgeClick(edge: InternalGraphEdge): void {
+    const data = edge.data as EdgeData;
+    setSelected({
+      source: data.sourceId,
+      target: data.targetId,
+      sourceLabel: labelOf(data.sourceId),
+      targetLabel: labelOf(data.targetId),
+    });
   }
 
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'stretch' }}>
-      <div style={{ flex: '1 1 340px', minWidth: 280, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ width: '100%', maxWidth: 400, height: 'auto' }}>
-          {edges.map(e => {
-            const from = positions.get(e.source);
-            const to = positions.get(e.target);
-            if (!from || !to) return null;
-            const ratio = e.weight / maxWeight;
-            const isSelected = selected?.source === e.source && selected?.target === e.target;
+      <div style={{ flex: '1 1 420px', minWidth: 300, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder="Find a user — shows them and their direct connections"
+            style={{
+              flex: '1 1 220px', padding: '7px 10px', fontSize: 12, borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)',
+              fontFamily: 'Inter, system-ui, sans-serif',
+            }}
+          />
+          {allDepartments.map(dept => {
+            const active = !excludedDepartments.has(dept);
             return (
-              <g key={`${e.source}-${e.target}`}>
-                <line
-                  x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                  stroke={isSelected ? SELECTED_COLOR : EDGE_COLOR}
-                  strokeOpacity={isSelected ? 0.95 : 0.2 + ratio * 0.5}
-                  strokeWidth={isSelected ? 3 + ratio * 3 : 1 + ratio * 3}
-                  strokeLinecap="round"
-                />
-                {/* Wide, invisible hit-area — the visible line is often too thin to click reliably */}
-                <line
-                  x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                  stroke="transparent" strokeWidth={14} strokeLinecap="round"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => selectEdge(e)}
-                >
-                  <title>{`${e.weight} message${e.weight === 1 ? '' : 's'} · click for details`}</title>
-                </line>
-              </g>
+              <button key={dept} type="button" onClick={() => toggleDepartment(dept)}
+                style={{
+                  padding: '5px 10px', borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'Inter, system-ui, sans-serif',
+                  border: `1.5px solid ${active ? 'var(--color-primary)' : 'var(--border)'}`,
+                  background: active ? 'var(--color-primary-light)' : 'transparent',
+                  color: active ? 'var(--color-primary)' : 'var(--text-muted)',
+                }}>
+                {dept}
+              </button>
             );
           })}
-          {nodes.map(n => {
-            const pos = positions.get(n.id);
-            if (!pos) return null;
-            const lx = CENTER + LABEL_RADIUS * Math.cos(pos.angle);
-            const ly = CENTER + LABEL_RADIUS * Math.sin(pos.angle);
-            const cos = Math.cos(pos.angle);
-            const anchor = cos > 0.15 ? 'start' : cos < -0.15 ? 'end' : 'middle';
-            const nodeActivity = activity.get(n.id) ?? 0;
-            return (
-              <g key={n.id}>
-                <circle cx={pos.x} cy={pos.y} r={7} fill={activityFill(nodeActivity / maxActivity)} stroke="var(--bg-card)" strokeWidth={2}>
-                  <title>{`${n.label}${n.department ? ` · ${n.department}` : ''} · ${nodeActivity} messages`}</title>
-                </circle>
-                <text x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle"
-                  fontSize={9} fill="var(--text-secondary)" fontFamily="Inter, system-ui, sans-serif">
-                  {shortLabel(n.label)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+        </div>
+
+        <div style={{ width: '100%', height: 420, position: 'relative', background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+          {graphNodes.length === 0 ? (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>
+              No users match this filter.
+            </div>
+          ) : (
+            <GraphCanvas
+              nodes={graphNodes}
+              edges={graphEdges}
+              clusterAttribute="department"
+              layoutType="forceDirected2d"
+              edgeArrowPosition="end"
+              onEdgeClick={handleEdgeClick}
+            />
+          )}
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>Less active</span>
           <div style={{ display: 'flex', gap: 2 }}>
@@ -144,6 +212,9 @@ export function CommsNetworkGraph({ graph, period }: { readonly graph: CommsGrap
             ))}
           </div>
           <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif' }}>More active</span>
+          <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'Inter, system-ui, sans-serif', marginLeft: 'auto' }}>
+            Grouped by department · click a line for message detail
+          </span>
         </div>
       </div>
 
