@@ -1,6 +1,6 @@
 services:
   mailing_app:
-    image: fiveguys301/mailing:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/mailing:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${MAILING_APP_CONTAINER}
     environment:
       - MAILING_SERVICE_PORT=${MAILING_SERVICE_PORT}
@@ -19,6 +19,7 @@ services:
       - TRACKING_LINK=${TRACKING_LINK}
       - BUSINESS_SENDING_DOMAIN=${BUSINESS_SENDING_DOMAIN}
       - SCHEDULE_MIN_LEAD_MINUTES=${SCHEDULE_MIN_LEAD_MINUTES}
+      - SCHEDULE_TIMEZONE=${SCHEDULE_TIMEZONE}
     volumes:
       - ./src:/app/src
     deploy:
@@ -31,7 +32,7 @@ services:
       - infrastructure
   
   accounts_app:
-    image: fiveguys301/accounts:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/accounts:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${ACCOUNTS_APP_CONTAINER}
     environment:
       - PORT=${ACCOUNTS_SERVICE_PORT}
@@ -68,11 +69,11 @@ services:
       - green
 
   api_app1:
-    image: fiveguys301/api:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/api:5f4d2049704befe1deba84806a62298bb68520cc
     restart: on-failure
     container_name: green_${GATEWAY_APP_CONTAINER}_1
     environment:
-      - VERSION=green_1-d512e17f108478f9a84f57d1e08b3f80c95e04aa
+      - VERSION=green_1-5f4d2049704befe1deba84806a62298bb68520cc
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
@@ -146,11 +147,11 @@ services:
       - infrastructure
 
   api_app2:
-    image: fiveguys301/api:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/api:5f4d2049704befe1deba84806a62298bb68520cc
     restart: on-failure
     container_name: green_${GATEWAY_APP_CONTAINER}_2
     environment:
-      - VERSION=green_2-d512e17f108478f9a84f57d1e08b3f80c95e04aa
+      - VERSION=green_2-5f4d2049704befe1deba84806a62298bb68520cc
       - OUR_EMAIL=${OUR_EMAIL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_RECEIVED_WEBHOOK_SECRET=${RESEND_RECEIVED_WEBHOOK_SECRET}
@@ -224,7 +225,7 @@ services:
       - infrastructure
 
   report_app:
-    image: fiveguys301/report:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/report:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${REPORT_APP_CONTAINER}
     environment:
       - PORT=${REPORT_SERVICE_PORT}
@@ -250,7 +251,7 @@ services:
       - infrastructure
 
   xp_app:
-    image: fiveguys301/xp:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/xp:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${XP_APP_CONTAINER}
     environment:
       - XP_SERVICE_PORT=${XP_SERVICE_PORT}
@@ -275,7 +276,7 @@ services:
       - infrastructure
       
   education_app:
-    image: fiveguys301/education:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/education:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${EDUCATION_APP_CONTAINER}
     environment:
       - PORT=${EDUCATION_SERVICE_PORT}
@@ -300,7 +301,7 @@ services:
       - infrastructure
       
   analytics_app:
-    image: fiveguys301/analytics:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/analytics:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${ANALYTICS_APP_CONTAINER}
     environment:
       - PORT=${ANALYTICS_SERVICE_PORT}
@@ -325,7 +326,7 @@ services:
       - infrastructure
 
   website:
-    image: fiveguys301/website:d512e17f108478f9a84f57d1e08b3f80c95e04aa-prod
+    image: fiveguys301/website:5f4d2049704befe1deba84806a62298bb68520cc-prod
     restart: on-failure
     container_name: green_website
     deploy:
@@ -338,7 +339,7 @@ services:
       - proxy
   
   outlook_addin:
-    image: fiveguys301/addin:d512e17f108478f9a84f57d1e08b3f80c95e04aa-prod
+    image: fiveguys301/addin:5f4d2049704befe1deba84806a62298bb68520cc-prod
     restart: on-failure
     container_name: green_addin
     deploy:
@@ -351,7 +352,7 @@ services:
       - proxy
 
   llm_app:
-    image: fiveguys301/llm:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/llm:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${LLM_APP_CONTAINER}
     environment:
       - PORT=${LLM_SERVICE_PORT}
@@ -387,7 +388,7 @@ services:
       - infrastructure
     
   company_app:
-    image: fiveguys301/company:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/company:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${COMPANY_APP_CONTAINER}
     environment:
       - PORT=${COMPANY_SERVICE_PORT}
@@ -410,7 +411,7 @@ services:
       - local-llm
 
   comms_app:
-    image: fiveguys301/comms:d512e17f108478f9a84f57d1e08b3f80c95e04aa
+    image: fiveguys301/comms:5f4d2049704befe1deba84806a62298bb68520cc
     container_name: green_${COMMS_APP_CONTAINER}
     environment:
       - PORT=${COMMS_SERVICE_PORT}
